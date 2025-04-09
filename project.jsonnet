@@ -22,4 +22,5 @@ function(settings)
     '_config.yml': utils.manifestYaml(jekyll(settings)),
     'package.json': std.manifestJson(package_json(settings)),
     'pyproject.toml': utils.manifestToml(pyproject(settings)),
+    'tests/pyproject.toml': utils.manifestToml(import 'pyproject-tests.libjsonnet'),
   } + github.workflows(settings)
