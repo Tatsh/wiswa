@@ -18,7 +18,7 @@ description = "Generate a Python project."
 dynamic = ["dependencies", "requires-python"]
 keywords = ["command line", "python"]
 license = "MIT"
-name = "genproj"
+name = "wiswa"
 readme = "README.md"
 version = "0.0.0"
 
@@ -27,12 +27,13 @@ email = "audvare@gmail.com"
 name = "Andrew Udvare"
 
 [project.scripts]
+wiswa = "wiswa.main:main"
 
 [project.urls]
-Issues = "https://github.com/Tatsh/genproj/issues"
-documentation = "https://genproj.readthedocs.org"
-homepage = "https://tatsh.github.io/genproj/"
-repository = "https://github.com/Tatsh/genproj"
+Issues = "https://github.com/Tatsh/wiswa/issues"
+documentation = "https://wiswa.readthedocs.org"
+homepage = "https://tatsh.github.io/wiswa/"
+repository = "https://github.com/Tatsh/wiswa"
 
 [tool]
 
@@ -65,7 +66,6 @@ strict_optional = true
 warn_unreachable = true
 
 [tool.poetry]
-packages = []
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.14"
@@ -87,10 +87,13 @@ optional = true
 
 [tool.poetry.group.tests.dependencies]
 
+[[tool.poetry.packages]]
+include = "wiswa"
+
 [tool.pyright]
 deprecateTypingAliases = true
 enableExperimentalFeatures = true
-include = ["./genproj", "./tests"]
+include = ["./wiswa", "./tests"]
 pythonPlatform = "Linux"
 pythonVersion = "3.10"
 reportCallInDefaultInitializer = "warning"

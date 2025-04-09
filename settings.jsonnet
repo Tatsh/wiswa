@@ -1,5 +1,5 @@
 local github_username = 'Tatsh';
-local project_name = 'genproj';
+local project_name = 'wiswa';
 
 local authors = [
     {
@@ -57,15 +57,15 @@ local authors = [
     tests: {},
   },
   min_python_minor_version: '10',
-  primary_module: 'genproj',
+  primary_module: project_name,
   supported_python_versions:
     ['3.%s' % self.min_python_minor_version] + [
       ('3.%s' % i)
       for i in [11, 12, 13]
     ],
-  modules: [self.primary_module],
-  packages: [],
-  scripts: {},
+  modules: [std.strReplace(self.primary_module, '-', '_')],
+  packages: [{ include: m } for m in self.modules],
+  scripts: { [project_name]: '%s.main:main' % project_name },
 
   // package.json only
   repository: {
