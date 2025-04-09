@@ -1,0 +1,16 @@
+{
+  ini_options: {
+    mock_use_standalone_module: true,
+    norecursedirs: [
+      'node_modules',
+    ],
+    python_files: [
+      'tests.py',
+      'test_*.py',
+      '*_tests.py',
+    ],
+    testpaths: [
+      'tests',
+    ],
+  },
+}

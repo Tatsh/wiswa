@@ -1,0 +1,8 @@
+function(settings) {
+  'cff-version': '1.2.0',
+  'date-released': settings.citation.date_released,
+  authors: settings.citation.authors,
+  message: 'If you use this software, please cite it as below.',
+  title: settings.project_name,
+  version: settings.version,
+}

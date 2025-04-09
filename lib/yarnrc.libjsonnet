@@ -1,0 +1,11 @@
+function(settings)
+  {
+    enableTelemetry: false,
+    nodeLinker: 'node-modules',
+    plugins: [
+      {
+        path: '.yarn/plugins/plugin-prettier-after-all-installed.cjs',
+      },
+    ],
+    yarnPath: '.yarn/releases/yarn-%s.cjs' % settings.yarn_version,
+  }

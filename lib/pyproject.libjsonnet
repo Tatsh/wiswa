@@ -1,0 +1,36 @@
+local mypy = import 'pyproject/mypy.libjsonnet';
+local poetry = import 'pyproject/poetry.libjsonnet';
+local project = import 'pyproject/project.libjsonnet';
+local pyright = import 'pyproject/pyright.libjsonnet';
+local ruff = import 'pyproject/ruff.libjsonnet';
+local yapf = import 'pyproject/yapf.libjsonnet';
+local yapfignore = import 'pyproject/yapfignore.libjsonnet';
+
+function(settings)
+  {
+    project: project(settings),
+    tool: {
+      commitizen: {
+        tag_format: 'v$version',
+        version_files: ['.project.jsonnet', 'CITATION.cff', 'README.md', 'package.json'],
+        version_provider: 'pep621',
+      },
+      coverage: import 'pyproject/coverage.libjsonnet',
+      doc8: {
+        'max-line-length': 100,
+      },
+      mypy: mypy(settings),
+      poetry: poetry(settings),
+      pyright: pyright(settings),
+      pytest: import 'pyproject/pytest.libjsonnet',
+      ruff: ruff(settings),
+      yapf: yapf,
+      yapfignore: yapfignore,
+    },
+    'build-system': {
+      requires: [
+        'poetry-core',
+      ],
+      'build-backend': 'poetry.core.masonry.api',
+    },
+  }

@@ -1,0 +1,4 @@
+function(settings)
+  {
+    theme: settings.github.pages_theme,
+  }

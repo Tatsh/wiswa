@@ -1,0 +1,12 @@
+local shared_ignore = import 'shared-ignore.libjsonnet';
+
+{
+  manifestToml(value):
+    std.manifestTomlEx(value, ''),
+  manifestIgnore(value):
+    std.join('\n', std.uniq(std.sort(value + shared_ignore))),
+  manifestLines(value):
+    std.join('\n', std.uniq(std.sort(value))),
+  manifestYaml(value):
+    std.manifestYamlDoc(value, true, false),
+}

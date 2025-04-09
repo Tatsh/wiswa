@@ -1,0 +1,18 @@
+{
+  report: {
+    omit: [
+      'conftest.py',
+      'tests.py',
+      'tests/test_*.py',
+    ],
+    show_missing: true,
+  },
+  run: {
+    branch: true,
+    omit: [
+      'conftest.py',
+      'tests.py',
+      'tests/test_*.py',
+    ],
+  },
+}

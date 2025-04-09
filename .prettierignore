@@ -1,0 +1,11 @@
+*.jsonnet
+*~
+.*_cache/
+.directory
+.pnp.*
+/.coverage
+/.yarn/**/*.cjs
+/.yarn/install-state.gz
+/docs/_build/
+__pycache__/
+node_modules/
