@@ -3,7 +3,7 @@
   tool: {
     commitizen: {
       tag_format: 'v$version',
-      version_files: ['.project.jsonnet', 'CITATION.cff', 'README.md', 'package.json'],
+      version_files: ['.wiswa.jsonnet', 'CITATION.cff', 'README.md', 'package.json'],
       version_provider: 'pep621',
     },
     coverage: import 'defaults/coverage.libjsonnet',
