@@ -1,0 +1,24 @@
+{
+  manifestToml(value):
+    std.manifestTomlEx(value, ''),
+  manifestIgnore(value):
+    std.join('\n', std.set(value)),
+  manifestLines(value):
+    std.join('\n', std.set(value)),
+  manifestYaml(value):
+    std.manifestYamlDoc(value, true, false),
+  citationAuthors(authors):
+    [{
+      'family-names': x['family-names'],
+      'given-names': x['given-names'],
+    } for x in authors],
+  githubGitSshUri(github_username, project_name): 'git@github.com:%s/%s.git' % [github_username, project_name],
+  readthedocsUri(project_name): 'https://%s.readthedocs.org' % project_name,
+  githubRepositoryUri(github_username, project_name): 'https://github.com/%s/%s' % [github_username, project_name],
+  pyprojectAuthors(authors):
+    [{
+      name: x.name,
+      email: x.email,
+    } for x in authors],
+  gitlabCi(settings): {},
+}

@@ -1,0 +1,5 @@
+{% if settings.codeowners %}
+{% for key, value in settings.codeowners %}
+{{ key }} {{ value }}
+{% endfor %}
+{% endif %}

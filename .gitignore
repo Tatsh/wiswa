@@ -1,9 +1,12 @@
+*.log
 *~
 .*_cache/
+.coverage
 .directory
 .pnp.*
-/.coverage
 /.yarn/install-state.gz
+/dist/
 /docs/_build/
 __pycache__/
+htmlcov/
 node_modules/

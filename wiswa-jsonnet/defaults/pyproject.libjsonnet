@@ -1,0 +1,34 @@
+{
+  project: import 'defaults/project.libjsonnet',
+  tool: {
+    commitizen: {
+      tag_format: 'v$version',
+      version_files: ['.project.jsonnet', 'CITATION.cff', 'README.md', 'package.json'],
+      version_provider: 'pep621',
+    },
+    coverage: import 'defaults/coverage.libjsonnet',
+    djlint: {
+      profile: 'jinja',
+      max_line_length: 100,
+      no_line_after_yaml: true,
+      preserve_leading_space: true,
+      use_gitignore: true,
+    },
+    doc8: {
+      'max-line-length': 100,
+    },
+    mypy: import 'defaults/mypy.libjsonnet',
+    poetry: import 'defaults/poetry.libjsonnet',
+    pyright: import 'defaults/pyright.libjsonnet',
+    pytest: import 'defaults/pytest.libjsonnet',
+    ruff: import 'defaults/ruff.libjsonnet',
+    yapf: import 'defaults/yapf.libjsonnet',
+    yapfignore: import 'defaults/yapfignore.libjsonnet',
+  },
+  'build-system': {
+    requires: [
+      'poetry-core',
+    ],
+    'build-backend': 'poetry.core.masonry.api',
+  },
+}

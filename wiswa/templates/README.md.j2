@@ -1,0 +1,42 @@
+# {{ settings.directory_name }}
+
+{% if settings.using_github %}
+[![QA]({{ settings.repository_uri }}/actions/workflows/qa.yml/badge.svg)]({{ settings.repository_uri }}/actions/workflows/qa.yml)
+[![Tests]({{ settings.repository_uri }}/actions/workflows/tests.yml/badge.svg)]({{ settings.repository_uri }}/actions/workflows/tests.yml)
+[![Coverage Status](https://coveralls.io/repos/github/{{ settings.github.username }}/{{ settings.project_name }}/badge.svg?branch=master)](https://coveralls.io/github/{{ settings.github.username }}/{{ settings.project_name }}?branch=master)
+{% endif %}
+{% if settings.want_docs %}
+[![Documentation Status](https://readthedocs.org/projects/{{ settings.project_name }}/badge/?version=latest)]({{ settings.documentation_uri }}/?badge=latest)
+{% endif %}
+![PyPI - Version](https://img.shields.io/pypi/v/{{ settings.project_name }})
+{% if settings.using_github %}
+![GitHub tag (with filter)](https://img.shields.io/github/v/tag/{{ settings.github.username }}/{{ settings.project_name }})
+![GitHub](https://img.shields.io/github/license/{{ settings.github.username }}/{{ settings.project_name }})
+![GitHub commits since latest release (by SemVer including pre-releases)](https://img.shields.io/github/commits-since/{{ settings.github.username }}/{{ settings.project_name }}/v{{ settings.version }}/master)
+{% endif %}
+
+{{ settings.description | wordwrap(99) }}
+
+## Installation
+
+### Poetry
+
+```shell
+poetry add {{ settings.directory_name }}
+```
+
+### Pip
+
+```shell
+pip install {{ settings.directory_name }}
+```
+
+## Usage
+
+Add `-d` to show debug logs.
+
+{% if settings.want_main %}
+```shell
+{{ settings.directory_name }}
+```
+{% endif %}

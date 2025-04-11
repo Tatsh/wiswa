@@ -1,0 +1,73 @@
+"""See https://www.sphinx-doc.org/en/master/usage/configuration.html."""
+from datetime import datetime, timezone
+from operator import itemgetter
+from pathlib import Path
+{% if settings.using_django %}
+from typing import Any
+{% endif %}
+{% if settings.docs_conf.environment_variables or settings.using_django %}
+import os
+{% endif %}
+import sys
+{% if settings.using_django %}
+from django.conf import settings
+import django
+    {% if settings.docs_conf.django.monkeypatch %}
+import django_stubs_ext
+    {% endif %}
+{% endif %}
+import tomlkit
+with (Path(__file__).parent.parent / 'pyproject.toml').open(newline='\n', encoding='utf-8') as f:
+    project_ = tomlkit.load(f).unwrap()['project']
+    authors_list, name, version = itemgetter('authors', 'name', 'version')(project_)
+authors = [f'{d["name"]} <{d["email"]}>' for d in authors_list]
+# region Path setup
+# If extensions (or modules to document with autodoc) are in another directory, add these
+# directories to sys.path here. If the directory is relative to the documentation root, use
+# str(Path().parent.parent) to make it absolute, like shown here.
+sys.path.insert(0, str(Path(__file__).parent.parent))
+# endregion
+{% if settings.docs_conf.environment_variables %}
+    {% for env_var, value in settings.docs_conf.environment_variables.items() %}
+os.environ['{{ env_var }}'] = {{ value | topython }}
+    {% endfor %}
+{% endif %}
+{% if settings.using_django %}
+# region Django setup
+os.environ['DJANGO_SETTINGS_MODULE'] = '{{ settings.docs_conf.django.settings_module }}'
+    {% for name, value in settings.docs_conf.django.settings.items() %}
+settings.{{ name }} = {{ value | topython }}
+    {% endfor %}
+    {% if settings.docs_conf.django.monkeypatch %}
+extra_classes: tuple[type[Any], ...] = ()
+try:
+    from rest_framework import fields, generics
+    extra_classes += (fields.Field, generics.GenericAPIView)
+except ImportError:
+    pass
+django_stubs_ext.monkeypatch(extra_classes=extra_classes)
+    {% endif %}
+django.setup()
+# endregion
+{% endif %}
+author = f'{authors_list[0]["name"]} <{authors_list[0]["email"]}>'
+copyright = str(datetime.now(timezone.utc).year)  # noqa: A001
+project = name
+release = f'v{version}'
+extensions = {{ settings.docs_conf.extensions | topython }}
+{% if settings.want_main and 'sphinx_click' not in settings.docs_conf.extensions %}
+extensions += ['sphinx_click']
+{% endif %}
+{% for key, value in settings.docs_conf.config.items() %}
+    {% if key == 'intersphinx_mapping' %}
+{{ key }} = {{ value | topython(list_to_tuple=True) }}
+    {% elif key == 'numpydoc_validation_checks' %}
+        {# djlint:off #}
+{{ key }} = {% raw %}{{% endraw %}{{ value[1:-1] }}{% raw %}}{% endraw %}
+        {# djlint:on #}
+    {% elif key.startswith('numpydoc_') %}
+{{ key }} = {{ value }}
+    {% else %}
+{{ key }} = {{ value | topython }}
+    {% endif %}
+{% endfor %}

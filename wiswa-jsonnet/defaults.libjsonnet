@@ -1,0 +1,204 @@
+local utils = import 'utils.libjsonnet';
+
+{
+  local deps = import 'defaults/deps.libjsonnet',
+  local github = if settings.using_github then [import 'defaults/pre-commit-config/github.libjsonnet'] else [],
+  local cff = if settings.want_cff then [import 'defaults/pre-commit-config/cff.libjsonnet'] else [],
+  local djlint = if settings.want_djlint then [import 'defaults/pre-commit-config/djlint.libjsonnet'] else [],
+  local local_hooks = [import 'defaults/pre-commit-config/local.libjsonnet'],
+  local settings = self,
+  yarn_version: '4.8.1',
+  license: 'MIT',
+  version: '0.0.0',
+
+  github_username: 'unknown',
+  repository_uri: utils.githubRepositoryUri(self.github.username, self.project_name),
+  documentation_uri: utils.readthedocsUri(self.project_name),
+  directory_name: self.project_name,
+  homepage: self.github.pages_uri,
+  keywords: [],
+  description: 'No description.',
+  modules: [self.primary_module],
+
+  // General settings
+  skip: [
+    'CHANGELOG.md',
+    'CONTRIBUTING.md',
+    'README.md',
+    'SECURITY.md',
+    'docs/index.rst',
+    'tests/test_main.py',
+  ],
+  codeowners: {},
+  using_django: 'django' in self.pyproject.tool.poetry.dependencies,
+  using_github: std.member(self.repository_uri, 'github.com'),
+  using_gitlab: std.member(self.repository_uri, 'gitlab.com'),
+  using_readthedocs: true,
+  want_cff: true,
+  want_docs: true,
+  want_djlint: false,
+  want_main: false,
+  year: '2025',
+
+  // Shared
+  authors: [
+    {
+      'family-names': 'Not',
+      'given-names': 'Filled In',
+      email: 'not-filled-in@email.com',
+      name: '%s %s' % [self['given-names'], self['family-names']],
+    },
+  ],
+  project_name: 'not-a-project-name',
+  repository_name: self.project_name,
+  shared_ignore: import 'defaults/shared-ignore.libjsonnet',
+  pre_commit_config: {
+    default_install_hook_types: [
+      'pre-commit',
+      'pre-push',
+      'post-checkout',
+      'post-merge',
+    ],
+    repos: [
+      import 'defaults/pre-commit-config/main.libjsonnet',
+      import 'defaults/pre-commit-config/poetry.libjsonnet',
+      import 'defaults/pre-commit-config/yapf.libjsonnet',
+    ] + github + cff + djlint + local_hooks,
+  },
+  vscode: {
+    extensions: import 'defaults/vscode/extensions.libjsonnet',
+    launch: import 'defaults/vscode/launch.libjsonnet',
+    settings: import 'defaults/vscode/settings.libjsonnet',
+  },
+  readthedocs: import 'defaults/readthedocs.libjsonnet',
+
+  // GitHub
+  github: {
+    dependabot: import 'defaults/dependabot.libjsonnet',
+    funding: {
+      custom: null,
+      github: settings.github_username,
+    },
+    pages_config: import 'defaults/_config.libjsonnet',
+    pages_uri: 'https://%s.github.io/%s/' % [std.asciiLower(settings.github_username), settings.project_name],
+    username: settings.github_username,
+  },
+
+  // CITATION.cff
+  citation: {
+    'cff-version': '1.2.0',
+    'date-released': '2025-04-09',
+    authors: utils.citationAuthors(settings.authors),
+    message: 'If you use this software, please cite it as below.',
+    title: settings.project_name,
+    version: settings.version,
+  },
+
+  // Git
+  gitattributes: [
+    '*.lock binary',
+    '/.yarn/**/*.cjs binary',
+  ],
+  gitignore: self.shared_ignore,
+
+  // Python only
+  supported_python_versions: ['3.%d' % i for i in std.range(10, 13)],
+  primary_module: std.strReplace(self.project_name, '-', '_'),
+  pyproject: (import 'defaults/pyproject.libjsonnet') + {
+    project+: {
+      authors: utils.pyprojectAuthors(settings.authors),
+      classifiers: std.sort([
+        'Development Status :: 2 - Pre-Alpha',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python',
+        'Typing :: Typed',
+      ] + [
+        ('Programming Language :: Python :: %s' % i)
+        for i in settings.supported_python_versions
+      ]),
+      description: settings.description,
+      keywords: settings.keywords,
+      name: settings.project_name,
+      version: settings.version,
+      license: settings.license,
+      scripts: {},
+      urls: {
+        homepage: settings.homepage,
+        documentation: settings.documentation_uri,
+        Issues: '%s/issues' % settings.repository_uri,
+        repository: settings.repository_uri,
+      },
+    },
+    tool+: {
+      commitizen+: {
+        version_files+: ['%s/__init__.py' % settings.primary_module],
+      },
+      mypy+: { python_version: settings.supported_python_versions[0] },
+      poetry+: {
+        include: {},
+        packages: {},
+        dependencies: {
+          python: '>=%s,<3.%d' % [
+            settings.supported_python_versions[0],
+            std.parseInt(settings.supported_python_versions[std.length(settings.supported_python_versions) - 1][2:]) + 1,
+          ],
+        } + deps.main,
+        group+: {
+          dev+: {
+            dependencies: deps.dev,
+          },
+          docs+: {
+            dependencies: deps.docs,
+          },
+          tests+: {
+            dependencies: deps.tests,
+          },
+        },
+      },
+      pyright+: {
+        include: ['./%s' % [m] for m in settings.modules] + [
+          './tests',
+        ],
+        pythonVersion: settings.supported_python_versions[0],
+      },
+      ruff+: {
+        'target-version': 'py3%s' % settings.supported_python_versions[0][2:],
+      },
+    },
+  },
+
+  docs_conf: (import 'defaults/docs_conf.libjsonnet') + {
+    config+: {
+      html_theme_options+: {
+        repo_name: settings.directory_name,
+        repo_url: settings.repository_uri,
+        site_url: settings.documentation_uri,
+      },
+    },
+  },
+  tests_pyproject: import 'defaults/pyproject-tests.libjsonnet',
+
+  // package.json only
+  package_json: (import 'defaults/package.libjsonnet') + {
+    contributors: ['%s <%s>' % [x.name, x.email] for x in settings.authors],
+    homepage: settings.homepage,
+    keywords: settings.keywords,
+    license: settings.license,
+    name: settings.project_name,
+    packageManager: 'yarn@%s' % settings.yarn_version,
+    repository: {
+      type: 'git',
+      url: utils.githubGitSshUri(settings.github_username, settings.project_name),
+    },
+    version: settings.version,
+  },
+
+  // Prettier
+  prettierignore: self.shared_ignore + ['*.1', '*.jsonnet', '*.libjsonnet', '/.yarn/**/*.cjs'],
+
+  // Yarn
+  yarnrc: (import 'defaults/yarnrc.libjsonnet') + {
+    yarnPath: '.yarn/releases/yarn-%s.cjs' % settings.yarn_version,
+  },
+}

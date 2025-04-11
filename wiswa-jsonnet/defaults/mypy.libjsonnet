@@ -1,0 +1,9 @@
+{
+  cache_dir: '~/.cache/mypy',
+  explicit_package_bases: true,
+  platform: 'linux',
+  show_column_numbers: true,
+  strict: true,
+  strict_optional: true,
+  warn_unreachable: true,
+}

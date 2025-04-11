@@ -1,0 +1,102 @@
+{
+  config: {
+    datatables_class: 'sphinx-datatable',
+    datatables_options: {
+      paging: 0,
+    },
+    datatables_version: '1.13.4',
+    intersphinx_mapping: {
+      python: [
+        'https://docs.python.org/3',
+        null,
+      ],
+    },
+    html_theme: 'sphinx_immaterial',
+    html_theme_options: {
+      features: [
+        'announce.dismiss',
+        'content.action.edit',
+        'content.action.view',
+        'content.code.copy',
+        'content.tabs.link',
+        'content.tooltips',
+        'navigation.expand',
+        'navigation.footer',
+        'navigation.sections',
+        'navigation.top',
+        'search.share',
+        'search.suggest',
+        'toc.follow',
+        'toc.sticky',
+      ],
+      icon: {
+        edit: 'material/file-edit-outline',
+        repo: 'fontawesome/brands/gitlab',
+      },
+      edit_uri: '-/blob/main/docs/',
+      globaltoc_collapse: true,
+      palette: [
+        {
+          media: '(prefers-color-scheme)',
+          toggle: {
+            icon: 'material/brightness-auto',
+            name: 'Switch to light mode',
+          },
+        },
+        {
+          media: '(prefers-color-scheme: light)',
+          scheme: 'default',
+          primary: 'light-green',
+          accent: 'light-blue',
+          toggle: {
+            icon: 'material/lightbulb',
+            name: 'Switch to dark mode',
+          },
+        },
+        {
+          media: '(prefers-color-scheme: dark)',
+          scheme: 'slate',
+          primary: 'deep-orange',
+          accent: 'lime',
+          toggle: {
+            icon: 'material/lightbulb-outline',
+            name: 'Switch to system preference',
+          },
+        },
+      ],
+      toc_title_is_page_title: true,
+    },
+  },
+  django: {
+    monkeypatch: true,
+    settings_module: 'settings',
+    settings: {
+      DATABASES: {
+        default: {
+          ENGINE: 'django.db.backends.sqlite3',
+          NAME: ':memory:',
+        },
+      },
+      INSTALLED_APPS: [
+        'django.contrib.admin',
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.sessions',
+        'django.contrib.messages',
+        'django.contrib.staticfiles',
+      ],
+      PATH_PREFIX: '',
+    },
+  },
+  environment_variables: {},
+  extensions: [
+    'hoverxref.extension',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',
+    'sphinx_datatables',
+    'sphinx_immaterial',
+    'sphinxcontrib.autodoc_pydantic',
+    'sphinxcontrib.jquery',
+  ],
+}

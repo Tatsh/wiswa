@@ -1,0 +1,5 @@
+{
+  dynamic: ['dependencies', 'requires-python'],
+  'optional-dependencies': { erdantic: ['erdantic<2.0'] },
+  readme: 'README.md',
+}

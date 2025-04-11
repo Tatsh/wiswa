@@ -1,6 +1,0 @@
-local utils = import 'utils.libjsonnet';
-
-[
-  '*.lock binary',
-  '/.yarn/**/*.cjs binary',
-]

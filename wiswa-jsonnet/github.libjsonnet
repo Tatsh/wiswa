@@ -1,0 +1,12 @@
+local codeql = import 'github/workflows/codeql.libjsonnet';
+local qa = import 'github/workflows/qa.libjsonnet';
+local tests = import 'github/workflows/tests.libjsonnet';
+local utils = import 'utils.libjsonnet';
+
+{
+  workflows(settings): {
+    '.github/workflows/codeql.yml': utils.manifestYaml(codeql(settings)),
+    '.github/workflows/qa.yml': utils.manifestYaml(qa(settings)),
+    '.github/workflows/tests.yml': utils.manifestYaml(tests(settings)),
+  },
+}

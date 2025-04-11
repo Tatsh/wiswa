@@ -24,9 +24,10 @@
       "yml"
     ],
     "ignorePaths": [
-      ".*_cache/**",
+      "*.1",
       "*.har",
       "*.log",
+      ".*_cache/**",
       ".coverage",
       ".directory",
       ".doctrees",
@@ -110,7 +111,7 @@
     "format": "prettier -w './**/*.cff' './**/*.json' './**/*.md' './**/*.toml' './**/*.y*ml' && poetry run yapf -ri .",
     "mypy": "poetry run mypy",
     "qa": "yarn mypy . && yarn ruff . && yarn check-spelling && yarn check-formatting",
-    "regen": "jsonnet -Sm . -J lib project.jsonnet --tla-code-file settings=settings.jsonnet && poetry lock && yarn && yarn format",
+    "regen": "poetry run wiswa",
     "ruff": "poetry run ruff check --fix",
     "test": "poetry run pytest",
     "test:cov": "yarn pytest --cov . --cov-report html --cov-report term-missing:skip-covered"

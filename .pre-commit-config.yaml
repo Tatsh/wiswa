@@ -61,6 +61,11 @@ repos:
     repo: 'https://github.com/citation-file-format/cffconvert'
     rev: 'b6045d7'
   - hooks:
+      - id: 'djlint-reformat-jinja'
+      - id: 'djlint-jinja'
+    repo: 'https://github.com/djlint/djLint'
+    rev: 'v1.36.4'
+  - hooks:
       - entry: 'yarn install --check-cache --immutable'
         files: "^package\\.json$"
         id: 'yarn-check-lock'

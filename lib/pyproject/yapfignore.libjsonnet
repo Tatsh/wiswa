@@ -1,5 +1,0 @@
-{
-  ignore_patterns: [
-    'node_modules/**',
-  ]
-}
