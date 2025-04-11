@@ -33,7 +33,7 @@
         edit: 'material/file-edit-outline',
         repo: 'fontawesome/brands/gitlab',
       },
-      edit_uri: '-/blob/main/docs/',
+      
       globaltoc_collapse: true,
       palette: [
         {

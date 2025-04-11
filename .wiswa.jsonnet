@@ -54,6 +54,7 @@ local utils = import 'utils.libjsonnet';
           click: '^8.1.8',
           jinja2: '^3.1.6',
           jsonnet: '^0.20.0',
+          keyring: '^25.6.0',
           requests: '^2.32.3',
         },
         group+: {
@@ -85,7 +86,6 @@ local utils = import 'utils.libjsonnet';
     settings+: {
       'files.associations'+: {
         '*.libjsonnet': 'jsonnet',
-        '*.md.j2': 'jinja-markdown',
       },
     },
   },

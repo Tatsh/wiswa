@@ -42,13 +42,7 @@ repository = "https://github.com/Tatsh/wiswa"
 
 [tool.commitizen]
 tag_format = "v$version"
-version_files = [
-  ".project.jsonnet",
-  "CITATION.cff",
-  "README.md",
-  "package.json",
-  "wiswa/__init__.py",
-]
+version_files = [".wiswa.jsonnet", "CITATION.cff", "README.md", "package.json", "wiswa/__init__.py"]
 version_provider = "pep621"
 
 [tool.coverage]
@@ -64,6 +58,7 @@ omit = ["conftest.py", "tests.py", "tests/test_*.py"]
 [tool.djlint]
 max_line_length = 100
 no_line_after_yaml = true
+preserve_blank_lines = true
 preserve_leading_space = true
 profile = "jinja"
 use_gitignore = true
@@ -90,6 +85,7 @@ jinja2 = "^3.1.6"
 jsonnet = "^0.20.0"
 python = ">=3.10,<3.14"
 requests = "^2.32.3"
+typing-extensions = "^4.13.1"
 
 [tool.poetry.group]
 

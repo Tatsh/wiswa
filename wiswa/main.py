@@ -17,6 +17,7 @@ from .utils import (
     evaluate_jsonnet_project,
     evaluate_merged_settings,
     post_process_steps,
+    setup_github_project,
     write_templated_files,
 )
 
@@ -30,6 +31,7 @@ __all__ = ('main',)
               multiple=True,
               help=('Add a directory to the Jsonnet search path '
                     '(only used when evaluating settings).'))
+@click.option('--skip-github', is_flag=True, help='Skip configuring Github project.')
 @click.option('--skip-jsonnet', is_flag=True, help='Skip Jsonnet evaluation.')
 @click.option('--skip-templates', is_flag=True, help='Skip Jinja2 template evaluation.')
 @click.argument('file',
@@ -39,6 +41,7 @@ def main(file: Path,
          jpath: tuple[str, ...] = (),
          *,
          debug: bool = False,
+         skip_github: bool = False,
          skip_jsonnet: bool = False,
          skip_templates: bool = False) -> None:
     """Entry point for the Wiswa CLI."""
@@ -56,5 +59,8 @@ def main(file: Path,
         download_yarn(loaded['yarn_version'])
         download_yarn_plugins()
         copy_static_files(loaded, module_path)
-        create_py_typed_files(loaded)
-        post_process_steps()
+        if not loaded['stubs_only']:
+            create_py_typed_files(loaded)
+        post_process_steps(loaded)
+        if not skip_github:
+            setup_github_project(loaded)

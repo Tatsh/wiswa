@@ -43,12 +43,12 @@ function(settings)
     on: {
       pull_request: {
         branches: [
-          'master',
+          settings.default_branch,
         ],
       },
       push: {
         branches: [
-          'master',
+          settings.default_branch,
         ],
       },
       schedule: [

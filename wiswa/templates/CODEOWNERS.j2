@@ -1,5 +1,5 @@
 {% if settings.codeowners %}
-{% for key, value in settings.codeowners %}
+    {% for key, value in settings.codeowners.items() %}
 {{ key }} {{ value }}
-{% endfor %}
+    {% endfor %}
 {% endif %}

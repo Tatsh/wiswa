@@ -1,4 +1,5 @@
 *.1
+*.j2
 *.jsonnet
 *.libjsonnet
 *.log

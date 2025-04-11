@@ -1,7 +1,9 @@
 {
-  main: {},
+  main: {
+    'typing-extensions': '^4.13.1',
+  },
   dev: {
-    commitizen: '^4.4.1',
+    commitizen: '^4.5.0',
     djlint: '^1.36.4',
     mypy: '>=1.12,<1.16',
     ruff: '^0.11.2',

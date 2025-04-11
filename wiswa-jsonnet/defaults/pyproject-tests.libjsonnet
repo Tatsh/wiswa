@@ -1,24 +1,24 @@
-  {
-    tool: {
-      ruff: {
-        extend: '../pyproject.toml',
-        lint: {
-          'extend-ignore': [
-            'ARG001',
-            'ARG002',
-            'D100',
-            'D103',
-            'INP001',
-            'PLR2004',
-            'S105',
-            'S106',
+{
+  tool: {
+    ruff: {
+      extend: '../pyproject.toml',
+      lint: {
+        'extend-ignore': [
+          'ARG001',
+          'ARG002',
+          'D100',
+          'D103',
+          'INP001',
+          'PLR2004',
+          'S105',
+          'S106',
+        ],
+        'pep8-naming': {
+          'extend-ignore-names': [
+            'test_*',
           ],
-          'pep8-naming': {
-            'extend-ignore-names': [
-              'test_*',
-            ],
-          },
         },
       },
     },
-  }
+  },
+}

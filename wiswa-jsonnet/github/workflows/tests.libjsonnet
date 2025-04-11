@@ -8,7 +8,7 @@ function(settings)
         'runs-on': 'ubuntu-latest',
         steps: [
           {
-            uses: 'actions/checkout@v3',
+            uses: 'actions/checkout@v4',
           },
           {
             name: 'Install Poetry',
@@ -16,7 +16,7 @@ function(settings)
           },
           {
             name: 'Set up Python ${{ matrix.python-version }}',
-            uses: 'actions/setup-python@v4',
+            uses: 'actions/setup-python@v5',
             with: {
               cache: 'poetry',
               'python-version': '${{ matrix.python-version }}',
@@ -24,7 +24,7 @@ function(settings)
           },
           {
             name: 'Install dependencies (Poetry)',
-            run: 'poetry install --with=tests --all-extras',
+            run: 'poetry install --with=tests',
           },
           {
             name: 'Install dependencies (Yarn)',
@@ -51,12 +51,12 @@ function(settings)
     on: {
       pull_request: {
         branches: [
-          'master',
+          settings.default_branch,
         ],
       },
       push: {
         branches: [
-          'master',
+          settings.default_branch,
         ],
       },
     },

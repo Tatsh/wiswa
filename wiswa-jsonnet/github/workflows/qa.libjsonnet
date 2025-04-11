@@ -21,7 +21,7 @@ function(settings)
           },
           {
             name: 'Install dependencies (Poetry)',
-            run: 'poetry install --with=dev',
+            run: 'poetry install --with=dev,tests',
           },
           {
             name: 'Install dependencies (Yarn)',
@@ -36,12 +36,12 @@ function(settings)
             run: 'yarn ruff .',
           },
           {
-            name: 'Check spelling',
-            run: 'yarn check-spelling',
-          },
-          {
             name: 'Check formatting',
             run: 'yarn check-formatting',
+          },
+          {
+            name: 'Check spelling',
+            run: 'yarn check-spelling',
           },
         ],
         strategy: {
@@ -55,12 +55,12 @@ function(settings)
     on: {
       pull_request: {
         branches: [
-          'master',
+          settings.default_branch,
         ],
       },
       push: {
         branches: [
-          'master',
+          settings.default_branch,
         ],
       },
     },

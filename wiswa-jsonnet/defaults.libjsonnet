@@ -12,6 +12,7 @@ local utils = import 'utils.libjsonnet';
   version: '0.0.0',
 
   github_username: 'unknown',
+  default_branch: 'master',
   repository_uri: utils.githubRepositoryUri(self.github.username, self.project_name),
   documentation_uri: utils.readthedocsUri(self.project_name),
   directory_name: self.project_name,
@@ -20,24 +21,33 @@ local utils = import 'utils.libjsonnet';
   description: 'No description.',
   modules: [self.primary_module],
 
+
   // General settings
   skip: [
     'CHANGELOG.md',
+    'CODEOWNERS',
     'CONTRIBUTING.md',
     'README.md',
     'SECURITY.md',
     'docs/index.rst',
+    '_module_/__init.py',
+    'tests/conftest.py',
     'tests/test_main.py',
+    'tests/test_utils.py',
   ],
-  codeowners: {},
+  codeowners: {
+    '*': '@%s' % settings.github_username,
+  },
   using_django: 'django' in self.pyproject.tool.poetry.dependencies,
   using_github: std.member(self.repository_uri, 'github.com'),
   using_gitlab: std.member(self.repository_uri, 'gitlab.com'),
   using_readthedocs: true,
+  stubs_only: false,
   want_cff: true,
   want_docs: true,
   want_djlint: false,
   want_main: false,
+  want_tests: true,
   year: '2025',
 
   // Shared
@@ -50,6 +60,7 @@ local utils = import 'utils.libjsonnet';
     },
   ],
   project_name: 'not-a-project-name',
+  pypi_project_name: self.project_name,
   repository_name: self.project_name,
   shared_ignore: import 'defaults/shared-ignore.libjsonnet',
   pre_commit_config: {
@@ -76,7 +87,6 @@ local utils = import 'utils.libjsonnet';
   github: {
     dependabot: import 'defaults/dependabot.libjsonnet',
     funding: {
-      custom: null,
       github: settings.github_username,
     },
     pages_config: import 'defaults/_config.libjsonnet',
@@ -96,6 +106,7 @@ local utils = import 'utils.libjsonnet';
 
   // Git
   gitattributes: [
+    '* text=auto eol=lf',
     '*.lock binary',
     '/.yarn/**/*.cjs binary',
   ],
@@ -112,7 +123,7 @@ local utils = import 'utils.libjsonnet';
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
-        'Typing :: Typed',
+        if settings.stubs_only then 'Typing :: Stubs Only' else 'Typing :: Typed',
       ] + [
         ('Programming Language :: Python :: %s' % i)
         for i in settings.supported_python_versions
@@ -122,7 +133,7 @@ local utils = import 'utils.libjsonnet';
       name: settings.project_name,
       version: settings.version,
       license: settings.license,
-      scripts: {},
+      scripts: if settings.want_main then { [settings.project_name]: '%s.main:main' % settings.primary_module } else {},
       urls: {
         homepage: settings.homepage,
         documentation: settings.documentation_uri,
@@ -134,16 +145,25 @@ local utils = import 'utils.libjsonnet';
       commitizen+: {
         version_files+: ['%s/__init__.py' % settings.primary_module],
       },
+      coverage+: {
+        report+: {
+          omit+: if settings.want_main then ['__main__.py'] else [],
+        },
+        run+: {
+          omit+: if settings.want_main then ['__main__.py'] else [],
+        },
+      },
       mypy+: { python_version: settings.supported_python_versions[0] },
       poetry+: {
-        include: {},
-        packages: {},
+        packages: [{ include: x } for x in settings.modules],
         dependencies: {
           python: '>=%s,<3.%d' % [
             settings.supported_python_versions[0],
             std.parseInt(settings.supported_python_versions[std.length(settings.supported_python_versions) - 1][2:]) + 1,
           ],
         } + deps.main,
+        local docs_section = if settings.want_docs then { docs: { optional: true, dependencies: deps.docs } } else {},
+        local tests_section = if settings.want_tests then { tests: { optional: true, dependencies: deps.tests } } else {},
         group+: {
           dev+: {
             dependencies: deps.dev,
@@ -154,8 +174,8 @@ local utils = import 'utils.libjsonnet';
           tests+: {
             dependencies: deps.tests,
           },
-        },
-      },
+        } + docs_section + tests_section,
+      } + if settings.want_main && settings.want_docs then { include: if settings.want_main && settings.want_docs then ['man'] else [] } else {},
       pyright+: {
         include: ['./%s' % [m] for m in settings.modules] + [
           './tests',
@@ -163,6 +183,7 @@ local utils = import 'utils.libjsonnet';
         pythonVersion: settings.supported_python_versions[0],
       },
       ruff+: {
+        lint+: if settings.stubs_only then { ignore+: ['E303'] } else {},
         'target-version': 'py3%s' % settings.supported_python_versions[0][2:],
       },
     },
@@ -171,6 +192,7 @@ local utils = import 'utils.libjsonnet';
   docs_conf: (import 'defaults/docs_conf.libjsonnet') + {
     config+: {
       html_theme_options+: {
+        edit_uri: '/tree/%s/docs' % settings.default_branch,
         repo_name: settings.directory_name,
         repo_url: settings.repository_uri,
         site_url: settings.documentation_uri,
@@ -192,10 +214,15 @@ local utils = import 'utils.libjsonnet';
       url: utils.githubGitSshUri(settings.github_username, settings.project_name),
     },
     version: settings.version,
-  },
+  } + { scripts+: if settings.want_docs then {
+    'gen-docs': 'poetry run sphinx-build -T -E -b html -d docs/_build/doctrees -D language=en docs docs/_build/html',
+  } + if settings.want_main then {
+    'gen-manpage': 'poetry run sphinx-build -T -E -b man -d docs/_build/doctrees -D language=en docs man',
+  } else {}
+  else {} },
 
   // Prettier
-  prettierignore: self.shared_ignore + ['*.1', '*.jsonnet', '*.libjsonnet', '/.yarn/**/*.cjs'],
+  prettierignore: self.shared_ignore + ['*.1', '*.j2', '*.jsonnet', '*.lock', '*.libjsonnet', '/.yarn/**/*.cjs'],
 
   // Yarn
   yarnrc: (import 'defaults/yarnrc.libjsonnet') + {

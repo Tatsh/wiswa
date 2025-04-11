@@ -3,11 +3,5 @@
     dev: {
       optional: true,
     },
-    docs: {
-      optional: true,
-    },
-    tests: {
-      optional: true,
-    },
   },
 }

@@ -14,13 +14,11 @@
     },
     {
       args: [
-        '--all-extras',
         '--all-groups',
-        '--sync',
       ],
       id: 'poetry-install',
     },
   ],
   repo: 'https://github.com/python-poetry/poetry',
-  rev: '2.1.1',
+  rev: '2.1.2',
 }

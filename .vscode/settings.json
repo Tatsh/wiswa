@@ -11,8 +11,7 @@
   "editor.insertSpaces": true,
   "editor.tabSize": 2,
   "files.associations": {
-    "*.libjsonnet": "jsonnet",
-    "*.md.j2": "jinja-markdown"
+    "*.libjsonnet": "jsonnet"
   },
   "files.eol": "\n",
   "python.analysis.autoImportCompletions": true,
