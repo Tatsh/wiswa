@@ -12,6 +12,7 @@ import click
 from .utils import (
     copy_static_files,
     create_py_typed_files,
+    download_yarn,
     download_yarn_plugins,
     evaluate_jsonnet_project,
     evaluate_merged_settings,
@@ -52,6 +53,7 @@ def main(file: Path,
             evaluate_jsonnet_project(lib_path, jpathdir, merged_settings)
         if not skip_templates:
             write_templated_files(module_path, loaded)
+        download_yarn(loaded['yarn_version'])
         download_yarn_plugins()
         copy_static_files(loaded, module_path)
         create_py_typed_files(loaded)

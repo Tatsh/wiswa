@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from pathlib import Path
 from shlex import quote
-from shutil import copyfile
+from shutil import copyfile, rmtree
 from typing import Any, cast
 import json
 import logging
@@ -130,3 +130,13 @@ def evaluate_merged_settings(jpathdir: list[str], lib_path: Path,
                                       'settings': file.read_text()
                                   }))
     return s, json.loads(s)
+
+
+def download_yarn(version: str) -> None:
+    r = requests.get(f'https://repo.yarnpkg.com/{version}/packages/yarnpkg-cli/bin/yarn.js',
+                     timeout=15)
+    r.raise_for_status()
+    releases_dir = Path('.yarn/releases')
+    rmtree(releases_dir, ignore_errors=True)
+    releases_dir.mkdir(parents=True, exist_ok=True)
+    (releases_dir / f'yarn-{version}.cjs').write_text(f'{r.text.strip()}\n', encoding='utf-8')
