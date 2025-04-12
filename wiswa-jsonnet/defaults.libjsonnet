@@ -113,9 +113,10 @@ local utils = import 'utils.libjsonnet';
   gitignore: self.shared_ignore,
 
   // Python only
+  local pyproject = import 'defaults/pyproject.libjsonnet',
   supported_python_versions: ['3.%d' % i for i in std.range(10, 13)],
   primary_module: std.strReplace(self.project_name, '-', '_'),
-  pyproject: (import 'defaults/pyproject.libjsonnet') + {
+  pyproject: pyproject {
     project+: {
       authors: utils.pyprojectAuthors(settings.authors),
       classifiers: std.sort([
@@ -181,9 +182,19 @@ local utils = import 'utils.libjsonnet';
           './tests',
         ],
         pythonVersion: settings.supported_python_versions[0],
-      },
+      } + if settings.stubs_only then { reportImplicitOverride: 'none' } else {},
       ruff+: {
-        lint+: if settings.stubs_only then { ignore+: ['E303'] } else {},
+        lint+: if settings.stubs_only then {
+          ignore: std.set(pyproject.tool.ruff.lint.ignore + [
+            'E303',
+            'FBT001',
+            'I001',
+            'N',
+            'S',
+            'T201',
+            'TID252',
+          ]),
+        } else {},
         'target-version': 'py3%s' % settings.supported_python_versions[0][2:],
       },
     },

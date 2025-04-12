@@ -48,12 +48,12 @@ version_provider = "pep621"
 [tool.coverage]
 
 [tool.coverage.report]
-omit = ["conftest.py", "tests.py", "tests/test_*.py"]
+omit = ["conftest.py", "tests.py", "tests/test_*.py", "__main__.py"]
 show_missing = true
 
 [tool.coverage.run]
 branch = true
-omit = ["conftest.py", "tests.py", "tests/test_*.py"]
+omit = ["conftest.py", "tests.py", "tests/test_*.py", "__main__.py"]
 
 [tool.djlint]
 max_line_length = 100
@@ -83,6 +83,7 @@ include = ["wiswa-jsonnet"]
 click = "^8.1.8"
 jinja2 = "^3.1.6"
 jsonnet = "^0.20.0"
+keyring = "^25.6.0"
 python = ">=3.10,<3.14"
 requests = "^2.32.3"
 typing-extensions = "^4.13.1"
@@ -93,7 +94,7 @@ typing-extensions = "^4.13.1"
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-commitizen = "^4.4.1"
+commitizen = "^4.5.0"
 djlint = "^1.36.4"
 mypy = ">=1.12,<1.16"
 ruff = "^0.11.2"
@@ -162,7 +163,6 @@ testpaths = ["tests"]
 
 [tool.ruff]
 cache-dir = "~/.cache/ruff"
-extend-exclude = []
 force-exclude = true
 line-length = 100
 namespace-packages = ["docs", "tests", "wiswa/static"]

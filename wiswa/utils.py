@@ -40,16 +40,20 @@ def post_process_steps(settings: dict[str, Any]) -> None:
     if not settings['want_tests']:
         rmtree('tests', ignore_errors=True)
         Path('.github/workflows/tests.yml').unlink(missing_ok=True)
+        if (not settings['vscode']['launch']
+                or (len(settings['vscode']['launch']['configurations']) == 1
+                    and settings['vscode']['launch']['configurations'][0]['name'] == 'Run tests')):
+            Path('.vscode/launch.json').unlink(missing_ok=True)
     if not settings['want_docs']:
         rmtree('docs', ignore_errors=True)
         Path('.readthedocs.yaml').unlink(missing_ok=True)
     if settings['stubs_only']:
         Path('.github/workflows/codeql.yml').unlink(missing_ok=True)
     subprocess_log_run(('poetry', 'lock'), check=True)
-    docs_str = 'docs' if settings['want_docs'] else ''
-    tests_str = 'tests' if settings['want_tests'] else ''
-    with_arg = ','.join((docs_str, tests_str))  # noqa: FLY002
-    subprocess_log_run(('poetry', 'update', f'--with={with_arg}'), check=True)
+    with_arg = ','.join(
+        ('docs' if settings['want_docs'] else '', 'tests' if settings['want_tests'] else ''))
+    subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg != ',' else ())),
+                       check=True)
     subprocess_log_run(('poetry', 'install', '--all-groups'), check=True)
     subprocess_log_run(('yarn',))
     subprocess_log_run(('yarn', 'format'))
@@ -73,7 +77,8 @@ def copy_static_files(merged_settings_loaded: dict[str, Any], module_path: Path)
             continue
         static_path = module_path / 'static' / filename
         output_file = Path(f'{merged_settings_loaded["primary_module"]}/{filename}')
-        if output_file.exists() and len(output_file.read_text().strip()) != 0:
+        if ((output_file.exists() and len(output_file.read_text().strip()) != 0)
+                or str(output_file) in merged_settings_loaded['skip']):
             log.debug('Skipping `%s`.', output_file)
             continue
         output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -119,7 +124,7 @@ def write_templated_files(module_path: Path, merged_settings_loaded: dict[str, A
             pass
         if ((output_file.exists() and len(output_file.read_text().strip()) != 0)
                 and (str(output_file) in to_skip or str(orig_output_file) in to_skip)):
-            log.debug('Skipping `%s`.', output_file)
+            log.debug('Skipping template `%s`.', output_file)
             continue
         output_file.parent.mkdir(parents=True, exist_ok=True)
         content = template.render({'settings': merged_settings_loaded})
