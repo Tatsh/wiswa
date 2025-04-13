@@ -1,4 +1,4 @@
-<!-- markdownlint-disable MD024 -->
+<!-- markdownlint-configure-file {"MD024": { "siblings_only": true } } -->
 
 # Changelog
 
@@ -8,8 +8,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
-## [0.0.1] - 2025-00-00
 
 ### Added
 
@@ -27,4 +25,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Item
 
-[unreleased]: https://github.com/Tatsh/wiswa/-/compare/v{settings.version}...HEAD
+## [0.0.1] - 2025-00-00
+
+First version.
+
+[unreleased]: https://github.com/Tatsh/wiswa/-/compare/v0.0.0...HEAD

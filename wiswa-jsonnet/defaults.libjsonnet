@@ -25,12 +25,11 @@ local utils = import 'utils.libjsonnet';
   // General settings
   skip: [
     'CHANGELOG.md',
-    'CODEOWNERS',
     'CONTRIBUTING.md',
     'README.md',
     'SECURITY.md',
     'docs/index.rst',
-    '_module_/__init.py',
+    '_module_/__init__.py',
     'tests/conftest.py',
     'tests/test_main.py',
     'tests/test_utils.py',
