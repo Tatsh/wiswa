@@ -4,6 +4,8 @@ bierner
 buianhthang
 codeowners
 color
+colored
+colorlog
 commitizen
 conftest
 contenttypes
@@ -13,6 +15,7 @@ datatable
 datatables
 davidanson
 debugpy
+djangorestframework
 djlint
 doctrees
 donjayamanne

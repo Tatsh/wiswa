@@ -12,9 +12,10 @@ local utils = import 'utils.libjsonnet';
   version: '0.0.0',
 
   github_username: 'unknown',
+  github_project_name: self.project_name,
   default_branch: 'master',
-  repository_uri: utils.githubRepositoryUri(self.github.username, self.project_name),
-  documentation_uri: utils.readthedocsUri(self.project_name),
+  repository_uri: utils.githubRepositoryUri(self.github.username, self.github_project_name),
+  documentation_uri: utils.readthedocsUri(self.github_project_name),
   directory_name: self.project_name,
   homepage: self.github.pages_uri,
   keywords: [],
@@ -38,6 +39,7 @@ local utils = import 'utils.libjsonnet';
     '*': '@%s' % settings.github_username,
   },
   using_django: 'django' in self.pyproject.tool.poetry.dependencies,
+  using_drf: 'djangorestframework' in self.pyproject.tool.poetry.dependencies,
   using_github: std.member(self.repository_uri, 'github.com'),
   using_gitlab: std.member(self.repository_uri, 'gitlab.com'),
   using_readthedocs: true,
@@ -89,7 +91,7 @@ local utils = import 'utils.libjsonnet';
       github: settings.github_username,
     },
     pages_config: import 'defaults/_config.libjsonnet',
-    pages_uri: 'https://%s.github.io/%s/' % [std.asciiLower(settings.github_username), settings.project_name],
+    pages_uri: 'https://%s.github.io/%s/' % [std.asciiLower(settings.github_username), settings.github_project_name],
     username: settings.github_username,
   },
 
@@ -185,6 +187,7 @@ local utils = import 'utils.libjsonnet';
       ruff+: {
         lint+: if settings.stubs_only then {
           ignore: std.set(pyproject.tool.ruff.lint.ignore + [
+            'A002',
             'E303',
             'FBT001',
             'I001',

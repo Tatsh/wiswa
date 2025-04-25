@@ -26,9 +26,6 @@ version = "0.0.0"
 email = "audvare@gmail.com"
 name = "Andrew Udvare"
 
-[project.optional-dependencies]
-erdantic = ["erdantic<2.0"]
-
 [project.scripts]
 wiswa = "wiswa.main:main"
 
@@ -81,6 +78,7 @@ include = ["wiswa-jsonnet"]
 
 [tool.poetry.dependencies]
 click = "^8.1.8"
+colorlog = "^6.9.0"
 jinja2 = "^3.1.6"
 jsonnet = "^0.20.0"
 keyring = "^25.6.0"
@@ -108,6 +106,7 @@ optional = true
 autodoc-pydantic = "^2.2.0"
 doc8 = "^1.1.2"
 docutils = "^0.21.2"
+erdantic = { optional = true, version = "<2.0" }
 esbonio = "^0.16.5"
 numpydoc = "^1.8.0"
 restructuredtext-lint = "^1.4.0"

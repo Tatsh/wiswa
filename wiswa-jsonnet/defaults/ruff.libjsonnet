@@ -114,6 +114,8 @@
       'case-sensitive': true,
       'combine-as-imports': true,
       'from-first': true,
+      'required-imports': ['from __future__ import annotations'],
+      'section-order': ['future', 'standard-library', 'third-party', 'local-folder'],
     },
     'pep8-naming': {
       'extend-ignore-names': [

@@ -58,8 +58,8 @@
     'prettier-plugin-ini': '^1.3.0',
     'prettier-plugin-sort-json': '^4.1.1',
     'prettier-plugin-toml': '^2.0.4',
-    pyright: '^1.1.398',
-    'yarn-audit-fix': '^10.1.0',
+    pyright: '^1.1.399',
+    'yarn-audit-fix': '^10.1.1',
   },
   'markdownlint-cli2': {
     config: {
