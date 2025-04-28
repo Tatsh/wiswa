@@ -19,6 +19,7 @@
     'sphinx-immaterial': '^0.13.4',
     doc8: '^1.1.2',
     docutils: '^0.21.2',
+    erdantic: { optional: true, version: '<2.0' },
     esbonio: '^0.16.5',
     numpydoc: '^1.8.0',
     sphinx: '<8.2.0',
