@@ -1,46 +1,25 @@
 {
   cspell: {
+    cache: { useCache: true },
     dictionaryDefinitions: [
       {
         name: 'main',
         path: '.vscode/dictionary.txt',
       },
     ],
+    enableFileTypes: { '*': true },
     enableGlobDot: true,
-    enabledLanguageIds: [
-      'git-commit',
-      'ignore',
-      'jinja',
-      'json',
-      'jsonc',
-      'markdown',
-      'plaintext',
-      'python',
-      'restructuredtext',
-      'text',
-      'toml',
-      'yaml',
-      'yml',
-    ],
+    files: ['*'],
     ignorePaths: [
       '*.1',
       '*.har',
+      '*.lock',
       '*.log',
-      '.*_cache/**',
-      '.coverage',
-      '.directory',
       '.doctrees',
       '.git',
       '.vscode/extensions.json',
       '.yarn/**/*.cjs',
-      '__pycache__',
-      '_build/**',
-      'build/**',
-      'dist/**',
-      'docs/_build/**',
-      'htmlcov/**',
       'man/**',
-      'node_modules/**',
     ],
     language: 'en-GB',
     languageSettings: [
@@ -49,6 +28,7 @@
         languageId: '*',
       },
     ],
+    useGitignore: true
   },
   devDependencies: {
     '@prettier/plugin-xml': '^3.4.1',
