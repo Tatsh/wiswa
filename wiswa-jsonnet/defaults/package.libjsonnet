@@ -14,11 +14,9 @@
       '*.1',
       '*.har',
       '*.lock',
-      '*.log',
-      '.doctrees',
-      '.git',
-      '.vscode/extensions.json',
+      '.git/**',
       '.yarn/**/*.cjs',
+      '.vscode/extensions.json',
       'man/**',
     ],
     language: 'en-GB',
@@ -28,7 +26,7 @@
         languageId: '*',
       },
     ],
-    useGitignore: true
+    useGitignore: true,
   },
   devDependencies: {
     '@prettier/plugin-xml': '^3.4.1',
