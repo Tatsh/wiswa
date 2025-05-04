@@ -55,6 +55,7 @@ jsonschema
 levelname
 lextudio
 libjsonnet
+linters
 modindex
 monkeypatch
 mypy
@@ -76,6 +77,7 @@ pyproject
 pyright
 pytest
 regen
+rstcheck
 ruiquelhas
 samuelcolvin
 schemafile

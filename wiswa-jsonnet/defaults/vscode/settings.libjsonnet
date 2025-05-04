@@ -1,16 +1,21 @@
-{
+function(line_width=100,
+         tab_size=2,
+         python_tab_size=4,
+         rst_tab_size=3,
+         shell_tab_size=4,
+         python_package_index_depth=100) {
   '[python]': {
     'editor.defaultFormatter': 'eeyore.yapf',
     'editor.formatOnSaveMode': 'file',
-    'editor.tabSize': 4,
+    'editor.tabSize': python_tab_size,
   },
   '[restructuredtext]': {
     'editor.defaultFormatter': 'lextudio.restructuredtext',
     'editor.formatOnSaveMode': 'file',
-    'editor.tabSize': 3,
+    'editor.tabSize': rst_tab_size,
   },
   '[shellscript]': {
-    'editor.tabSize': 4,
+    'editor.tabSize': shell_tab_size,
   },
   'cSpell.enabled': true,
   'editor.codeActionsOnSave': { 'source.fixAll': 'always' },
@@ -19,9 +24,9 @@
   'editor.formatOnSave': true,
   'editor.formatOnType': true,
   'editor.insertSpaces': true,
-  'editor.rulers': [100],
-  'editor.tabSize': 2,
-  'editor.wordWrapColumn': 100,
+  'editor.rulers': [line_width],
+  'editor.tabSize': tab_size,
+  'editor.wordWrapColumn': line_width,
   'files.insertFinalNewline': true,
   'files.trimFinalNewlines': true,
   'files.trimTrailingWhitespace': true,
@@ -36,7 +41,7 @@
   'python.analysis.inlayHints.variableTypes': true,
   'python.analysis.packageIndexDepths': [
     {
-      depth: 100,
+      depth: python_package_index_depth,
       name: '',
     },
   ],
@@ -45,5 +50,7 @@
     'tests',
   ],
   'python.testing.pytestEnabled': true,
-  'yaml.format.printWidth': 100,
+  'restructuredtext.experimental': true,
+  'restructuredtext.linter.disabledLinters': ['rstcheck'],
+  'yaml.format.printWidth': line_width,
 }

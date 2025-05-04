@@ -1,7 +1,8 @@
-{
+function(want_main) {
+  local want_main_deps = if want_main then { click: '^8.1.8', colorlog: '^6.9.0' } else {},
   main: {
     'typing-extensions': '^4.13.1',
-  },
+  } + want_main_deps,
   dev: {
     commitizen: '^4.5.0',
     djlint: '^1.36.4',

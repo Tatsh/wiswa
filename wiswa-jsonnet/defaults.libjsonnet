@@ -1,7 +1,9 @@
+local package = import 'defaults/package.libjsonnet';
+local vscode_settings = import 'defaults/vscode/settings.libjsonnet';
 local utils = import 'utils.libjsonnet';
 
 {
-  local deps = import 'defaults/deps.libjsonnet',
+  local deps = (import 'defaults/deps.libjsonnet')(self.want_main),
   local github = if settings.using_github then [import 'defaults/pre-commit-config/github.libjsonnet'] else [],
   local cff = if settings.want_cff then [import 'defaults/pre-commit-config/cff.libjsonnet'] else [],
   local djlint = if settings.want_djlint then [import 'defaults/pre-commit-config/djlint.libjsonnet'] else [],
@@ -48,8 +50,20 @@ local utils = import 'utils.libjsonnet';
   want_docs: true,
   want_djlint: false,
   want_main: false,
+  want_man: self.want_main,
   want_tests: true,
   year: '2025',
+
+
+  // Detailed settings
+  line_width: 100,
+  python_package_index_depth: 100,
+
+  // Tab sizes
+  python_tab_size: 4,
+  rst_tab_size: 3,
+  shell_tab_size: 4,
+  tab_size: 2,
 
   // Shared
   authors: [
@@ -80,7 +94,12 @@ local utils = import 'utils.libjsonnet';
   vscode: {
     extensions: import 'defaults/vscode/extensions.libjsonnet',
     launch: import 'defaults/vscode/launch.libjsonnet',
-    settings: import 'defaults/vscode/settings.libjsonnet',
+    settings: vscode_settings(settings.line_width,
+                              settings.tab_size,
+                              settings.python_tab_size,
+                              settings.rst_tab_size,
+                              settings.shell_tab_size,
+                              settings.python_package_index_depth),
   },
   readthedocs: import 'defaults/readthedocs.libjsonnet',
 
@@ -215,7 +234,7 @@ local utils = import 'utils.libjsonnet';
   tests_pyproject: import 'defaults/pyproject-tests.libjsonnet',
 
   // package.json only
-  package_json: (import 'defaults/package.libjsonnet') + {
+  package_json: package(self.line_width) + {
     contributors: ['%s <%s>' % [x.name, x.email] for x in settings.authors],
     homepage: settings.homepage,
     keywords: settings.keywords,
@@ -229,7 +248,7 @@ local utils = import 'utils.libjsonnet';
     version: settings.version,
   } + { scripts+: if settings.want_docs then {
     'gen-docs': 'poetry run sphinx-build -T -E -b html -d docs/_build/doctrees -D language=en docs docs/_build/html',
-  } + if settings.want_main then {
+  } + if settings.want_man then {
     'gen-manpage': 'poetry run sphinx-build -T -E -b man -d docs/_build/doctrees -D language=en docs man',
   } else {}
   else {} },

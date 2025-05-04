@@ -35,4 +35,5 @@ def setup_logging(*,
                 'formatter': 'default',
             }
         },
+        'version': 1
     })
