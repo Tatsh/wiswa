@@ -45,6 +45,7 @@ version_provider = "pep621"
 [tool.coverage]
 
 [tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:"]
 omit = ["conftest.py", "tests.py", "tests/test_*.py", "__main__.py"]
 show_missing = true
 
@@ -95,7 +96,7 @@ optional = true
 commitizen = "^4.5.0"
 djlint = "^1.36.4"
 mypy = ">=1.12,<1.16"
-ruff = "^0.11.2"
+ruff = "^0.11.7"
 types-requests = "^2.32.0.20250328"
 yapf = "^0.43.0"
 
@@ -106,7 +107,6 @@ optional = true
 autodoc-pydantic = "^2.2.0"
 doc8 = "^1.1.2"
 docutils = "^0.21.2"
-erdantic = { optional = true, version = "<2.0" }
 esbonio = "^0.16.5"
 numpydoc = "^1.8.0"
 restructuredtext-lint = "^1.4.0"
@@ -119,6 +119,10 @@ sphinx-immaterial = "^0.13.4"
 [tool.poetry.group.docs.dependencies.enum-tools]
 extras = ["sphinx"]
 version = "^0.12.0"
+
+[tool.poetry.group.docs.dependencies.erdantic]
+optional = true
+version = "<2.0"
 
 [tool.poetry.group.tests]
 optional = true
@@ -276,6 +280,8 @@ multiline-quotes = "double"
 case-sensitive = true
 combine-as-imports = true
 from-first = true
+required-imports = ["from __future__ import annotations"]
+section-order = ["future", "standard-library", "third-party", "local-folder"]
 
 [tool.ruff.lint.pep8-naming]
 extend-ignore-names = ["test_*"]

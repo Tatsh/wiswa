@@ -1,4 +1,6 @@
 """Constants."""
+from __future__ import annotations
+
 __all__ = ('PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI', 'STATIC_MODULE_FILES')
 
 PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI = (
