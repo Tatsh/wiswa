@@ -10,6 +10,7 @@ from typing import Any, cast
 import getpass
 import json
 import logging
+import logging.config
 import subprocess as sp
 
 from github import Auth, Github
@@ -21,9 +22,16 @@ import requests
 from .constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI, STATIC_MODULE_FILES
 from .extensions import ToPythonExtension
 
-__all__ = ('copy_static_files', 'create_py_typed_files', 'download_yarn_plugins',
-           'evaluate_jsonnet_project', 'evaluate_merged_settings', 'post_process_steps',
-           'write_templated_files')
+__all__ = (
+    'copy_static_files',
+    'create_py_typed_files',
+    'download_yarn_plugins',
+    'evaluate_jsonnet_project',
+    'evaluate_merged_settings',
+    'post_process_steps',
+    'setup_logging',
+    'write_templated_files',
+)
 
 log = logging.getLogger(__name__)
 
@@ -343,3 +351,42 @@ def setup_github_project(settings: dict[str, Any]) -> None:
                          }).raise_for_status()
     except requests.exceptions.HTTPError as e:
         log.warning('Caught error updating repo: %s.', e.response.text)
+
+
+def setup_logging(*,
+                  debug: bool = False,
+                  force_color: bool = False,
+                  no_color: bool = False) -> None:
+    """Set up logging configuration."""
+    logging.config.dictConfig({
+        'disable_existing_loggers': True,
+        'root': {
+            'level': 'DEBUG' if debug else 'INFO',
+            'handlers': ['console'],
+        },
+        'formatters': {
+            'default': {
+                '()': 'colorlog.ColoredFormatter',
+                'force_color': force_color,
+                'format': (
+                    '%(light_cyan)s%(asctime)s%(reset)s | %(log_color)s%(levelname)-8s%(reset)s | '
+                    '%(light_green)s%(name)s%(reset)s:%(light_red)s%(funcName)s%(reset)s:'
+                    '%(blue)s%(lineno)d%(reset)s - %(message)s'),
+                'no_color': no_color,
+            }
+        },
+        'handlers': {
+            'console': {
+                'class': 'colorlog.StreamHandler',
+                'formatter': 'default',
+            }
+        },
+        'loggers': {
+            'wiswa': {
+                'level': 'DEBUG' if debug else 'INFO',
+                'handlers': ['console'],
+                'propagate': False,
+            }
+        },
+        'version': 1
+    })

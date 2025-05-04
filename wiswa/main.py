@@ -4,7 +4,6 @@ from __future__ import annotations
 from pathlib import Path
 import importlib
 import importlib.resources
-import logging
 import os
 
 import click
@@ -18,6 +17,7 @@ from .utils import (
     evaluate_merged_settings,
     post_process_steps,
     setup_github_project,
+    setup_logging,
     write_templated_files,
 )
 
@@ -45,8 +45,7 @@ def main(file: Path,
          skip_jsonnet: bool = False,
          skip_templates: bool = False) -> None:
     """Entry point for the Wiswa CLI."""
-    logging.basicConfig(level=logging.DEBUG if debug else logging.WARNING,
-                        format='%(levelname)s:%(module)s:%(lineno)d:%(funcName)s: %(message)s')
+    setup_logging(debug=debug)
     os.chdir(file.parent)
     with (importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as
           lib_path, importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path):
