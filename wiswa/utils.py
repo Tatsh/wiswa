@@ -13,7 +13,6 @@ import logging
 import logging.config
 import subprocess as sp
 
-from github import Auth, Github
 import _jsonnet  # type: ignore[import-not-found] # noqa: PLC2701
 import jinja2
 import keyring
@@ -181,13 +180,14 @@ def download_yarn(version: str) -> None:
 
 def setup_github_project(settings: dict[str, Any]) -> None:
     if not settings['using_github']:
+        log.debug('Not running Github setup.')
         return
     owner, project = settings['repository_uri'].split('/')[-2:]
     if not (token := keyring.get_password('tmu-github-api', getpass.getuser())):
         log.warning('No Github token.')
         return
+    log.debug('Got a token.')
     repo_name = f'{owner}/{project}'
-    Github(auth=Auth.Token(token))
     session = requests.Session()
     host = 'https://api.github.com'
     session.headers.update({
@@ -382,6 +382,11 @@ def setup_logging(*,
             }
         },
         'loggers': {
+            'urllib3': {
+                'level': 'DEBUG' if debug else 'INFO',
+                'handlers': ['console'],
+                'propagate': False,
+            },
             'wiswa': {
                 'level': 'DEBUG' if debug else 'INFO',
                 'handlers': ['console'],

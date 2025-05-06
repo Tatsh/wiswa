@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import importlib
 import importlib.resources
+import logging
 import os
 
 import click
@@ -22,6 +23,8 @@ from .utils import (
 )
 
 __all__ = ('main',)
+
+log = logging.getLogger(__name__)
 
 
 @click.command(context_settings={'help_option_names': ('-h', '--help')})
@@ -46,6 +49,7 @@ def main(file: Path,
          skip_templates: bool = False) -> None:
     """Entry point for the Wiswa CLI."""
     setup_logging(debug=debug)
+    log.debug('Github enabled: %s', not skip_github)
     os.chdir(file.parent)
     with (importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as
           lib_path, importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path):
