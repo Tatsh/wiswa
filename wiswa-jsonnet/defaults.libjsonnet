@@ -23,6 +23,8 @@ local utils = import 'utils.libjsonnet';
   keywords: [],
   description: 'No description.',
   modules: [self.primary_module],
+  mastodon_id: '',
+  mastodon_domain: 'hostux.social',
 
 
   // General settings
@@ -197,7 +199,12 @@ local utils = import 'utils.libjsonnet';
             dependencies: deps.tests,
           },
         } + docs_section + tests_section,
-      } + if settings.want_main && settings.want_docs then { include: if settings.want_main && settings.want_docs then ['man'] else [] } else {},
+      } + if settings.want_main && settings.want_docs then {
+        include: if settings.want_main && settings.want_docs then ['man'] + (
+          if settings.want_tests then
+            [{ path: 'tests', format: 'sdist' }] else []
+        ) else if settings.want_tests then [{ path: 'tests', format: 'sdist' }] else [],
+      } else {},
       pyright+: {
         include: ['./%s' % [m] for m in settings.modules] + [
           './tests',

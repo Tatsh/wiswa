@@ -17,6 +17,7 @@ import _jsonnet  # type: ignore[import-not-found] # noqa: PLC2701
 import jinja2
 import keyring
 import requests
+import tomlkit
 
 from .constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI, STATIC_MODULE_FILES
 from .extensions import ToPythonExtension
@@ -56,9 +57,18 @@ def post_process_steps(settings: dict[str, Any]) -> None:
         Path('.readthedocs.yaml').unlink(missing_ok=True)
     if settings['stubs_only']:
         Path('.github/workflows/codeql.yml').unlink(missing_ok=True)
+    pyproject_content = tomlkit.loads(Path('pyproject.toml').read_text(encoding='utf-8')).unwrap()
+    if settings['want_man']:
+        log.debug('Adding man page to Commitizen version_files.')
+
+        module = settings['primary_module']
+        pyproject_content['tool']['commitizen']['version_files'] = sorted(
+            {*pyproject_content['tool']['commitizen']['version_files'], f'man/{module}.1'})
+    # tomlkit will strip empty sections.
+    Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8')
     subprocess_log_run(('poetry', 'lock'), check=True)
     with_arg = ','.join(
-        ('docs' if settings['want_docs'] else '', 'tests' if settings['want_tests'] else ''))
+        ('docs' if settings['want_docs'] else '', 'tests' if settings['want_tests'] else '', 'dev'))
     subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg != ',' else ())),
                        check=True)
     subprocess_log_run(('poetry', 'install', '--all-groups'), check=True)
@@ -356,7 +366,7 @@ def setup_github_project(settings: dict[str, Any]) -> None:
 def setup_logging(*,
                   debug: bool = False,
                   force_color: bool = False,
-                  no_color: bool = False) -> None:
+                  no_color: bool = False) -> None:  # pragma: no cover
     """Set up logging configuration."""
     logging.config.dictConfig({
         'disable_existing_loggers': True,
