@@ -1,12 +1,13 @@
-{
+function(apt_packages, os) {
   build: {
+    apt_packages: apt_packages,
     jobs: {
       post_install: [
         'pip install poetry',
         'VIRTUAL_ENV="$READTHEDOCS_VIRTUALENV_PATH" poetry install --all-extras --with=docs',
       ],
     },
-    os: 'ubuntu-22.04',
+    os: os,
     tools: {
       python: '3.12',
     },

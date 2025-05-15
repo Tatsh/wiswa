@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 def setup_logging(*,
                   debug: bool = False,
                   force_color: bool = False,
-                  no_color: bool = False) -> None:
+                  no_color: bool = False) -> None:  # pragma: no cover
     """Set up logging configuration."""
     logging.config.dictConfig({
         'disable_existing_loggers': True,

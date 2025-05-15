@@ -2,7 +2,7 @@ function(settings)
   {
     jobs: {
       build: {
-        'runs-on': 'ubuntu-latest',
+        'runs-on': settings.qa_runs_on,
         steps: [
           {
             uses: 'actions/checkout@v4',
@@ -21,7 +21,8 @@ function(settings)
           },
           {
             name: 'Install dependencies (Poetry)',
-            run: 'poetry install --with=dev,tests',
+            run: if settings.want_tests then 'poetry install --with=dev,tests'
+            else 'poetry install --with=dev',
           },
           {
             name: 'Install dependencies (Yarn)',

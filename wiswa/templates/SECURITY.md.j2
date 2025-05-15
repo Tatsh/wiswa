@@ -4,7 +4,9 @@
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.0.x   | :white_check_mark: |
+{% for version, support_state in settings.security_policy_supported_versions.items() %}
+| {{ version }} | {{ support_state }} |
+{% endfor %}
 
 ## Reporting a Vulnerability
 

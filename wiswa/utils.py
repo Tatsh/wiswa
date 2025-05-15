@@ -19,19 +19,12 @@ import keyring
 import requests
 import tomlkit
 
-from .constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI, STATIC_MODULE_FILES
+from .constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
 from .extensions import ToPythonExtension
 
-__all__ = (
-    'copy_static_files',
-    'create_py_typed_files',
-    'download_yarn_plugins',
-    'evaluate_jsonnet_project',
-    'evaluate_merged_settings',
-    'post_process_steps',
-    'setup_logging',
-    'write_templated_files',
-)
+__all__ = ('copy_static_files', 'create_py_typed_files', 'download_yarn_plugins',
+           'evaluate_jsonnet_project', 'evaluate_merged_settings', 'post_process_steps',
+           'setup_logging', 'write_templated_files')
 
 log = logging.getLogger(__name__)
 
@@ -52,23 +45,45 @@ def post_process_steps(settings: dict[str, Any]) -> None:
                 or (len(settings['vscode']['launch']['configurations']) == 1
                     and settings['vscode']['launch']['configurations'][0]['name'] == 'Run tests')):
             Path('.vscode/launch.json').unlink(missing_ok=True)
+    pyproject_content = tomlkit.loads(Path('pyproject.toml').read_text(encoding='utf-8')).unwrap()
+    package_json_content = json.loads(Path('package.json').read_text(encoding='utf-8'))
     if not settings['want_docs']:
         rmtree('docs', ignore_errors=True)
         Path('.readthedocs.yaml').unlink(missing_ok=True)
-    if settings['stubs_only']:
+        del pyproject_content['tool']['poetry']['group']['docs']
+    if not settings['want_codeql']:
         Path('.github/workflows/codeql.yml').unlink(missing_ok=True)
-    pyproject_content = tomlkit.loads(Path('pyproject.toml').read_text(encoding='utf-8')).unwrap()
     if settings['want_man']:
-        log.debug('Adding man page to Commitizen version_files.')
-
-        module = settings['primary_module']
-        pyproject_content['tool']['commitizen']['version_files'] = sorted(
-            {*pyproject_content['tool']['commitizen']['version_files'], f'man/{module}.1'})
+        log.debug('Adding man pages to Commitizen version_files.')
+        if (man := Path('man')).exists():
+            pyproject_content['tool']['commitizen']['version_files'] = sorted({
+                *pyproject_content['tool']['commitizen']['version_files'],
+                *(str(x) for x in man.glob('*.1'))
+            })
+        else:
+            module = settings['primary_module']
+            pyproject_content['tool']['commitizen']['version_files'] = sorted(
+                {*pyproject_content['tool']['commitizen']['version_files'], f'man/{module}.1'})
+    if not settings['want_tests']:
+        del pyproject_content['tool']['coverage']
+        del pyproject_content['tool']['poetry']['group']['tests']
+        del pyproject_content['tool']['pytest']
+        rmtree('tests', ignore_errors=True)
+    if not settings['want_yapf']:
+        del pyproject_content['tool']['yapf']
+        del pyproject_content['tool']['yapfignore']
+        package_json_content['check-formatting'] = ("yarn prettier -c . && poetry run ruff format "
+                                                    "--check . && yarn markdownlint-cli2 '**/*.md'"
+                                                    " '#node_modules'")
+        package_json_content['format'] = ("yarn prettier -w . && poetry run ruff format . "
+                                          "&& yarn markdownlint-cli2 '**/*.md' '#node_modules'")
+    Path('package.json').write_text(json.dumps(package_json_content, indent=2, sort_keys=True),
+                                    encoding='utf-8')
     # tomlkit will strip empty sections.
     Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8')
     subprocess_log_run(('poetry', 'lock'), check=True)
-    with_arg = ','.join(
-        ('docs' if settings['want_docs'] else '', 'tests' if settings['want_tests'] else '', 'dev'))
+    with_arg = ','.join(('docs' if settings['want_docs'] else '',
+                         'tests' if settings['want_tests'] else '', 'dev')).lstrip(',').rstrip(',')
     subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg != ',' else ())),
                        check=True)
     subprocess_log_run(('poetry', 'install', '--all-groups'), check=True)
@@ -86,21 +101,29 @@ def create_py_typed_files(settings: dict[str, Any]) -> None:
         log.debug('Touched `%s`.', target)
 
 
-def copy_static_files(merged_settings_loaded: dict[str, Any], module_path: Path) -> None:
+def non_empty_file_exists(output_file: Path) -> bool:
+    """Check if a file exists and is not empty."""
+    return output_file.exists() and len(output_file.read_text().strip()) != 0
+
+
+def copy_static_files(settings: dict[str, Any], module_path: Path) -> None:
     """Copy static files to the current directory."""
-    for filename in STATIC_MODULE_FILES:
-        if merged_settings_loaded['stubs_only'] and filename.endswith('.py'):
-            log.debug('Skipping `%s`.', filename)
-            continue
+    def copy_file(filename: str) -> None:
         static_path = module_path / 'static' / filename
-        output_file = Path(f'{merged_settings_loaded["primary_module"]}/{filename}')
-        if ((output_file.exists() and len(output_file.read_text().strip()) != 0)
-                or str(output_file) in merged_settings_loaded['skip']):
+        output_file = Path(f'{settings["primary_module"]}/{filename}')
+        if non_empty_file_exists(output_file):
             log.debug('Skipping `%s`.', output_file)
-            continue
+            return
         output_file.parent.mkdir(parents=True, exist_ok=True)
         copyfile(static_path, output_file)
         log.debug('Wrote `%s`.', output_file)
+
+    if settings['stubs_only']:
+        return
+    copy_file('utils.py')
+    if settings['want_main']:
+        copy_file('__main__.py')
+        copy_file('main.py')
 
 
 def download_yarn_plugins() -> None:
@@ -113,7 +136,7 @@ def download_yarn_plugins() -> None:
                                                                          encoding='utf-8')
 
 
-def write_templated_files(module_path: Path, merged_settings_loaded: dict[str, Any]) -> None:
+def write_templated_files(module_path: Path, settings: dict[str, Any]) -> None:
     """Write templated files."""
     env = jinja2.Environment(autoescape=jinja2.select_autoescape(),
                              extensions=(ToPythonExtension,),
@@ -122,31 +145,40 @@ def write_templated_files(module_path: Path, merged_settings_loaded: dict[str, A
                              trim_blocks=True,
                              undefined=jinja2.StrictUndefined)
     templates_dir = module_path / 'templates'
-    to_skip = merged_settings_loaded['skip']
-    for file_path in templates_dir.rglob('*.j2'):
-        if merged_settings_loaded['stubs_only'] and file_path.name.endswith('.py.j2'):
-            log.debug('Skipping template `%s`.', file_path)
-            continue
-        if (file_path.name in {'__main__.py.j2', 'main.py.j2', 'test_main.py.j2'}
-                and not merged_settings_loaded['want_main']):
-            log.debug('Skipping template `%s`.', file_path)
-            continue
-        template_path = file_path.relative_to(templates_dir)
-        template = env.get_template(str(template_path))
-        output_file = orig_output_file = template_path.with_suffix('')
-        try:
-            if output_file.parts[-2] == '_module_':
-                output_file = Path(merged_settings_loaded['primary_module']) / output_file.name
-        except IndexError:
-            pass
-        if ((output_file.exists() and len(output_file.read_text().strip()) != 0)
-                and (str(output_file) in to_skip or str(orig_output_file) in to_skip)):
+
+    def resolve_template(file_path: Path) -> jinja2.Template:
+        return env.get_template(str(file_path.relative_to(templates_dir)))
+
+    def write_file(template: jinja2.Template,
+                   output_file: Path | str,
+                   *,
+                   overwrite: bool = False) -> None:
+        output_file = Path(output_file)
+        if not overwrite and non_empty_file_exists(output_file):
             log.debug('Skipping template `%s`.', output_file)
-            continue
+            return
         output_file.parent.mkdir(parents=True, exist_ok=True)
-        content = template.render({'settings': merged_settings_loaded})
+        content = template.render({'settings': settings})
         output_file.write_text(f'{content.strip()}\n')
         log.debug('Wrote `%s`.', output_file)
+
+    if settings['want_tests']:
+        write_file(resolve_template(templates_dir / 'tests/conftest.py.j2'), 'tests/conftest.py')
+        write_file(resolve_template(templates_dir / 'tests/test_utils.py.j2'),
+                   'tests/test_utils.py')
+        if settings['want_main']:
+            write_file(resolve_template(templates_dir / 'tests/test_main.py.j2'),
+                       'tests/test_main.py')
+    for file_path in (templates_dir / 'CHANGELOG.md.j2', templates_dir / 'README.md.j2',
+                      templates_dir / 'docs/index.rst.j2'):
+        write_file(resolve_template(file_path),
+                   file_path.relative_to(templates_dir).with_suffix(''))
+    for file_path in (templates_dir / 'CODEOWNERS.j2', templates_dir / 'CONTRIBUTING.md.j2',
+                      templates_dir / 'LICENSE.txt.j2', templates_dir / 'SECURITY.md.j2',
+                      templates_dir / 'docs/conf.py.j2'):
+        write_file(resolve_template(file_path),
+                   file_path.relative_to(templates_dir).with_suffix('').name,
+                   overwrite=True)
 
 
 def evaluate_jsonnet_project(lib_path: Path, jpathdir: list[str], merged_settings: str) -> None:

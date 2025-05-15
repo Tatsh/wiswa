@@ -13,6 +13,9 @@ function(settings)
   local readthedocs_items = if settings.want_docs then {
     '.readthedocs.yaml': utils.manifestYaml(settings.readthedocs),
   } else {};
+  local tests_items = if settings.want_tests then {
+    'tests/pyproject.toml': utils.manifestToml(settings.tests_pyproject),
+  } else {};
   {
     '.gitattributes': utils.manifestLines(settings.gitattributes),
     '.gitignore': utils.manifestIgnore(settings.gitignore),
@@ -25,5 +28,4 @@ function(settings)
     'CITATION.cff': utils.manifestYaml(settings.citation),
     'package.json': std.manifestJson(settings.package_json),
     'pyproject.toml': utils.manifestToml(settings.pyproject),
-    'tests/pyproject.toml': utils.manifestToml(settings.tests_pyproject),
-  } + github_items + gitlab_items + readthedocs_items
+  } + tests_items + github_items + gitlab_items + readthedocs_items

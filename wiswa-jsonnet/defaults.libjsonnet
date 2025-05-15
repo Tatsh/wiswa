@@ -3,11 +3,12 @@ local vscode_settings = import 'defaults/vscode/settings.libjsonnet';
 local utils = import 'utils.libjsonnet';
 
 {
-  local deps = (import 'defaults/deps.libjsonnet')(self.want_main),
+  local deps = (import 'defaults/python-deps.libjsonnet')(self.want_main, self.want_yapf),
   local github = if settings.using_github then [import 'defaults/pre-commit-config/github.libjsonnet'] else [],
   local cff = if settings.want_cff then [import 'defaults/pre-commit-config/cff.libjsonnet'] else [],
   local djlint = if settings.want_djlint then [import 'defaults/pre-commit-config/djlint.libjsonnet'] else [],
   local local_hooks = [import 'defaults/pre-commit-config/local.libjsonnet'],
+  local rtd = import 'defaults/readthedocs.libjsonnet',
   local settings = self,
   yarn_version: '4.9.1',
   license: 'MIT',
@@ -26,7 +27,6 @@ local utils = import 'utils.libjsonnet';
   mastodon_id: '',
   mastodon_domain: 'hostux.social',
 
-
   // General settings
   skip: [
     'CHANGELOG.md',
@@ -42,6 +42,7 @@ local utils = import 'utils.libjsonnet';
   codeowners: {
     '*': '@%s' % settings.github_username,
   },
+  security_policy_supported_versions: {'0.0.x': ':white_check_mark:'},
   using_django: 'django' in self.pyproject.tool.poetry.dependencies,
   using_drf: 'djangorestframework' in self.pyproject.tool.poetry.dependencies,
   using_github: std.member(self.repository_uri, 'github.com'),
@@ -49,11 +50,13 @@ local utils = import 'utils.libjsonnet';
   using_readthedocs: true,
   stubs_only: false,
   want_cff: true,
+  want_codeql: !self.stubs_only,
   want_docs: true,
   want_djlint: false,
   want_main: false,
   want_man: self.want_main,
   want_tests: true,
+  want_yapf: true,
   year: '2025',
 
 
@@ -103,7 +106,8 @@ local utils = import 'utils.libjsonnet';
                               settings.shell_tab_size,
                               settings.python_package_index_depth),
   },
-  readthedocs: import 'defaults/readthedocs.libjsonnet',
+  rtd_os: 'ubuntu-22.04',
+  readthedocs: rtd(settings.rtd_apt_packages, settings.rtd_os),
 
   // GitHub
   github: {
@@ -115,6 +119,7 @@ local utils = import 'utils.libjsonnet';
     pages_uri: 'https://%s.github.io/%s/' % [std.asciiLower(settings.github_username), settings.github_project_name],
     username: settings.github_username,
   },
+  qa_runs_on: self.tests_run_on,
   tests_run_on: 'ubuntu-latest',
 
   // CITATION.cff
@@ -229,6 +234,7 @@ local utils = import 'utils.libjsonnet';
     },
   },
 
+  rtd_apt_packages: [],
   docs_conf: (import 'defaults/docs_conf.libjsonnet') + {
     config+: {
       html_theme_options+: {
