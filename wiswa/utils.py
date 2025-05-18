@@ -169,15 +169,16 @@ def write_templated_files(module_path: Path, settings: dict[str, Any]) -> None:
         if settings['want_main']:
             write_file(resolve_template(templates_dir / 'tests/test_main.py.j2'),
                        'tests/test_main.py')
+    conf_py = (templates_dir / 'docs/conf.py.j2',) if settings['want_docs'] else ()
+    docs_index_rst = (templates_dir / 'docs/index.rst.j2',) if settings['want_docs'] else ()
     for file_path in (templates_dir / 'CHANGELOG.md.j2', templates_dir / 'README.md.j2',
-                      templates_dir / 'docs/index.rst.j2'):
+                      *docs_index_rst):
         write_file(resolve_template(file_path),
                    file_path.relative_to(templates_dir).with_suffix(''))
     for file_path in (templates_dir / 'CODEOWNERS.j2', templates_dir / 'CONTRIBUTING.md.j2',
-                      templates_dir / 'LICENSE.txt.j2', templates_dir / 'SECURITY.md.j2',
-                      templates_dir / 'docs/conf.py.j2'):
+                      templates_dir / 'LICENSE.txt.j2', templates_dir / 'SECURITY.md.j2', *conf_py):
         write_file(resolve_template(file_path),
-                   file_path.relative_to(templates_dir).with_suffix('').name,
+                   file_path.relative_to(templates_dir).with_suffix(''),
                    overwrite=True)
 
 
