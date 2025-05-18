@@ -150,7 +150,6 @@ local utils = import 'utils.libjsonnet';
       classifiers: std.sort([
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
         if settings.stubs_only then 'Typing :: Stubs Only' else 'Typing :: Typed',
       ] + [
