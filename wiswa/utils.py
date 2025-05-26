@@ -140,7 +140,7 @@ def write_templated_files(module_path: Path, settings: dict[str, Any]) -> None:
     """Write templated files."""
     env = jinja2.Environment(autoescape=jinja2.select_autoescape(),
                              extensions=(ToPythonExtension,),
-                             loader=jinja2.PackageLoader(__package__, 'templates'),
+                             loader=jinja2.PackageLoader(__package__),
                              lstrip_blocks=True,
                              trim_blocks=True,
                              undefined=jinja2.StrictUndefined)
