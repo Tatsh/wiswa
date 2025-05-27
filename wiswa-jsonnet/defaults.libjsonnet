@@ -42,7 +42,7 @@ local utils = import 'utils.libjsonnet';
   codeowners: {
     '*': '@%s' % settings.github_username,
   },
-  security_policy_supported_versions: {'0.0.x': ':white_check_mark:'},
+  security_policy_supported_versions: { '0.0.x': ':white_check_mark:' },
   using_django: 'django' in self.pyproject.tool.poetry.dependencies,
   using_drf: 'djangorestframework' in self.pyproject.tool.poetry.dependencies,
   using_github: std.member(self.repository_uri, 'github.com'),

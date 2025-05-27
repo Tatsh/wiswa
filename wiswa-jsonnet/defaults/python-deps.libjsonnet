@@ -1,19 +1,19 @@
 function(want_main, want_yapf) {
-  local want_main_deps = if want_main then { click: '^8.2.0', colorlog: '^6.9.0' } else {},
+  local want_main_deps = if want_main then { click: '^8.2.1', colorlog: '^6.9.0' } else {},
   main: {
     'typing-extensions': '^4.13.2',
   } + want_main_deps,
   dev: {
-    commitizen: '^4.7.0',
+    commitizen: '^4.8.2',
     djlint: '^1.36.4',
     mypy: '>=1.12,<1.16',
-    ruff: '^0.11.9',
+    ruff: '^0.11.11',
   } + (if want_yapf then { yapf: '^0.43.0' } else {}),
   docs: {
     'autodoc-pydantic': '^2.2.0',
     doc8: '^1.1.2',
     docutils: '^0.21.2',
-    'enum-tools': { extras: ['sphinx'], version: '^0.12.0' },
+    'enum-tools': { extras: ['sphinx'], version: '^0.13.0' },
     esbonio: '^0.16.5',
     numpydoc: '^1.8.0',
     'restructuredtext-lint': '^1.4.0',
@@ -31,6 +31,6 @@ function(want_main, want_yapf) {
     mock: '^5.2.0',
     pytest: '^8.3.5',
     'pytest-cov': '^6.1.1',
-    'pytest-mock': '^3.14.0',
+    'pytest-mock': '^3.14.1',
   },
 }
