@@ -51,9 +51,8 @@ local utils = import 'utils.libjsonnet';
     tool+: {
       poetry+: {
         dependencies+: {
-          click: '^8.1.8',
           jinja2: '^3.1.6',
-          jsonnet: '^0.20.0',
+          jsonnet: '^0.21.0',
           keyring: '^25.6.0',
           requests: '^2.32.3',
         },

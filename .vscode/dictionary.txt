@@ -27,7 +27,6 @@ eeyore
 elif
 endfor
 endraw
-erdantic
 esbenp
 esbonio
 excinfo

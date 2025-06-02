@@ -1,13 +1,13 @@
 function(want_main, want_yapf) {
   local want_main_deps = if want_main then { click: '^8.2.1', colorlog: '^6.9.0' } else {},
   main: {
-    'typing-extensions': '^4.13.2',
+    'typing-extensions': '^4.14.0',
   } + want_main_deps,
   dev: {
     commitizen: '^4.8.2',
     djlint: '^1.36.4',
-    mypy: '>=1.12,<1.16',
-    ruff: '^0.11.11',
+    mypy: '^1.16.0',
+    ruff: '^0.11.12',
   } + (if want_yapf then { yapf: '^0.43.0' } else {}),
   docs: {
     'autodoc-pydantic': '^2.2.0',

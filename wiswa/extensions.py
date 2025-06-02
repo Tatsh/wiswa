@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 def topython(  # noqa: PLR0911
         obj: Any, *, convert_strings: bool = True, list_to_tuple: bool = False) -> Any:
+    """Convert an object to a Python representation as a string."""
     data: Any
     if isinstance(obj, str):
         if convert_strings:
