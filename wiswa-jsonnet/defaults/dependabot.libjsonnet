@@ -1,17 +1,25 @@
 {
+  local interval = 'weekly',
   updates: [
     {
       directory: '/',
       'package-ecosystem': 'npm',
       schedule: {
-        interval: 'weekly',
+        interval: interval,
       },
     },
     {
       directory: '/',
       'package-ecosystem': 'pip',
       schedule: {
-        interval: 'weekly',
+        interval: interval,
+      },
+    },
+    {
+      directory: '/',
+      'package-ecosystem': 'github-actions',
+      schedule: {
+        interval: interval,
       },
     },
   ],
