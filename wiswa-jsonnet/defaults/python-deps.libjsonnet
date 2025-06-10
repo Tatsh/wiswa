@@ -4,10 +4,10 @@ function(want_main, want_yapf) {
     'typing-extensions': '^4.14.0',
   } + want_main_deps,
   dev: {
-    commitizen: '^4.8.2',
+    commitizen: '^4.8.3',
     djlint: '^1.36.4',
     mypy: '^1.16.0',
-    ruff: '^0.11.12',
+    ruff: '^0.11.13',
   } + (if want_yapf then { yapf: '^0.43.0' } else {}),
   docs: {
     'autodoc-pydantic': '^2.2.0',
@@ -18,7 +18,7 @@ function(want_main, want_yapf) {
     numpydoc: '^1.8.0',
     'restructuredtext-lint': '^1.4.0',
     sphinx: [
-      { version: '^8.2.0', python: '>=3.11' },
+      { version: '^8.2.3', python: '>=3.11' },
       { version: '^7.2.5', python: '<3.11' },
     ],
     'sphinx-click': '^6.0.0',
