@@ -10,7 +10,7 @@ local utils = import 'utils.libjsonnet';
   local local_hooks = [import 'defaults/pre-commit-config/local.libjsonnet'],
   local rtd = import 'defaults/readthedocs.libjsonnet',
   local settings = self,
-  yarn_version: '4.9.1',
+  yarn_version: '4.9.2',
   license: 'MIT',
   version: '0.0.0',
 
