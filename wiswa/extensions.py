@@ -20,9 +20,9 @@ def topython(  # noqa: PLR0911
         if convert_strings:
             if re.match(r'^true|false$', obj, re.IGNORECASE):
                 return obj.lower() == 'true'
-            if re.match(r'^\d+$', obj):
+            if obj.isdigit():
                 return int(obj)
-        fixed = obj.replace("'", r"\'").replace('\\', r'\\')
+        fixed = obj.replace('\\', r'\\').replace("'", r"\'")
         return f"'{fixed}'"
     if isinstance(obj, float | int | bool | Decimal | None):
         return str(obj)
@@ -31,7 +31,8 @@ def topython(  # noqa: PLR0911
         return f'[{", ".join(data)}]'
     if isinstance(obj, Mapping):
         data = {
-            k.replace("'", r"\'"): topython(v, list_to_tuple=list_to_tuple)
+            str(k).replace('\\', r'\\').replace("'", r"\'"):
+                topython(v, list_to_tuple=list_to_tuple)
             for k, v in obj.items()
         }
         val = ', '.join(f"'{k}': {v}" for k, v in data.items())
