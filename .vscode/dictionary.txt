@@ -1,3 +1,4 @@
+asyncio
 autodoc
 automodule
 autosubmit
@@ -13,12 +14,14 @@ conftest
 contenttypes
 contrib
 coveragerc
+dataclasses
 datatable
 datatables
 davidanson
 debugpy
 djangorestframework
 djlint
+docstrings
 doctrees
 donjayamanne
 dotjoshjohnson
@@ -46,6 +49,7 @@ internalerror
 intersphinx
 isort
 itemgetter
+itertools
 jinja
 jinjahtml
 jmredfern
@@ -61,6 +65,7 @@ linters
 modindex
 monkeypatch
 mypy
+namedtuples
 naumovs
 nhoizey
 noqa
