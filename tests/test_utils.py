@@ -627,3 +627,161 @@ def test_setup_github_project_adds_protect_default_branch_ruleset(mocker: Mocker
             if json_arg.get('name') == 'Protect default branch':
                 found = True
     assert found
+
+
+def test_post_process_steps_removes_tests_and_vscode_launch_when_want_tests_false_and_vscode_launch(
+        mocker: MockerFixture, tmp_path: Path) -> None:
+    settings = {
+        'want_tests': False,
+        'want_docs': True,
+        'want_codeql': True,
+        'want_man': False,
+        'want_yapf': True,
+        'vscode': {
+            'launch': {
+                'configurations': [{
+                    'name': 'Run tests'
+                }, {
+                    'name': 'Other config'
+                }]
+            }
+        },
+        'primary_module': 'foo'
+    }
+    (tmp_path / 'tests').mkdir()
+    (tmp_path / '.github').mkdir(parents=True, exist_ok=True)
+    (tmp_path / '.github' / 'workflows').mkdir(parents=True, exist_ok=True)
+    (tmp_path / '.github' / 'workflows' / 'tests.yml').touch()
+    (tmp_path / '.vscode').mkdir()
+    (tmp_path / '.vscode' / 'launch.json').touch()
+    (tmp_path / 'pyproject.toml').write_text(
+        '[tool.poetry.group.tests]\n[tool.coverage]\n[tool.pytest]\n[tool.poetry.group.docs]\n')
+    (tmp_path / 'package.json').write_text('{}')
+    rmtree = mocker.spy(utils, 'rmtree')
+    mocker.patch('wiswa.utils.Path', side_effect=lambda x=None: tmp_path / x if x else tmp_path)
+    mocker.patch('wiswa.utils.subprocess_log_run')
+    mocker.patch(
+        'wiswa.utils.tomlkit.loads',
+        side_effect=lambda _: mocker.Mock(unwrap=lambda: {
+            'tool': {
+                'poetry': {
+                    'group': {
+                        'tests': {},
+                        'docs': {}
+                    }
+                },
+                'coverage': {},
+                'pytest': {}
+            }
+        }))
+    mocker.patch('wiswa.utils.tomlkit.dumps', return_value='[tool.poetry]\n')
+    mocker.patch('wiswa.utils.json.loads', return_value={})
+    mocker.patch('wiswa.utils.json.dumps', return_value='{}')
+    mocker.patch('wiswa.utils.PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI', 'http://example.com')
+    with chdir(tmp_path):
+        utils.post_process_steps(settings)
+    rmtree.assert_any_call('tests', ignore_errors=True)
+    assert not (tmp_path / 'tests').exists()
+    assert not (tmp_path / '.github' / 'workflows' / 'tests.yml').exists()
+    # launch.json should still exist because there is more than one configuration
+    assert (tmp_path / '.vscode' / 'launch.json').exists()
+
+
+def test_copy_static_files_skips_existing_files(mocker: MockerFixture, tmp_path: Path) -> None:
+    settings = {'stubs_only': False, 'primary_module': 'foo', 'want_main': True}
+    module_path = tmp_path
+    static_dir = module_path / 'static'
+    static_dir.mkdir(parents=True)
+    (static_dir / 'utils.py').write_text('x')
+    (static_dir / '__main__.py').write_text('y')
+    (static_dir / 'main.py').write_text('z')
+    # Simulate that all output files already exist and are non-empty
+    mocker.patch('wiswa.utils.non_empty_file_exists', return_value=True)
+    copyfile = mocker.patch('wiswa.utils.copyfile')
+    logger = mocker.patch('wiswa.utils.log')
+    utils.copy_static_files(settings, module_path)
+    # No files should be copied
+    copyfile.assert_not_called()
+    # Should log skipping for each file
+    assert logger.debug.call_count >= 1
+    calls = [call.args[0] for call in logger.debug.call_args_list]
+    assert any('Skipping' in msg for msg in calls)
+
+
+def test_copy_static_files_want_main_false(mocker: MockerFixture, tmp_path: Path) -> None:
+    settings = {'stubs_only': False, 'primary_module': 'foo', 'want_main': False}
+    module_path = tmp_path
+    static_dir = module_path / 'static'
+    static_dir.mkdir(parents=True)
+    (static_dir / 'utils.py').write_text('x')
+    mocker.patch('wiswa.utils.non_empty_file_exists', return_value=False)
+    copyfile = mocker.patch('wiswa.utils.copyfile')
+    utils.copy_static_files(settings, module_path)
+    assert copyfile.call_count == 1
+    args, _ = copyfile.call_args
+    assert static_dir / 'utils.py' in args
+
+
+def test_write_templated_files_skips_when_file_exists(mocker: MockerFixture,
+                                                      tmp_path: Path) -> None:
+    settings = {
+        'want_tests': True,
+        'want_main': False,
+        'want_docs': False,
+    }
+    module_path = tmp_path
+    templates_dir = module_path / 'templates'
+    (templates_dir / 'tests').mkdir(parents=True)
+    (templates_dir / 'tests/conftest.py.j2').touch()
+    env_mock = mocker.Mock()
+    template_mock = mocker.Mock()
+    template_mock.render.return_value = 'should not be written'
+    env_mock.get_template.return_value = template_mock
+    mocker.patch('wiswa.utils.jinja2.Environment', return_value=env_mock)
+    mocker.patch('wiswa.utils.jinja2.PackageLoader')
+    mocker.patch('wiswa.utils.ToPythonExtension')
+    mocker.patch('wiswa.utils.non_empty_file_exists', return_value=True)
+    logger = mocker.patch('wiswa.utils.log')
+    utils.write_templated_files(module_path, settings)
+    logger.debug.assert_any_call('Skipping template `%s`.', Path('tests/conftest.py'))
+
+
+def test_setup_github_project_does_not_add_protect_default_branch_if_exists(
+        mocker: MockerFixture) -> None:
+    settings = {
+        'using_github': True,
+        'repository_uri': 'https://github.com/owner/project',
+        'description': 'desc',
+        'homepage': 'https://example.com',
+        'keywords': ['foo'],
+        'default_branch': 'main',
+    }
+    mocker.patch('wiswa.utils.keyring.get_password', return_value='token')
+    session_mock = mocker.Mock()
+    patch = session_mock.patch
+    put = session_mock.put
+    get = session_mock.get
+    post = session_mock.post
+    patch.return_value.raise_for_status = lambda: None
+    put.return_value.raise_for_status = lambda: None
+    post.return_value.raise_for_status = lambda: None
+    # First get returns rulesets including 'Protect default branch', second get returns pages
+    get.side_effect = [
+        mocker.Mock(status_code=200,
+                    json=lambda: [
+                        {
+                            'name': 'Other ruleset'
+                        },
+                        {
+                            'name': 'Protect default branch'
+                        },
+                    ]),
+        mocker.Mock(status_code=200),
+    ]
+    mocker.patch('wiswa.utils.requests.Session', return_value=session_mock)
+    utils.setup_github_project(settings)
+    # Should not call post to add 'Protect default branch'
+    post_urls = [call.args[0] for call in post.call_args_list]
+    assert not any(
+        '/rulesets' in url and call.kwargs.get('json', {}).get('name') == 'Protect default branch'
+        for url, call in zip(post_urls, post.call_args_list, strict=False))
