@@ -1,8 +1,6 @@
 # Copilot Instructions
 
-This project is an implementation of a REST API for managing schedules and content, built with
-Django, Django-Ninja, PostgreSQL, and Redis. Python code follows all rules provided by Ruff with a
-few exceptions. Python code is also fully typed with type hints and is checked in full with Mypy.
+This project generates new Python projects given a configuration that is written in Jsonnet.
 
 ## General
 
@@ -72,12 +70,6 @@ few exceptions. Python code is also fully typed with type hints and is checked i
 - Use single quotes for strings except where it would be inconvenient to do so.
 - Use double quotes for docstrings.
 - Always add type hints in function and method signatures, even in tests.
-  - The type of the `mocker` fixture is `pytest_mock.MockerFixture`.
-  - The type of the `django_db_setup` fixture is always `None`.
-  - The type of the `user`, `django_user_model`, and `readonly_user` fixtures is
-    `django.contrib.auth.models.AbstractUser`.
-  - The type of the `client` and `authenticated_client` fixtures is `django.test.Client`.
-  - The type of the `tmp_path` fixture is `Path` and is imported as `from pathlib import Path`.
 - Use 4 spaces for indentation.
 - Use async/await for asynchronous code.
 - Prefix private class members with underscore (\_).
@@ -96,7 +88,6 @@ few exceptions. Python code is also fully typed with type hints and is checked i
 - Use `pytest` for testing.
 - Use `pytest.mark.parametrize` for parameterized tests.
 - Use `pytest.mark.asyncio` for asynchronous tests.
-- Django: Use `pytest.mark.django_db` for tests that require database access.
 - Use `pytest.raises` for testing exceptions.
 - Use `pytest.fixture` decorator for fixtures.
 - Do not create new fixtures inside test files. All fixtures must be defined in the `conftest.py`
@@ -139,33 +130,24 @@ few exceptions. Python code is also fully typed with type hints and is checked i
 - By default, sort collections alphabetically.
 - If a function accepts a collection of items and returns it, prefer to return a modified copy of
   the collection instead of modifying it in place.
-- Django: On models, prefer to use `_default_manager` instead of `objects`, unless `objects` is
-  defined in the model explicitly. For example, use `MyModel._default_manager.all()` instead of
-  `MyModel.objects.all()`.
-- If a parameter must exist in a callback, use `_` as the identifier if it is not a keyword
-  argument.
 
 ## Python test guidelines
 
 - Always add type hints including the return value.
   - The type of the `mocker` fixture is `MockerFixture`. It is imported as
     `from pytest_mock import MockerFixture`.
-  - The type of the `django_db_setup` fixture is always `None`.
-  - The type of the `user`, `django_user_model`, and `readonly_user` fixtures is
-    `AbstractUser`. It is imported as `from django.contrib.auth.models import AbstractUser`.
-  - The type of the `client` and `authenticated_client` fixtures is `Client`. It is imported as
-    `from django.test import Client`.
 - All test function names must start with `test_`.
 - Test files must be named `test_*.py`.
 - Use `pytest.mark.parametrize` for parameterized tests.
 - Use `pytest.mark.asyncio` for asynchronous tests.
-- Use `pytest.mark.django_db` for tests that require database access.
 - Use `pytest.raises` for testing exceptions.
 - Use `pytest.fixture` for fixtures.
 - Do not create new fixtures inside test files.
 - All fixtures must be defined in the `tests/conftest.py` file.
 - Do not add docstrings to test functions or methods.
-- Mock external dependencies and IO operations in tests, with Django ORM being the only exception.
+- Mock external dependencies and IO operations in tests.
+- If a parameter must exist in a callback, use `_` as the identifier if it is not a keyword
+  argument.
 
 ## SQL guidelines
 
