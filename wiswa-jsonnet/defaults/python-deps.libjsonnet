@@ -11,7 +11,7 @@ function(want_main, want_yapf) {
   } + (if want_yapf then { yapf: '^0.43.0' } else {}),
   docs: {
     'autodoc-pydantic': '^2.2.0',
-    doc8: '^1.1.2',
+    doc8: '^2.0.0',
     docutils: '^0.21.2',
     'enum-tools': { extras: ['sphinx'], version: '^0.13.0' },
     esbonio: '^0.16.5',
@@ -30,7 +30,7 @@ function(want_main, want_yapf) {
     coveralls: { python: '<3.13', version: '^4.0.1' },
     mock: '^5.2.0',
     pytest: '^8.4.0',
-    'pytest-cov': '^6.1.1',
+    'pytest-cov': '^6.2.1',
     'pytest-mock': '^3.14.1',
   },
 }
