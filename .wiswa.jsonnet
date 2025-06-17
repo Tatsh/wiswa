@@ -76,7 +76,7 @@ local utils = import 'utils.libjsonnet';
   package_json+: {
     repository: {
       type: 'git',
-      url: utils.githubGitSshUri(top.github_username, top.project_name),
+      url: utils.gitHubGitSshUri(top.github_username, top.project_name),
     },
   },
 

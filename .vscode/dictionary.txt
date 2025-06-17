@@ -96,6 +96,7 @@ shellcheck
 sphinxcontrib
 startswith
 staticfiles
+subpackages
 tamasfe
 tatsh
 testpaths
