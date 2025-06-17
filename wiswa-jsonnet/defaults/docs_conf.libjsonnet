@@ -1,18 +1,30 @@
+local d = import 'doc-util/main.libsonnet';
 {
+  '#': d.pkg(name='docs_conf', url='', help='', filename=std.thisFile),
+  '#config': d.obj('Sphinx configuration (top level of `conf.py`).'),
   config: {
+    '#datatables_class': d.val(d.T.string, 'CSS class for DataTables.'),
     datatables_class: 'sphinx-datatable',
+    '#datatables_options': d.obj('Options for DataTables.'),
     datatables_options: {
+      '#paging': d.val(d.T.number, 'Pagination enabled (0) or disabled (1).'),
       paging: 0,
     },
+    '#datatables_version': d.val(d.T.string, 'Version of DataTables to use.'),
     datatables_version: '1.13.4',
+    '#intersphinx_mapping': d.obj('Mapping for intersphinx (object of string to `[url, null | string]`).'),
     intersphinx_mapping: {
+      '#python': d.val(d.T.array, 'Python documentation mapping.'),
       python: [
         'https://docs.python.org/3',
         null,
       ],
     },
+    '#html_theme': d.val(d.T.string, 'HTML theme to use.'),
     html_theme: 'sphinx_immaterial',
+    '#html_theme_options': d.obj('Options for the HTML theme.'),
     html_theme_options: {
+      '#features': d.val(d.T.array, 'sphinx_immaterial: Features to enable in the theme.'),
       features: [
         'announce.dismiss',
         'content.action.edit',
@@ -29,11 +41,16 @@
         'toc.follow',
         'toc.sticky',
       ],
+      '#icon': d.obj('sphinx_immaterial: Icons for the theme.'),
       icon: {
+        '#edit': d.val(d.T.string, 'Icon for edit action.'),
         edit: 'material/file-edit-outline',
+        '#repo': d.val(d.T.string, 'Icon for repository.'),
         repo: 'fontawesome/brands/gitlab',
       },
+      '#globaltoc_collapse': d.val(d.T.boolean, 'sphinx_immaterial: Whether to collapse the global table of contents.'),
       globaltoc_collapse: true,
+      '#palette': d.val(d.T.array, 'sphinx_immaterial: Color palette for the theme.'),
       palette: [
         {
           media: '(prefers-color-scheme)',
@@ -66,16 +83,22 @@
       toc_title_is_page_title: true,
     },
   },
+  '#django': d.obj('Django settings for Sphinx documentation.'),
   django: {
+    '#monkeypatch': d.val(d.T.boolean, 'Whether to monkeypatch Django (needed for type hints).'),
     monkeypatch: true,
+    '#settings_module': d.val(d.T.string, 'Django settings module to use.'),
     settings_module: 'settings',
+    '#settings': d.obj('Django settings.'),
     settings: {
+      '#DATABASES': d.val(d.T.object, 'Django databases configuration.'),
       DATABASES: {
         default: {
           ENGINE: 'django.db.backends.sqlite3',
           NAME: ':memory:',
         },
       },
+      '#INSTALLED_APPS': d.val(d.T.array, 'Django installed applications.'),
       INSTALLED_APPS: [
         'django.contrib.admin',
         'django.contrib.auth',
@@ -84,10 +107,13 @@
         'django.contrib.messages',
         'django.contrib.staticfiles',
       ],
+      '#PATH_PREFIX': d.val(d.T.string, 'Django path prefix for static files.'),
       PATH_PREFIX: '',
     },
   },
+  '#environment_variables': d.val(d.T.object, 'Environment variables for Sphinx documentation.'),
   environment_variables: {},
+  '#extensions': d.val(d.T.array, 'Sphinx extensions to use.'),
   extensions: [
     'hoverxref.extension',
     'sphinx.ext.autodoc',

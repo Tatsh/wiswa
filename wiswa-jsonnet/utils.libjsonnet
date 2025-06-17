@@ -1,24 +1,70 @@
+local d = import 'doc-util/main.libsonnet';
+
 {
-  manifestToml(value):
+  '#': d.pkg(name='utils', url='', help='', filename=std.thisFile),
+
+  '#manifestToml':: d.fn('Convert an object to a TOML form (no indentation).',
+                         [d.arg('value', d.T.object)]),
+  manifestToml(value)::
     std.manifestTomlEx(value, ''),
-  manifestIgnore(value):
+
+  '#manifestLines': d.fn('Convert an array to a string with each element on a new line.',
+                         [d.arg('value', d.T.array)]),
+  manifestLines(value)::
     std.join('\n', std.set(value)),
-  manifestLines(value):
-    std.join('\n', std.set(value)),
-  manifestYaml(value):
+
+
+  '#manifestYaml': d.fn(
+    'Convert an object to a YAML form (indented in array and keys not quoted).',
+    [d.arg('value', d.T.object)]
+  ),
+  manifestYaml(value)::
     std.manifestYamlDoc(value, true, false),
-  citationAuthors(authors):
+
+  '#citationAuthors': d.fn(
+    'Convert an array of authors to a format suitable for citation metadata.',
+    [d.arg('authors', d.T.array)]
+  ),
+  citationAuthors(authors)::
     [{
       'family-names': x['family-names'],
       'given-names': x['given-names'],
     } for x in authors],
-  githubGitSshUri(github_username, project_name): 'git@github.com:%s/%s.git' % [github_username, project_name],
-  readthedocsUri(project_name): 'https://%s.readthedocs.org' % project_name,
-  githubRepositoryUri(github_username, project_name): 'https://github.com/%s/%s' % [github_username, project_name],
-  pyprojectAuthors(authors):
+
+
+  '#gitHubGitSshUri': d.fn(
+    'Generate a Git SSH URI for a GitHub repository.',
+    [d.arg('github_username', d.T.string), d.arg('project_name', d.T.string)]
+  ),
+  gitHubGitSshUri(github_username, project_name)::
+    'git@github.com:%s/%s.git' % [github_username, project_name],
+
+  '#readTheDocsUri': d.fn(
+    'Generate a readthedocs.org URI for a project.',
+    [d.arg('project_name', d.T.string)]
+  ),
+  readTheDocsUri(project_name):: 'https://%s.readthedocs.org' % project_name,
+
+  '#gitHubRepositoryUri': d.fn(
+    'Generate a GitHub repository URI.',
+    [d.arg('github_username', d.T.string), d.arg('project_name', d.T.string)]
+  ),
+  gitHubRepositoryUri(github_username, project_name)::
+    'https://github.com/%s/%s' % [github_username, project_name],
+
+  '#pyprojectAuthors': d.fn(
+    'Convert an array of authors to a format suitable for pyproject.toml.',
+    [d.arg('authors', d.T.array)]
+  ),
+  pyprojectAuthors(authors)::
     [{
       name: x.name,
       email: x.email,
     } for x in authors],
-  gitlabCi(settings): {},
+
+  '#gitLabCi': d.fn(
+    'Generate a Gitlab CI configuration.',
+    [d.arg('settings', d.T.object)]
+  ),
+  gitLabCi(settings):: {},
 }

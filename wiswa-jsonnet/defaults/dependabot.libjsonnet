@@ -1,5 +1,9 @@
+local d = import 'doc-util/main.libsonnet';
+
 {
+  '#': d.pkg('dependabot'),
   local interval = 'weekly',
+  '#updates': d.val(d.T.array, 'Update configuration.'),
   updates: [
     {
       directory: '/',
@@ -23,5 +27,6 @@
       },
     },
   ],
+  '#version': d.val(d.T.number, 'Version of the Dependabot configuration.'),
   version: 2,
 }
