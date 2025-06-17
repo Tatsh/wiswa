@@ -1,16 +1,38 @@
 from __future__ import annotations
 
-from contextlib import chdir
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
+import contextlib
 import json
+import os
 
 from wiswa import utils
 import pytest
 import requests
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from pytest_mock import MockerFixture
+    from wiswa.typing import Settings
+
+
+@contextlib.contextmanager
+def chdir(path: Path) -> Iterator[None]:
+    """
+    Context manager to change the current working directory.
+
+    Yields
+    ------
+    None
+        Changes the current working directory to ``path`` and restores it after the block.
+    """
+    original_path = Path.cwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(original_path)
 
 
 @pytest.mark.parametrize(
@@ -36,7 +58,7 @@ def test_copy_static_files_skips_when_stubs_only(mocker: MockerFixture, tmp_path
     settings = {'stubs_only': True, 'primary_module': 'foo', 'want_main': False}
     module_path = tmp_path
     copyfile = mocker.patch('wiswa.utils.copyfile')
-    utils.copy_static_files(settings, module_path)
+    utils.copy_static_files(cast('Settings', settings), module_path)
     copyfile.assert_not_called()
 
 
@@ -50,7 +72,7 @@ def test_copy_static_files_copies_files(mocker: MockerFixture, tmp_path: Path) -
     (static_dir / 'main.py').write_text('z')
     mocker.patch('wiswa.utils.non_empty_file_exists', return_value=False)
     copyfile = mocker.patch('wiswa.utils.copyfile')
-    utils.copy_static_files(settings, module_path)
+    utils.copy_static_files(cast('Settings', settings), module_path)
     assert copyfile.call_count == 3
 
 
@@ -69,7 +91,7 @@ def test_create_py_typed_files_creates_files(tmp_path: Path, mocker: MockerFixtu
         }
     }
     logger = mocker.patch('wiswa.utils.log')
-    utils.create_py_typed_files(settings)
+    utils.create_py_typed_files(cast('Settings', settings))
     assert (tmp_path / 'foo' / 'py.typed').exists()
     assert (tmp_path / 'bar' / 'py.typed').exists()
     assert logger.debug.call_count == 2
@@ -107,7 +129,7 @@ def test_evaluate_merged_settings_reads_and_merges(mocker: MockerFixture, tmp_pa
     file.write_text('{}')
     s, d = utils.evaluate_merged_settings([], lib_path, file)
     assert s == '{"foo": "bar"}'
-    assert d == {'foo': 'bar'}
+    assert dict(d) == {'foo': 'bar'}
 
 
 def test_download_yarn_writes_file(mocker: MockerFixture, tmp_path: Path) -> None:
@@ -173,7 +195,7 @@ def test_post_process_steps_removes_tests_when_want_tests_false(mocker: MockerFi
     mocker.patch('wiswa.utils.json.dumps', return_value='{}')
     mocker.patch('wiswa.utils.PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI', 'http://example.com')
     with chdir(tmp_path):
-        utils.post_process_steps(settings)
+        utils.post_process_steps(cast('Settings', settings))
     rmtree.assert_any_call('tests', ignore_errors=True)
     assert (tmp_path / 'tests').exists() is False
     assert (tmp_path / '.github' / 'workflows' / 'tests.yml').exists() is False
@@ -224,7 +246,7 @@ def test_post_process_steps_removes_docs_when_want_docs_false(mocker: MockerFixt
     mocker.patch('wiswa.utils.json.dumps', return_value='{}')
     mocker.patch('wiswa.utils.PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI', 'http://example.com')
     with chdir(tmp_path):
-        utils.post_process_steps(settings)
+        utils.post_process_steps(cast('Settings', settings))
     rmtree.assert_any_call('docs', ignore_errors=True)
     assert (tmp_path / 'docs').exists() is False
     assert (tmp_path / '.readthedocs.yaml').exists() is False
@@ -273,7 +295,7 @@ def test_post_process_steps_removes_codeql_when_want_codeql_false(mocker: Mocker
     mocker.patch('wiswa.utils.json.dumps', return_value='{}')
     mocker.patch('wiswa.utils.PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI', 'http://example.com')
     with chdir(tmp_path):
-        utils.post_process_steps(settings)
+        utils.post_process_steps(cast('Settings', settings))
     assert (tmp_path / '.github' / 'workflows' / 'codeql.yml').exists() is False
 
 
@@ -333,16 +355,18 @@ def test_post_process_steps_want_man_adds_version_files(mocker: MockerFixture, t
     mocker.patch('wiswa.utils.json.dumps', return_value='{}')
     mocker.patch('wiswa.utils.PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI', 'http://example.com')
     with chdir(tmp_path):
-        utils.post_process_steps(settings)
+        utils.post_process_steps(cast('Settings', settings))
     # Check that version_files was updated correctly
     if man_exists:
         expected_files = sorted(
             set(version_files + [str(p) for p in (tmp_path / 'man').glob('*.1')]))
-        actual_files = sorted(pyproject_dict['tool']['commitizen']['version_files'])
+        actual_files = sorted(
+            pyproject_dict['tool']['commitizen']['version_files'])  # type: ignore[index]
         assert actual_files == expected_files
     else:
         expected_files = sorted({*version_files, f'man/{settings["primary_module"]}.1'})
-        actual_files = sorted(pyproject_dict['tool']['commitizen']['version_files'])
+        actual_files = sorted(
+            pyproject_dict['tool']['commitizen']['version_files'])  # type: ignore[index]
         assert actual_files == expected_files
 
 
@@ -391,7 +415,7 @@ def test_post_process_steps_removes_yapf_when_want_yapf_false(mocker: MockerFixt
     mocker.patch('wiswa.utils.json.dumps', return_value='{}')
     mocker.patch('wiswa.utils.PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI', 'http://example.com')
     with chdir(tmp_path):
-        utils.post_process_steps(settings)
+        utils.post_process_steps(cast('Settings', settings))
     assert 'yapf' not in pyproject_dict['tool']
     assert 'yapfignore' not in pyproject_dict['tool']
     assert 'check-formatting' in package_json_dict
@@ -418,7 +442,7 @@ def test_write_templated_files_writes_test_files(mocker: MockerFixture, tmp_path
     mocker.patch('wiswa.utils.jinja2.PackageLoader')
     mocker.patch('wiswa.utils.ToPythonExtension')
     mocker.patch('wiswa.utils.non_empty_file_exists', return_value=False)
-    utils.write_templated_files(module_path, settings)
+    utils.write_templated_files(module_path, cast('Settings', settings))
     # Should attempt to render and write all three test files
     assert template_mock.render.call_count >= 3
 
@@ -444,7 +468,7 @@ def test_write_templated_files_writes_docs_files(mocker: MockerFixture, tmp_path
     mocker.patch('wiswa.utils.jinja2.PackageLoader')
     mocker.patch('wiswa.utils.ToPythonExtension')
     mocker.patch('wiswa.utils.non_empty_file_exists', return_value=False)
-    utils.write_templated_files(module_path, settings)
+    utils.write_templated_files(module_path, cast('Settings', settings))
     # Should render and write docs files
     assert template_mock.render.call_count >= 4
 
@@ -493,7 +517,7 @@ def test_evaluate_jsonnet_project_handles_empty_output(mocker: MockerFixture,
     logger.debug.assert_not_called()
 
 
-def make_settings(**overrides: Any) -> dict[str, Any]:
+def make_settings(**overrides: Any) -> Settings:
     settings = {
         'using_github': True,
         'repository_uri': 'https://github.com/owner/project',
@@ -502,14 +526,14 @@ def make_settings(**overrides: Any) -> dict[str, Any]:
         'keywords': ['foo', 'bar baz'],
         'default_branch': 'main',
     }
-    return settings | overrides
+    return cast('Settings', settings | overrides)
 
 
 def test_setup_github_project_not_using_github(mocker: MockerFixture) -> None:
     settings = make_settings(using_github=False)
     logger = mocker.patch('wiswa.utils.log')
     utils.setup_github_project(settings)
-    logger.debug.assert_called_with('Not running Github setup.')
+    logger.debug.assert_called_with('Not running GitHub setup.')
 
 
 def test_setup_github_project_no_token(mocker: MockerFixture) -> None:
@@ -517,7 +541,7 @@ def test_setup_github_project_no_token(mocker: MockerFixture) -> None:
     mocker.patch('wiswa.utils.keyring.get_password', return_value=None)
     logger = mocker.patch('wiswa.utils.log')
     utils.setup_github_project(settings)
-    logger.warning.assert_called_with('No Github token.')
+    logger.warning.assert_called_with('No GitHub token.')
 
 
 def test_setup_github_project_successful_patch_and_puts(mocker: MockerFixture) -> None:
@@ -615,7 +639,7 @@ def test_setup_github_project_adds_protect_default_branch_ruleset(mocker: Mocker
         mocker.Mock(status_code=200),
     ]
     mocker.patch('wiswa.utils.requests.Session', return_value=session_mock)
-    utils.setup_github_project(settings)
+    utils.setup_github_project(cast('Settings', settings))
     # Should call post to add 'Protect default branch'
     post_urls = [call.args[0] for call in post.call_args_list]
     assert any('/rulesets' in url for url in post_urls)
@@ -679,7 +703,7 @@ def test_post_process_steps_removes_tests_and_vscode_launch_when_want_tests_fals
     mocker.patch('wiswa.utils.json.dumps', return_value='{}')
     mocker.patch('wiswa.utils.PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI', 'http://example.com')
     with chdir(tmp_path):
-        utils.post_process_steps(settings)
+        utils.post_process_steps(cast('Settings', settings))
     rmtree.assert_any_call('tests', ignore_errors=True)
     assert not (tmp_path / 'tests').exists()
     assert not (tmp_path / '.github' / 'workflows' / 'tests.yml').exists()
@@ -699,7 +723,7 @@ def test_copy_static_files_skips_existing_files(mocker: MockerFixture, tmp_path:
     mocker.patch('wiswa.utils.non_empty_file_exists', return_value=True)
     copyfile = mocker.patch('wiswa.utils.copyfile')
     logger = mocker.patch('wiswa.utils.log')
-    utils.copy_static_files(settings, module_path)
+    utils.copy_static_files(cast('Settings', settings), module_path)
     # No files should be copied
     copyfile.assert_not_called()
     # Should log skipping for each file
@@ -716,7 +740,7 @@ def test_copy_static_files_want_main_false(mocker: MockerFixture, tmp_path: Path
     (static_dir / 'utils.py').write_text('x')
     mocker.patch('wiswa.utils.non_empty_file_exists', return_value=False)
     copyfile = mocker.patch('wiswa.utils.copyfile')
-    utils.copy_static_files(settings, module_path)
+    utils.copy_static_files(cast('Settings', settings), module_path)
     assert copyfile.call_count == 1
     args, _ = copyfile.call_args
     assert static_dir / 'utils.py' in args
@@ -742,7 +766,7 @@ def test_write_templated_files_skips_when_file_exists(mocker: MockerFixture,
     mocker.patch('wiswa.utils.ToPythonExtension')
     mocker.patch('wiswa.utils.non_empty_file_exists', return_value=True)
     logger = mocker.patch('wiswa.utils.log')
-    utils.write_templated_files(module_path, settings)
+    utils.write_templated_files(module_path, cast('Settings', settings))
     logger.debug.assert_any_call('Skipping template `%s`.', Path('tests/conftest.py'))
 
 
@@ -779,7 +803,7 @@ def test_setup_github_project_does_not_add_protect_default_branch_if_exists(
         mocker.Mock(status_code=200),
     ]
     mocker.patch('wiswa.utils.requests.Session', return_value=session_mock)
-    utils.setup_github_project(settings)
+    utils.setup_github_project(cast('Settings', settings))
     # Should not call post to add 'Protect default branch'
     post_urls = [call.args[0] for call in post.call_args_list]
     assert not any(

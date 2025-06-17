@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from datetime import datetime, timezone
+from functools import cache
 from http import HTTPStatus
 from pathlib import Path
 from shlex import quote
 from shutil import copyfile, rmtree
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 import getpass
 import json
 import logging
@@ -22,9 +24,12 @@ import tomlkit
 from .constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
 from .extensions import ToPythonExtension
 
+if TYPE_CHECKING:
+    from .typing import Settings
+
 __all__ = ('copy_static_files', 'create_py_typed_files', 'download_yarn_plugins',
-           'evaluate_jsonnet_project', 'evaluate_merged_settings', 'post_process_steps',
-           'setup_logging', 'write_templated_files')
+           'evaluate_jsonnet_project', 'evaluate_merged_settings', 'get_latest_yarn_version',
+           'post_process_steps', 'setup_logging', 'write_templated_files')
 
 log = logging.getLogger(__name__)
 
@@ -36,7 +41,7 @@ def subprocess_log_run(*args: Any, **kwargs: Any) -> sp.CompletedProcess[Any]:
     return sp.run(*args, check=kwargs.pop('check', True), **kwargs)
 
 
-def post_process_steps(settings: dict[str, Any]) -> None:
+def post_process_steps(settings: Settings) -> None:
     """Run post-processing steps."""
     if not settings['want_tests']:
         rmtree('tests', ignore_errors=True)
@@ -92,7 +97,7 @@ def post_process_steps(settings: dict[str, Any]) -> None:
     subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
 
 
-def create_py_typed_files(settings: dict[str, Any]) -> None:
+def create_py_typed_files(settings: Settings) -> None:
     """Create ``py.typed`` files for all packages."""
     for path in (Path(x['include']) for x in settings['pyproject']['tool']['poetry']['packages']):
         path.mkdir(parents=True, exist_ok=True)
@@ -106,7 +111,7 @@ def non_empty_file_exists(output_file: Path) -> bool:
     return output_file.exists() and len(output_file.read_text().strip()) != 0
 
 
-def copy_static_files(settings: dict[str, Any], module_path: Path) -> None:
+def copy_static_files(settings: Settings, module_path: Path) -> None:
     """Copy static files to the current directory."""
     def copy_file(filename: str) -> None:
         static_path = module_path / 'static' / filename
@@ -136,7 +141,7 @@ def download_yarn_plugins() -> None:
                                                                          encoding='utf-8')
 
 
-def write_templated_files(module_path: Path, settings: dict[str, Any]) -> None:
+def write_templated_files(module_path: Path, settings: Settings) -> None:
     """Write templated files."""
     env = jinja2.Environment(autoescape=jinja2.select_autoescape(),
                              extensions=(ToPythonExtension,),
@@ -182,11 +187,27 @@ def write_templated_files(module_path: Path, settings: dict[str, Any]) -> None:
                    overwrite=True)
 
 
+@cache
+def get_latest_yarn_version() -> str:  # pragma: no cover
+    """Get the latest Yarn version."""
+    r = requests.get('https://repo.yarnpkg.com/tags', timeout=15)
+    r.raise_for_status()
+    return cast('str', r.json()['latest']['stable'])
+
+
+NATIVE_CALLBACKS = {
+    'latestYarnVersion': ((), get_latest_yarn_version),
+    'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()),
+    'year': ((), lambda: datetime.now(tz=timezone.utc).year),
+}
+
+
 def evaluate_jsonnet_project(lib_path: Path, jpathdir: list[str], merged_settings: str) -> None:
     """Evaluate ``project.jsonnet`` to output generated files."""
     for filename, content in json.loads(
             _jsonnet.evaluate_file(str(lib_path / 'project.jsonnet'),
                                    jpathdir=jpathdir,
+                                   native_callbacks=NATIVE_CALLBACKS,
                                    tla_codes={'settings': merged_settings})).items():
         output_file = Path(filename)
         output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -195,13 +216,14 @@ def evaluate_jsonnet_project(lib_path: Path, jpathdir: list[str], merged_setting
 
 
 def evaluate_merged_settings(jpathdir: list[str], lib_path: Path,
-                             file: Path) -> tuple[str, dict[str, Any]]:
+                             file: Path) -> tuple[str, Settings]:
     """Evaluate the merged settings using Jsonnet."""
     s = cast(
         'str',
         _jsonnet.evaluate_snippet('',
                                   'function(defaults, settings) defaults + settings',
                                   jpathdir=jpathdir,
+                                  native_callbacks=NATIVE_CALLBACKS,
                                   tla_codes={
                                       'defaults': (lib_path / 'defaults.libjsonnet').read_text(),
                                       'settings': file.read_text()
@@ -221,13 +243,13 @@ def download_yarn(version: str) -> None:
     target.chmod(0o755)
 
 
-def setup_github_project(settings: dict[str, Any]) -> None:
+def setup_github_project(settings: Settings) -> None:
     if not settings['using_github']:
-        log.debug('Not running Github setup.')
+        log.debug('Not running GitHub setup.')
         return
     owner, project = settings['repository_uri'].split('/')[-2:]
     if not (token := keyring.get_password('tmu-github-api', getpass.getuser())):
-        log.warning('No Github token.')
+        log.warning('No GitHub token.')
         return
     log.debug('Got a token.')
     repo_name = f'{owner}/{project}'

@@ -1,5 +1,5 @@
 wiswa
-=============================
+=====
 
 Commands
 --------
@@ -10,12 +10,25 @@ Commands
 
 .. only:: html
 
-   .. toctree::
-      :maxdepth: 2
-      :caption: Contents:
+   Library
+   -------
+   .. automodule:: wiswa
+      :members:
+
+   .. automodule:: wiswa.constants
+      :members:
+
+   .. automodule:: wiswa.extensions
+      :members:
+
+   .. automodule:: wiswa.typing
+      :members:
+
+   .. automodule:: wiswa.utils
+      :members:
 
    Indices and tables
    ==================
+
    * :ref:`genindex`
    * :ref:`modindex`
-   * :ref:`search`

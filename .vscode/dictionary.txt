@@ -47,6 +47,7 @@ hoverxref
 htmlcov
 internalerror
 intersphinx
+isodate
 isort
 itemgetter
 itertools
@@ -61,6 +62,7 @@ jsonschema
 levelname
 lextudio
 libjsonnet
+libsonnet
 linters
 modindex
 monkeypatch
@@ -79,6 +81,7 @@ pycache
 pydantic
 pydocstyle
 pylance
+pylint
 pypi
 pyproject
 pyright

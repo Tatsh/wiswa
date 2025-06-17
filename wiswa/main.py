@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
               multiple=True,
               help=('Add a directory to the Jsonnet search path '
                     '(only used when evaluating settings).'))
-@click.option('--skip-github', is_flag=True, help='Skip configuring Github project.')
+@click.option('--skip-github', is_flag=True, help='Skip configuring GitHub project.')
 @click.option('--skip-jsonnet', is_flag=True, help='Skip Jsonnet evaluation.')
 @click.option('--skip-templates', is_flag=True, help='Skip Jinja2 template evaluation.')
 @click.argument('file',
@@ -49,7 +49,7 @@ def main(file: Path,
          skip_templates: bool = False) -> None:
     """Entry point for the Wiswa CLI."""
     setup_logging(debug=debug)
-    log.debug('Github enabled: %s', not skip_github)
+    log.debug('GitHub enabled: %s', not skip_github)
     os.chdir(file.parent)
     with (importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as
           lib_path, importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path):
