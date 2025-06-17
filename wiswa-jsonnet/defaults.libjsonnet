@@ -1,8 +1,11 @@
 local package = import 'defaults/package.libjsonnet';
 local vscode_settings = import 'defaults/vscode/settings.libjsonnet';
+local d = import 'doc-util/main.libsonnet';
 local utils = import 'utils.libjsonnet';
 
 {
+  '#': d.pkg(name='defaults', url='', help='', filename=std.thisFile),
+
   local deps = (import 'defaults/python-deps.libjsonnet')(self.want_main, self.want_yapf),
   local github = if settings.using_github then [import 'defaults/pre-commit-config/github.libjsonnet'] else [],
   local cff = if settings.want_cff then [import 'defaults/pre-commit-config/cff.libjsonnet'] else [],
@@ -10,22 +13,45 @@ local utils = import 'utils.libjsonnet';
   local local_hooks = [import 'defaults/pre-commit-config/local.libjsonnet'],
   local rtd = import 'defaults/readthedocs.libjsonnet',
   local settings = self,
-  yarn_version: '4.9.2',
-  license: 'MIT',
-  version: '0.0.0',
 
+  '#yarn_version': d.val(d.T.string, 'Yarn version to use.'),
+  yarn_version:: std.native('latestYarnVersion')(),
+  '#license': d.val(d.T.string, 'License.'),
+  license:: 'MIT',
+  '#version': d.val(d.T.string, 'Version.'),
+  version:: '0.0.0',
+
+  '#github_username': d.val(d.T.string, 'GitHub username.'),
   github_username: 'unknown',
+  '#github_project_name': d.val(d.T.string, 'Project name on GitHub.'),
   github_project_name: self.project_name,
+  '#default_branch': d.val(d.T.string, 'Default Git branch name (on the hosting provider).'),
   default_branch: 'master',
-  repository_uri: utils.githubRepositoryUri(self.github.username, self.github_project_name),
-  documentation_uri: utils.readthedocsUri(self.github_project_name),
+  '#repository_uri': d.val(d.T.string, 'HTML repository URI of the hosting provider.'),
+  repository_uri: utils.gitHubRepositoryUri(self.github.username, self.github_project_name),
+  documentation_uri: utils.readTheDocsUri(self.github_project_name),
+  '#directory_name': d.val(d.T.string, 'Directory name (generally what `git` would clone to without a specified output directory).'),
   directory_name: self.project_name,
   homepage: self.github.pages_uri,
+  '#keywords': d.val(d.T.array, 'Project keywords (array of strings).'),
   keywords: [],
+  '#description': d.val(d.T.string, 'Project description.'),
   description: 'No description.',
+  '#modules': d.val(d.T.array, 'Array of modules (Python packages) in the project.'),
   modules: [self.primary_module],
-  mastodon_id: '',
-  mastodon_domain: 'hostux.social',
+
+  '#social': d.obj('Social media configuration (for badges).'),
+  social: {
+    '#bsky': d.val(d.T.string, 'Bluesky username.'),
+    bsky: '',
+    '#mastodon': d.obj('Mastodon configuration.'),
+    mastodon: {
+      '#id': d.val(d.T.string, 'Mastodon account ID.'),
+      id: '',
+      '#domain': d.val(d.T.string, 'Mastodon instance domain.'),
+      domain: 'hostux.social',
+    },
+  },
 
   // General settings
   skip: [
@@ -42,32 +68,50 @@ local utils = import 'utils.libjsonnet';
   codeowners: {
     '*': '@%s' % settings.github_username,
   },
+  '#security_policy_supported_versions': d.val(d.T.object, 'Supported versions for the security policy (table in`SECURITY.md`).'),
   security_policy_supported_versions: { '0.0.x': ':white_check_mark:' },
   using_django: 'django' in self.pyproject.tool.poetry.dependencies,
   using_drf: 'djangorestframework' in self.pyproject.tool.poetry.dependencies,
+  '#using_github': d.val(d.T.boolean, 'If the project is hosted on GitHub.'),
   using_github: std.member(self.repository_uri, 'github.com'),
+  '#using_gitlab': d.val(d.T.boolean, 'If the project is hosted on GitLab.'),
   using_gitlab: std.member(self.repository_uri, 'gitlab.com'),
+  '#using_readthedocs': d.val(d.T.boolean, 'If the project hosts documentation on ReadTheDocs.'),
   using_readthedocs: true,
+  '#stubs_only': d.val(d.T.boolean, 'If the project consists of only Python typing stubs.'),
   stubs_only: false,
+  '#want_cff': d.val(d.T.boolean, 'If the project should have a `CITATION.cff` file.'),
   want_cff: true,
+  '#want_codeql': d.val(d.T.boolean, 'If the project should have a CodeQL configuration.'),
   want_codeql: !self.stubs_only,
+  '#want_docs': d.val(d.T.boolean, 'If the project should will generate documentation.'),
   want_docs: true,
+  '#want_djlint': d.val(d.T.boolean, 'If the project should have a `djlint` configuration.'),
   want_djlint: false,
+  '#want_main': d.val(d.T.boolean, 'If the project should have a main module (for CLI).'),
   want_main: false,
+  '#want_man': d.val(d.T.boolean, 'If the project will have manual pages.'),
   want_man: self.want_main,
-  want_tests: true,
+  '#want_tests': d.val(d.T.boolean, 'If the project will have tests.'),
+  want_tests: !self.stubs_only,
+  '#want_yapf': d.val(d.T.boolean, 'If the project will use YAPF for formatting.'),
   want_yapf: true,
-  year: '2025',
-
+  year: std.native('year')(),
 
   // Detailed settings
+  '#line_width': d.val(d.T.number, 'Line width for code formatting.'),
   line_width: 100,
+  '#python_package_index_depth': d.val(d.T.number, 'Depth of the Python package index (for Pyright and Pylance).'),
   python_package_index_depth: 100,
 
   // Tab sizes
+  '#python_tab_size': d.val(d.T.number, 'Tab size for Python files.'),
   python_tab_size: 4,
+  '#rst_tab_size': d.val(d.T.number, 'Tab size for reStructuredText files.'),
   rst_tab_size: 3,
+  '#shell_tab_size': d.val(d.T.number, 'Tab size for shell scripts.'),
   shell_tab_size: 4,
+  '#tab_size': d.val(d.T.number, 'Default tab size.'),
   tab_size: 2,
 
   // Shared
@@ -79,9 +123,13 @@ local utils = import 'utils.libjsonnet';
       name: '%s %s' % [self['given-names'], self['family-names']],
     },
   ],
+  '#project_name': d.val(d.T.string, 'Project name.'),
   project_name: 'not-a-project-name',
+  '#pypi_project_name': d.val(d.T.string, 'Project name on PyPI.'),
   pypi_project_name: self.project_name,
+  '#repository_name': d.val(d.T.string, 'Repository name (on any hosting provider).'),
   repository_name: self.project_name,
+  '#shared_ignore': d.val(d.T.array, 'Array of shared ignore patterns.'),
   shared_ignore: import 'defaults/shared-ignore.libjsonnet',
   pre_commit_config: {
     default_install_hook_types: [
@@ -106,26 +154,35 @@ local utils = import 'utils.libjsonnet';
                               settings.shell_tab_size,
                               settings.python_package_index_depth),
   },
+  '#rtd_os': d.val(d.T.string, 'Operating system for ReadTheDocs.'),
   rtd_os: 'ubuntu-22.04',
   readthedocs: rtd(settings.rtd_apt_packages, settings.rtd_os),
 
-  // GitHub
+  // // GitHub
+  '#github': d.obj('GitHub settings.'),
   github: {
+    '#dependabot': d.obj('Dependabot configuration.'),
     dependabot: import 'defaults/dependabot.libjsonnet',
     funding: {
       github: settings.github_username,
     },
+    '#pages_config': d.obj('GitHub Pages configuration.'),
     pages_config: import 'defaults/_config.libjsonnet',
-    pages_uri: 'https://%s.github.io/%s/' % [std.asciiLower(settings.github_username), settings.github_project_name],
+    pages_uri: 'https://%s.github.io/%s/' % [
+      std.asciiLower(settings.github_username),
+      settings.github_project_name,
+    ],
     username: settings.github_username,
   },
+  '#qa_runs_on': d.val(d.T.string, 'Operating system for `qa.yml` runs on GitHub runners.'),
   qa_runs_on: self.tests_run_on,
+  '#tests_run_on': d.val(d.T.string, 'Operating system for `tests.yml` on GitHub runners.'),
   tests_run_on: 'ubuntu-latest',
 
   // CITATION.cff
   citation: {
     'cff-version': '1.2.0',
-    'date-released': '2025-04-09',
+    'date-released': std.native('isodate')(),
     authors: utils.citationAuthors(settings.authors),
     message: 'If you use this software, please cite it as below.',
     title: settings.project_name,
@@ -133,16 +190,20 @@ local utils = import 'utils.libjsonnet';
   },
 
   // Git
+  '#gitattributes': d.val(d.T.array, 'Array of .gitattributes entries.'),
   gitattributes: [
     '* text=auto eol=lf',
     '*.lock binary',
     '/.yarn/**/*.cjs binary',
   ],
+  '#gitignore': d.val(d.T.array, 'Array of .gitignore entries.'),
   gitignore: self.shared_ignore,
 
-  // Python only
+  // // Python only
   local pyproject = import 'defaults/pyproject.libjsonnet',
+  '#supported_python_versions': d.val(d.T.array, 'Array of supported Python versions.'),
   supported_python_versions: ['3.%d' % i for i in std.range(10, 13)],
+  '#primary_module': d.val(d.T.string, 'Primary module name (Python package).'),
   primary_module: std.strReplace(self.project_name, '-', '_'),
   pyproject: pyproject {
     project+: {
@@ -233,7 +294,9 @@ local utils = import 'utils.libjsonnet';
     },
   },
 
+  '#rtd_apt_packages': d.val(d.T.array, "Packages to install from `apt` on ReadTheDocs' runner."),
   rtd_apt_packages: [],
+  '#docs_conf': d.obj('Sphinx documentation configuration.'),
   docs_conf: (import 'defaults/docs_conf.libjsonnet') + {
     config+: {
       html_theme_options+: {
@@ -267,7 +330,9 @@ local utils = import 'utils.libjsonnet';
   else {} },
 
   // Prettier
-  prettierignore: self.shared_ignore + ['*.1', '*.j2', '*.jsonnet', '*.lock', '*.libjsonnet', '/.yarn/**/*.cjs'],
+  '#prettierignore': d.val(d.T.array, 'Array of patterns to ignore for Prettier.'),
+  prettierignore: std.sort(self.shared_ignore +
+                           ['*.1', '*.j2', '*.jsonnet', '*.lock', '*.libjsonnet', '/.yarn/**/*.cjs']),
 
   // Yarn
   yarnrc: (import 'defaults/yarnrc.libjsonnet') + {
