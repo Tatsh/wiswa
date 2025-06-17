@@ -86,14 +86,13 @@ def post_process_steps(settings: Settings) -> None:
                                     encoding='utf-8')
     # tomlkit will strip empty sections.
     Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8')
-    subprocess_log_run(('poetry', 'lock'), check=True)
+    subprocess_log_run(('poetry', 'lock'))
     with_arg = ','.join(('docs' if settings['want_docs'] else '',
                          'tests' if settings['want_tests'] else '', 'dev')).lstrip(',').rstrip(',')
-    subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg != ',' else ())),
-                       check=True)
-    subprocess_log_run(('poetry', 'install', '--all-groups'), check=True)
+    subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg != ',' else ())))
+    subprocess_log_run(('poetry', 'install', '--all-groups'))
     subprocess_log_run(('yarn',))
-    subprocess_log_run(('yarn', 'format'))
+    subprocess_log_run(('yarn', 'format'), check=False)
     subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
 
 
