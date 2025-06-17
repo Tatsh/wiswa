@@ -54,12 +54,12 @@ local utils = import 'utils.libjsonnet';
           jinja2: '^3.1.6',
           jsonnet: '^0.21.0',
           keyring: '^25.6.0',
-          requests: '^2.32.3',
+          requests: '^2.32.4',
         },
         group+: {
           dev+: {
             dependencies+: {
-              'types-requests': '^2.32.0.20250328',
+              'types-requests': '^2.32.4.20250611',
             },
           },
         },
