@@ -87,7 +87,7 @@ jinja2 = "^3.1.6"
 jsonnet = "^0.21.0"
 keyring = "^25.6.0"
 python = ">=3.10,<3.14"
-requests = "^2.32.3"
+requests = "^2.32.4"
 typing-extensions = "^4.14.0"
 
 [tool.poetry.group.dev]
@@ -96,9 +96,9 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 commitizen = "^4.8.3"
 djlint = "^1.36.4"
-mypy = "^1.16.0"
-ruff = "^0.11.13"
-types-requests = "^2.32.0.20250328"
+mypy = "^1.16.1"
+ruff = "^0.12.0"
+types-requests = "^2.32.4.20250611"
 yapf = "^0.43.0"
 
 [tool.poetry.group.docs]
@@ -106,13 +106,13 @@ optional = true
 
 [tool.poetry.group.docs.dependencies]
 autodoc-pydantic = "^2.2.0"
-doc8 = "^1.1.2"
+doc8 = "^2.0.0"
 docutils = "^0.21.2"
 esbonio = "^0.16.5"
 numpydoc = "^1.8.0"
 restructuredtext-lint = "^1.4.0"
 sphinx-click = "^6.0.0"
-sphinx-datatables = "^0.2.1"
+sphinx-datatables = "^0.3.0"
 sphinx-hoverxref = "^1.4.2"
 sphinx-immaterial = "^0.13.5"
 
@@ -134,7 +134,7 @@ optional = true
 [tool.poetry.group.tests.dependencies]
 mock = "^5.2.0"
 pytest = "^8.4.0"
-pytest-cov = "^6.1.1"
+pytest-cov = "^6.2.1"
 pytest-mock = "^3.14.1"
 
 [tool.poetry.group.tests.dependencies.coveralls]
@@ -238,12 +238,7 @@ extend-select = [
   "YTT",
 ]
 ignore = [
-  "A005",
   "ANN401",
-  "ARG001",
-  "ARG002",
-  "ARG004",
-  "C901",
   "COM812",
   "CPY001",
   "D201",
@@ -251,25 +246,18 @@ ignore = [
   "D204",
   "D212",
   "DOC201",
-  "EM101",
   "N818",
-  "PLR0912",
-  "PLR0913",
-  "PLR0914",
-  "PLR0915",
-  "PLR0917",
-  "PLR1702",
-  "PLR6301",
   "S101",
   "S404",
   "S603",
   "TD002",
-  "TD003",
-  "TD004",
   "UP046",
   "UP047",
 ]
 preview = true
+
+[tool.ruff.lint.flake8-builtins]
+allowed-modules = ["typing", "types"]
 
 [tool.ruff.lint.flake8-quotes]
 inline-quotes = "single"
@@ -282,11 +270,20 @@ from-first = true
 required-imports = ["from __future__ import annotations"]
 section-order = ["future", "standard-library", "third-party", "local-folder"]
 
+[tool.ruff.lint.mccabe]
+max-complexity = 20
+
 [tool.ruff.lint.pep8-naming]
 extend-ignore-names = ["test_*"]
 
+[tool.ruff.lint.per-file-ignores]
+"main.py" = ["PLR0913"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
+
+[tool.ruff.lint.pylint]
+max-branches = 20
 
 [tool.yapf]
 align_closing_bracket_with_visual_indent = true
