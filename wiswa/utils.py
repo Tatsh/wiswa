@@ -196,7 +196,7 @@ def get_latest_yarn_version() -> str:  # pragma: no cover
 
 NATIVE_CALLBACKS = {
     'latestYarnVersion': ((), get_latest_yarn_version),
-    'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()),
+    'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
     'year': ((), lambda: datetime.now(tz=timezone.utc).year),
 }
 
