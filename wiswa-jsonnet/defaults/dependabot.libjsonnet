@@ -1,9 +1,11 @@
 local d = import 'doc-util/main.libsonnet';
 
 {
-  '#': d.pkg('dependabot'),
+  '#':: d.pkg('dependabot',
+              'https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuring-dependabot-version-updates#example-dependabotyml-file',
+              'Dependabot configuration for managing dependencies in a project.'),
   local interval = 'weekly',
-  '#updates': d.val(d.T.array, 'Update configuration.'),
+  '#updates':: d.val(d.T.array, 'Update configuration.'),
   updates: [
     {
       directory: '/',
@@ -27,6 +29,6 @@ local d = import 'doc-util/main.libsonnet';
       },
     },
   ],
-  '#version': d.val(d.T.number, 'Version of the Dependabot configuration.'),
+  '#version':: d.val(d.T.number, 'Version of the Dependabot configuration.'),
   version: 2,
 }

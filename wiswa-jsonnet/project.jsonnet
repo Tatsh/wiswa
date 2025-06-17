@@ -18,9 +18,9 @@ function(settings)
   } else {};
   {
     '.gitattributes': utils.manifestLines(settings.gitattributes),
-    '.gitignore': utils.manifestIgnore(settings.gitignore),
+    '.gitignore': utils.manifestLines(settings.gitignore),
     '.pre-commit-config.yaml': utils.manifestYaml(settings.pre_commit_config),
-    '.prettierignore': utils.manifestIgnore(settings.prettierignore),
+    '.prettierignore': utils.manifestLines(settings.prettierignore),
     '.vscode/extensions.json': std.manifestJson(settings.vscode.extensions),
     '.vscode/launch.json': std.manifestJson(settings.vscode.launch),
     '.vscode/settings.json': std.manifestJson(settings.vscode.settings),

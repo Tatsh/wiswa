@@ -8,20 +8,20 @@ local d = import 'doc-util/main.libsonnet';
   manifestToml(value)::
     std.manifestTomlEx(value, ''),
 
-  '#manifestLines': d.fn('Convert an array to a string with each element on a new line.',
-                         [d.arg('value', d.T.array)]),
+  '#manifestLines':: d.fn('Convert an array to a string with each element on a new line.',
+                          [d.arg('value', d.T.array)]),
   manifestLines(value)::
     std.join('\n', std.set(value)),
 
 
-  '#manifestYaml': d.fn(
+  '#manifestYaml':: d.fn(
     'Convert an object to a YAML form (indented in array and keys not quoted).',
     [d.arg('value', d.T.object)]
   ),
   manifestYaml(value)::
     std.manifestYamlDoc(value, true, false),
 
-  '#citationAuthors': d.fn(
+  '#citationAuthors':: d.fn(
     'Convert an array of authors to a format suitable for citation metadata.',
     [d.arg('authors', d.T.array)]
   ),
@@ -32,27 +32,27 @@ local d = import 'doc-util/main.libsonnet';
     } for x in authors],
 
 
-  '#gitHubGitSshUri': d.fn(
+  '#gitHubGitSshUri':: d.fn(
     'Generate a Git SSH URI for a GitHub repository.',
     [d.arg('github_username', d.T.string), d.arg('project_name', d.T.string)]
   ),
   gitHubGitSshUri(github_username, project_name)::
     'git@github.com:%s/%s.git' % [github_username, project_name],
 
-  '#readTheDocsUri': d.fn(
+  '#readTheDocsUri':: d.fn(
     'Generate a readthedocs.org URI for a project.',
     [d.arg('project_name', d.T.string)]
   ),
   readTheDocsUri(project_name):: 'https://%s.readthedocs.org' % project_name,
 
-  '#gitHubRepositoryUri': d.fn(
+  '#gitHubRepositoryUri':: d.fn(
     'Generate a GitHub repository URI.',
     [d.arg('github_username', d.T.string), d.arg('project_name', d.T.string)]
   ),
   gitHubRepositoryUri(github_username, project_name)::
     'https://github.com/%s/%s' % [github_username, project_name],
 
-  '#pyprojectAuthors': d.fn(
+  '#pyprojectAuthors':: d.fn(
     'Convert an array of authors to a format suitable for pyproject.toml.',
     [d.arg('authors', d.T.array)]
   ),
@@ -62,7 +62,7 @@ local d = import 'doc-util/main.libsonnet';
       email: x.email,
     } for x in authors],
 
-  '#gitLabCi': d.fn(
+  '#gitLabCi':: d.fn(
     'Generate a Gitlab CI configuration.',
     [d.arg('settings', d.T.object)]
   ),

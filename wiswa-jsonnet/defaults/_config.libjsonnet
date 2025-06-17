@@ -1,7 +1,9 @@
 local d = import 'doc-util/main.libsonnet';
 
 {
-  '#': d.pkg('_config'),
-  '#theme': d.val(d.T.string, 'Jekyll theme to use.'),
+  '#':: d.pkg('_config',
+              'https://jekyllrb.com/docs/configuration/options/',
+              'Jekyll configuration options.'),
+  '#theme':: d.val(d.T.string, 'Jekyll theme to use.'),
   theme: 'jekyll-theme-hacker',
 }

@@ -6,8 +6,8 @@ function(want_main, want_yapf) {
   dev: {
     commitizen: '^4.8.3',
     djlint: '^1.36.4',
-    mypy: '^1.16.0',
-    ruff: '^0.11.13',
+    mypy: '^1.16.1',
+    ruff: '^0.12.0',
   } + (if want_yapf then { yapf: '^0.43.0' } else {}),
   docs: {
     'autodoc-pydantic': '^2.2.0',
@@ -22,7 +22,7 @@ function(want_main, want_yapf) {
       { version: '^7.2.5', python: '<3.11' },
     ],
     'sphinx-click': '^6.0.0',
-    'sphinx-datatables': '^0.2.1',
+    'sphinx-datatables': '^0.3.0',
     'sphinx-hoverxref': '^1.4.2',
     'sphinx-immaterial': '^0.13.5',
   },
