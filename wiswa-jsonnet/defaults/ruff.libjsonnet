@@ -2,10 +2,7 @@
   'cache-dir': '~/.cache/ruff',
   'force-exclude': true,
   'line-length': 100,
-  'namespace-packages': [
-    'docs',
-    'tests',
-  ],
+  'namespace-packages': ['docs', 'tests'],
   'unsafe-fixes': true,
   lint: {
     'extend-select': [
@@ -71,12 +68,7 @@
       'YTT',
     ],
     ignore: [
-      'A005',
       'ANN401',
-      'ARG001',
-      'ARG002',
-      'ARG004',
-      'C901',
       'COM812',
       'CPY001',
       'D201',
@@ -84,25 +76,20 @@
       'D204',
       'D212',
       'DOC201',
-      'EM101',
       'N818',
-      'PLR0912',
-      'PLR0913',
-      'PLR0914',
-      'PLR0915',
-      'PLR0917',
-      'PLR1702',
-      'PLR6301',
       'S101',
       'S404',
       'S603',
       'TD002',
-      'TD003',
-      'TD004',
+      // Below can be removed if project supports 3.12+
       'UP046',
       'UP047',
     ],
     preview: true,
+    'flake8-builtins': {
+      'allowed-modules': ['typing', 'types'],
+      // 'strict-checking': true,
+    },
     'flake8-quotes': {
       'inline-quotes': 'single',
       'multiline-quotes': 'double',
@@ -114,13 +101,22 @@
       'required-imports': ['from __future__ import annotations'],
       'section-order': ['future', 'standard-library', 'third-party', 'local-folder'],
     },
+    mccabe: {
+      'max-complexity': 20,
+    },
     'pep8-naming': {
       'extend-ignore-names': [
         'test_*',
       ],
     },
+    'per-file-ignores': {
+      'main.py': ['PLR0913'],
+    },
     pydocstyle: {
       convention: 'numpy',
+    },
+    pylint: {
+      'max-branches': 20,
     },
   },
 }
