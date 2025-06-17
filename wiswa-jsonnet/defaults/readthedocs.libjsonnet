@@ -1,4 +1,4 @@
-function(apt_packages, os) {
+function(apt_packages, os, fail_on_warning = true) {
   build: {
     apt_packages: apt_packages,
     jobs: {
@@ -14,7 +14,7 @@ function(apt_packages, os) {
   },
   sphinx: {
     configuration: 'docs/conf.py',
-    fail_on_warning: true,
+    fail_on_warning: fail_on_warning,
   },
   version: 2,
 }
