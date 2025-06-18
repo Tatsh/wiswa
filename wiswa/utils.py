@@ -28,8 +28,9 @@ if TYPE_CHECKING:
     from .typing import Settings
 
 __all__ = ('copy_static_files', 'create_py_typed_files', 'download_yarn_plugins',
-           'evaluate_jsonnet_project', 'evaluate_merged_settings', 'get_latest_yarn_version',
-           'post_process_steps', 'setup_logging', 'write_templated_files')
+           'evaluate_jsonnet_file', 'evaluate_jsonnet_project', 'evaluate_merged_settings',
+           'get_latest_yarn_version', 'post_process_steps', 'setup_logging',
+           'write_templated_files')
 
 log = logging.getLogger(__name__)
 
@@ -201,21 +202,37 @@ NATIVE_CALLBACKS = {
 }
 
 
-def evaluate_jsonnet_project(lib_path: Path, jpathdir: list[str], merged_settings: str) -> None:
+def evaluate_jsonnet_file(jpathdir: list[str], file: Path, merged_settings: str) -> str:
+    """Evaluate a Jsonnet file with the given settings."""
+    return cast(
+        'str',
+        _jsonnet.evaluate_file(str(file),
+                               jpathdir=jpathdir,
+                               native_callbacks=NATIVE_CALLBACKS,
+                               tla_codes={'settings': merged_settings}))
+
+
+def evaluate_jsonnet_project(lib_path: Path,
+                             jpathdir: list[str],
+                             merged_settings: str,
+                             file: Path | None = None,
+                             output_dir: Path | None = None) -> None:
     """Evaluate ``project.jsonnet`` to output generated files."""
+    if output_dir:
+        output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = output_dir or Path()
+    filename: str
     for filename, content in json.loads(
-            _jsonnet.evaluate_file(str(lib_path / 'project.jsonnet'),
-                                   jpathdir=jpathdir,
-                                   native_callbacks=NATIVE_CALLBACKS,
-                                   tla_codes={'settings': merged_settings})).items():
-        output_file = Path(filename)
+            evaluate_jsonnet_file(jpathdir, file or (lib_path / 'project.jsonnet'),
+                                  merged_settings)).items():
+        output_file = output_dir / filename
         output_file.parent.mkdir(parents=True, exist_ok=True)
         output_file.write_text(f'{content.strip()}\n')
         log.debug('Wrote `%s`.', output_file)
 
 
 def evaluate_merged_settings(jpathdir: list[str], lib_path: Path,
-                             file: Path) -> tuple[str, Settings]:
+                             settings: str) -> tuple[str, Settings]:
     """Evaluate the merged settings using Jsonnet."""
     s = cast(
         'str',
@@ -225,7 +242,7 @@ def evaluate_merged_settings(jpathdir: list[str], lib_path: Path,
                                   native_callbacks=NATIVE_CALLBACKS,
                                   tla_codes={
                                       'defaults': (lib_path / 'defaults.libjsonnet').read_text(),
-                                      'settings': file.read_text()
+                                      'settings': settings
                                   }))
     return s, json.loads(s)
 

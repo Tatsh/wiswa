@@ -1,4 +1,7 @@
+local d = import 'doc-util/main.libsonnet';
 {
+  '#': d.pkg(name='defaults', url='', help='', filename=std.thisFile),
+  '#hooks':: 'pre-commit-hooks.',
   hooks: [
     {
       exclude: 'yarn-\\d+.*\\.cjs$',

@@ -1,8 +1,26 @@
+local d = import 'doc-util/main.libsonnet';
+
 {
+  '#': d.pkg(
+    name='pyproject',
+    url='https://peps.python.org/pep-0518/',
+    help='PEP 518 configuration for Python projects.',
+    filename=std.thisFile,
+  ),
+  '#project':: d.obj(
+    d.T.object,
+    'Project metadata, including name, version, description, authors, and license.',
+  ),
   project: import 'defaults/project.libjsonnet',
+  '#tool':: d.obj(
+    'Tool-specific configurations for various Python development tools.',
+  ),
   tool: {
+    '#commitizen':: d.obj('Configuration for Commitizen.'),
     commitizen: {
+      '#tag_format':: d.val(d.T.string, 'Format for version tags.'),
       tag_format: 'v$version',
+      '#version_files':: d.val(d.T.array, 'List of files to update with the new version.'),
       version_files: [
         '.wiswa.jsonnet',
         'CITATION.cff',
@@ -10,26 +28,58 @@
         'docs/index.rst',
         'package.json',
       ],
+      '#version_provider':: d.val(
+        d.T.string, 'Provider for versioning, such as "pep440" or "pep621".'
+      ),
       version_provider: 'pep621',
     },
+    '#coverage':: d.obj('Configuration for code coverage.'),
     coverage: import 'defaults/coverage.libjsonnet',
+    '#djlint':: d.obj('Configuration for Jinja2 template linter.', d.T.object),
     djlint: {
+      '#profile':: d.val(
+        d.T.string, 'Profile for Jinja2 linting, such as "jinja" or "django".'
+      ),
       profile: 'jinja',
+      '#max_line_length':: d.val(
+        d.T.number, 'Maximum line length for Jinja2 templates.'
+      ),
       max_line_length: 100,
+      '#no_line_after_yaml':: d.val(
+        d.T.boolean, 'Whether to enforce no trailing newline in templates.'
+      ),
       no_line_after_yaml: true,
+      '#preserve_blank_lines':: d.val(
+        d.T.boolean, 'Whether to preserve blank lines in templates.'
+      ),
       preserve_blank_lines: true,
+      '#preserve_leading_space':: d.val(
+        d.T.boolean, 'Whether to preserve leading spaces in templates.'
+      ),
       preserve_leading_space: true,
+      '#use_gitignore':: d.val(
+        d.T.boolean, 'Whether to use .gitignore patterns for ignoring files.'
+      ),
       use_gitignore: true,
     },
+    '#doc8':: d.obj('Configuration for doc8, a documentation linter.'),
     doc8: {
+      '#max-line-length':: d.val(d.T.number, 'Maximum line length for documentation files.'),
       'max-line-length': 100,
     },
+    '#mypy':: d.obj('Configuration for mypy.'),
     mypy: import 'defaults/mypy.libjsonnet',
+    '#poetry':: d.obj('Configuration for Poetry.'),
     poetry: import 'defaults/poetry.libjsonnet',
+    '#pyright':: d.obj('Configuration for Pyright.'),
     pyright: import 'defaults/pyright.libjsonnet',
+    '#pytest':: d.obj('Configuration for pytest.'),
     pytest: import 'defaults/pytest.libjsonnet',
+    '#ruff':: d.obj('Configuration for Ruff.'),
     ruff: import 'defaults/ruff.libjsonnet',
+    '#yapf':: d.obj('Configuration for YAPF.'),
     yapf: import 'defaults/yapf.libjsonnet',
+    '#yapfignore':: d.obj('Configuration for YAPF ignore patterns.'),
     yapfignore: import 'defaults/yapfignore.libjsonnet',
   },
   'build-system': {

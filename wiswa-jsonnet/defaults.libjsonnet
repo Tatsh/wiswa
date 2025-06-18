@@ -65,12 +65,15 @@ local utils = import 'utils.libjsonnet';
     'tests/test_main.py',
     'tests/test_utils.py',
   ],
+  '#codeowners':: d.val(d.T.object, 'Code owners for the project. Dictionary of string to string. The value is usually the GitHub or GitLab username but this is host-dependent.'),
   codeowners: {
     '*': '@%s' % settings.github_username,
   },
   '#security_policy_supported_versions':: d.val(d.T.object, 'Supported versions for the security policy (table in`SECURITY.md`).'),
   security_policy_supported_versions: { '0.0.x': ':white_check_mark:' },
+  '#using_django':: d.val(d.T.boolean, 'If the project uses Django.'),
   using_django: 'django' in self.pyproject.tool.poetry.dependencies,
+  '#using_drf':: d.val(d.T.boolean, 'If the project uses Django REST Framework.'),
   using_drf: 'djangorestframework' in self.pyproject.tool.poetry.dependencies,
   '#using_github':: d.val(d.T.boolean, 'If the project is hosted on GitHub.'),
   using_github: std.member(self.repository_uri, 'github.com'),
@@ -96,6 +99,7 @@ local utils = import 'utils.libjsonnet';
   want_tests: !self.stubs_only,
   '#want_yapf':: d.val(d.T.boolean, 'If the project will use YAPF for formatting.'),
   want_yapf: true,
+  '#year': d.val(d.T.string, 'Copyright year of the project.'),
   year: std.native('year')(),
 
   // Detailed settings
@@ -115,6 +119,7 @@ local utils = import 'utils.libjsonnet';
   tab_size: 2,
 
   // Shared
+  '#authors':: d.val(d.T.array, 'Array of authors. See [What is a CITATION.cff file?](https://citation-file-format.github.io/#/what-is-a-citation-cff-file) for more information on this field.'),
   authors: [
     {
       'family-names': 'Not',
@@ -131,31 +136,39 @@ local utils = import 'utils.libjsonnet';
   repository_name: self.project_name,
   '#shared_ignore':: d.val(d.T.array, 'Array of shared ignore patterns.'),
   shared_ignore: import 'defaults/shared-ignore.libjsonnet',
+  '#pre_commit_config':: d.obj('Pre-commit configuration.'),
   pre_commit_config: {
+    '#default_install_hook_types':: d.val(d.T.array, 'Array of default pre-commit hook types to install.'),
     default_install_hook_types: [
       'pre-commit',
       'pre-push',
       'post-checkout',
       'post-merge',
     ],
+    '#repos':: d.val(d.T.array, 'Array of pre-commit repositories.'),
     repos: [
       import 'defaults/pre-commit-config/main.libjsonnet',
       import 'defaults/pre-commit-config/poetry.libjsonnet',
       import 'defaults/pre-commit-config/yapf.libjsonnet',
     ] + github + cff + djlint + local_hooks,
   },
+  '#vscode':: d.obj('Visual Studio Code configuration.'),
   vscode: {
+    '#extensions':: d.val(d.T.array, 'Array of VS Code extensions.'),
     extensions: import 'defaults/vscode/extensions.libjsonnet',
+    '#launch':: d.obj('VS Code launch configuration.'),
     launch: import 'defaults/vscode/launch.libjsonnet',
-    settings: vscode_settings(settings.line_width,
-                              settings.tab_size,
-                              settings.python_tab_size,
-                              settings.rst_tab_size,
-                              settings.shell_tab_size,
-                              settings.python_package_index_depth),
+    '#settings':: d.obj('VS Code settings.'),
+    settings: vscode_settings.get(settings.line_width,
+                                  settings.tab_size,
+                                  settings.python_tab_size,
+                                  settings.rst_tab_size,
+                                  settings.shell_tab_size,
+                                  settings.python_package_index_depth),
   },
   '#rtd_os':: d.val(d.T.string, 'Operating system for ReadTheDocs.'),
   rtd_os: 'ubuntu-22.04',
+  '#readthedocs':: d.obj('ReadTheDocs configuration.'),
   readthedocs: rtd(settings.rtd_apt_packages, settings.rtd_os),
 
   // GitHub
@@ -163,15 +176,19 @@ local utils = import 'utils.libjsonnet';
   github: {
     '#dependabot':: d.obj('Dependabot configuration.'),
     dependabot: import 'defaults/dependabot.libjsonnet',
+    '#funding':: d.obj('Funding configuration.'),
     funding: {
+      '#github':: d.val(d.T.string, 'GitHub username.'),
       github: settings.github_username,
     },
     '#pages_config':: d.obj('GitHub Pages configuration.'),
     pages_config: import 'defaults/_config.libjsonnet',
+    '#pages_uri':: d.val(d.T.string, 'GitHub Pages URI.'),
     pages_uri: 'https://%s.github.io/%s/' % [
       std.asciiLower(settings.github_username),
       settings.github_project_name,
     ],
+    '#username':: d.val(d.T.string, 'GitHub username.'),
     username: settings.github_username,
   },
   '#qa_runs_on':: d.val(d.T.string, 'Operating system for `qa.yml` runs on GitHub runners.'),
@@ -181,11 +198,17 @@ local utils = import 'utils.libjsonnet';
 
   // CITATION.cff
   citation: {
+    '#cff-version':: d.val(d.T.string, 'CITATION.cff version.'),
     'cff-version': '1.2.0',
+    '#date-released':: d.val(d.T.string, 'Date when the software was released.'),
     'date-released': std.native('isodate')(),
+    '#authors':: d.val(d.T.array, 'Array of authors. See [What is a CITATION.cff file?](https://citation-file-format.github.io/#/what-is-a-citation-cff-file) for more information on this field.'),
     authors: utils.citationAuthors(settings.authors),
+    '#message':: d.val(d.T.string, 'Message to display when citing the software.'),
     message: 'If you use this software, please cite it as below.',
+    '#title':: d.val(d.T.string, 'Title of the software.'),
     title: settings.project_name,
+    '#version':: d.val(d.T.string, 'Version of the software.'),
     version: settings.version,
   },
 
@@ -205,6 +228,7 @@ local utils = import 'utils.libjsonnet';
   supported_python_versions: ['3.%d' % i for i in std.range(10, 13)],
   '#primary_module':: d.val(d.T.string, 'Primary module name (Python package).'),
   primary_module: std.strReplace(self.project_name, '-', '_'),
+  '#pyproject':: d.obj('Python project configuration (`pyproject.toml`).'),
   pyproject: pyproject {
     project+: {
       authors: utils.pyprojectAuthors(settings.authors),
@@ -307,10 +331,13 @@ local utils = import 'utils.libjsonnet';
       },
     },
   },
+  '#tests_pyproject':: d.obj('Ruff configuration for test files (`pyproject.toml` inside `tests`).'),
   tests_pyproject: import 'defaults/pyproject-tests.libjsonnet',
 
   // package.json only
-  package_json: package(self.line_width) + {
+  '#package_json':: d.obj('Configuration for `package.json`.'),
+  package_json: package.get(self.line_width) + {
+    '#contributors':: d.val(d.T.string, 'Contributors.'),
     contributors: ['%s <%s>' % [x.name, x.email] for x in settings.authors],
     homepage: settings.homepage,
     keywords: settings.keywords,
@@ -335,6 +362,7 @@ local utils = import 'utils.libjsonnet';
                            ['*.1', '*.j2', '*.jsonnet', '*.lock', '*.libjsonnet', '/.yarn/**/*.cjs']),
 
   // Yarn
+  '#yarnrc':: d.obj('Yarn configuration.'),
   yarnrc: (import 'defaults/yarnrc.libjsonnet') + {
     yarnPath: '.yarn/releases/yarn-%s.cjs' % settings.yarn_version,
   },
