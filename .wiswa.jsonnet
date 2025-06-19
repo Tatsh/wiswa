@@ -31,10 +31,10 @@ local utils = import 'utils.libjsonnet';
 
   // Python only
   pyproject+: {
+    project+: {
+      scripts+: { '_wiswa-gen-docs': 'wiswa.main:gen_docs_main' },
+    },
     tool+: {
-      project+: {
-        scripts+: { '_wiswa-gen-docs': 'wiswa.main:gen_docs_main' },
-      },
       poetry+: {
         dependencies+: {
           jinja2: '^3.1.6',
