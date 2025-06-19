@@ -1,6 +1,6 @@
 local d = import 'doc-util/main.libsonnet';
 {
-  '#': d.pkg(name='yarnrc', url='', help='', filename=std.thisFile),
+  '#':: d.pkg(name='yarnrc', url='', help='', filename=std.thisFile),
   '#enableTelemetry':: d.val(d.T.bool, 'Enable/disable telemetry collection.', false),
   enableTelemetry: false,
   '#nodeLinker':: d.val(d.T.string, 'Node linker to use.', 'node-modules'),

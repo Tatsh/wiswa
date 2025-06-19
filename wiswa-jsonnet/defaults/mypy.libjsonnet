@@ -1,7 +1,7 @@
 local d = import 'doc-util/main.libsonnet';
 
 {
-  '#': d.pkg(
+  '#':: d.pkg(
     name='mypy',
     url='https://mypy.readthedocs.io/',
     help='Configuration for the Mypy static type checker.',

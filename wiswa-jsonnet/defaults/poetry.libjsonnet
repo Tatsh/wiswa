@@ -1,7 +1,7 @@
 local d = import 'doc-util/main.libsonnet';
 
 {
-  '#': d.pkg(
+  '#':: d.pkg(
     name='tool-poetry',
     url='https://python-poetry.org/',
     help='Configuration for Poetry, a Python dependency management tool.',
