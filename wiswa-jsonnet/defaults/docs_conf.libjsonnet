@@ -7,8 +7,8 @@ local d = import 'doc-util/main.libsonnet';
     datatables_class: 'sphinx-datatable',
     '#datatables_options':: d.obj('Options for DataTables.'),
     datatables_options: {
-      '#paging':: d.val(d.T.number, 'Pagination enabled (0) or disabled (1).'),
-      paging: 0,
+      '#paging':: d.val(d.T.boolean, 'If pagination should be enabled.'),
+      paging: false,
     },
     '#datatables_version':: d.val(d.T.string, 'Version of DataTables to use.'),
     datatables_version: '1.13.4',

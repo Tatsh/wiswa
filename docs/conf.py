@@ -29,7 +29,7 @@ extensions = [
 ]
 extensions += ['sphinx_click']
 datatables_class = 'sphinx-datatable'
-datatables_options = {'paging': 0}
+datatables_options = {'paging': False}
 datatables_version = '1.13.4'
 html_theme = 'sphinx_immaterial'
 html_theme_options = {
