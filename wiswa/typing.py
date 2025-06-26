@@ -1,10 +1,12 @@
 """Types."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, Literal, TypedDict
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
+
+ProjectType = Literal['c', 'c++', 'generic', 'lua', 'python', 'typescript', 'xcode']
 
 
 class VSCodeLaunchConfiguration(TypedDict):
@@ -106,6 +108,8 @@ class Settings(TypedDict):
     """A list of keywords describing the project."""
     primary_module: str
     """The primary module."""
+    project_type: ProjectType
+    """The type of the project."""
     pyproject: PyProject
     """Parsed ``pyproject.toml``."""
     repository_uri: str

@@ -27,9 +27,11 @@ def test_main_basic_invocation(args: list[str], mocker: MockerFixture, tmp_path:
     mocker.patch('wiswa.main.setup_logging')
     mocker.patch('wiswa.main.evaluate_merged_settings',
                  return_value=({
+                     'project_type': 'python',
                      'stubs_only': False,
                      'yarn_version': '1.0.0'
                  }, {
+                     'project_type': 'python',
                      'stubs_only': False,
                      'yarn_version': '1.0.0'
                  }))
@@ -81,9 +83,11 @@ def test_main_skip_github(
     mocker.patch('wiswa.main.setup_logging')
     mocker.patch('wiswa.main.evaluate_merged_settings',
                  return_value=({
+                     'project_type': 'python',
                      'stubs_only': False,
                      'yarn_version': '1.0.0'
                  }, {
+                     'project_type': 'python',
                      'stubs_only': False,
                      'yarn_version': '1.0.0'
                  }))
@@ -136,9 +140,11 @@ def test_main_skip_flags(skip_flag: str, func_name: str, mocker: MockerFixture,
     mocker.patch('wiswa.main.setup_logging')
     mocker.patch('wiswa.main.evaluate_merged_settings',
                  return_value=({
+                     'project_type': 'python',
                      'stubs_only': False,
                      'yarn_version': '1.0.0'
                  }, {
+                     'project_type': 'python',
                      'stubs_only': False,
                      'yarn_version': '1.0.0'
                  }))
@@ -184,9 +190,11 @@ def test_main_stubs_only_skips_create_py_typed_files(mocker: MockerFixture, tmp_
     mocker.patch('wiswa.main.setup_logging')
     mocker.patch('wiswa.main.evaluate_merged_settings',
                  return_value=({
+                     'project_type': 'python',
                      'stubs_only': True,
                      'yarn_version': '1.0.0'
                  }, {
+                     'project_type': 'python',
                      'stubs_only': True,
                      'yarn_version': '1.0.0'
                  }))
@@ -229,9 +237,11 @@ def test_main_jpath_option_passed(mocker: MockerFixture, tmp_path: Path) -> None
     eval_merged = mocker.patch(
         'wiswa.main.evaluate_merged_settings',
         return_value=({
+            'project_type': 'python',
             'stubs_only': False,
             'yarn_version': '1.0.0'
         }, {
+            'project_type': 'python',
             'stubs_only': False,
             'yarn_version': '1.0.0'
         }),

@@ -14,6 +14,8 @@ local utils = import 'utils.libjsonnet';
   local rtd = import 'defaults/readthedocs.libjsonnet',
   local settings = self,
 
+  '#project_type':: d.val(d.T.string, 'Project type. Valid values: python, typescript, xcode, c, c++, generic.'),
+  project_type: 'python',
   '#yarn_version':: d.val(d.T.string, 'Yarn version to use.'),
   yarn_version: std.native('latestYarnVersion')(),
   '#license':: d.val(d.T.string, 'License.'),
@@ -154,6 +156,8 @@ local utils = import 'utils.libjsonnet';
   },
   '#vscode':: d.obj('Visual Studio Code configuration.'),
   vscode: {
+    '#c_cpp':: d.obj('C/C++ configuration for Visual Studio Code.'),
+    c_cpp: import 'defaults/vscode/c_cpp_properties.libjsonnet',
     '#extensions':: d.val(d.T.array, 'Array of VS Code extensions.'),
     extensions: import 'defaults/vscode/extensions.libjsonnet',
     '#launch':: d.obj('VS Code launch configuration.'),
@@ -195,6 +199,17 @@ local utils = import 'utils.libjsonnet';
   qa_runs_on: self.tests_run_on,
   '#tests_run_on':: d.val(d.T.string, 'Operating system for `tests.yml` on GitHub runners.'),
   tests_run_on: 'ubuntu-latest',
+
+  // .cz.json
+  '#cz':: d.obj('Commitizen configuration.'),
+  cz: {
+    '#tag_format':: d.val(d.T.string, 'Tag format for Commitizen.'),
+    tag_format: 'v$version',
+    '#version_files':: d.val(d.T.array, 'Array of files to update with the new version.'),
+    version_files+: [
+      'man/name.1',
+    ],
+  },
 
   // CITATION.cff
   citation: {

@@ -127,7 +127,7 @@ def test_evaluate_merged_settings_reads_and_merges(mocker: MockerFixture, tmp_pa
     file = tmp_path / 'settings.jsonnet'
     defaults.write_text('{}')
     file.write_text('{}')
-    s, d = utils.evaluate_merged_settings([], lib_path, file)
+    s, d = utils.evaluate_merged_settings([], lib_path, '{}')
     assert s == '{"foo": "bar"}'
     assert dict(d) == {'foo': 'bar'}
 
@@ -150,6 +150,7 @@ def test_download_yarn_writes_file(mocker: MockerFixture, tmp_path: Path) -> Non
 def test_post_process_steps_removes_tests_when_want_tests_false(mocker: MockerFixture,
                                                                 tmp_path: Path) -> None:
     settings = {
+        'project_type': 'python',
         'want_tests': False,
         'want_docs': True,
         'want_codeql': True,
@@ -205,6 +206,7 @@ def test_post_process_steps_removes_tests_when_want_tests_false(mocker: MockerFi
 def test_post_process_steps_removes_docs_when_want_docs_false(mocker: MockerFixture,
                                                               tmp_path: Path) -> None:
     settings = {
+        'project_type': 'python',
         'want_tests': True,
         'want_docs': False,
         'want_codeql': True,
@@ -255,6 +257,7 @@ def test_post_process_steps_removes_docs_when_want_docs_false(mocker: MockerFixt
 def test_post_process_steps_removes_codeql_when_want_codeql_false(mocker: MockerFixture,
                                                                   tmp_path: Path) -> None:
     settings = {
+        'project_type': 'python',
         'want_tests': True,
         'want_docs': True,
         'want_codeql': False,
@@ -303,6 +306,7 @@ def test_post_process_steps_removes_codeql_when_want_codeql_false(mocker: Mocker
 def test_post_process_steps_want_man_adds_version_files(mocker: MockerFixture, tmp_path: Path,
                                                         man_exists: bool) -> None:  # noqa: FBT001
     settings = {
+        'project_type': 'python',
         'want_tests': True,
         'want_docs': True,
         'want_codeql': True,
@@ -334,6 +338,7 @@ def test_post_process_steps_want_man_adds_version_files(mocker: MockerFixture, t
     # Patch tomlkit.loads to return a mock with unwrap returning a dict with version_files
     version_files = ['foo/__init__.py']
     pyproject_dict = {
+        'project_type': 'python',
         'tool': {
             'poetry': {
                 'group': {
@@ -373,6 +378,7 @@ def test_post_process_steps_want_man_adds_version_files(mocker: MockerFixture, t
 def test_post_process_steps_removes_yapf_when_want_yapf_false(mocker: MockerFixture,
                                                               tmp_path: Path) -> None:
     settings = {
+        'project_type': 'python',
         'want_tests': True,
         'want_docs': True,
         'want_codeql': True,
@@ -424,6 +430,7 @@ def test_post_process_steps_removes_yapf_when_want_yapf_false(mocker: MockerFixt
 
 def test_write_templated_files_writes_test_files(mocker: MockerFixture, tmp_path: Path) -> None:
     settings = {
+        'project_type': 'python',
         'want_tests': True,
         'want_main': True,
         'want_docs': False,
@@ -449,6 +456,7 @@ def test_write_templated_files_writes_test_files(mocker: MockerFixture, tmp_path
 
 def test_write_templated_files_writes_docs_files(mocker: MockerFixture, tmp_path: Path) -> None:
     settings = {
+        'project_type': 'python',
         'want_tests': False,
         'want_main': False,
         'want_docs': True,
@@ -656,6 +664,7 @@ def test_setup_github_project_adds_protect_default_branch_ruleset(mocker: Mocker
 def test_post_process_steps_removes_tests_and_vscode_launch_when_want_tests_false_and_vscode_launch(
         mocker: MockerFixture, tmp_path: Path) -> None:
     settings = {
+        'project_type': 'python',
         'want_tests': False,
         'want_docs': True,
         'want_codeql': True,
@@ -749,6 +758,7 @@ def test_copy_static_files_want_main_false(mocker: MockerFixture, tmp_path: Path
 def test_write_templated_files_skips_when_file_exists(mocker: MockerFixture,
                                                       tmp_path: Path) -> None:
     settings = {
+        'project_type': 'python',
         'want_tests': True,
         'want_main': False,
         'want_docs': False,
@@ -773,6 +783,7 @@ def test_write_templated_files_skips_when_file_exists(mocker: MockerFixture,
 def test_setup_github_project_does_not_add_protect_default_branch_if_exists(
         mocker: MockerFixture) -> None:
     settings = {
+        'project_type': 'python',
         'using_github': True,
         'repository_uri': 'https://github.com/owner/project',
         'description': 'desc',

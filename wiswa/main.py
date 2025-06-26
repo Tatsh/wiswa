@@ -63,7 +63,7 @@ def main(file: Path,
         download_yarn(loaded['yarn_version'])
         download_yarn_plugins()
         copy_static_files(loaded, module_path)
-        if not loaded['stubs_only']:
+        if loaded['project_type'] == 'python' and not loaded['stubs_only']:
             create_py_typed_files(loaded)
         post_process_steps(loaded)
         if not skip_github:

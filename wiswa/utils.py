@@ -1,7 +1,7 @@
 """Utilities."""
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from datetime import datetime, timezone
 from functools import cache
 from http import HTTPStatus
@@ -25,7 +25,7 @@ from .constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
 from .extensions import ToPythonExtension
 
 if TYPE_CHECKING:
-    from .typing import Settings
+    from .typing import ProjectType, Settings
 
 __all__ = ('copy_static_files', 'create_py_typed_files', 'download_yarn_plugins',
            'evaluate_jsonnet_file', 'evaluate_jsonnet_project', 'evaluate_merged_settings',
@@ -42,8 +42,7 @@ def subprocess_log_run(*args: Any, **kwargs: Any) -> sp.CompletedProcess[Any]:
     return sp.run(*args, check=kwargs.pop('check', True), **kwargs)
 
 
-def post_process_steps(settings: Settings) -> None:
-    """Run post-processing steps."""
+def post_process_steps_python(settings: Settings) -> None:
     if not settings['want_tests']:
         rmtree('tests', ignore_errors=True)
         Path('.github/workflows/tests.yml').unlink(missing_ok=True)
@@ -52,7 +51,6 @@ def post_process_steps(settings: Settings) -> None:
                     and settings['vscode']['launch']['configurations'][0]['name'] == 'Run tests')):
             Path('.vscode/launch.json').unlink(missing_ok=True)
     pyproject_content = tomlkit.loads(Path('pyproject.toml').read_text(encoding='utf-8')).unwrap()
-    package_json_content = json.loads(Path('package.json').read_text(encoding='utf-8'))
     if not settings['want_docs']:
         rmtree('docs', ignore_errors=True)
         Path('.readthedocs.yaml').unlink(missing_ok=True)
@@ -75,6 +73,7 @@ def post_process_steps(settings: Settings) -> None:
         del pyproject_content['tool']['poetry']['group']['tests']
         del pyproject_content['tool']['pytest']
         rmtree('tests', ignore_errors=True)
+    package_json_content = json.loads(Path('package.json').read_text(encoding='utf-8'))
     if not settings['want_yapf']:
         del pyproject_content['tool']['yapf']
         del pyproject_content['tool']['yapfignore']
@@ -92,9 +91,23 @@ def post_process_steps(settings: Settings) -> None:
                          'tests' if settings['want_tests'] else '', 'dev')).lstrip(',').rstrip(',')
     subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg != ',' else ())))
     subprocess_log_run(('poetry', 'install', '--all-groups'))
+    subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
+
+
+def post_process_steps(settings: Settings) -> None:
+    """Run post-processing steps."""
+    match settings['project_type']:
+        case 'python':
+            post_process_steps_python(settings)
+        case _:
+            log.warning('No post-processing steps for project type `%s`.', settings['project_type'])
+    package_json = Path('package.json')
+    package_json.write_text(json.dumps(json.loads(package_json.read_text(encoding='utf-8')),
+                                       indent=2,
+                                       sort_keys=True),
+                            encoding='utf-8')
     subprocess_log_run(('yarn',))
     subprocess_log_run(('yarn', 'format'), check=False)
-    subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
 
 
 def create_py_typed_files(settings: Settings) -> None:
@@ -111,7 +124,7 @@ def non_empty_file_exists(output_file: Path) -> bool:
     return output_file.exists() and len(output_file.read_text().strip()) != 0
 
 
-def copy_static_files(settings: Settings, module_path: Path) -> None:
+def copy_static_files_python(settings: Settings, module_path: Path) -> None:
     """Copy static files to the current directory."""
     def copy_file(filename: str) -> None:
         static_path = module_path / 'static' / filename
@@ -131,6 +144,17 @@ def copy_static_files(settings: Settings, module_path: Path) -> None:
         copy_file('main.py')
 
 
+def copy_static_files(settings: Settings,
+                      module_path: Path,
+                      project_type: ProjectType = 'python') -> None:
+    """Copy static files to the current directory."""
+    match project_type:
+        case 'python':
+            copy_static_files_python(settings, module_path)
+        case _:
+            log.warning('No static files to copy for project type `%s`.', project_type)
+
+
 def download_yarn_plugins() -> None:
     """Download Yarn plugins."""
     r = requests.get(PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI, timeout=15)
@@ -141,8 +165,9 @@ def download_yarn_plugins() -> None:
                                                                          encoding='utf-8')
 
 
-def write_templated_files(module_path: Path, settings: Settings) -> None:
-    """Write templated files."""
+def _template_env(
+    module_path: Path, settings: Settings
+) -> tuple[jinja2.Environment, Path, Callable[[Path], jinja2.Template], Callable[..., None]]:
     env = jinja2.Environment(autoescape=jinja2.select_autoescape(),
                              extensions=(ToPythonExtension,),
                              loader=jinja2.PackageLoader(__package__),
@@ -167,6 +192,40 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
         output_file.write_text(f'{content.strip()}\n')
         log.debug('Wrote `%s`.', output_file)
 
+    return env, templates_dir, resolve_template, write_file
+
+
+def write_templated_files_c_cpp(settings: Settings, templates_dir: Path,
+                                resolve_template: Callable[[Path], jinja2.Template],
+                                write_file: Callable[..., object]) -> None:
+    write_file(resolve_template(templates_dir / 'CMakeLists.txt.j2'), 'CMakeLists.txt')
+    write_file(resolve_template(templates_dir / 'src/CMakeLists.txt.j2'), 'src/CMakeLists.txt')
+    if settings['want_docs']:
+        write_file(resolve_template(templates_dir / 'Doxyfile.in.j2'), 'Doxyfile.in')
+
+
+def write_templated_files_cpp(templates_dir: Path, resolve_template: Callable[[Path],
+                                                                              jinja2.Template],
+                              write_file: Callable[..., object]) -> None:
+    write_file(resolve_template(templates_dir / 'src/main.cpp.j2'), 'src/main.cpp')
+
+
+def write_templated_files_c(templates_dir: Path, resolve_template: Callable[[Path],
+                                                                            jinja2.Template],
+                            write_file: Callable[..., object]) -> None:
+    write_file(resolve_template(templates_dir / 'src/main.c.j2'), 'src/main.c')
+
+
+def write_template_files_lua(templates_dir: Path, resolve_template: Callable[[Path],
+                                                                             jinja2.Template],
+                             write_file: Callable[..., object]) -> None:
+    write_file(resolve_template(templates_dir / '.busted.j2'), '.busted')
+    write_file(resolve_template(templates_dir / '.luacov.j2'), '.luacov')
+
+
+def write_templated_files_python(settings: Settings, templates_dir: Path,
+                                 resolve_template: Callable[[Path], jinja2.Template],
+                                 write_file: Callable[..., object]) -> None:
     if settings['want_tests']:
         write_file(resolve_template(templates_dir / 'tests/conftest.py.j2'), 'tests/conftest.py')
         write_file(resolve_template(templates_dir / 'tests/test_utils.py.j2'),
@@ -185,6 +244,35 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
         write_file(resolve_template(file_path),
                    file_path.relative_to(templates_dir).with_suffix(''),
                    overwrite=True)
+
+
+def write_templated_files_typescript(templates_dir: Path,
+                                     resolve_template: Callable[[Path], jinja2.Template],
+                                     write_file: Callable[..., object]) -> None:
+    write_file(resolve_template(templates_dir / 'src/index.ts.j2'), 'src/index.ts')
+
+
+def write_templated_files(module_path: Path, settings: Settings) -> None:
+    """Write templated files."""
+    _, templates_dir, resolve_template, write_file = _template_env(module_path, settings)
+    write_file(resolve_template(templates_dir / '.github/copilot-instructions.md.j2'),
+               '.github/copilot-instructions.md')
+    match settings['project_type']:
+        case 'python':
+            write_templated_files_python(settings, templates_dir, resolve_template, write_file)
+        case 'c++':
+            write_templated_files_c_cpp(settings, templates_dir, resolve_template, write_file)
+            write_templated_files_cpp(templates_dir, resolve_template, write_file)
+        case 'c':
+            write_templated_files_c_cpp(settings, templates_dir, resolve_template, write_file)
+            write_templated_files_c(templates_dir, resolve_template, write_file)
+        case 'lua':
+            write_template_files_lua(templates_dir, resolve_template, write_file)
+        case 'typescript':
+            write_templated_files_typescript(templates_dir, resolve_template, write_file)
+        case _:
+            log.warning('No templated files to write for project type `%s`.',
+                        settings['project_type'])
 
 
 @cache
