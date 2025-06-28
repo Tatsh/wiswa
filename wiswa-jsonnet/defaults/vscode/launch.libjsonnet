@@ -1,21 +1,23 @@
 {
-  configurations: [
-    {
-      args: ['-x'],
-      autoReload: {
-        enable: true,
+  get(settings):: {
+    configurations: if settings.project_type == 'python' then [
+      {
+        args: ['-x'],
+        autoReload: {
+          enable: true,
+        },
+        console: 'integratedTerminal',
+        env: {
+          _PYTEST_RAISE: '1',
+        },
+        justMyCode: false,
+        module: 'pytest',
+        name: 'Run tests',
+        request: 'launch',
+        type: 'debugpy',
       },
-      console: 'integratedTerminal',
-      env: {
-        _PYTEST_RAISE: '1',
-      },
-      justMyCode: false,
-      module: 'pytest',
-      name: 'Run tests',
-      request: 'launch',
-      type: 'debugpy',
-    },
-  ],
-  inputs: [],
-  version: '0.2.0',
+    ] else [],
+    inputs: [],
+    version: '0.2.0',
+  },
 }

@@ -1,12 +1,23 @@
+local d = import 'doc-util/main.libsonnet';
+
 {
-  configurePresets: [
-    {
-      environment: {
-        VCPKG_ROOT: '/home/tatsh/dev/vcpkg',
+  '#':: d.pkg(name='cmake-user-presets',
+              url='https://cmake.org/cmake/help/latest/manual/cmake-user-presets.7.html',
+              help='CMake user presets',
+              filename=std.thisFile),
+  '#get':: d.fn('Get CMake user presets.', [
+    d.arg('vcpkg_root', d.T.string, '/home/tatsh/dev/vcpkg'),
+  ]),
+  get(vcpkg_root='/home/tatsh/dev/vcpkg'):: {
+    configurePresets: [
+      {
+        environment: {
+          VCPKG_ROOT: '/home/tatsh/dev/vcpkg',
+        },
+        inherits: 'vcpkg',
+        name: 'default',
       },
-      inherits: 'vcpkg',
-      name: 'default',
-    },
-  ],
-  version: 2,
+    ],
+    version: 2,
+  },
 }

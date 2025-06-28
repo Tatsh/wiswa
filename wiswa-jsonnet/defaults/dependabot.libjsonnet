@@ -5,30 +5,30 @@ local d = import 'doc-util/main.libsonnet';
               'https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuring-dependabot-version-updates#example-dependabotyml-file',
               'Dependabot configuration for managing dependencies in a project.'),
   local interval = 'weekly',
-  '#updates':: d.val(d.T.array, 'Update configuration.'),
-  updates: [
-    {
-      directory: '/',
-      'package-ecosystem': 'npm',
-      schedule: {
-        interval: interval,
-      },
+  local python_settings = [{
+    directory: '/',
+    'package-ecosystem': 'pip',
+    schedule: {
+      interval: interval,
     },
-    {
-      directory: '/',
-      'package-ecosystem': 'pip',
-      schedule: {
-        interval: interval,
+  }],
+  updates(settings):: {
+    updates: [
+      {
+        directory: '/',
+        'package-ecosystem': 'npm',
+        schedule: {
+          interval: interval,
+        },
       },
-    },
-    {
-      directory: '/',
-      'package-ecosystem': 'github-actions',
-      schedule: {
-        interval: interval,
+      {
+        directory: '/',
+        'package-ecosystem': 'github-actions',
+        schedule: {
+          interval: interval,
+        },
       },
-    },
-  ],
-  '#version':: d.val(d.T.number, 'Version of the Dependabot configuration.'),
-  version: 2,
+    ] + if settings.project_type == 'python' then python_settings else [],
+    version: 2,
+  },
 }

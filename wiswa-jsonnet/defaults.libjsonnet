@@ -10,7 +10,7 @@ local utils = import 'utils.libjsonnet';
   local github = if settings.using_github then [import 'defaults/pre-commit-config/github.libjsonnet'] else [],
   local cff = if settings.want_cff then [import 'defaults/pre-commit-config/cff.libjsonnet'] else [],
   local djlint = if settings.want_djlint then [import 'defaults/pre-commit-config/djlint.libjsonnet'] else [],
-  local local_hooks = [import 'defaults/pre-commit-config/local.libjsonnet'],
+  local local_hooks = import 'defaults/pre-commit-config/local.libjsonnet',
   local rtd = import 'defaults/readthedocs.libjsonnet',
   local settings = self,
 
@@ -111,6 +111,8 @@ local utils = import 'utils.libjsonnet';
   python_package_index_depth: 100,
 
   // Tab sizes
+  '#c_cpp_tab_size':: d.val(d.T.number, 'Tab size for C/C++ files.'),
+  c_cpp_tab_size: 4,
   '#python_tab_size':: d.val(d.T.number, 'Tab size for Python files.'),
   python_tab_size: 4,
   '#rst_tab_size':: d.val(d.T.number, 'Tab size for reStructuredText files.'),
@@ -130,6 +132,9 @@ local utils = import 'utils.libjsonnet';
       name: '%s %s' % [self['given-names'], self['family-names']],
     },
   ],
+  copilot: {
+    intro: '(Not set.)',
+  },
   '#project_name':: d.val(d.T.string, 'Project name.'),
   project_name: 'not-a-project-name',
   '#pypi_project_name':: d.val(d.T.string, 'Project name on PyPI.'),
@@ -140,7 +145,8 @@ local utils = import 'utils.libjsonnet';
   shared_ignore: import 'defaults/shared-ignore.libjsonnet',
   '#pre_commit_config':: d.obj('Pre-commit configuration.'),
   pre_commit_config: {
-    '#default_install_hook_types':: d.val(d.T.array, 'Array of default pre-commit hook types to install.'),
+    '#default_install_hook_types':: d.val(d.T.array,
+                                          'Array of default pre-commit hook types to install.'),
     default_install_hook_types: [
       'pre-commit',
       'pre-push',
@@ -148,27 +154,26 @@ local utils = import 'utils.libjsonnet';
       'post-merge',
     ],
     '#repos':: d.val(d.T.array, 'Array of pre-commit repositories.'),
-    repos: [
-      import 'defaults/pre-commit-config/main.libjsonnet',
+    local precommit_python_repos = if settings.project_type == 'python' then [
       import 'defaults/pre-commit-config/poetry.libjsonnet',
       import 'defaults/pre-commit-config/yapf.libjsonnet',
-    ] + github + cff + djlint + local_hooks,
+    ] + djlint else [],
+    local precommit_c_cpp_repos = if settings.project_type == 'c' || settings.project_type == 'c++' then [
+      import 'defaults/pre-commit-config/clang-format.libjsonnet',
+    ],
+    repos: [import 'defaults/pre-commit-config/main.libjsonnet'] +
+           precommit_python_repos + precommit_c_cpp_repos + github + cff + [local_hooks.get(settings)],
   },
   '#vscode':: d.obj('Visual Studio Code configuration.'),
   vscode: {
     '#c_cpp':: d.obj('C/C++ configuration for Visual Studio Code.'),
     c_cpp: import 'defaults/vscode/c_cpp_properties.libjsonnet',
     '#extensions':: d.val(d.T.array, 'Array of VS Code extensions.'),
-    extensions: import 'defaults/vscode/extensions.libjsonnet',
+    extensions: (import 'defaults/vscode/extensions.libjsonnet').get(settings),
     '#launch':: d.obj('VS Code launch configuration.'),
-    launch: import 'defaults/vscode/launch.libjsonnet',
+    launch: (import 'defaults/vscode/launch.libjsonnet').get(settings),
     '#settings':: d.obj('VS Code settings.'),
-    settings: vscode_settings.get(settings.line_width,
-                                  settings.tab_size,
-                                  settings.python_tab_size,
-                                  settings.rst_tab_size,
-                                  settings.shell_tab_size,
-                                  settings.python_package_index_depth),
+    settings: vscode_settings.get(settings),
   },
   '#rtd_os':: d.val(d.T.string, 'Operating system for ReadTheDocs.'),
   rtd_os: 'ubuntu-22.04',
@@ -179,7 +184,7 @@ local utils = import 'utils.libjsonnet';
   '#github':: d.obj('GitHub settings.'),
   github: {
     '#dependabot':: d.obj('Dependabot configuration.'),
-    dependabot: import 'defaults/dependabot.libjsonnet',
+    dependabot: (import 'defaults/dependabot.libjsonnet').updates(settings),
     '#funding':: d.obj('Funding configuration.'),
     funding: {
       '#github':: d.val(d.T.string, 'GitHub username.'),
@@ -202,14 +207,8 @@ local utils = import 'utils.libjsonnet';
 
   // .cz.json
   '#cz':: d.obj('Commitizen configuration.'),
-  cz: {
-    '#tag_format':: d.val(d.T.string, 'Tag format for Commitizen.'),
-    tag_format: 'v$version',
-    '#version_files':: d.val(d.T.array, 'Array of files to update with the new version.'),
-    version_files+: [
-      'man/name.1',
-    ],
-  },
+  local cz = import 'defaults/cz.libjsonnet',
+  cz: cz,
 
   // CITATION.cff
   citation: {
@@ -234,8 +233,30 @@ local utils = import 'utils.libjsonnet';
     '*.lock binary',
     '/.yarn/**/*.cjs binary',
   ],
+  local cpp_ignore = if self.project_type == 'c++' then ['*.info', '/build/', '/CMakeUserPresets.json'] else [],
   '#gitignore':: d.val(d.T.array, 'Array of .gitignore entries.'),
-  gitignore: self.shared_ignore,
+  gitignore: std.sort(self.shared_ignore + cpp_ignore),
+
+  // C/C++ only
+  local clang_format = import 'defaults/clang-format.libjsonnet',
+  local cmake_format = import 'defaults/cmake-format.libjsonnet',
+  local cmake_user_presets = import 'defaults/cmake-user-presets.libjsonnet',
+  local vcpkg = import 'defaults/vcpkg.libjsonnet',
+  local vcpkg_config = import 'defaults/vcpkg-config.libjsonnet',
+  vcpkg_root: '/home/tatsh/dev/vcpkg',
+  '#clang_format':: d.obj('Clang format configuration.'),
+  clang_format: clang_format.get(self.line_width, self.c_cpp_tab_size),
+  '#cmake_format':: d.obj('cmake-format configuration.'),
+  cmake_format: cmake_format.get(self.line_width),
+  '#cmake_presets':: d.obj('CMake presets.'),
+  cmake_presets: import 'defaults/cmake-presets.libjsonnet',
+  '#cmake_user_presets':: d.obj('CMake user presets.'),
+  cmake_user_presets: cmake_user_presets.get(self.vcpkg_root),
+  '#vcpkg':: d.obj('vcpkg package metadata.'),
+  vcpkg: vcpkg.get(settings),
+  '#vcpkg_config':: d.obj('vcpkg configuration.'),
+  vcpkg_config: vcpkg_config,
+  cmake: { shared_deps: [], googletest_version: '1.17.0', uses_qt: false },
 
   // Python only
   local pyproject = import 'defaults/pyproject.libjsonnet',
@@ -351,7 +372,7 @@ local utils = import 'utils.libjsonnet';
 
   // package.json only
   '#package_json':: d.obj('Configuration for `package.json`.'),
-  package_json: package.get(self.line_width) + {
+  package_json: package.get(self) + {
     '#contributors':: d.val(d.T.string, 'Contributors.'),
     contributors: ['%s <%s>' % [x.name, x.email] for x in settings.authors],
     homepage: settings.homepage,
@@ -364,17 +385,27 @@ local utils = import 'utils.libjsonnet';
       url: utils.gitHubGitSshUri(settings.github_username, settings.project_name),
     },
     version: settings.version,
-  } + { scripts+: if settings.want_docs then {
+  } + { scripts+: if settings.want_docs && settings.project_type == 'python' then {
     'gen-docs': 'poetry run sphinx-build -T -E -b html -d docs/_build/doctrees -D language=en docs docs/_build/html',
-  } + if settings.want_man then {
+  } + if settings.want_man && settings.project_type == 'python' then {
     'gen-manpage': 'poetry run sphinx-build -T -E -b man -d docs/_build/doctrees -D language=en docs man',
   } else {}
   else {} },
 
   // Prettier
   '#prettierignore':: d.val(d.T.array, 'Array of patterns to ignore for Prettier.'),
+  local cpp_prettierignore = if self.project_type == 'c++' then
+    cpp_ignore + ['*.c', '*.cpp', '*.h', '*.in'] else [],
   prettierignore: std.sort(self.shared_ignore +
-                           ['*.1', '*.j2', '*.jsonnet', '*.lock', '*.libjsonnet', '/.yarn/**/*.cjs']),
+                           [
+                             '*.1',
+                             '*.j2',
+                             '*.jsonnet',
+                             '*.lock',
+                             '*.libjsonnet',
+                             '/.yarn/**/*.cjs',
+                           ] +
+                           cpp_prettierignore),
 
   // Yarn
   '#yarnrc':: d.obj('Yarn configuration.'),

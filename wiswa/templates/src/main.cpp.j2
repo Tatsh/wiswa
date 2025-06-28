@@ -1,9 +1,9 @@
-{% if settings.uses_qt %}
+{% if settings.cmake.uses_qt %}
 #include {{ '<' }}QtCore/QCoreApplication{{ '>' }}
 {% endif %}
 
 int main(int argc, char *argv[]) {
-{% if settings.uses_qt %}
+{% if settings.cmake.uses_qt %}
     QCoreApplication app(argc, argv);
     return app.exec();
 {% else %}

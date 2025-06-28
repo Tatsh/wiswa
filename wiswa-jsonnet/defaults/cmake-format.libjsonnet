@@ -1,6 +1,14 @@
+local d = import 'doc-util/main.libsonnet';
+
 {
-  format: {
-    autosort: true,
-    line_width: 100,
+  '#': d.pkg(name='cmake-format configuration.', help='', filename=std.thisFile),
+  '#get': d.fn('Get CMake format configuration.', [
+    d.arg('line_width', d.T.number, 100),
+  ]),
+  get(line_width=100):: {
+    format: {
+      autosort: true,
+      line_width: line_width,
+    },
   },
 }

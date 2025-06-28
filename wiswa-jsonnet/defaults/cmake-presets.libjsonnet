@@ -1,4 +1,13 @@
+local d = import 'doc-util/main.libsonnet';
+
 {
+  '#':: d.pkg(
+    name='cmake-presets',
+    url='https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html',
+    help='CMake presets for use with vcpkg.',
+    filename=std.thisFile,
+  ),
+  '#configurePresets':: d.val(d.T.array, 'Array of CMake configure presets for vcpkg.'),
   configurePresets: [
     {
       binaryDir: '${sourceDir}/build',
@@ -9,5 +18,6 @@
       name: 'vcpkg',
     },
   ],
+  '#version':: d.val(d.T.number, 'Version of the CMake presets.'),
   version: 2,
 }

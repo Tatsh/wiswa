@@ -4,10 +4,12 @@ if(CMAKE_BUILD_TYPE STREQUAL Debug AND (CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CM
                                                                               STREQUAL Clang))
   set(DEBUG_FLAGS -ggdb -Wall -Werror -Wextra -Wno-unknown-pragmas)
 endif()
+{% if settings.cmake.shared_deps %}
 set(SHARED_DEPS {{ settings.cmake.shared_deps|join(" ") }})
+{% endif %}
 
 set(LIBNAME_SRCS other.h)
-{% if settings.uses_qt %}
+{% if settings.cmake.uses_qt %}
 ecm_qt_declare_logging_category(
   LIBNAME_SRCS
   HEADER
@@ -30,7 +32,7 @@ if(BUILD_TESTS)
   enable_testing()
   include(FetchContent)
   FetchContent_Declare(googletest
-                       URL https://github.com/google/googletest/archive/refs/tags/v{{ settings.googletest_version }}.zip)
+                       URL https://github.com/google/googletest/archive/refs/tags/v{{ settings.cmake.googletest_version }}.zip)
   FetchContent_MakeAvailable(googletest)
   add_executable(${CMAKE_PROJECT_NAME}-tests test.cpp)
   target_compile_options(${CMAKE_PROJECT_NAME}-tests PRIVATE ${DEBUG_FLAGS})

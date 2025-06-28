@@ -1,11 +1,12 @@
 local codeql = import 'github/workflows/codeql.libjsonnet';
-local qa = import 'github/workflows/qa.libjsonnet';
+local qa_other = import 'github/workflows/qa-other.libjsonnet';
+local qa_python = import 'github/workflows/qa-python.libjsonnet';
 local tests = import 'github/workflows/tests.libjsonnet';
 local utils = import 'utils.libjsonnet';
 
 {
   workflows(settings): {
-    '.github/workflows/qa.yml': utils.manifestYaml(qa(settings)),
+    '.github/workflows/qa.yml': utils.manifestYaml(if settings.project_type == 'python' then qa_python(settings) else qa_other(settings)),
   } + (
     if settings.want_codeql then {
       '.github/workflows/codeql.yml': utils.manifestYaml(codeql(settings)),

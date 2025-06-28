@@ -136,12 +136,13 @@ def copy_static_files_python(settings: Settings, module_path: Path) -> None:
         copyfile(static_path, output_file)
         log.debug('Wrote `%s`.', output_file)
 
-    if settings['stubs_only']:
-        return
-    copy_file('utils.py')
-    if settings['want_main']:
-        copy_file('__main__.py')
-        copy_file('main.py')
+    if settings['project_type'] == 'python':
+        if settings['stubs_only']:
+            return
+        copy_file('utils.py')
+        if settings['want_main']:
+            copy_file('__main__.py')
+            copy_file('main.py')
 
 
 def copy_static_files(settings: Settings,
@@ -201,19 +202,23 @@ def write_templated_files_c_cpp(settings: Settings, templates_dir: Path,
     write_file(resolve_template(templates_dir / 'CMakeLists.txt.j2'), 'CMakeLists.txt')
     write_file(resolve_template(templates_dir / 'src/CMakeLists.txt.j2'), 'src/CMakeLists.txt')
     if settings['want_docs']:
-        write_file(resolve_template(templates_dir / 'Doxyfile.in.j2'), 'Doxyfile.in')
+        write_file(resolve_template(templates_dir / 'Doxyfile.in.j2'),
+                   'Doxyfile.in',
+                   overwrite=True)
 
 
-def write_templated_files_cpp(templates_dir: Path, resolve_template: Callable[[Path],
-                                                                              jinja2.Template],
+def write_templated_files_cpp(settings: Settings, templates_dir: Path,
+                              resolve_template: Callable[[Path], jinja2.Template],
                               write_file: Callable[..., object]) -> None:
-    write_file(resolve_template(templates_dir / 'src/main.cpp.j2'), 'src/main.cpp')
+    if settings['want_main']:
+        write_file(resolve_template(templates_dir / 'src/main.cpp.j2'), 'src/main.cpp')
 
 
-def write_templated_files_c(templates_dir: Path, resolve_template: Callable[[Path],
-                                                                            jinja2.Template],
+def write_templated_files_c(settings: Settings, templates_dir: Path,
+                            resolve_template: Callable[[Path], jinja2.Template],
                             write_file: Callable[..., object]) -> None:
-    write_file(resolve_template(templates_dir / 'src/main.c.j2'), 'src/main.c')
+    if settings['want_main']:
+        write_file(resolve_template(templates_dir / 'src/main.c.j2'), 'src/main.c')
 
 
 def write_template_files_lua(templates_dir: Path, resolve_template: Callable[[Path],
@@ -233,17 +238,10 @@ def write_templated_files_python(settings: Settings, templates_dir: Path,
         if settings['want_main']:
             write_file(resolve_template(templates_dir / 'tests/test_main.py.j2'),
                        'tests/test_main.py')
-    conf_py = (templates_dir / 'docs/conf.py.j2',) if settings['want_docs'] else ()
-    docs_index_rst = (templates_dir / 'docs/index.rst.j2',) if settings['want_docs'] else ()
-    for file_path in (templates_dir / 'CHANGELOG.md.j2', templates_dir / 'README.md.j2',
-                      *docs_index_rst):
-        write_file(resolve_template(file_path),
-                   file_path.relative_to(templates_dir).with_suffix(''))
-    for file_path in (templates_dir / 'CODEOWNERS.j2', templates_dir / 'CONTRIBUTING.md.j2',
-                      templates_dir / 'LICENSE.txt.j2', templates_dir / 'SECURITY.md.j2', *conf_py):
-        write_file(resolve_template(file_path),
-                   file_path.relative_to(templates_dir).with_suffix(''),
-                   overwrite=True)
+    if settings['want_docs']:
+        for file_path in (templates_dir / 'docs/conf.py.j2', templates_dir / 'docs/index.rst.j2'):
+            write_file(resolve_template(file_path),
+                       file_path.relative_to(templates_dir).with_suffix(''))
 
 
 def write_templated_files_typescript(templates_dir: Path,
@@ -257,15 +255,22 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
     _, templates_dir, resolve_template, write_file = _template_env(module_path, settings)
     write_file(resolve_template(templates_dir / '.github/copilot-instructions.md.j2'),
                '.github/copilot-instructions.md')
+    for file_path, overwrite in (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', False),
+                                 ('LICENSE.txt.j2', True), ('SECURITY.md.j2', True),
+                                 ('CHANGELOG.md.j2', False), (templates_dir / 'README.md.j2',
+                                                              False)):
+        write_file(resolve_template(templates_dir / file_path),
+                   (templates_dir / file_path).relative_to(templates_dir).with_suffix(''),
+                   overwrite=overwrite)
     match settings['project_type']:
         case 'python':
             write_templated_files_python(settings, templates_dir, resolve_template, write_file)
         case 'c++':
             write_templated_files_c_cpp(settings, templates_dir, resolve_template, write_file)
-            write_templated_files_cpp(templates_dir, resolve_template, write_file)
+            write_templated_files_cpp(settings, templates_dir, resolve_template, write_file)
         case 'c':
             write_templated_files_c_cpp(settings, templates_dir, resolve_template, write_file)
-            write_templated_files_c(templates_dir, resolve_template, write_file)
+            write_templated_files_c(settings, templates_dir, resolve_template, write_file)
         case 'lua':
             write_template_files_lua(templates_dir, resolve_template, write_file)
         case 'typescript':

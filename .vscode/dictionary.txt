@@ -171,3 +171,6 @@ yarnrc
 zainchen
 zengxingxin
 zeshuaro
+cpptools
+dbuild
+pyyaml

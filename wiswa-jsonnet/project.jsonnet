@@ -10,7 +10,7 @@ function(settings)
   local gitlab_items = if settings.using_gitlab then {
     '.gitlab-ci.yml': utils.manifestYaml(utils.settings.gitlab_ci),
   } else {};
-  local readthedocs_items = if settings.want_docs then {
+  local readthedocs_items = if settings.want_docs && settings.project_type == 'python' then {
     '.readthedocs.yaml': utils.manifestYaml(settings.readthedocs),
   } else {};
   local tests_items = if settings.project_type == 'python' && settings.want_tests then {
@@ -20,7 +20,7 @@ function(settings)
     'pyproject.toml': utils.manifestToml(settings.pyproject),
   } else {};
   local cz_json = if settings.project_type != 'python' then {
-    '.cz.json': utils.manifestJson(settings.cz),
+    '.cz.json': std.manifestJson(settings.cz),
   } else {};
   local c_cpp_items = if settings.project_type == 'c' || settings.project_type == 'c++' then {
     '.clang-format': utils.manifestYaml(settings.clang_format),
@@ -28,8 +28,8 @@ function(settings)
     '.vscode/c_cpp_properties.json': std.manifestJson(settings.vscode.c_cpp),
     'CMakePresets.json': std.manifestJson(settings.cmake_presets),
     'CMakeUserPresets.json': std.manifestJson(settings.cmake_user_presets),
-    'vcpkg.json': utils.manifestJson(settings.vcpkg),
-    'vcpkg-configuration.json': utils.manifestJson(settings.vcpkg_configuration),
+    'vcpkg.json': std.manifestJson(settings.vcpkg),
+    'vcpkg-configuration.json': std.manifestJson(settings.vcpkg_config),
   } else {};
   local xcode_items = if settings.project_type == 'xcode' then {
     '.clang-format': utils.manifestYaml(settings.clang_format),
@@ -38,7 +38,7 @@ function(settings)
     '.luacheckrc': utils.manifestLines(settings.luacheck),
   } else {};
   local typescript_items = if settings.project_type == 'typescript' then {
-    'tsconfig.json': utils.manifestJson(settings.tsconfig),
+    'tsconfig.json': std.manifestJson(settings.tsconfig),
   } else {};
   {
     '.gitattributes': utils.manifestLines(settings.gitattributes),

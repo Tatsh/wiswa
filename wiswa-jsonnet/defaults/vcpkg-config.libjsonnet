@@ -1,9 +1,14 @@
+local d = import 'doc-util/main.libsonnet';
+
 {
+  '#':: d.pkg(name='vcpkg', url='', help='', filename=std.thisFile),
+  '#default-registry':: d.val(d.T.object, 'Default vcpkg registry configuration.'),
   'default-registry': {
     baseline: '0cf34c184ce990471435b5b9c92edcf7424930b1',
     kind: 'git',
     repository: 'https://github.com/microsoft/vcpkg',
   },
+  '#registries':: d.val(d.T.array, 'Array of vcpkg registries.'),
   registries: [
     {
       kind: 'artifact',

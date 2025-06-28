@@ -1,6 +1,6 @@
 # Copilot Instructions
 
-This project generates new Python projects given a configuration that is written in Jsonnet.
+{{ settings.copilot.intro | wordwrap(99) }}
 
 ## General
 
@@ -32,7 +32,7 @@ This project generates new Python projects given a configuration that is written
 - `MD024`: Headers do not have to be unique if they are in different sections.
 - Line length does not apply to code blocks.
 
-{% if project_type == 'python' %}
+{% if settings.project_type == 'python' %}
 ## Python guidelines
 
 - Follow all rules given by Ruff, with the following exceptions:
