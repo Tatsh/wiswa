@@ -1,13 +1,14 @@
 {
-  commitizen: {
-    tag_format: 'v$version',
-    version_files: [
+  get(settings):: {
+    local cpp_files = if settings.project_type == 'c' || settings.project_type == 'c++' then [
       'CMakeLists.txt',
-      'README.md',
-      'package.json',
       'vcpkg.json',
-    ],
-    version_provider: 'npm',
-    version_scheme: 'semver',
+    ] else [],
+    commitizen: {
+      tag_format: 'v$version',
+      version_files: std.sort(['CITATION.cff', 'README.md', 'package.json'] + cpp_files),
+      version_provider: 'npm',
+      version_scheme: 'semver',
+    },
   },
 }

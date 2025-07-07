@@ -16,10 +16,19 @@ local d = import 'doc-util/main.libsonnet';
       files: [
         '*.qrc',
         '*.rc',
+        '*.ts',
         '*.ui',
       ],
       options: {
         parser: 'xml',
+      },
+    },
+  ],
+  local typescript_overrides = [
+    {
+      files: ['*.ts', '*.tsx'],
+      options: {
+        parser: 'typescript',
       },
     },
   ],
@@ -43,6 +52,18 @@ local d = import 'doc-util/main.libsonnet';
     format: 'cmake-format -i CMakeLists.txt src/CMakeLists.txt && clang-format -i src/*.cpp src/*.h && yarn prettier -w .',
     qa: 'yarn check-spelling && yarn check-formatting',
   },
+  local typescript_dev_deps = {
+    '@eslint/js': '^9.30.1',
+    eslint: '^9.30.1',
+    'typescript-eslint': '^8.35.1',
+    typescript: '^5.8.3',
+  },
+  local typescript_scripts = {
+    'check-formatting': "yarn prettier -c . && yarn markdownlint-cli2 '**/*.md' '#node_modules'",
+    'check-spelling': "yarn cspell --no-progress './**/*'  './**/.*'",
+    format: "prettier -w . && yarn markdownlint-cli2 --fix '**/*.md' '#node_modules'",
+    qa: 'yarn eslint && yarn check-spelling && yarn check-formatting',
+  },
 
   '#get':: d.fn('Get package.json content.', [
     d.arg('settings', d.T.object),
@@ -50,6 +71,7 @@ local d = import 'doc-util/main.libsonnet';
   get(settings): {
     local prettier_c_cpp = if settings.project_type == 'c++' || settings.project_type == 'c' then c_cpp_overrides else [],
     local prettier_cpp = if settings.cmake.uses_qt then qt_overrides else [],
+    local prettier_ts = if settings.project_type == 'typescript' then typescript_overrides else [],
     cspell: {
       cache: { useCache: true },
       dictionaryDefinitions: [
@@ -79,6 +101,7 @@ local d = import 'doc-util/main.libsonnet';
       ],
       useGitignore: true,
     },
+    description: settings.description,
     devDependencies: {
       '@prettier/plugin-xml': '^3.4.1',
       cspell: '^9.1.1',
@@ -88,7 +111,8 @@ local d = import 'doc-util/main.libsonnet';
       'prettier-plugin-sort-json': '^4.1.1',
       'prettier-plugin-toml': '^2.0.5',
       'yarn-audit-fix': '^10.1.1',
-    } + if settings.project_type == 'python' then python_deps else {},
+    } + if settings.project_type == 'python' then python_deps else
+      {} + if settings.project_type == 'typescript' then typescript_dev_deps else {},
     'markdownlint-cli2': {
       config: {
         MD033: {
@@ -113,7 +137,7 @@ local d = import 'doc-util/main.libsonnet';
             parser: 'json',
           },
         },
-      ] + prettier_c_cpp + prettier_cpp,
+      ] + prettier_c_cpp + prettier_cpp + prettier_ts,
       plugins: [
         '@prettier/plugin-xml',
         'prettier-plugin-ini',
@@ -126,6 +150,7 @@ local d = import 'doc-util/main.libsonnet';
     },
     scripts: if settings.project_type == 'python' then python_scripts
     else if settings.project_type == 'c++' || settings.project_type == 'c' then c_cpp_scripts
+    else if settings.project_type == 'typescript' then typescript_scripts
     else {},
   },
 }

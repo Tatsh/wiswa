@@ -247,7 +247,11 @@ def write_templated_files_python(settings: Settings, templates_dir: Path,
 def write_templated_files_typescript(templates_dir: Path,
                                      resolve_template: Callable[[Path], jinja2.Template],
                                      write_file: Callable[..., object]) -> None:
+    """Write templated files for TypeScript projects."""
     write_file(resolve_template(templates_dir / 'src/index.ts.j2'), 'src/index.ts')
+    write_file(resolve_template(templates_dir / 'eslint.config.mjs.j2'),
+               'eslint.config.mjs',
+               overwrite=True)
 
 
 def write_templated_files(module_path: Path, settings: Settings) -> None:

@@ -8,7 +8,7 @@ function(settings) {
         },
         {
           name: 'Install dependencies (Yarn)',
-          run: 'yarn\npip install cmake-format pyyaml\n',
+          run: 'yarn' + (if settings.project_type == 'c' || settings.project_type == 'c++' then 'pip install cmake-format pyyaml\n' else ''),
         },
         {
           name: 'Check formatting',

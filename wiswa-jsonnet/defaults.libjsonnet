@@ -26,14 +26,14 @@ local utils = import 'utils.libjsonnet';
   '#github_username':: d.val(d.T.string, 'GitHub username.'),
   github_username: 'unknown',
   '#github_project_name':: d.val(d.T.string, 'Project name on GitHub.'),
-  github_project_name: self.project_name,
+  github_project_name: std.strReplace(std.strReplace(self.project_name, '@', ''), '/', '-'),
   '#default_branch':: d.val(d.T.string, 'Default Git branch name (on the hosting provider).'),
   default_branch: 'master',
   '#repository_uri':: d.val(d.T.string, 'HTML repository URI of the hosting provider.'),
   repository_uri: utils.gitHubRepositoryUri(self.github.username, self.github_project_name),
   documentation_uri: utils.readTheDocsUri(self.github_project_name),
   '#directory_name':: d.val(d.T.string, 'Directory name (generally what `git` would clone to without a specified output directory).'),
-  directory_name: self.project_name,
+  directory_name: std.strReplace(std.strReplace(self.project_name, '@', ''), '/', '-'),
   homepage: self.github.pages_uri,
   '#keywords':: d.val(d.T.array, 'Project keywords (array of strings).'),
   keywords: [],
@@ -140,7 +140,7 @@ local utils = import 'utils.libjsonnet';
   '#pypi_project_name':: d.val(d.T.string, 'Project name on PyPI.'),
   pypi_project_name: self.project_name,
   '#repository_name':: d.val(d.T.string, 'Repository name (on any hosting provider).'),
-  repository_name: self.project_name,
+  repository_name: std.strReplace(std.strReplace(self.project_name, '@', ''), '/', '-'),
   '#shared_ignore':: d.val(d.T.array, 'Array of shared ignore patterns.'),
   shared_ignore: import 'defaults/shared-ignore.libjsonnet',
   '#pre_commit_config':: d.obj('Pre-commit configuration.'),
@@ -160,7 +160,7 @@ local utils = import 'utils.libjsonnet';
     ] + djlint else [],
     local precommit_c_cpp_repos = if settings.project_type == 'c' || settings.project_type == 'c++' then [
       import 'defaults/pre-commit-config/clang-format.libjsonnet',
-    ],
+    ] else [],
     repos: [import 'defaults/pre-commit-config/main.libjsonnet'] +
            precommit_python_repos + precommit_c_cpp_repos + github + cff + [local_hooks.get(settings)],
   },
@@ -208,7 +208,7 @@ local utils = import 'utils.libjsonnet';
   // .cz.json
   '#cz':: d.obj('Commitizen configuration.'),
   local cz = import 'defaults/cz.libjsonnet',
-  cz: cz,
+  cz: cz.get(settings),
 
   // CITATION.cff
   citation: {
@@ -358,7 +358,6 @@ local utils = import 'utils.libjsonnet';
       },
     },
   },
-
   '#rtd_apt_packages':: d.val(d.T.array, "Packages to install from `apt` on ReadTheDocs' runner."),
   rtd_apt_packages: [],
   '#docs_conf':: d.obj('Sphinx documentation configuration.'),
@@ -374,6 +373,27 @@ local utils = import 'utils.libjsonnet';
   },
   '#tests_pyproject':: d.obj('Ruff configuration for test files (`pyproject.toml` inside `tests`).'),
   tests_pyproject: import 'defaults/pyproject-tests.libjsonnet',
+
+  // TypeScript only
+  local tsconfig = import 'defaults/tsconfig.libjsonnet',
+  '#tsconfig':: d.obj('TypeScript configuration.'),
+  tsconfig: tsconfig,
+  '#eslint': d.obj('ESLint configuration.'),
+  eslint: [
+    {
+      rules: {
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          {
+            argsIgnorePattern: '^_',
+            caughtErrorsIgnorePattern: '^_',
+            destructuredArrayIgnorePattern: '^_',
+            varsIgnorePattern: '^_',
+          },
+        ],
+      },
+    },
+  ],
 
   // package.json only
   '#package_json':: d.obj('Configuration for `package.json`.'),
