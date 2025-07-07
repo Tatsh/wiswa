@@ -37,7 +37,10 @@ local d = import 'doc-util/main.libsonnet';
     [d.arg('github_username', d.T.string), d.arg('project_name', d.T.string)]
   ),
   gitHubGitSshUri(github_username, project_name)::
-    'git@github.com:%s/%s.git' % [github_username, project_name],
+    'git@github.com:%s/%s.git' % [
+      github_username,
+      std.strReplace(std.strReplace(project_name, '@', ''), '/', '-'),
+    ],
 
   '#readTheDocsUri':: d.fn(
     'Generate a readthedocs.org URI for a project.',
@@ -50,7 +53,10 @@ local d = import 'doc-util/main.libsonnet';
     [d.arg('github_username', d.T.string), d.arg('project_name', d.T.string)]
   ),
   gitHubRepositoryUri(github_username, project_name)::
-    'https://github.com/%s/%s' % [github_username, project_name],
+    'https://github.com/%s/%s' % [
+      github_username,
+      std.strReplace(std.strReplace(project_name, '@', ''), '/', '-'),
+    ],
 
   '#pyprojectAuthors':: d.fn(
     'Convert an array of authors to a format suitable for pyproject.toml.',

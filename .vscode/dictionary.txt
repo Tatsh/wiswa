@@ -23,11 +23,13 @@ contenttypes
 contrib
 coveragerc
 cpack
+cpptools
 dataclasses
 datarootdir
 datatable
 datatables
 davidanson
+dbuild
 debugpy
 djangorestframework
 djlint
@@ -122,6 +124,7 @@ pypi
 pyproject
 pyright
 pytest
+pyyaml
 qstringbuilder
 qtbase
 reflow
@@ -146,14 +149,17 @@ testpaths
 timezone
 timonwong
 todolist
+tojson
 tomlkit
 topython
 tryfirst
+tseslint
 typeattributes
 tyriar
 udvare
 undoc
 varattributes
+vars
 vcpkg
 virtualenv
 wayou
@@ -171,6 +177,3 @@ yarnrc
 zainchen
 zengxingxin
 zeshuaro
-cpptools
-dbuild
-pyyaml
