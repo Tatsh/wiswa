@@ -2922,6 +2922,18 @@ slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [[package]]
+name = "types-jsonnet"
+version = "0.21.0.20250708"
+description = "Typing stubs for jsonnet"
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "types_jsonnet-0.21.0.20250708-py3-none-any.whl", hash = "sha256:4c3ff1235692f0c5f341f12ff4d6ada836c524733c46ee8c35032ed174c8b7b5"},
+    {file = "types_jsonnet-0.21.0.20250708.tar.gz", hash = "sha256:b16381bb12eff80850bd98b6c2263f1d9e594361a8a42ed9d1e6277b38f9c24f"},
+]
+
+[[package]]
 name = "types-requests"
 version = "2.32.4.20250611"
 description = "Typing stubs for requests"
@@ -3046,4 +3058,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.14"
-content-hash = "59dd7233dc594cabecac3d6fcd2a3a497c9ff50cd7e1b6651dc795684a85e012"
+content-hash = "6da05490046c9396ce6bb3535f9d5ac56d62294f808ede4840449dafd70e6654"

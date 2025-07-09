@@ -15,7 +15,7 @@ import logging
 import logging.config
 import subprocess as sp
 
-import _jsonnet  # type: ignore[import-not-found] # noqa: PLC2701
+import _jsonnet  # noqa: PLC2701
 import jinja2
 import keyring
 import requests
@@ -244,11 +244,12 @@ def write_templated_files_python(settings: Settings, templates_dir: Path,
                        file_path.relative_to(templates_dir).with_suffix(''))
 
 
-def write_templated_files_typescript(templates_dir: Path,
+def write_templated_files_typescript(settings: Settings, templates_dir: Path,
                                      resolve_template: Callable[[Path], jinja2.Template],
                                      write_file: Callable[..., object]) -> None:
     """Write templated files for TypeScript projects."""
-    write_file(resolve_template(templates_dir / 'src/index.ts.j2'), 'src/index.ts')
+    if not settings['stubs_only']:
+        write_file(resolve_template(templates_dir / 'src/index.ts.j2'), 'src/index.ts')
     write_file(resolve_template(templates_dir / 'eslint.config.mjs.j2'),
                'eslint.config.mjs',
                overwrite=True)
@@ -278,7 +279,7 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
         case 'lua':
             write_template_files_lua(templates_dir, resolve_template, write_file)
         case 'typescript':
-            write_templated_files_typescript(templates_dir, resolve_template, write_file)
+            write_templated_files_typescript(settings, templates_dir, resolve_template, write_file)
         case _:
             log.warning('No templated files to write for project type `%s`.',
                         settings['project_type'])
@@ -292,7 +293,7 @@ def get_latest_yarn_version() -> str:  # pragma: no cover
     return cast('str', r.json()['latest']['stable'])
 
 
-NATIVE_CALLBACKS = {
+NATIVE_CALLBACKS: dict[str, tuple[tuple[str, ...], Callable[..., object]]] = {
     'latestYarnVersion': ((), get_latest_yarn_version),
     'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
     'year': ((), lambda: datetime.now(tz=timezone.utc).year),
@@ -301,12 +302,10 @@ NATIVE_CALLBACKS = {
 
 def evaluate_jsonnet_file(jpathdir: list[str], file: Path, merged_settings: str) -> str:
     """Evaluate a Jsonnet file with the given settings."""
-    return cast(
-        'str',
-        _jsonnet.evaluate_file(str(file),
-                               jpathdir=jpathdir,
-                               native_callbacks=NATIVE_CALLBACKS,
-                               tla_codes={'settings': merged_settings}))
+    return _jsonnet.evaluate_file(str(file),
+                                  jpathdir=jpathdir,
+                                  native_callbacks=NATIVE_CALLBACKS,
+                                  tla_codes={'settings': merged_settings})
 
 
 def evaluate_jsonnet_project(lib_path: Path,
@@ -331,16 +330,14 @@ def evaluate_jsonnet_project(lib_path: Path,
 def evaluate_merged_settings(jpathdir: list[str], lib_path: Path,
                              settings: str) -> tuple[str, Settings]:
     """Evaluate the merged settings using Jsonnet."""
-    s = cast(
-        'str',
-        _jsonnet.evaluate_snippet('',
+    s = _jsonnet.evaluate_snippet('',
                                   'function(defaults, settings) defaults + settings',
                                   jpathdir=jpathdir,
                                   native_callbacks=NATIVE_CALLBACKS,
                                   tla_codes={
                                       'defaults': (lib_path / 'defaults.libjsonnet').read_text(),
                                       'settings': settings
-                                  }))
+                                  })
     return s, json.loads(s)
 
 
