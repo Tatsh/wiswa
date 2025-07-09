@@ -22,6 +22,8 @@ local utils = import 'utils.libjsonnet';
   license: 'MIT',
   '#version':: d.val(d.T.string, 'Version.'),
   version: '0.0.0',
+  '#keep_dist':: d.val(d.T.boolean, 'If the project should not ignore the `/dist/` directory.'),
+  keep_dist: false,
 
   '#github_username':: d.val(d.T.string, 'GitHub username.'),
   github_username: 'unknown',
@@ -161,7 +163,7 @@ local utils = import 'utils.libjsonnet';
     local precommit_c_cpp_repos = if settings.project_type == 'c' || settings.project_type == 'c++' then [
       import 'defaults/pre-commit-config/clang-format.libjsonnet',
     ] else [],
-    repos: [import 'defaults/pre-commit-config/main.libjsonnet'] +
+    repos: [(import 'defaults/pre-commit-config/main.libjsonnet').get(settings)] +
            precommit_python_repos + precommit_c_cpp_repos + github + cff + [local_hooks.get(settings)],
   },
   '#vscode':: d.obj('Visual Studio Code configuration.'),
@@ -249,8 +251,10 @@ local utils = import 'utils.libjsonnet';
     '/CMakeUserPresets.json',
     '/vcpkg_installed/',
   ] else [],
+  local typescript_ignore = if self.project_type == 'typescript' then ['/coverage/'] else [],
   '#gitignore':: d.val(d.T.array, 'Array of .gitignore entries.'),
-  gitignore: std.sort(self.shared_ignore + cpp_ignore),
+  gitignore: std.sort(self.shared_ignore + cpp_ignore + typescript_ignore +
+                      if !self.keep_dist then ['/dist/'] else []),
 
   // C/C++ only
   local clang_format = import 'defaults/clang-format.libjsonnet',
@@ -431,16 +435,17 @@ local utils = import 'utils.libjsonnet';
   '#prettierignore':: d.val(d.T.array, 'Array of patterns to ignore for Prettier.'),
   local cpp_prettierignore = if self.project_type == 'c++' then
     cpp_ignore + ['*.c', '*.cpp', '*.h', '*.in'] else [],
-  prettierignore: std.sort(self.shared_ignore +
-                           [
-                             '*.1',
-                             '*.j2',
-                             '*.jsonnet',
-                             '*.lock',
-                             '*.libjsonnet',
-                             '/.yarn/**/*.cjs',
-                           ] +
-                           cpp_prettierignore),
+  prettierignore: std.uniq(std.sort(self.shared_ignore +
+                                    [
+                                      '*.1',
+                                      '*.j2',
+                                      '*.jsonnet',
+                                      '*.libjsonnet',
+                                      '*.lock',
+                                      '/.yarn/**/*.cjs',
+                                      '/dist/',
+                                    ] +
+                                    cpp_prettierignore)),
 
   // Yarn
   '#yarnrc':: d.obj('Yarn configuration.'),

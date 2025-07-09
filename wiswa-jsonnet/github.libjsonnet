@@ -2,6 +2,7 @@ local codeql = import 'github/workflows/codeql.libjsonnet';
 local qa_other = import 'github/workflows/qa-other.libjsonnet';
 local qa_python = import 'github/workflows/qa-python.libjsonnet';
 local qa_typescript = import 'github/workflows/qa-typescript.libjsonnet';
+local tests_typescript = import 'github/workflows/tests-typescript.libjsonnet';
 local tests = import 'github/workflows/tests.libjsonnet';
 local utils = import 'utils.libjsonnet';
 
@@ -18,7 +19,10 @@ local utils = import 'utils.libjsonnet';
     } else {}
   ) + (
     if settings.want_tests then {
-      '.github/workflows/tests.yml': utils.manifestYaml(tests(settings)),
+      '.github/workflows/tests.yml': utils.manifestYaml(
+        if settings.project_type == 'typescript' then tests_typescript(settings)
+        else tests(settings)
+      ),
     } else {}
   ),
 }

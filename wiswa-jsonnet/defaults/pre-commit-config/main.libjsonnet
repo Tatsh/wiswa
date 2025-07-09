@@ -1,62 +1,61 @@
-local d = import 'doc-util/main.libsonnet';
 {
-  '#':: d.pkg(name='defaults', url='', help='', filename=std.thisFile),
-  '#hooks':: 'pre-commit-hooks.',
-  hooks: [
-    {
-      exclude: 'yarn-\\d+.*\\.cjs$',
-      id: 'check-added-large-files',
-    },
-    {
-      id: 'check-ast',
-    },
-    {
-      id: 'check-builtin-literals',
-    },
-    {
-      id: 'check-case-conflict',
-    },
-    {
-      id: 'check-executables-have-shebangs',
-    },
-    {
-      id: 'check-merge-conflict',
-    },
-    {
-      id: 'check-shebang-scripts-are-executable',
-    },
-    {
-      id: 'check-symlinks',
-    },
-    {
-      id: 'check-toml',
-    },
-    {
-      id: 'debug-statements',
-    },
-    {
-      id: 'destroyed-symlinks',
-    },
-    {
-      id: 'detect-aws-credentials',
-    },
-    {
-      id: 'detect-private-key',
-    },
-    {
-      id: 'end-of-file-fixer',
-    },
-    {
-      files: '^(\\.(docker|eslint|prettier)ignore|CODEOWNERS|\\.gitattributes)$',
-      id: 'file-contents-sorter',
-    },
-    {
-      id: 'fix-byte-order-marker',
-    },
-    {
-      id: 'mixed-line-ending',
-    },
-  ],
-  repo: 'https://github.com/pre-commit/pre-commit-hooks',
-  rev: 'v5.0.0',
+  get(settings):: {
+    hooks: [
+      {
+        exclude: 'yarn-\\d+.*\\.cjs$',
+        id: 'check-added-large-files',
+      },
+      {
+        id: 'check-ast',
+      },
+      {
+        id: 'check-builtin-literals',
+      },
+      {
+        id: 'check-case-conflict',
+      },
+      {
+        id: 'check-executables-have-shebangs',
+      },
+      {
+        id: 'check-merge-conflict',
+      },
+      {
+        id: 'check-shebang-scripts-are-executable',
+      } + (if settings.project_type == 'typescript' then { exclude: 'src/index\\.ts$' } else {}),
+      {
+        id: 'check-symlinks',
+      },
+      {
+        id: 'check-toml',
+      },
+      {
+        id: 'debug-statements',
+      },
+      {
+        id: 'destroyed-symlinks',
+      },
+      {
+        id: 'detect-aws-credentials',
+      },
+      {
+        id: 'detect-private-key',
+      },
+      {
+        id: 'end-of-file-fixer',
+      },
+      {
+        files: '^(\\.(docker|eslint|prettier)ignore|CODEOWNERS|\\.gitattributes)$',
+        id: 'file-contents-sorter',
+      },
+      {
+        id: 'fix-byte-order-marker',
+      },
+      {
+        id: 'mixed-line-ending',
+      },
+    ],
+    repo: 'https://github.com/pre-commit/pre-commit-hooks',
+    rev: 'v5.0.0',
+  },
 }
