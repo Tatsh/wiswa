@@ -6,7 +6,7 @@
     ] else [],
     commitizen: {
       tag_format: 'v$version',
-      version_files: std.sort(['CITATION.cff', 'README.md', 'package.json'] + cpp_files),
+      version_files: std.sort(['.wiswa.jsonnet', 'CITATION.cff', 'README.md', 'package.json'] + cpp_files),
       version_provider: 'npm',
       version_scheme: 'semver',
     },

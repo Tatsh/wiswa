@@ -8,7 +8,11 @@ function(settings) {
         },
         {
           name: 'Install dependencies (Yarn)',
-          run: 'yarn' + (if settings.project_type == 'c' || settings.project_type == 'c++' then 'pip install cmake-format pyyaml\n' else ''),
+          run: 'yarn',
+        },
+        {
+          name: 'ESLint',
+          run: 'yarn eslint',
         },
         {
           name: 'Check formatting',

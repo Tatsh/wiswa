@@ -183,6 +183,16 @@ local utils = import 'utils.libjsonnet';
   // GitHub
   '#github':: d.obj('GitHub settings.'),
   github: {
+    '#codeql':: d.obj('CodeQL configuration.'),
+    codeql: {
+      '#languages':: d.val(d.T.array, 'Array of languages for CodeQL analysis.'),
+      languages: (if settings.project_type == 'python' then ['python']
+                  else if settings.project_type == 'typescript' then ['javascript']
+                  else if settings.project_type == 'c' || settings.project_type == 'c++' then ['cpp']
+                  else []),
+      '#runs_on':: d.val(d.T.string, 'Operating system for CodeQL runs on GitHub runners.'),
+      runs_on: settings.tests_run_on,
+    },
     '#dependabot':: d.obj('Dependabot configuration.'),
     dependabot: (import 'defaults/dependabot.libjsonnet').updates(settings),
     '#funding':: d.obj('Funding configuration.'),
