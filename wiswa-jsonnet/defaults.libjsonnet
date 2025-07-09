@@ -421,7 +421,7 @@ local utils = import 'utils.libjsonnet';
     packageManager: 'yarn@%s' % settings.yarn_version,
     repository: {
       type: 'git',
-      url: utils.gitHubGitSshUri(settings.github_username, settings.project_name),
+      url: utils.gitHubGitSshUri(settings.github_username, settings.github_project_name),
     },
     version: settings.version,
   } + { scripts+: if settings.want_docs && settings.project_type == 'python' then {
