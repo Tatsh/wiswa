@@ -245,7 +245,7 @@ local utils = import 'utils.libjsonnet';
     '*.lock binary',
     '/.yarn/**/*.cjs binary',
   ],
-  local cpp_ignore = if self.project_type == 'c++' then [
+  local cpp_ignore = if self.project_type == 'c++' || self.project_type == 'c' then [
     '*.info',
     '/build/',
     '/CMakeUserPresets.json',
@@ -433,7 +433,7 @@ local utils = import 'utils.libjsonnet';
 
   // Prettier
   '#prettierignore':: d.val(d.T.array, 'Array of patterns to ignore for Prettier.'),
-  local cpp_prettierignore = if self.project_type == 'c++' then
+  local cpp_prettierignore = if self.project_type == 'c++' || self.project_type == 'c' then
     cpp_ignore + ['*.c', '*.cpp', '*.h', '*.in'] else [],
   prettierignore: std.uniq(std.sort(self.shared_ignore +
                                     [
