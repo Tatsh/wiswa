@@ -55,7 +55,12 @@ def test_non_empty_file_exists(tmp_path: Path, content: str,
 
 
 def test_copy_static_files_skips_when_stubs_only(mocker: MockerFixture, tmp_path: Path) -> None:
-    settings = {'stubs_only': True, 'primary_module': 'foo', 'want_main': False}
+    settings = {
+        'stubs_only': True,
+        'primary_module': 'foo',
+        'want_main': False,
+        'project_type': 'python'
+    }
     module_path = tmp_path
     copyfile = mocker.patch('wiswa.utils.copyfile')
     utils.copy_static_files(cast('Settings', settings), module_path)
@@ -63,7 +68,12 @@ def test_copy_static_files_skips_when_stubs_only(mocker: MockerFixture, tmp_path
 
 
 def test_copy_static_files_copies_files(mocker: MockerFixture, tmp_path: Path) -> None:
-    settings = {'stubs_only': False, 'primary_module': 'foo', 'want_main': True}
+    settings = {
+        'stubs_only': False,
+        'primary_module': 'foo',
+        'want_main': True,
+        'project_type': 'python'
+    }
     module_path = tmp_path
     static_dir = module_path / 'static'
     static_dir.mkdir(parents=True)
@@ -721,7 +731,12 @@ def test_post_process_steps_removes_tests_and_vscode_launch_when_want_tests_fals
 
 
 def test_copy_static_files_skips_existing_files(mocker: MockerFixture, tmp_path: Path) -> None:
-    settings = {'stubs_only': False, 'primary_module': 'foo', 'want_main': True}
+    settings = {
+        'stubs_only': False,
+        'primary_module': 'foo',
+        'want_main': True,
+        'project_type': 'python'
+    }
     module_path = tmp_path
     static_dir = module_path / 'static'
     static_dir.mkdir(parents=True)
@@ -742,7 +757,12 @@ def test_copy_static_files_skips_existing_files(mocker: MockerFixture, tmp_path:
 
 
 def test_copy_static_files_want_main_false(mocker: MockerFixture, tmp_path: Path) -> None:
-    settings = {'stubs_only': False, 'primary_module': 'foo', 'want_main': False}
+    settings = {
+        'stubs_only': False,
+        'primary_module': 'foo',
+        'want_main': False,
+        'project_type': 'python'
+    }
     module_path = tmp_path
     static_dir = module_path / 'static'
     static_dir.mkdir(parents=True)
