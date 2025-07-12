@@ -35,4 +35,7 @@ function(settings)
         ],
       },
     },
+    permissions: {
+      contents: 'read',
+    },
   }
