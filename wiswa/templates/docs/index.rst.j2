@@ -75,9 +75,9 @@
       :target: https://bsky.app/profile/{{ settings.github.username }}.bsky.social
       :alt: Follow @{{ settings.github.username }}
 
-{% if settings.mastodon_id and settings.mastodon_domain %}
-   .. image:: https://img.shields.io/mastodon/follow/{{ settings.mastodon_id }}?domain={{ settings.mastodon_domain }}&style=social
-      :target: https://{{ settings.mastodon_domain }}/@{{ settings.github.username }}
+{% if settings.social.mastodon.id and settings.social.mastodon.domain %}
+   .. image:: https://img.shields.io/mastodon/follow/{{ settings.social.mastodon.id }}?domain={{ settings.social.mastodon.domain }}&style=social
+      :target: https://{{ settings.social.mastodon.domain }}/@{{ settings.github.username }}
       :alt: Mastodon Follow
 {% endif %}
 
