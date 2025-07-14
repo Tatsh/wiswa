@@ -36,6 +36,8 @@ homepage = "https://tatsh.github.io/wiswa/"
 repository = "https://github.com/Tatsh/wiswa"
 
 [tool.commitizen]
+name = "cz_path"
+remove_path_prefixes = ["wiswa"]
 tag_format = "v$version"
 version_files = [
   ".wiswa.jsonnet",
@@ -96,6 +98,7 @@ optional = true
 
 [tool.poetry.group.dev.dependencies]
 commitizen = "^4.8.3"
+cz-path = "^0.0.1"
 djlint = "^1.36.4"
 mypy = "^1.16.1"
 ruff = "^0.12.0"
