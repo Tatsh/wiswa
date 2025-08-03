@@ -48,7 +48,7 @@
         language: 'system',
         name: 'check files are formatted with Prettier',
       },
-    ] + if settings.project_type == 'python' then python_hooks else [] + [
+    ] + (if settings.project_type == 'python' then python_hooks else []) + [
       {
         entry: "yarn markdownlint-cli2 --fix '#node_modules'",
         id: 'fix-formatting-markdown',

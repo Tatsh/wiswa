@@ -1,19 +1,19 @@
 cmake_minimum_required(VERSION 3.31)
 project({{ settings.project_name }} VERSION 0.0.2)
 
-{% if settings.uses_ecm %}
+{% if settings.cmake.uses_ecm %}
 find_package(ECM NO_MODULE REQUIRED)
 list(APPEND CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
 include(ECMQtDeclareLoggingCategory)
 {% endif %}
 
-{% if settings.want_feature_summary %}
+{% if settings.cmake.want_feature_summary %}
 include(FeatureSummary)
 {% endif %}
 
 include(GNUInstallDirs)
 
-{% if settings.uses_qt %}
+{% if settings.cmake.uses_qt %}
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -46,7 +46,7 @@ if(BUILD_DOCS)
 endif()
 {% endif %}
 
-{% if settings.want_qt %}
+{% if settings.cmake.uses_qt %}
 find_package(Qt6 REQUIRED COMPONENTS DBus Network CONFIG)
 set_package_properties(Qt6DBus PROPERTIES TYPE REQUIRED)
 set_package_properties(Qt6Network PROPERTIES TYPE REQUIRED)
@@ -62,13 +62,13 @@ add_definitions(
   -DVERSION=\"${CMAKE_PROJECT_VERSION}\")
 {% endif %}
 
-{% if settings.want_feature_summary %}
+{% if settings.cmake.want_feature_summary %}
 feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
 {% endif %}
 
 add_subdirectory(src)
 
 install(TARGETS ${CMAKE_PROJECT_NAME})
-{% if settings.want_cpack %}
+{% if settings.cmake.want_cpack %}
 include(CPack)
 {% endif %}

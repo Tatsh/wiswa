@@ -275,7 +275,9 @@ local utils = import 'utils.libjsonnet';
   vcpkg: vcpkg.get(settings),
   '#vcpkg_config':: d.obj('vcpkg configuration.'),
   vcpkg_config: vcpkg_config,
-  cmake: { shared_deps: [], googletest_version: '1.17.0', uses_qt: false },
+  cmake: { shared_deps: [], googletest_version: '1.17.0', uses_ecm: false, uses_qt: false,
+want_feature_summary: true, want_cpack: true },
+  cxx_standard: 23,
 
   // Python only
   local pyproject = import 'defaults/pyproject.libjsonnet',
