@@ -8,7 +8,7 @@ function(settings)
         'runs-on': settings.tests_run_on,
         steps: [
           {
-            uses: 'actions/checkout@v4',
+            uses: 'actions/checkout@v5',
           },
           {
             name: 'Install Poetry',

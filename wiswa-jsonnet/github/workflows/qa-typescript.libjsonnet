@@ -4,7 +4,7 @@ function(settings) {
       'runs-on': settings.qa_runs_on,
       steps: [
         {
-          uses: 'actions/checkout@v4',
+          uses: 'actions/checkout@v5',
         },
         {
           name: 'Install dependencies (Yarn)',
