@@ -6,6 +6,8 @@
     ] else [],
     local man = if settings.want_man then ['man/%s.1' % settings.project_name] else [],
     commitizen: {
+      name: 'cz-path',
+      remove_path_prefixes: std.sort([settings.primary_module, 'src', 'include']),
       tag_format: 'v$version',
       version_files: std.sort(['.wiswa.jsonnet', 'CITATION.cff', 'README.md', 'package.json'] + cpp_files + man),
       version_provider: 'npm',

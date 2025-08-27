@@ -136,21 +136,31 @@ def copy_static_files_python(settings: Settings, module_path: Path) -> None:
         copyfile(static_path, output_file)
         log.debug('Wrote `%s`.', output_file)
 
-    if settings['project_type'] == 'python':
-        if settings['stubs_only']:
-            return
-        copy_file('utils.py')
-        if settings['want_main']:
-            copy_file('__main__.py')
-            copy_file('main.py')
+    if settings['stubs_only']:
+        return
+    copy_file('utils.py')
+    if settings['want_main']:
+        copy_file('__main__.py')
+        copy_file('main.py')
 
 
 def copy_static_files(settings: Settings,
                       module_path: Path,
                       project_type: ProjectType = 'python') -> None:
     """Copy static files to the current directory."""
+    Path('.github/instructions').mkdir(parents=True, exist_ok=True)
+    for name in ('json-yaml', 'markdown', 'toml-ini'):
+        copyfile(module_path / 'static/.github/instructions' / f'{name}.instructions.md',
+                 f'.github/instructions/{name}.instructions.md')
     match project_type:
+        case 'c++':
+            copyfile(module_path / 'static/.github/instructions/cpp.instructions.md',
+                     '.github/instructions/cpp.instructions.md')
         case 'python':
+            copyfile(module_path / 'static/.github/instructions/python.instructions.md',
+                     '.github/instructions/python.instructions.md')
+            copyfile(module_path / 'static/.github/instructions/python-tests.instructions.md',
+                     '.github/instructions/python-tests.instructions.md')
             copy_static_files_python(settings, module_path)
         case _:
             log.warning('No static files to copy for project type `%s`.', project_type)
@@ -231,6 +241,8 @@ def write_template_files_lua(templates_dir: Path, resolve_template: Callable[[Pa
 def write_templated_files_python(settings: Settings, templates_dir: Path,
                                  resolve_template: Callable[[Path], jinja2.Template],
                                  write_file: Callable[..., object]) -> None:
+    write_file(resolve_template(templates_dir / '_module_/__init__.py.j2'),
+               f'{settings["primary_module"]}/__init__.py')
     if settings['want_tests']:
         write_file(resolve_template(templates_dir / 'tests/conftest.py.j2'), 'tests/conftest.py')
         write_file(resolve_template(templates_dir / 'tests/test_utils.py.j2'),
@@ -260,8 +272,8 @@ def write_templated_files_typescript(settings: Settings, templates_dir: Path,
 def write_templated_files(module_path: Path, settings: Settings) -> None:
     """Write templated files."""
     _, templates_dir, resolve_template, write_file = _template_env(module_path, settings)
-    write_file(resolve_template(templates_dir / '.github/copilot-instructions.md.j2'),
-               '.github/copilot-instructions.md')
+    write_file(resolve_template(templates_dir / '.github/instructions/general.instructions.md.j2'),
+               '.github/instructions/general.instructions.md')
     for file_path, overwrite in (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', False),
                                  ('LICENSE.txt.j2', True), ('SECURITY.md.j2', True),
                                  ('CHANGELOG.md.j2', False), (templates_dir / 'README.md.j2',

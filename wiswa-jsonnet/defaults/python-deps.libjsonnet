@@ -1,21 +1,22 @@
 function(want_main, want_yapf) {
-  local want_main_deps = if want_main then { click: '^8.2.1', colorlog: '^6.9.0' } else {},
+  local want_main_deps = if want_main then { click: '^8.2.1' } else {},
   main: {
     'typing-extensions': '^4.14.0',
   } + want_main_deps,
   dev: {
+    'cz-path': '^0.0.1',
     commitizen: '^4.8.3',
     djlint: '^1.36.4',
-    mypy: '^1.16.1',
-    ruff: '^0.12.0',
+    mypy: '^1.17.0',
+    ruff: '^0.12.10',
   } + (if want_yapf then { yapf: '^0.43.0' } else {}),
   docs: {
     'autodoc-pydantic': '^2.2.0',
     doc8: '^2.0.0',
-    docutils: '^0.21.2',
+    docutils: '<0.22',  // due to Sphinx requirement
     'enum-tools': { extras: ['sphinx'], version: '^0.13.0' },
     esbonio: '^0.16.5',
-    numpydoc: '^1.8.0',
+    numpydoc: '^1.9.0',
     'restructuredtext-lint': '^1.4.0',
     sphinx: [
       { version: '^8.2.3', python: '>=3.11' },
@@ -24,12 +25,12 @@ function(want_main, want_yapf) {
     'sphinx-click': '^6.0.0',
     'sphinx-datatables': '^0.3.0',
     'sphinx-hoverxref': '^1.4.2',
-    'sphinx-immaterial': '^0.13.5',
+    'sphinx-immaterial': '^0.13.6',
   },
   tests: {
     coveralls: { python: '<3.13', version: '^4.0.1' },
     mock: '^5.2.0',
-    pytest: '^8.4.0',
+    pytest: '^8.4.1',
     'pytest-cov': '^6.2.1',
     'pytest-mock': '^3.14.1',
   },
