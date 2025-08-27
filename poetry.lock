@@ -195,6 +195,22 @@ docs = ["furo", "jaraco.packaging (>=9.3)", "rst.linker (>=1.9)", "sphinx (>=3.5
 testing = ["jaraco.test", "pytest (!=8.0.*)", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)"]
 
 [[package]]
+name = "bascom"
+version = "0.0.1"
+description = "Core library that my tools use."
+optional = false
+python-versions = "<3.14,>=3.10"
+groups = ["main"]
+files = [
+    {file = "bascom-0.0.1-py3-none-any.whl", hash = "sha256:59e203a6fe1722614d8f2730453723da8603b8fa67ddcb8b5d29ab1e92f38a70"},
+    {file = "bascom-0.0.1.tar.gz", hash = "sha256:038648afb821d5c8b64884e11f7ccb001b7a21e97c35cc3e013ad89be736d601"},
+]
+
+[package.dependencies]
+colorlog = ">=6.9.0,<7.0.0"
+typing-extensions = ">=4.14.0,<5.0.0"
+
+[[package]]
 name = "beautifulsoup4"
 version = "4.13.4"
 description = "Screen-scraping library"
@@ -3121,4 +3137,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.14"
-content-hash = "fd0a4f9679ac62ce9372188bb7115d7505a889d5f26b44d1f815c30a2471beb8"
+content-hash = "753348fe8b43a08d7953a727de250d21cb627d05b604115ad47b68f5659218bf"

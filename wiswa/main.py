@@ -7,6 +7,7 @@ import importlib.resources
 import logging
 import os
 
+from bascom import setup_logging
 import click
 
 from .utils import (
@@ -18,7 +19,6 @@ from .utils import (
     evaluate_merged_settings,
     post_process_steps,
     setup_github_project,
-    setup_logging,
     write_templated_files,
 )
 
@@ -48,7 +48,21 @@ def main(file: Path,
          skip_jsonnet: bool = False,
          skip_templates: bool = False) -> None:
     """Entry point for the Wiswa CLI."""
-    setup_logging(debug=debug)
+    setup_logging(
+        debug=debug,
+        loggers={
+            'urllib3': {
+                'level': 'DEBUG' if debug else 'INFO',
+                'handlers': ('console',),
+                'propagate': False,
+            },
+            'wiswa': {
+                'level': 'DEBUG' if debug else 'INFO',
+                'handlers': ('console',),
+                'propagate': False,
+            }
+        },
+    )
     log.debug('GitHub enabled: %s', not skip_github)
     os.chdir(file.parent)
     with (importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as
@@ -79,7 +93,21 @@ def main(file: Path,
                     '(only used when evaluating settings).'))
 def gen_docs_main(jpath: tuple[str, ...] = (), *, debug: bool = False) -> None:  # pragma: no cover
     """Generate Jsonnet documentation."""
-    setup_logging(debug=debug)
+    setup_logging(
+        debug=debug,
+        loggers={
+            'urllib3': {
+                'level': 'DEBUG' if debug else 'INFO',
+                'handlers': ('console',),
+                'propagate': False,
+            },
+            'wiswa': {
+                'level': 'DEBUG' if debug else 'INFO',
+                'handlers': ('console',),
+                'propagate': False,
+            }
+        },
+    )
     with (importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as
           lib_path, importlib.resources.as_file(importlib.resources.files('wiswa'))):
         jpathdir = ['/usr/share/jsonnet', *jpath, str(lib_path)]

@@ -29,8 +29,7 @@ if TYPE_CHECKING:
 
 __all__ = ('copy_static_files', 'create_py_typed_files', 'download_yarn_plugins',
            'evaluate_jsonnet_file', 'evaluate_jsonnet_project', 'evaluate_merged_settings',
-           'get_latest_yarn_version', 'post_process_steps', 'setup_logging',
-           'write_templated_files')
+           'get_latest_yarn_version', 'post_process_steps', 'write_templated_files')
 
 log = logging.getLogger(__name__)
 
@@ -272,6 +271,7 @@ def write_templated_files_typescript(settings: Settings, templates_dir: Path,
 def write_templated_files(module_path: Path, settings: Settings) -> None:
     """Write templated files."""
     _, templates_dir, resolve_template, write_file = _template_env(module_path, settings)
+    Path('.github/copilot-instructions.md').unlink(missing_ok=True)
     write_file(resolve_template(templates_dir / '.github/instructions/general.instructions.md.j2'),
                '.github/instructions/general.instructions.md')
     for file_path, overwrite in (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', False),
@@ -540,47 +540,3 @@ def setup_github_project(settings: Settings) -> None:
                          }).raise_for_status()
     except requests.exceptions.HTTPError as e:
         log.warning('Caught error updating repo: %s.', e.response.text)
-
-
-def setup_logging(*,
-                  debug: bool = False,
-                  force_color: bool = False,
-                  no_color: bool = False) -> None:  # pragma: no cover
-    """Set up logging configuration."""
-    logging.config.dictConfig({
-        'disable_existing_loggers': True,
-        'root': {
-            'level': 'DEBUG' if debug else 'INFO',
-            'handlers': ['console'],
-        },
-        'formatters': {
-            'default': {
-                '()': 'colorlog.ColoredFormatter',
-                'force_color': force_color,
-                'format': (
-                    '%(light_cyan)s%(asctime)s%(reset)s | %(log_color)s%(levelname)-8s%(reset)s | '
-                    '%(light_green)s%(name)s%(reset)s:%(light_red)s%(funcName)s%(reset)s:'
-                    '%(blue)s%(lineno)d%(reset)s - %(message)s'),
-                'no_color': no_color,
-            }
-        },
-        'handlers': {
-            'console': {
-                'class': 'colorlog.StreamHandler',
-                'formatter': 'default',
-            }
-        },
-        'loggers': {
-            'urllib3': {
-                'level': 'DEBUG' if debug else 'INFO',
-                'handlers': ['console'],
-                'propagate': False,
-            },
-            'wiswa': {
-                'level': 'DEBUG' if debug else 'INFO',
-                'handlers': ['console'],
-                'propagate': False,
-            }
-        },
-        'version': 1
-    })

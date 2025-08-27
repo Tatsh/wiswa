@@ -6,6 +6,7 @@ autorcc
 autosort
 autosubmit
 autouic
+bascom
 bierner
 bsky
 buglist

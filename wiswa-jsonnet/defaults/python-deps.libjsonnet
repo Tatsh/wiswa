@@ -1,6 +1,7 @@
 function(want_main, want_yapf) {
   local want_main_deps = if want_main then { click: '^8.2.1' } else {},
   main: {
+    bascom: '^0.0.1',
     'typing-extensions': '^4.14.0',
   } + want_main_deps,
   dev: {
