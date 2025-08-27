@@ -18,6 +18,10 @@ local d = import 'doc-util/main.libsonnet';
   tool: {
     '#commitizen':: d.obj('Configuration for Commitizen.'),
     commitizen: {
+      '#name':: d.val(d.T.string, 'Extension to use by default.'),
+      name: 'cz_path',
+      '#remove_path_prefixes':: d.val(d.T.array, 'Prefixes to remove when using cz-path.'),
+      remove_path_prefixes: ['include', 'src'],
       '#tag_format':: d.val(d.T.string, 'Format for version tags.'),
       tag_format: 'v$version',
       '#version_files':: d.val(d.T.array, 'List of files to update with the new version.'),

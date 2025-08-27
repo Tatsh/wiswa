@@ -275,8 +275,14 @@ local utils = import 'utils.libjsonnet';
   vcpkg: vcpkg.get(settings),
   '#vcpkg_config':: d.obj('vcpkg configuration.'),
   vcpkg_config: vcpkg_config,
-  cmake: { shared_deps: [], googletest_version: '1.17.0', uses_ecm: false, uses_qt: false,
-want_feature_summary: true, want_cpack: true },
+  cmake: {
+    shared_deps: [],
+    googletest_version: '1.17.0',
+    uses_ecm: false,
+    uses_qt: false,
+    want_feature_summary: true,
+    want_cpack: true,
+  },
   cxx_standard: 23,
 
   // Python only
@@ -313,6 +319,7 @@ want_feature_summary: true, want_cpack: true },
     },
     tool+: {
       commitizen+: {
+        remove_path_prefixes+: [settings.project_name],
         version_files+: ['%s/__init__.py' % settings.primary_module],
       },
       coverage+: {
