@@ -27,15 +27,17 @@
 {% if settings.using_django %}
 ![django](https://img.shields.io/badge/django-5.1-092E20?logo=django)
 {% endif %}
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 {% if settings.project_type == 'python' %}
 [![mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
-    {% if settings.stubs_only %}
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+    {% if not settings.stubs_only %}
 [![pydocstyle](https://img.shields.io/badge/pydocstyle-enabled-AD4CD3)](http://www.pydocstyle.org/en/stable/)
 [![pytest](https://img.shields.io/badge/pytest-zz?logo=Pytest&labelColor=black&color=black)](https://docs.pytest.org/en/stable/)
     {% endif %}
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Downloads](https://static.pepy.tech/badge/{{ settings.project_name }}/month)](https://pepy.tech/project/{{ settings.project_name }})
+{% else %}
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 {% endif %}
 [![Stargazers](https://img.shields.io/github/stars/{{ settings.github.username }}/{{ settings.project_name }}?logo=github&style=flat)](https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/stargazers)
 

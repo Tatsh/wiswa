@@ -46,7 +46,7 @@ local d = import 'doc-util/main.libsonnet';
         '#edit':: d.val(d.T.string, 'Icon for edit action.'),
         edit: 'material/file-edit-outline',
         '#repo':: d.val(d.T.string, 'Icon for repository.'),
-        repo: 'fontawesome/brands/gitlab',
+        repo: 'fontawesome/brands/github'
       },
       '#globaltoc_collapse':: d.val(d.T.boolean, 'sphinx_immaterial: Whether to collapse the global table of contents.'),
       globaltoc_collapse: true,

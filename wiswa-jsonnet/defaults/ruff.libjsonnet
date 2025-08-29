@@ -116,7 +116,13 @@
       convention: 'numpy',
     },
     pylint: {
+      'max-args': 20,
       'max-branches': 20,
+      'max-locals': 20,
+      'max-positional-args': 15,
+      'max-public-methods': 30,
+      'max-returns': 10,
+      'max-statements': 100,
     },
   },
 }
