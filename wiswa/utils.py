@@ -205,15 +205,11 @@ def _template_env(
     return env, templates_dir, resolve_template, write_file
 
 
-def write_templated_files_c_cpp(settings: Settings, templates_dir: Path,
-                                resolve_template: Callable[[Path], jinja2.Template],
+def write_templated_files_c_cpp(templates_dir: Path, resolve_template: Callable[[Path],
+                                                                                jinja2.Template],
                                 write_file: Callable[..., object]) -> None:
     write_file(resolve_template(templates_dir / 'CMakeLists.txt.j2'), 'CMakeLists.txt')
     write_file(resolve_template(templates_dir / 'src/CMakeLists.txt.j2'), 'src/CMakeLists.txt')
-    if settings['want_docs']:
-        write_file(resolve_template(templates_dir / 'Doxyfile.in.j2'),
-                   'Doxyfile.in',
-                   overwrite=True)
 
 
 def write_templated_files_cpp(settings: Settings, templates_dir: Path,
@@ -285,10 +281,10 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
         case 'python':
             write_templated_files_python(settings, templates_dir, resolve_template, write_file)
         case 'c++':
-            write_templated_files_c_cpp(settings, templates_dir, resolve_template, write_file)
+            write_templated_files_c_cpp(templates_dir, resolve_template, write_file)
             write_templated_files_cpp(settings, templates_dir, resolve_template, write_file)
         case 'c':
-            write_templated_files_c_cpp(settings, templates_dir, resolve_template, write_file)
+            write_templated_files_c_cpp(templates_dir, resolve_template, write_file)
             write_templated_files_c(settings, templates_dir, resolve_template, write_file)
         case 'lua':
             write_template_files_lua(templates_dir, resolve_template, write_file)

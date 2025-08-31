@@ -39,7 +39,6 @@ docstrings
 doctrees
 donjayamanne
 dotjoshjohnson
-doxyfile
 dversion
 eamodio
 eeyore
@@ -129,6 +128,7 @@ pytest
 pyyaml
 qstringbuilder
 qtbase
+qtcore
 ramda
 reflow
 regen
@@ -145,6 +145,8 @@ startswith
 staticfiles
 strequal
 strongified
+tagfile
+tagfiles
 tamasfe
 tatsh
 testlist
