@@ -120,4 +120,4 @@ def gen_docs_main(jpath: tuple[str, ...] = (), *, debug: bool = False) -> None: 
         jpathdir = ['/usr/share/jsonnet', *jpath, str(lib_path)]
         merged_settings, _ = evaluate_merged_settings(jpathdir, lib_path, '{}')
         evaluate_jsonnet_project(lib_path, jpathdir, merged_settings, lib_path / 'docs.jsonnet',
-                                 Path('docs'))
+                                 Path('docs/jsonnet'))
