@@ -399,6 +399,10 @@ NATIVE_CALLBACKS: dict[str, tuple[tuple[str, ...], Callable[..., object]]] = {
         lambda owner, repo: get_github_release_latest_tag(owner, repo, skip_releases=True)),
     'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
     'latestNpmPackageVersion': (('package',), get_npm_latest_package_version),
+    'latestPypiPackageVersionCaret': (
+        ('package',), lambda package: f'^{get_pypi_latest_package_version(package)}'),
+    'latestPypiPackageVersionTilde': (
+        ('package',), lambda package: f'~{get_pypi_latest_package_version(package)}'),
     'latestPypiPackageVersion': (('package',), get_pypi_latest_package_version),
     'latestYarnVersion': ((), get_latest_yarn_version),
     'year': ((), lambda: datetime.now(tz=timezone.utc).year),
@@ -452,13 +456,13 @@ def evaluate_merged_settings(jpathdir: list[str],
         raise FileNotFoundError(msg)
     s = _jsonnet.evaluate_snippet(
         '',
-        'function(defaults, settings, user_defaults) defaults + settings + user_defaults',
+        'function(defaults, user_defaults, settings) defaults + user_defaults + settings',
         jpathdir=jpathdir,
         native_callbacks=NATIVE_CALLBACKS,
         tla_codes={
             'defaults': (lib_path / 'defaults.libjsonnet').read_text(),
             'settings': settings,
-            'user_defaults': user_defaults_jsonnet.read_text() if user_defaults else '{}'
+            'user_defaults': user_defaults_jsonnet.read_text() if user_defaults else '{}',
         })
     return s, json.loads(s)
 
