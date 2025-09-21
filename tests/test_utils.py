@@ -119,7 +119,8 @@ def test_download_yarn_plugins_writes_file(mocker: MockerFixture, tmp_path: Path
     mock_response = mocker.Mock()
     mock_response.text = 'plugin code'
     mock_response.raise_for_status = lambda: None
-    mocker.patch('wiswa.utils.requests.get', return_value=mock_response)
+    mocker.patch(
+        'wiswa.utils.requests_cache.CachedSession').return_value.get.return_value = mock_response
     mocker.patch('wiswa.utils.PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI', 'http://example.com')
     plugins_dir = tmp_path / '.yarn' / 'plugins'
     mocker.patch('wiswa.utils.Path',
@@ -146,7 +147,8 @@ def test_download_yarn_writes_file(mocker: MockerFixture, tmp_path: Path) -> Non
     mock_response = mocker.Mock()
     mock_response.text = 'yarn code'
     mock_response.raise_for_status = lambda: None
-    mocker.patch('wiswa.utils.requests.get', return_value=mock_response)
+    mocker.patch(
+        'wiswa.utils.requests_cache').CachedSession.return_value.get.return_value = mock_response
     mocker.patch('wiswa.utils.rmtree')
     mocker.patch('wiswa.utils.Path',
                  side_effect=lambda x=None: tmp_path / '.yarn' / 'releases'
@@ -579,7 +581,7 @@ def test_setup_github_project_successful_patch_and_puts(mocker: MockerFixture) -
         }]),  # rulesets
         mocker.Mock(status_code=200),  # pages
     ]
-    mocker.patch('wiswa.utils.requests.Session', return_value=session_mock)
+    mocker.patch('wiswa.utils.requests_cache.CachedSession', return_value=session_mock)
     utils.setup_github_project(settings)
     assert patch.called
     assert put.call_count >= 3
@@ -602,7 +604,7 @@ def test_setup_github_project_adds_rulesets_and_pages(mocker: MockerFixture) -> 
         mocker.Mock(status_code=200, json=list),  # rulesets
         mocker.Mock(status_code=404),  # pages
     ]
-    mocker.patch('wiswa.utils.requests.Session', return_value=session_mock)
+    mocker.patch('wiswa.utils.requests_cache.CachedSession', return_value=session_mock)
     utils.setup_github_project(settings)
     # Should add both rulesets and pages
     assert post.call_count >= 3
@@ -617,7 +619,7 @@ def test_setup_github_project_handles_http_error(mocker: MockerFixture) -> None:
     session_mock = mocker.Mock()
     error = requests.HTTPError(response=mocker.MagicMock(text='fail'))
     session_mock.patch.side_effect = error
-    mocker.patch('wiswa.utils.requests.Session', return_value=session_mock)
+    mocker.patch('wiswa.utils.requests_cache.CachedSession', return_value=session_mock)
     logger = mocker.patch('wiswa.utils.log')
     utils.setup_github_project(settings)
     logger.warning.assert_called_with('Caught error updating repo: %s.', 'fail')
@@ -656,7 +658,7 @@ def test_setup_github_project_adds_protect_default_branch_ruleset(mocker: Mocker
         } for n in ruleset_names]),
         mocker.Mock(status_code=200),
     ]
-    mocker.patch('wiswa.utils.requests.Session', return_value=session_mock)
+    mocker.patch('wiswa.utils.requests_cache.CachedSession', return_value=session_mock)
     utils.setup_github_project(cast('Settings', settings))
     # Should call post to add 'Protect default branch'
     post_urls = [call.args[0] for call in post.call_args_list]
@@ -833,7 +835,7 @@ def test_setup_github_project_does_not_add_protect_default_branch_if_exists(
                     ]),
         mocker.Mock(status_code=200),
     ]
-    mocker.patch('wiswa.utils.requests.Session', return_value=session_mock)
+    mocker.patch('wiswa.utils.requests_cache.CachedSession', return_value=session_mock)
     utils.setup_github_project(cast('Settings', settings))
     # Should not call post to add 'Protect default branch'
     post_urls = [call.args[0] for call in post.call_args_list]

@@ -34,6 +34,10 @@ log = logging.getLogger(__name__)
               multiple=True,
               help=('Add a directory to the Jsonnet search path '
                     '(only used when evaluating settings).'))
+@click.option('-u',
+              '--user-defaults',
+              is_flag=True,
+              help='Use defaults.jsonnet file in user preferences directory.')
 @click.option('--skip-github', is_flag=True, help='Skip configuring GitHub project.')
 @click.option('--skip-jsonnet', is_flag=True, help='Skip Jsonnet evaluation.')
 @click.option('--skip-templates', is_flag=True, help='Skip Jinja2 template evaluation.')
@@ -46,7 +50,8 @@ def main(file: Path,
          debug: bool = False,
          skip_github: bool = False,
          skip_jsonnet: bool = False,
-         skip_templates: bool = False) -> None:
+         skip_templates: bool = False,
+         user_defaults: bool = False) -> None:
     """Entry point for the Wiswa CLI."""
     setup_logging(
         debug=debug,
@@ -68,8 +73,10 @@ def main(file: Path,
     with (importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as
           lib_path, importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path):
         jpathdir = [str(lib_path)]
-        merged_settings, loaded = evaluate_merged_settings([*jpath, *jpathdir], lib_path,
-                                                           file.read_text(encoding='utf-8'))
+        merged_settings, loaded = evaluate_merged_settings([*jpath, *jpathdir],
+                                                           lib_path,
+                                                           file.read_text(encoding='utf-8'),
+                                                           user_defaults=user_defaults)
         if not skip_jsonnet:
             evaluate_jsonnet_project(lib_path, jpathdir, merged_settings)
         if not skip_templates:

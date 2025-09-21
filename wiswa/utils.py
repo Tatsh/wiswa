@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import cache
 from http import HTTPStatus
 from pathlib import Path
@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any, cast
 import getpass
 import json
 import logging
-import logging.config
 import subprocess as sp
 
 from bs4 import BeautifulSoup as Soup
@@ -20,7 +19,9 @@ from packaging.version import parse as parse_version
 import _jsonnet  # noqa: PLC2701
 import jinja2
 import keyring
+import platformdirs
 import requests
+import requests_cache
 import tomlkit
 
 from .constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
@@ -34,6 +35,13 @@ __all__ = ('copy_static_files', 'create_py_typed_files', 'download_yarn_plugins'
            'get_latest_yarn_version', 'post_process_steps', 'write_templated_files')
 
 log = logging.getLogger(__name__)
+
+
+def cached_session() -> requests_cache.CachedSession:
+    """Get a cached requests session."""
+    return requests_cache.CachedSession(platformdirs.user_cache_path() / 'wiswa/http',
+                                        backend='filesystem',
+                                        expiration=timedelta(days=1))
 
 
 def subprocess_log_run(*args: Any, **kwargs: Any) -> sp.CompletedProcess[Any]:
@@ -169,7 +177,7 @@ def copy_static_files(settings: Settings,
 
 def download_yarn_plugins() -> None:
     """Download Yarn plugins."""
-    r = requests.get(PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI, timeout=15)
+    r = cached_session().get(PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI, timeout=15)
     r.raise_for_status()
     plugins_dir = Path('.yarn/plugins')
     plugins_dir.mkdir(parents=True, exist_ok=True)
@@ -300,7 +308,7 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
 @cache
 def get_latest_yarn_version() -> str:  # pragma: no cover
     """Get the latest Yarn version."""
-    r = requests.get('https://repo.yarnpkg.com/tags', timeout=15)
+    r = cached_session().get('https://repo.yarnpkg.com/tags', timeout=15)
     r.raise_for_status()
     return cast('str', r.json()['latest']['stable'])
 
@@ -308,7 +316,7 @@ def get_latest_yarn_version() -> str:  # pragma: no cover
 @cache
 def get_npm_latest_package_version(package: str) -> str:  # pragma: no cover
     """Get the latest version of an NPM package."""
-    r = requests.get(f'https://registry.npmjs.org/{package}/latest', timeout=15)
+    r = cached_session().get(f'https://registry.npmjs.org/{package}/latest', timeout=15)
     r.raise_for_status()
     return cast('str', r.json()['version'])
 
@@ -328,7 +336,7 @@ def get_pypi_latest_package_version(package: str) -> str:  # pragma: no cover
     ValueError
         If no versions are found.
     """
-    r = requests.get(f'https://pypi.org/rss/project/{package}/releases.xml', timeout=15)
+    r = cached_session().get(f'https://pypi.org/rss/project/{package}/releases.xml', timeout=15)
     r.raise_for_status()
     root = Soup(r.content, 'xml')
     versions = [x.text for x in root.select('item > title')]
@@ -355,12 +363,13 @@ def get_github_release_latest_tag(owner: str,
         If no tags are found.
     """
     version: str | None = None
+    session = cached_session()
     if (not skip_releases
-            and (r := requests.get(f'https://api.github.com/repos/{owner}/{repo}/releases/latest',
-                                   timeout=15)).ok):
+            and (r := session.get(f'https://api.github.com/repos/{owner}/{repo}/releases/latest',
+                                  timeout=15)).ok):
         version = r.json()['tag_name']
     if (not version and
-        (r := requests.get(f'https://api.github.com/repos/{owner}/{repo}/tags', timeout=15)).ok
+        (r := session.get(f'https://api.github.com/repos/{owner}/{repo}/tags', timeout=15)).ok
             and (tags := [x['name'] for x in r.json() if 'name' in x])):
         if actions or (owner == 'google' and repo == 'yapf'):
             version = next(x for x in tags if x.startswith('v'))
@@ -416,23 +425,40 @@ def evaluate_jsonnet_project(lib_path: Path,
         log.debug('Wrote `%s`.', output_file)
 
 
-def evaluate_merged_settings(jpathdir: list[str], lib_path: Path,
-                             settings: str) -> tuple[str, Settings]:
-    """Evaluate the merged settings using Jsonnet."""
-    s = _jsonnet.evaluate_snippet('',
-                                  'function(defaults, settings) defaults + settings',
-                                  jpathdir=jpathdir,
-                                  native_callbacks=NATIVE_CALLBACKS,
-                                  tla_codes={
-                                      'defaults': (lib_path / 'defaults.libjsonnet').read_text(),
-                                      'settings': settings
-                                  })
+def evaluate_merged_settings(jpathdir: list[str],
+                             lib_path: Path,
+                             settings: str,
+                             *,
+                             user_defaults: bool = False) -> tuple[str, Settings]:
+    """
+    Evaluate the merged settings using Jsonnet.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the ``user_defaults`` option is given but no user defaults file exists.
+    """
+    user_defaults_jsonnet = platformdirs.user_config_path('wiswa') / 'defaults.jsonnet'
+    if user_defaults and not user_defaults_jsonnet.exists():
+        msg = ('The user_defaults=True option was given, but no defaults.jsonnet file exists in'
+               f' the user preferences directory (path: {user_defaults_jsonnet}).')
+        raise FileNotFoundError(msg)
+    s = _jsonnet.evaluate_snippet(
+        '',
+        'function(defaults, settings, user_defaults) defaults + settings + user_defaults',
+        jpathdir=jpathdir,
+        native_callbacks=NATIVE_CALLBACKS,
+        tla_codes={
+            'defaults': (lib_path / 'defaults.libjsonnet').read_text(),
+            'settings': settings,
+            'user_defaults': user_defaults_jsonnet.read_text() if user_defaults else '{}'
+        })
     return s, json.loads(s)
 
 
 def download_yarn(version: str) -> None:
-    r = requests.get(f'https://repo.yarnpkg.com/{version}/packages/yarnpkg-cli/bin/yarn.js',
-                     timeout=15)
+    r = cached_session().get(f'https://repo.yarnpkg.com/{version}/packages/yarnpkg-cli/bin/yarn.js',
+                             timeout=15)
     r.raise_for_status()
     releases_dir = Path('.yarn/releases')
     rmtree(releases_dir, ignore_errors=True)
@@ -452,7 +478,7 @@ def setup_github_project(settings: Settings) -> None:
         return
     log.debug('Got a token.')
     repo_name = f'{owner}/{project}'
-    session = requests.Session()
+    session = cached_session()
     host = 'https://api.github.com'
     session.headers.update({
         'Accept': 'application/vnd.github+json',
@@ -613,5 +639,5 @@ def setup_github_project(settings: Settings) -> None:
                                  'path': '/'
                              }
                          }).raise_for_status()
-    except requests.exceptions.HTTPError as e:
+    except requests.HTTPError as e:
         log.warning('Caught error updating repo: %s.', e.response.text)

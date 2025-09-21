@@ -7,29 +7,12 @@ local utils = import 'utils.libjsonnet';
   want_main: true,
 
   // Shared
-  github_username: 'Tatsh',
-  authors: [
-    {
-      'family-names': 'Udvare',
-      'given-names': 'Andrew',
-      email: 'audvare@gmail.com',
-      name: '%s %s' % [self['given-names'], self['family-names']],
-    },
-  ],
   project_name: 'wiswa',
   version: '0.0.0',
   description: 'Generate a Python project.',
   keywords: ['command line', 'python'],
   copilot: {
     intro: 'Wiswa is a tool to generate and manage Python projects.',
-  },
-
-  github+: {
-    funding+: {
-      ko_fi: 'tatsh2',
-      liberapay: 'tatsh2',
-      patreon: 'tatsh2',
-    },
   },
 
   // Python only
