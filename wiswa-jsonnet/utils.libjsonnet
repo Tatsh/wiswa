@@ -73,6 +73,11 @@ local d = import 'doc-util/main.libsonnet';
     [d.arg('settings', d.T.object)]
   ),
   gitLabCi(settings):: {},
+
+  '#pyprojectClassifiers':: d.fn(
+    'Generate a sorted unique list of PyPI classifiers.',
+    [d.arg('settings', d.T.object), d.arg('classifiers', d.T.array)]
+  ),
   pyprojectClassifiers(settings, classifiers=[])::
     std.set(classifiers + [
       'Development Status :: 4 - Beta',
@@ -83,4 +88,20 @@ local d = import 'doc-util/main.libsonnet';
       ('Programming Language :: Python :: %s' % i)
       for i in settings.supported_python_versions
     ]),
+
+  '#latestPypiPackageVersionCaret':: d.fn(
+    'Get the latest version of a PyPI package, prefixed with a caret (^).',
+    [d.arg('package', d.T.string)]
+  ),
+  latestPypiPackageVersionCaret(package):: std.native('latestPypiPackageVersionCaret')(package),
+  '#latestPypiPackageVersionTilde':: d.fn(
+    'Get the latest version of a PyPI package, prefixed with a tilde (~).',
+    [d.arg('package', d.T.string)]
+  ),
+  latestPypiPackageVersionTilde(package):: std.native('latestPypiPackageVersionTilde')(package),
+  '#latestPypiPackageVersion':: d.fn(
+    'Get the latest version of a PyPI package.',
+    [d.arg('package', d.T.string)]
+  ),
+  latestPypiPackageVersion(package):: std.native('latestPypiPackageVersion')(package),
 }
