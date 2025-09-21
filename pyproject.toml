@@ -262,7 +262,7 @@ ignore = [
 preview = true
 
 [tool.ruff.lint.flake8-builtins]
-allowed-modules = ["typing", "types"]
+allowed-modules = ["types", "typing"]
 
 [tool.ruff.lint.flake8-quotes]
 inline-quotes = "single"
