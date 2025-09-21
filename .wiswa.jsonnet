@@ -1,6 +1,6 @@
 local utils = import 'utils.libjsonnet';
 
-(import 'defaults.libjsonnet') + {
+{
   local top = self,
   // General settings
   want_djlint: true,
@@ -23,16 +23,16 @@ local utils = import 'utils.libjsonnet';
     tool+: {
       poetry+: {
         dependencies+: {
-          jinja2: '^' + std.native('latestPypiPackageVersion')('jinja2'),
-          jsonnet: '^' + std.native('latestPypiPackageVersion')('jsonnet'),
-          keyring: '^' + std.native('latestPypiPackageVersion')('keyring'),
-          requests: '^' + std.native('latestPypiPackageVersion')('requests'),
+          jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
+          jsonnet: utils.latestPypiPackageVersionCaret('jsonnet'),
+          keyring: utils.latestPypiPackageVersionCaret('keyring'),
+          requests: utils.latestPypiPackageVersionCaret('requests'),
         },
         group+: {
           dev+: {
             dependencies+: {
-              'types-jsonnet': '^' + std.native('latestPypiPackageVersion')('types-jsonnet'),
-              'types-requests': '^' + std.native('latestPypiPackageVersion')('types-requests'),
+              'types-jsonnet': utils.latestPypiPackageVersionCaret('types-jsonnet'),
+              'types-requests': utils.latestPypiPackageVersionCaret('types-requests'),
             },
           },
         },
