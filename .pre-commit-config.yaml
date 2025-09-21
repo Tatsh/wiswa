@@ -25,7 +25,7 @@ repos:
       - id: 'fix-byte-order-marker'
       - id: 'mixed-line-ending'
     repo: 'https://github.com/pre-commit/pre-commit-hooks'
-    rev: 'v5.0.0'
+    rev: 'v6.0.0'
   - hooks:
       - id: 'poetry-check'
         stages:
@@ -44,6 +44,11 @@ repos:
     repo: 'https://github.com/google/yapf'
     rev: 'v0.43.0'
   - hooks:
+      - id: 'djlint-reformat-jinja'
+      - id: 'djlint-jinja'
+    repo: 'https://github.com/djlint/djLint'
+    rev: 'v1.36.4'
+  - hooks:
       - id: 'check-github-actions'
       - id: 'check-github-workflows'
       - args:
@@ -53,16 +58,11 @@ repos:
         id: 'check-jsonschema'
         name: 'validate package.json'
     repo: 'https://github.com/python-jsonschema/check-jsonschema'
-    rev: '0.33.0'
+    rev: '0.33.3'
   - hooks:
       - id: 'validate-cff'
     repo: 'https://github.com/citation-file-format/cffconvert'
     rev: 'b6045d7'
-  - hooks:
-      - id: 'djlint-reformat-jinja'
-      - id: 'djlint-jinja'
-    repo: 'https://github.com/djlint/djLint'
-    rev: 'v1.36.4'
   - hooks:
       - entry: 'yarn install --check-cache --immutable'
         files: "^package\\.json$"

@@ -20,6 +20,9 @@ local utils = import 'utils.libjsonnet';
   version: '0.0.0',
   description: 'Generate a Python project.',
   keywords: ['command line', 'python'],
+  copilot: {
+    intro: 'Wiswa is a tool to generate and manage Python projects.',
+  },
 
   github+: {
     funding+: {
@@ -37,15 +40,16 @@ local utils = import 'utils.libjsonnet';
     tool+: {
       poetry+: {
         dependencies+: {
-          jinja2: '^3.1.6',
-          jsonnet: '^0.21.0',
-          keyring: '^25.6.0',
-          requests: '^2.32.4',
+          jinja2: '^' + std.native('latestPypiPackageVersion')('jinja2'),
+          jsonnet: '^' + std.native('latestPypiPackageVersion')('jsonnet'),
+          keyring: '^' + std.native('latestPypiPackageVersion')('keyring'),
+          requests: '^' + std.native('latestPypiPackageVersion')('requests'),
         },
         group+: {
           dev+: {
             dependencies+: {
-              'types-requests': '^2.32.4.20250611',
+              'types-jsonnet': '^' + std.native('latestPypiPackageVersion')('types-jsonnet'),
+              'types-requests': '^' + std.native('latestPypiPackageVersion')('types-requests'),
             },
           },
         },

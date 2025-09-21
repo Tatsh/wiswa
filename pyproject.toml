@@ -37,7 +37,7 @@ repository = "https://github.com/Tatsh/wiswa"
 
 [tool.commitizen]
 name = "cz_path"
-remove_path_prefixes = ["wiswa"]
+remove_path_prefixes = ["include", "src", "wiswa"]
 tag_format = "v$version"
 version_files = [
   ".wiswa.jsonnet",
@@ -52,12 +52,12 @@ version_provider = "pep621"
 
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:"]
-omit = ["conftest.py", "tests.py", "tests/test_*.py", "__main__.py", "typing.py"]
+omit = ["conftest.py", "tests.py", "tests/test_*.py", "__main__.py"]
 show_missing = true
 
 [tool.coverage.run]
 branch = true
-omit = ["conftest.py", "tests.py", "tests/test_*.py", "__main__.py", "typing.py"]
+omit = ["conftest.py", "tests.py", "tests/test_*.py", "__main__.py"]
 
 [tool.djlint]
 max_line_length = 100
@@ -85,26 +85,25 @@ include = ["wiswa-jsonnet"]
 
 [tool.poetry.dependencies]
 bascom = "^0.0.1"
-click = "^8.2.1"
-colorlog = "^6.9.0"
+click = "^8.3.0"
 jinja2 = "^3.1.6"
 jsonnet = "^0.21.0"
 keyring = "^25.6.0"
 python = ">=3.10,<3.14"
-requests = "^2.32.4"
-typing-extensions = "^4.14.0"
+requests = "^2.32.5"
+typing-extensions = "^4.15.0"
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-commitizen = "^4.8.3"
+commitizen = "^4.9.1"
 cz-path = "^0.0.1"
 djlint = "^1.36.4"
-mypy = "^1.16.1"
-ruff = "^0.12.0"
+mypy = "^1.18.2"
+ruff = "^0.13.1"
 types-jsonnet = "^0.21.0.20250708"
-types-requests = "^2.32.4.20250611"
+types-requests = "^2.32.4.20250913"
 yapf = "^0.43.0"
 
 [tool.poetry.group.docs]
@@ -113,14 +112,14 @@ optional = true
 [tool.poetry.group.docs.dependencies]
 autodoc-pydantic = "^2.2.0"
 doc8 = "^2.0.0"
-docutils = "^0.21.2"
+docutils = "<0.22"
 esbonio = "^0.16.5"
-numpydoc = "^1.8.0"
+numpydoc = "^1.9.0"
 restructuredtext-lint = "^1.4.0"
-sphinx-click = "^6.0.0"
+sphinx-click = "^6.1.0"
 sphinx-datatables = "^0.3.0"
 sphinx-hoverxref = "^1.4.2"
-sphinx-immaterial = "^0.13.5"
+sphinx-immaterial = "^0.13.6"
 
 [tool.poetry.group.docs.dependencies.enum-tools]
 extras = ["sphinx"]
@@ -139,9 +138,9 @@ optional = true
 
 [tool.poetry.group.tests.dependencies]
 mock = "^5.2.0"
-pytest = "^8.4.0"
-pytest-cov = "^6.2.1"
-pytest-mock = "^3.14.1"
+pytest = "^8.4.2"
+pytest-cov = "^7.0.0"
+pytest-mock = "^3.15.1"
 
 [tool.poetry.group.tests.dependencies.coveralls]
 python = "<3.13"
@@ -289,7 +288,13 @@ extend-ignore-names = ["test_*"]
 convention = "numpy"
 
 [tool.ruff.lint.pylint]
+max-args = 20
 max-branches = 20
+max-locals = 20
+max-positional-args = 15
+max-public-methods = 30
+max-returns = 10
+max-statements = 100
 
 [tool.yapf]
 align_closing_bracket_with_visual_indent = true

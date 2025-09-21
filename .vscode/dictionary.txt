@@ -9,15 +9,11 @@ autouic
 bascom
 bierner
 bsky
-buglist
 buianhthang
 buildsystems
 bytearray
 codeowners
 color
-colored
-colorlog
-colorstyle
 commitizen
 conftest
 contenttypes
@@ -33,6 +29,7 @@ datatables
 davidanson
 dbuild
 debugpy
+devrelease
 djangorestframework
 djlint
 docstrings
@@ -70,7 +67,6 @@ hookimpl
 hostux
 hoverxref
 htmlcov
-ifup
 internalerror
 intersphinx
 isodate
@@ -86,7 +82,6 @@ jpathdir
 jquery
 jsonnet
 jsonschema
-levelname
 lextudio
 libjsonnet
 libname
@@ -96,7 +91,6 @@ luacheck
 luacheckrc
 luacov
 mainpage
-mathjax
 maxwidth
 mdfile
 modindex
@@ -112,7 +106,6 @@ norecursedirs
 numpy
 numpydoc
 objc
-openfortivpn
 pascalreitermann
 pathlib
 pipx
@@ -127,7 +120,6 @@ pyright
 pytest
 pyyaml
 qstringbuilder
-qtbase
 qtcore
 ramda
 reflow
@@ -149,11 +141,9 @@ tagfile
 tagfiles
 tamasfe
 tatsh
-testlist
 testpaths
 timezone
 timonwong
-todolist
 tojson
 tomlkit
 topython
@@ -162,7 +152,6 @@ tseslint
 typeattributes
 tyriar
 udvare
-undoc
 varattributes
 vars
 vcpkg
