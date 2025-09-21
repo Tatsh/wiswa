@@ -41,5 +41,18 @@ pip install wiswa
 Add `-d` to show debug logs.
 
 ```shell
-wiswa
+Usage: wiswa [OPTIONS] [FILE]
+
+  Entry point for the Wiswa CLI.
+
+Options:
+  -d, --debug          Enable debug output.
+  -J, --jpath TEXT     Add a directory to the Jsonnet search path (only used
+                       when evaluating settings).
+  -u, --user-defaults  Use defaults.jsonnet file in user preferences
+                       directory.
+  --skip-github        Skip configuring GitHub project.
+  --skip-jsonnet       Skip Jsonnet evaluation.
+  --skip-templates     Skip Jinja2 template evaluation.
+  -h, --help           Show this message and exit.
 ```
