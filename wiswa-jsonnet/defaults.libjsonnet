@@ -178,7 +178,7 @@ local utils = import 'utils.libjsonnet';
     settings: vscode_settings.get(settings),
   },
   '#readthedocs':: d.obj('ReadTheDocs configuration.'),
-  readthedocs: rtd(settings.rtd_apt_packages, settings.rtd_os),
+  readthedocs: rtd,
 
   // GitHub
   '#github':: d.obj('GitHub settings.'),

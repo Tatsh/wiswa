@@ -1,20 +1,20 @@
-function(apt_packages, os, fail_on_warning = true) {
+{
   build: {
-    apt_packages: apt_packages,
+    apt_packages: [],
     jobs: {
       post_install: [
         'pip install poetry',
         'VIRTUAL_ENV="$READTHEDOCS_VIRTUALENV_PATH" poetry install --all-extras --with=docs',
       ],
     },
-    os: os,
+    os: 'ubuntu-22.04',
     tools: {
       python: '3.12',
     },
   },
   sphinx: {
     configuration: 'docs/conf.py',
-    fail_on_warning: fail_on_warning,
+    fail_on_warning: true,
   },
   version: 2,
 }
