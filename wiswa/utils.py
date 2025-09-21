@@ -15,7 +15,7 @@ import logging
 import subprocess as sp
 
 from bs4 import BeautifulSoup as Soup
-from packaging.version import parse as parse_version
+from packaging.version import InvalidVersion, Version, parse as parse_version
 import _jsonnet  # noqa: PLC2701
 import jinja2
 import keyring
@@ -343,8 +343,15 @@ def get_pypi_latest_package_version(package: str) -> str:  # pragma: no cover
     if not versions:
         msg = f'No versions found for package `{package}`.'
         raise ValueError(msg)
+
+    def parse_version_safe(v: str) -> Version | None:
+        try:
+            return parse_version(v)
+        except InvalidVersion:
+            return None
+
     return str(
-        max(w for w in (parse_version(v) for v in versions) if not w.is_prerelease
+        max(w for w in (parse_version_safe(v) for v in versions) if w and not w.is_prerelease
             and not w.is_devrelease and f'{package}-{w}' not in PYPI_YANKED_RELEASES))
 
 
