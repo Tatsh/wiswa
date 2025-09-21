@@ -15,6 +15,8 @@ import logging
 import logging.config
 import subprocess as sp
 
+from bs4 import BeautifulSoup as Soup
+from packaging.version import parse as parse_version
 import _jsonnet  # noqa: PLC2701
 import jinja2
 import keyring
@@ -89,7 +91,7 @@ def post_process_steps_python(settings: Settings) -> None:
     with_arg = ','.join(('docs' if settings['want_docs'] else '',
                          'tests' if settings['want_tests'] else '', 'dev')).lstrip(',').rstrip(',')
     subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg != ',' else ())))
-    subprocess_log_run(('poetry', 'install', '--all-groups'))
+    subprocess_log_run(('poetry', 'install', '--all-groups', '--all-extras'))
     subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
 
 
@@ -120,7 +122,7 @@ def create_py_typed_files(settings: Settings) -> None:
 
 def non_empty_file_exists(output_file: Path) -> bool:
     """Check if a file exists and is not empty."""
-    return output_file.exists() and len(output_file.read_text().strip()) != 0
+    return output_file.exists() and len(output_file.read_text(encoding='utf-8').strip()) != 0
 
 
 def copy_static_files_python(settings: Settings, module_path: Path) -> None:
@@ -303,9 +305,46 @@ def get_latest_yarn_version() -> str:  # pragma: no cover
     return cast('str', r.json()['latest']['stable'])
 
 
+@cache
+def get_npm_latest_package_version(package: str) -> str:  # pragma: no cover
+    """Get the latest version of an NPM package."""
+    r = requests.get(f'https://registry.npmjs.org/{package}/latest', timeout=15)
+    r.raise_for_status()
+    return cast('str', r.json()['version'])
+
+
+PYPI_YANKED_RELEASES = {
+    'sphinx-8.3.0',
+}
+
+
+@cache
+def get_pypi_latest_package_version(package: str) -> str:  # pragma: no cover
+    """
+    Get the latest version of a PyPI package.
+
+    Raises
+    ------
+    ValueError
+        If no versions are found.
+    """
+    r = requests.get(f'https://pypi.org/rss/project/{package}/releases.xml', timeout=15)
+    r.raise_for_status()
+    root = Soup(r.content, 'xml')
+    versions = [x.text for x in root.select('item > title')]
+    if not versions:
+        msg = f'No versions found for package `{package}`.'
+        raise ValueError(msg)
+    return str(
+        max(w for w in (parse_version(v) for v in versions) if not w.is_prerelease
+            and not w.is_devrelease and f'{package}-{w}' not in PYPI_YANKED_RELEASES))
+
+
 NATIVE_CALLBACKS: dict[str, tuple[tuple[str, ...], Callable[..., object]]] = {
-    'latestYarnVersion': ((), get_latest_yarn_version),
     'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
+    'latestNpmPackageVersion': (('package',), get_npm_latest_package_version),
+    'latestPypiPackageVersion': (('package',), get_pypi_latest_package_version),
+    'latestYarnVersion': ((), get_latest_yarn_version),
     'year': ((), lambda: datetime.now(tz=timezone.utc).year),
 }
 

@@ -69,7 +69,7 @@ def main(file: Path,
           lib_path, importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path):
         jpathdir = [str(lib_path)]
         merged_settings, loaded = evaluate_merged_settings([*jpath, *jpathdir], lib_path,
-                                                           file.read_text())
+                                                           file.read_text(encoding='utf-8'))
         if not skip_jsonnet:
             evaluate_jsonnet_project(lib_path, jpathdir, merged_settings)
         if not skip_templates:
