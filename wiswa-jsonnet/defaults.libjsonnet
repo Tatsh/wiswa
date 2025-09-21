@@ -177,8 +177,6 @@ local utils = import 'utils.libjsonnet';
     '#settings':: d.obj('VS Code settings.'),
     settings: vscode_settings.get(settings),
   },
-  '#rtd_os':: d.val(d.T.string, 'Operating system for ReadTheDocs.'),
-  rtd_os: 'ubuntu-22.04',
   '#readthedocs':: d.obj('ReadTheDocs configuration.'),
   readthedocs: rtd(settings.rtd_apt_packages, settings.rtd_os),
 
@@ -253,8 +251,8 @@ local utils = import 'utils.libjsonnet';
   ] else [],
   local typescript_ignore = if self.project_type == 'typescript' then ['/coverage/'] else [],
   '#gitignore':: d.val(d.T.array, 'Array of .gitignore entries.'),
-  gitignore: std.sort(self.shared_ignore + cpp_ignore + typescript_ignore +
-                      if !self.keep_dist then ['/dist/'] else []),
+  gitignore: std.set(self.shared_ignore + cpp_ignore + typescript_ignore +
+                     if !self.keep_dist then ['/dist/'] else []),
 
   // C/C++ only
   local clang_format = import 'defaults/clang-format.libjsonnet',
@@ -295,15 +293,7 @@ local utils = import 'utils.libjsonnet';
   pyproject: pyproject {
     project+: {
       authors: utils.pyprojectAuthors(settings.authors),
-      classifiers: std.sort([
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: Developers',
-        'Programming Language :: Python',
-        if settings.stubs_only then 'Typing :: Stubs Only' else 'Typing :: Typed',
-      ] + [
-        ('Programming Language :: Python :: %s' % i)
-        for i in settings.supported_python_versions
-      ]),
+      classifiers: utils.pyprojectClassifiers(settings),
       description: settings.description,
       keywords: settings.keywords,
       name: settings.project_name,
@@ -319,8 +309,11 @@ local utils = import 'utils.libjsonnet';
     },
     tool+: {
       commitizen+: {
-        remove_path_prefixes+: [settings.project_name],
-        version_files+: ['%s/__init__.py' % settings.primary_module],
+        remove_path_prefixes: std.set(pyproject.tool.commitizen.remove_path_prefixes + [
+          settings.project_name,
+        ]),
+        version_files: std.set(pyproject.tool.commitizen.version_files +
+                               ['%s/__init__.py' % settings.primary_module]),
       },
       coverage+: {
         report+: {
@@ -356,12 +349,9 @@ local utils = import 'utils.libjsonnet';
             dependencies: deps.tests,
           },
         } + docs_section + tests_section,
-      } + if settings.want_main && settings.want_docs then {
-        include: if settings.want_main && settings.want_docs then ['man'] + (
-          if settings.want_tests then
-            [{ path: 'tests', format: 'sdist' }] else []
-        ) else if settings.want_tests then [{ path: 'tests', format: 'sdist' }] else [],
-      } else {},
+        include: (if settings.want_docs && settings.want_man then ['man'] else []) +
+                 (if settings.want_tests then [{ path: 'tests', format: 'sdist' }] else []),
+      },
       pyright+: {
         include: ['./%s' % [m] for m in settings.modules] + [
           './tests',
@@ -380,13 +370,14 @@ local utils = import 'utils.libjsonnet';
             'T201',
             'TID252',
           ]),
-        } else {},
+        } else (if settings.want_main then {
+                  'per-file-ignores': { 'main.py': ['PLR0913'] },
+                }
+                else {}),
         'target-version': 'py3%s' % settings.supported_python_versions[0][2:],
       },
     },
   },
-  '#rtd_apt_packages':: d.val(d.T.array, "Packages to install from `apt` on ReadTheDocs' runner."),
-  rtd_apt_packages: [],
   '#docs_conf':: d.obj('Sphinx documentation configuration.'),
   docs_conf: (import 'defaults/docs_conf.libjsonnet') + {
     config+: {
@@ -448,17 +439,17 @@ local utils = import 'utils.libjsonnet';
   '#prettierignore':: d.val(d.T.array, 'Array of patterns to ignore for Prettier.'),
   local cpp_prettierignore = if self.project_type == 'c++' || self.project_type == 'c' then
     cpp_ignore + ['*.c', '*.cpp', '*.h', '*.in'] else [],
-  prettierignore: std.uniq(std.sort(self.shared_ignore +
-                                    [
-                                      '*.1',
-                                      '*.j2',
-                                      '*.jsonnet',
-                                      '*.libjsonnet',
-                                      '*.lock',
-                                      '/.yarn/**/*.cjs',
-                                      '/dist/',
-                                    ] +
-                                    cpp_prettierignore)),
+  prettierignore: std.set(self.shared_ignore +
+                          [
+                            '*.1',
+                            '*.j2',
+                            '*.jsonnet',
+                            '*.libjsonnet',
+                            '*.lock',
+                            '/.yarn/**/*.cjs',
+                            '/dist/',
+                          ] +
+                          cpp_prettierignore),
 
   // Yarn
   '#yarnrc':: d.obj('Yarn configuration.'),

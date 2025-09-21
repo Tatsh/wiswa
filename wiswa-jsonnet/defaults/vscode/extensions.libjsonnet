@@ -8,7 +8,7 @@
   ],
   local python_unwanted_recommendations = ['ms-python.vscode-python-envs'],
   get(settings):: {
-    recommendations: std.sort([
+    recommendations: std.set([
       'Grafana.vscode-jsonnet',
       'aaron-bond.better-comments',
       'bierner.markdown-checkbox',

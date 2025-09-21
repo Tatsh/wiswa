@@ -9,7 +9,12 @@
       name: 'cz_path',
       remove_path_prefixes: ['include', 'src'],
       tag_format: 'v$version',
-      version_files: std.sort(['.wiswa.jsonnet', 'CITATION.cff', 'README.md', 'package.json'] + cpp_files + man),
+      version_files: std.set([
+        '.wiswa.jsonnet',
+        'CITATION.cff',
+        'README.md',
+        'package.json',
+      ] + cpp_files + man),
       version_provider: 'npm',
       version_scheme: 'semver',
     },

@@ -73,4 +73,14 @@ local d = import 'doc-util/main.libsonnet';
     [d.arg('settings', d.T.object)]
   ),
   gitLabCi(settings):: {},
+  pyprojectClassifiers(settings, classifiers=[])::
+    std.set(classifiers + [
+      'Development Status :: 4 - Beta',
+      'Intended Audience :: Developers',
+      'Programming Language :: Python',
+      if settings.stubs_only then 'Typing :: Stubs Only' else 'Typing :: Typed',
+    ] + [
+      ('Programming Language :: Python :: %s' % i)
+      for i in settings.supported_python_versions
+    ]),
 }

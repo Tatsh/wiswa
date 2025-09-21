@@ -87,7 +87,7 @@
     ],
     preview: true,
     'flake8-builtins': {
-      'allowed-modules': ['typing', 'types'],
+      'allowed-modules': ['types', 'typing'],
       // 'strict-checking': true,
     },
     'flake8-quotes': {
@@ -108,9 +108,6 @@
       'extend-ignore-names': [
         'test_*',
       ],
-    },
-    'per-file-ignores': {
-      'main.py': ['PLR0913'],
     },
     pydocstyle: {
       convention: 'numpy',
