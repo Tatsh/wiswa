@@ -4,7 +4,7 @@ function(settings) {
       'runs-on': settings.qa_runs_on,
       steps: [
         {
-          uses: 'actions/checkout@v5',
+          uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
         },
         {
           name: 'Install dependencies (Yarn)',

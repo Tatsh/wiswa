@@ -5,7 +5,7 @@ function(settings)
         'runs-on': settings.tests_run_on,
         steps: [
           {
-            uses: 'actions/checkout@v5',
+            uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
           },
           {
             name: 'Install dependencies (Yarn)',
@@ -17,7 +17,7 @@ function(settings)
           },
           {
             name: 'Coveralls',
-            uses: 'coverallsapp/github-action@v2',
+            uses: 'coverallsapp/github-action@' + std.native('githubLatestActionTag')('coverallsapp', 'github-action'),
           },
         ],
       },

@@ -12,18 +12,18 @@ function(settings)
         steps: [
           {
             name: 'Checkout repository',
-            uses: 'actions/checkout@v5',
+            uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
           },
           {
             name: 'Initialize CodeQL',
-            uses: 'github/codeql-action/init@v3',
+            uses: 'github/codeql-action/init@' + std.native('githubLatestActionTag')('github', 'codeql-action'),
             with: {
               languages: '${{ matrix.language }}',
             },
           },
           {
             name: 'Perform CodeQL Analysis',
-            uses: 'github/codeql-action/analyze@v3',
+            uses: 'github/codeql-action/analyze@' + std.native('githubLatestActionTag')('github', 'codeql-action'),
             with: {
               category: '/language:${{matrix.language}}',
             },

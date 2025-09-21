@@ -6,5 +6,5 @@
     },
   ],
   repo: 'https://github.com/google/yapf',
-  rev: 'v0.43.0',
+  rev: std.native('githubLatestTag')('google', 'yapf'),
 }

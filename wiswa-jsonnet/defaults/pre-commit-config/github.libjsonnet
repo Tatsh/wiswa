@@ -17,5 +17,5 @@
     },
   ],
   repo: 'https://github.com/python-jsonschema/check-jsonschema',
-  rev: '0.33.3',
+  rev: std.native('githubLatestReleaseTag')('python-jsonschema', 'check-jsonschema'),
 }

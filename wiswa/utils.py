@@ -340,7 +340,47 @@ def get_pypi_latest_package_version(package: str) -> str:  # pragma: no cover
             and not w.is_devrelease and f'{package}-{w}' not in PYPI_YANKED_RELEASES))
 
 
+@cache
+def get_github_release_latest_tag(owner: str,
+                                  repo: str,
+                                  *,
+                                  actions: bool = False,
+                                  skip_releases: bool = False) -> str:
+    """
+    Get the latest release tag from a GitHub repository.
+
+    Raises
+    ------
+    ValueError
+        If no tags are found.
+    """
+    version: str | None = None
+    if (not skip_releases
+            and (r := requests.get(f'https://api.github.com/repos/{owner}/{repo}/releases/latest',
+                                   timeout=15)).ok):
+        version = r.json()['tag_name']
+    if (not version and
+        (r := requests.get(f'https://api.github.com/repos/{owner}/{repo}/tags', timeout=15)).ok
+            and (tags := [x['name'] for x in r.json() if 'name' in x])):
+        if actions or (owner == 'google' and repo == 'yapf'):
+            version = next(x for x in tags if x.startswith('v'))
+        else:
+            version = tags[0]
+    if not version:
+        msg = f'Could not get latest tag for {owner}/{repo}.'
+        raise ValueError(msg)
+    if actions:
+        return version.split('.')[0]
+    return version
+
+
 NATIVE_CALLBACKS: dict[str, tuple[tuple[str, ...], Callable[..., object]]] = {
+    'githubLatestActionTag': (('owner', 'repo'), lambda owner, repo: get_github_release_latest_tag(
+        owner, repo, actions=True, skip_releases=True)),
+    'githubLatestReleaseTag': (('owner', 'repo'), get_github_release_latest_tag),
+    'githubLatestTag': (
+        ('owner', 'repo'),
+        lambda owner, repo: get_github_release_latest_tag(owner, repo, skip_releases=True)),
     'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
     'latestNpmPackageVersion': (('package',), get_npm_latest_package_version),
     'latestPypiPackageVersion': (('package',), get_pypi_latest_package_version),

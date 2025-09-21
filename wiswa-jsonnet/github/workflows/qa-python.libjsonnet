@@ -5,7 +5,7 @@ function(settings)
         'runs-on': settings.qa_runs_on,
         steps: [
           {
-            uses: 'actions/checkout@v5',
+            uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
           },
           {
             name: 'Install Poetry',
@@ -13,7 +13,7 @@ function(settings)
           },
           {
             name: 'Set up Python ${{ matrix.python-version }}',
-            uses: 'actions/setup-python@v6',
+            uses: 'actions/setup-python@' + std.native('githubLatestActionTag')('actions', 'setup-python'),
             with: {
               cache: 'poetry',
               'python-version': '${{ matrix.python-version }}',

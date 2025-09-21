@@ -324,10 +324,14 @@ local utils = import 'utils.libjsonnet';
       },
       coverage+: {
         report+: {
-          omit+: if settings.want_main then ['__main__.py'] else [],
+          omit: std.set(pyproject.tool.coverage.report.omit + (
+            if settings.want_main then ['__main__.py'] else []
+          )),
         },
         run+: {
-          omit+: if settings.want_main then ['__main__.py'] else [],
+          omit: std.set(pyproject.tool.coverage.run.omit + (
+            if settings.want_main then ['__main__.py'] else []
+          )),
         },
       },
       mypy+: { python_version: settings.supported_python_versions[0] },
