@@ -328,6 +328,8 @@ local utils = import 'utils.libjsonnet';
         },
       },
       mypy+: { python_version: settings.supported_python_versions[0] },
+      local poetry_include = (if settings.want_docs && settings.want_man then ['man'] else []) +
+                             (if settings.want_tests then [{ path: 'tests', format: 'sdist' }] else []),
       poetry+: {
         packages: [{ include: x } for x in settings.modules],
         dependencies: {
@@ -349,9 +351,7 @@ local utils = import 'utils.libjsonnet';
             dependencies: deps.tests,
           },
         } + docs_section + tests_section,
-        include: (if settings.want_docs && settings.want_man then ['man'] else []) +
-                 (if settings.want_tests then [{ path: 'tests', format: 'sdist' }] else []),
-      },
+      } + (if std.length(poetry_include) > 0 then poetry_include else {}),
       pyright+: {
         include: ['./%s' % [m] for m in settings.modules] + [
           './tests',
