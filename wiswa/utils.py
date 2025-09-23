@@ -147,7 +147,6 @@ def copy_static_files_python(settings: Settings, module_path: Path) -> None:
 
     if settings['stubs_only']:
         return
-    copy_file('utils.py')
     if settings['want_main']:
         copy_file('__main__.py')
         copy_file('main.py')
@@ -166,10 +165,11 @@ def copy_static_files(settings: Settings,
             copyfile(module_path / 'static/.github/instructions/cpp.instructions.md',
                      '.github/instructions/cpp.instructions.md')
         case 'python':
-            copyfile(module_path / 'static/.github/instructions/python.instructions.md',
-                     '.github/instructions/python.instructions.md')
-            copyfile(module_path / 'static/.github/instructions/python-tests.instructions.md',
-                     '.github/instructions/python-tests.instructions.md')
+            if not settings['stubs_only']:
+                copyfile(module_path / 'static/.github/instructions/python.instructions.md',
+                         '.github/instructions/python.instructions.md')
+                copyfile(module_path / 'static/.github/instructions/python-tests.instructions.md',
+                         '.github/instructions/python-tests.instructions.md')
             copy_static_files_python(settings, module_path)
         case _:
             log.warning('No static files to copy for project type `%s`.', project_type)
@@ -246,12 +246,11 @@ def write_template_files_lua(templates_dir: Path, resolve_template: Callable[[Pa
 def write_templated_files_python(settings: Settings, templates_dir: Path,
                                  resolve_template: Callable[[Path], jinja2.Template],
                                  write_file: Callable[..., object]) -> None:
-    write_file(resolve_template(templates_dir / '_module_/__init__.py.j2'),
-               f'{settings["primary_module"]}/__init__.py')
+    if not settings['stubs_only']:
+        write_file(resolve_template(templates_dir / '_module_/__init__.py.j2'),
+                   f'{settings["primary_module"]}/__init__.py')
     if settings['want_tests']:
         write_file(resolve_template(templates_dir / 'tests/conftest.py.j2'), 'tests/conftest.py')
-        write_file(resolve_template(templates_dir / 'tests/test_utils.py.j2'),
-                   'tests/test_utils.py')
         if settings['want_main']:
             write_file(resolve_template(templates_dir / 'tests/test_main.py.j2'),
                        'tests/test_main.py')

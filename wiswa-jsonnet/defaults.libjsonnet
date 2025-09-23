@@ -6,7 +6,9 @@ local utils = import 'utils.libjsonnet';
 {
   '#':: d.pkg(name='defaults', url='', help='', filename=std.thisFile),
 
-  local deps = (import 'defaults/python-deps.libjsonnet')(self.want_main, self.want_yapf),
+  local deps = (import 'defaults/python-deps.libjsonnet')(
+    self.want_main, self.want_yapf, self.stubs_only, self.project_name
+  ),
   local github = if settings.using_github then [import 'defaults/pre-commit-config/github.libjsonnet'] else [],
   local cff = if settings.want_cff then [import 'defaults/pre-commit-config/cff.libjsonnet'] else [],
   local djlint = if settings.want_djlint then [import 'defaults/pre-commit-config/djlint.libjsonnet'] else [],
@@ -67,7 +69,6 @@ local utils = import 'utils.libjsonnet';
     '_module_/__init__.py',
     'tests/conftest.py',
     'tests/test_main.py',
-    'tests/test_utils.py',
   ],
   '#codeowners':: d.val(d.T.object, 'Code owners for the project. Dictionary of string to string. The value is usually the GitHub or GitLab username but this is host-dependent.'),
   codeowners: {
@@ -209,6 +210,19 @@ local utils = import 'utils.libjsonnet';
     ],
     '#username':: d.val(d.T.string, 'GitHub username.'),
     username: settings.github_username,
+    '#workflows':: d.obj('GitHub Actions workflows configuration.'),
+    workflows: {
+      codeql: {
+        '#apt_packages':: d.val(d.T.array, 'Array of APT packages to install for CodeQL workflow.'),
+        apt_packages: [],
+      },
+      qa: {
+        apt_packages: [],
+      },
+      tests: {
+        apt_packages: [],
+      },
+    },
   },
   '#qa_runs_on':: d.val(d.T.string, 'Operating system for `qa.yml` runs on GitHub runners.'),
   qa_runs_on: self.tests_run_on,
@@ -310,10 +324,11 @@ local utils = import 'utils.libjsonnet';
     tool+: {
       commitizen+: {
         remove_path_prefixes: std.set(pyproject.tool.commitizen.remove_path_prefixes + [
-          settings.project_name,
+          settings.primary_module,
         ]),
         version_files: std.set(pyproject.tool.commitizen.version_files +
-                               ['%s/__init__.py' % settings.primary_module]),
+                               ['%s/__init__.py' % settings.primary_module] +
+                               (if !settings.stubs_only then ['docs/index.rst'] else [])),
       },
       coverage+: {
         report+: {
@@ -351,7 +366,7 @@ local utils = import 'utils.libjsonnet';
             dependencies: deps.tests,
           },
         } + docs_section + tests_section,
-      } + (if std.length(poetry_include) > 0 then poetry_include else {}),
+      } + (if std.length(poetry_include) > 0 then { include: poetry_include } else {}),
       pyright+: {
         include: ['./%s' % [m] for m in settings.modules] + [
           './tests',

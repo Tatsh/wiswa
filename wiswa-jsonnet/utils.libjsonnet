@@ -88,20 +88,25 @@ local d = import 'doc-util/main.libsonnet';
       ('Programming Language :: Python :: %s' % i)
       for i in settings.supported_python_versions
     ]),
-
+  '#latestNpmPackageVersionCaret':: d.fn(
+    'Get the latest version of an npm package, prefixed with a caret (^).',
+    [d.arg('package', d.T.string)]
+  ),
+  latestNpmPackageVersionCaret(package):: '^' + std.native('latestNpmPackageVersion')(package),
   '#latestPypiPackageVersionCaret':: d.fn(
     'Get the latest version of a PyPI package, prefixed with a caret (^).',
     [d.arg('package', d.T.string)]
   ),
-  latestPypiPackageVersionCaret(package):: std.native('latestPypiPackageVersionCaret')(package),
+  latestPypiPackageVersionCaret(package):: '^' + std.native('latestPypiPackageVersion')(package),
   '#latestPypiPackageVersionTilde':: d.fn(
     'Get the latest version of a PyPI package, prefixed with a tilde (~).',
     [d.arg('package', d.T.string)]
   ),
-  latestPypiPackageVersionTilde(package):: std.native('latestPypiPackageVersionTilde')(package),
+  latestPypiPackageVersionTilde(package):: '~' + std.native('latestPypiPackageVersion')(package),
   '#latestPypiPackageVersion':: d.fn(
     'Get the latest version of a PyPI package.',
     [d.arg('package', d.T.string)]
   ),
   latestPypiPackageVersion(package):: std.native('latestPypiPackageVersion')(package),
+  githubLatestActionTag(owner, repo):: std.native('githubLatestActionTag')(owner, repo),
 }

@@ -11,6 +11,10 @@ function(settings)
             name: 'Install Poetry',
             run: 'pipx install poetry',
           },
+        ] + (if std.length(settings.github.workflows.qa.apt_packages) > 0 then [{
+               name: 'Install dependencies',
+               run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
+             }] else []) + [
           {
             name: 'Set up Python ${{ matrix.python-version }}',
             uses: 'actions/setup-python@' + std.native('githubLatestActionTag')('actions', 'setup-python'),

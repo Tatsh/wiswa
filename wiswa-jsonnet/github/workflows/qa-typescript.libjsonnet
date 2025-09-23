@@ -6,6 +6,10 @@ function(settings) {
         {
           uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
         },
+      ] + (if std.length(settings.github.workflows.qa.apt_packages) > 0 then [{
+             name: 'Install dependencies',
+             run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
+           }] else []) + [
         {
           name: 'Install dependencies (Yarn)',
           run: 'yarn',

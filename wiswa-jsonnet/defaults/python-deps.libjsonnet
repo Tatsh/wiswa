@@ -1,16 +1,16 @@
-function(want_main, want_yapf) {
+function(want_main, want_yapf, stubs_only, project_name) {
   local want_main_deps = if want_main then { click: '^' + std.native('latestPypiPackageVersion')('click') } else {},
+  local bascom_dep = if !stubs_only && project_name != 'bascom' then { 'bascom': '^' + std.native('latestPypiPackageVersion')('bascom') } else {},
+  local cz_path_dep = if project_name != 'cz-path' then { 'cz-path': '^' + std.native('latestPypiPackageVersion')('cz-path') } else {},
   main: {
-    bascom: '^' + std.native('latestPypiPackageVersion')('bascom'),
     'typing-extensions': '^' + std.native('latestPypiPackageVersion')('typing-extensions'),
-  } + want_main_deps,
+  } + want_main_deps + bascom_dep,
   dev: {
-    'cz-path': '^' + std.native('latestPypiPackageVersion')('cz-path'),
     commitizen: '^' + std.native('latestPypiPackageVersion')('commitizen'),
     djlint: '^' + std.native('latestPypiPackageVersion')('djlint'),
     mypy: '^' + std.native('latestPypiPackageVersion')('mypy'),
     ruff: '^' + std.native('latestPypiPackageVersion')('ruff'),
-  } + (if want_yapf then { yapf: '^' + std.native('latestPypiPackageVersion')('yapf') } else {}),
+  } + cz_path_dep + (if want_yapf then { yapf: '^' + std.native('latestPypiPackageVersion')('yapf') } else {}),
   docs: {
     'autodoc-pydantic': '^' + std.native('latestPypiPackageVersion')('autodoc-pydantic'),
     doc8: '^' + std.native('latestPypiPackageVersion')('doc8'),

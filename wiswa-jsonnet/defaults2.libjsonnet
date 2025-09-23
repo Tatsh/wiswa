@@ -1,0 +1,115 @@
+local d = import 'doc-util/main.libsonnet';
+local utils = import 'utils.libjsonnet';
+
+{
+  '#': d.pkg(name='defaults', url='', help='', filename=std.thisFile),
+
+  local settings = self,
+  local _g = settings.globals,
+
+  '#globals':: d.val(d.T.object, 'Settings affecting multiple files.'),
+  globals: {
+    project_type: 'python',
+    project_name: null,
+    yarn_version: std.native('latestYarnVersion')(),
+    license: 'MIT',
+    version: '0.0.0',
+    github: {
+      owner: null,
+      project_name: _g.project_name,
+    },
+    git: {
+      default_branch: 'master',
+      repository_html_uri: utils.gitHubRepositoryUri(
+        _g.github.username, _g.github.project_name
+      ),
+    },
+    rtd: {
+      uri: utils.readTheDocsUri(_g.github.project_name),
+    },
+    keywords: [],
+    description: null,
+    '#c':: d.obj('C configuration.'),
+    c: {
+      tab_size: 4,
+    },
+    '#c++':: d.obj('C++ configuration.'),
+    cxx: {
+      tab_size: 4,
+    },
+    '#python':: d.obj('Python configuration.'),
+    python: {
+      modules: [],
+      primary_module: null,
+      pypi_project_name: _g.project_name,
+      tab_size: 4,
+    },
+    '#rst':: d.obj('reStructuredText configuration.'),
+    rst: {
+      tab_size: 3,
+    },
+    '#shell':: d.obj('Shell script configuration.'),
+    shell: {
+      tab_size: 4,
+    },
+    '#tab_size':: d.val(d.T.number, 'Default tab size.'),
+    tab_size: 2,
+    '#social':: d.obj('Social media configuration (for badges).'),
+    social: {
+      '#bsky':: d.val(d.T.string, 'Bluesky username.'),
+      bsky: '',
+      '#mastodon':: d.obj('Mastodon configuration.'),
+      mastodon: {
+        '#id':: d.val(d.T.string, 'Mastodon account ID.'),
+        id: '',
+        '#domain':: d.val(d.T.string, 'Mastodon instance domain.'),
+        domain: 'hostux.social',
+      },
+    },
+    ignore: [],
+  },
+  '#pyproject.toml':: d.obj('Settings for pyproject.toml generation.'),
+  'pyproject.toml': {},
+  'CITATION.cff': {
+    '#cff-version':: d.val(d.T.string, 'CITATION.cff version.'),
+    'cff-version': '1.2.0',
+    '#date-released':: d.val(d.T.string, 'Date when the software was released.'),
+    'date-released': std.native('isodate')(),
+    '#authors':: d.val(d.T.array, 'Array of authors. See [What is a CITATION.cff file?](https://citation-file-format.github.io/#/what-is-a-citation-cff-file) for more information on this field.'),
+    authors: utils.citationAuthors(settings.globals.authors),
+    '#message':: d.val(d.T.string, 'Message to display when citing the software.'),
+    message: 'If you use this software, please cite it as below.',
+    '#title':: d.val(d.T.string, 'Title of the software.'),
+    title: settings.project_name,
+    '#version':: d.val(d.T.string, 'Version of the software.'),
+    version: settings.globals.version,
+  },
+  '#CODEOWNERS':: d.obj('Code owners for the project. Dictionary of string to string. The value is usually the GitHub or GitLab username but this is host-dependent.'),
+  CODEOWNERS: {},
+  '.github': {
+    instructions: {
+      'general.instructions.md': {
+        intro: null,
+      },
+    },
+  },
+  '.pre-commit-config.yaml': {
+    default_install_hook_types: [
+      'pre-commit',
+      'pre-push',
+      'post-checkout',
+      'post-merge',
+    ],
+  },
+  '.vscode': {
+    'settings.json': {
+      '#python.analysis.packageIndexDepths':: d.val(d.T.number, 'Depth of the Python package index (for Pyright and Pylance).'),
+      'python.analysis.packageIndexDepths': [
+        {
+          depth: 100,
+          name: '',
+        },
+      ],
+    },
+  },
+}
