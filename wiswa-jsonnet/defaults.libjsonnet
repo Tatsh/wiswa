@@ -479,4 +479,8 @@ local utils = import 'utils.libjsonnet';
   yarnrc: (import 'defaults/yarnrc.libjsonnet') + {
     yarnPath: '.yarn/releases/yarn-%s.cjs' % settings.yarn_version,
   },
+
+  // Lua
+  '#luacheck': d.val(d.T.array, 'Array of configuration lines (strings).'),
+  luacheck: [],
 }
