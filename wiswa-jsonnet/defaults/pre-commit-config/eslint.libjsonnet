@@ -1,0 +1,7 @@
+{
+  entry: 'yarn eslint --fix',
+  id: 'fix-eslint',
+  language: 'system',
+  name: 'run ESLint',
+  types_or: ['javascript'],
+}

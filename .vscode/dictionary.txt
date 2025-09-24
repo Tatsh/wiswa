@@ -103,6 +103,7 @@ netrc
 nhoizey
 noqa
 norecursedirs
+nullptr
 numpy
 numpydoc
 objc

@@ -28,7 +28,7 @@ from .constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
 from .extensions import ToPythonExtension
 
 if TYPE_CHECKING:
-    from .typing import ProjectType, Settings
+    from .typing import Settings
 
 __all__ = ('copy_static_files', 'create_py_typed_files', 'download_yarn_plugins',
            'evaluate_jsonnet_file', 'evaluate_jsonnet_project', 'evaluate_merged_settings',
@@ -147,20 +147,18 @@ def copy_static_files_python(settings: Settings, module_path: Path) -> None:
 
     if settings['stubs_only']:
         return
-    if settings['want_main']:
+    if settings['want_main'] and not settings['has_multiple_entry_points']:
         copy_file('__main__.py')
         copy_file('main.py')
 
 
-def copy_static_files(settings: Settings,
-                      module_path: Path,
-                      project_type: ProjectType = 'python') -> None:
+def copy_static_files(settings: Settings, module_path: Path) -> None:
     """Copy static files to the current directory."""
     Path('.github/instructions').mkdir(parents=True, exist_ok=True)
     for name in ('json-yaml', 'markdown', 'toml-ini'):
         copyfile(module_path / 'static/.github/instructions' / f'{name}.instructions.md',
                  f'.github/instructions/{name}.instructions.md')
-    match project_type:
+    match settings['project_type']:
         case 'c++':
             copyfile(module_path / 'static/.github/instructions/cpp.instructions.md',
                      '.github/instructions/cpp.instructions.md')
@@ -172,7 +170,7 @@ def copy_static_files(settings: Settings,
                          '.github/instructions/python-tests.instructions.md')
             copy_static_files_python(settings, module_path)
         case _:
-            log.warning('No static files to copy for project type `%s`.', project_type)
+            log.warning('No static files to copy for project type `%s`.', settings['project_type'])
 
 
 def download_yarn_plugins() -> None:
@@ -225,14 +223,14 @@ def write_templated_files_c_cpp(templates_dir: Path, resolve_template: Callable[
 def write_templated_files_cpp(settings: Settings, templates_dir: Path,
                               resolve_template: Callable[[Path], jinja2.Template],
                               write_file: Callable[..., object]) -> None:
-    if settings['want_main']:
+    if settings['want_main'] and not settings['has_multiple_entry_points']:
         write_file(resolve_template(templates_dir / 'src/main.cpp.j2'), 'src/main.cpp')
 
 
 def write_templated_files_c(settings: Settings, templates_dir: Path,
                             resolve_template: Callable[[Path], jinja2.Template],
                             write_file: Callable[..., object]) -> None:
-    if settings['want_main']:
+    if settings['want_main'] and not settings['has_multiple_entry_points']:
         write_file(resolve_template(templates_dir / 'src/main.c.j2'), 'src/main.c')
 
 
@@ -251,7 +249,7 @@ def write_templated_files_python(settings: Settings, templates_dir: Path,
                    f'{settings["primary_module"]}/__init__.py')
     if settings['want_tests']:
         write_file(resolve_template(templates_dir / 'tests/conftest.py.j2'), 'tests/conftest.py')
-        if settings['want_main']:
+        if settings['want_main'] and not settings['has_multiple_entry_points']:
             write_file(resolve_template(templates_dir / 'tests/test_main.py.j2'),
                        'tests/test_main.py')
     if settings['want_docs']:
@@ -398,10 +396,6 @@ NATIVE_CALLBACKS: dict[str, tuple[tuple[str, ...], Callable[..., object]]] = {
         lambda owner, repo: get_github_release_latest_tag(owner, repo, skip_releases=True)),
     'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
     'latestNpmPackageVersion': (('package',), get_npm_latest_package_version),
-    'latestPypiPackageVersionCaret': (
-        ('package',), lambda package: f'^{get_pypi_latest_package_version(package)}'),
-    'latestPypiPackageVersionTilde': (
-        ('package',), lambda package: f'~{get_pypi_latest_package_version(package)}'),
     'latestPypiPackageVersion': (('package',), get_pypi_latest_package_version),
     'latestYarnVersion': ((), get_latest_yarn_version),
     'year': ((), lambda: datetime.now(tz=timezone.utc).year),

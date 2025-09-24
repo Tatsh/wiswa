@@ -3,10 +3,13 @@ local utils = import 'utils.libjsonnet';
 
 function(settings)
   local github_items = if settings.using_github then {
-    '.github/FUNDING.yml': utils.manifestYaml(settings.github.funding),
-    '.github/dependabot.yml': utils.manifestYaml(settings.github.dependabot),
-    '_config.yml': utils.manifestYaml(settings.github.pages_config),
-  } + github.workflows(settings) else {};
+                                                       '.github/FUNDING.yml': utils.manifestYaml(settings.github.funding),
+                                                       '.github/dependabot.yml': utils.manifestYaml(settings.github.dependabot),
+                                                     } + (
+                                                       if settings.github.pages_using_jekyll then
+                                                         { '_config.yml': utils.manifestYaml(settings.github.pages_config) } else {}
+                                                     ) +
+                                                     github.workflows(settings) else {};
   local gitlab_items = if settings.using_gitlab then {
     '.gitlab-ci.yml': utils.manifestYaml(utils.settings.gitlab_ci),
   } else {};

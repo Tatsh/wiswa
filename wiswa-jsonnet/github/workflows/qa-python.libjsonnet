@@ -40,6 +40,12 @@ function(settings)
             name: 'Lint with Ruff',
             run: 'yarn ruff .',
           },
+        ] + (if settings.force_eslint then [
+               {
+                 name: 'Lint with ESLint',
+                 run: 'yarn eslint',
+               },
+             ] else []) + [
           {
             name: 'Check formatting',
             run: 'yarn check-formatting',

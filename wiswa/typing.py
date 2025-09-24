@@ -102,6 +102,8 @@ class Settings(TypedDict):
     """The default Git branch."""
     description: str
     """A short description of the project."""
+    has_multiple_entry_points: bool
+    """If the project has multiple entry points (CLI commands)."""
     homepage: str
     """The HTTP URI of the project's homepage."""
     keywords: Iterable[str]
