@@ -1,0 +1,79 @@
+{% from '.github/workflows/pyinstaller-build.sh.j2' import build %}
+{% from '.github/workflows/pyinstaller-test.ps1.j2' import test_powershell %}
+{% from '.github/workflows/pyinstaller-test.sh.j2' import test_bash %}
+jobs:
+  build:
+    runs-on: ${{ '{{' }} matrix.os }}
+    steps:
+      - uses: 'actions/checkout@v5'
+      - name: 'Install Poetry'
+        run: 'pipx install poetry yq'
+      - name: 'Set up Python'
+        uses: 'actions/setup-python@v6'
+        with:
+          cache: 'poetry'
+          python-version: '3.13'
+      - name: 'Install dependencies (Poetry)'
+        run: |
+          poetry install
+          poetry run -- pip install pyinstaller
+        shell: 'bash'
+      - name: 'Build with PyInstaller'
+        run: |
+          {{ build(settings) | indent(10) | trim }}
+        shell: 'bash'
+      - if: matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm'
+        name: 'Test binary'
+        run: |
+          {{ test_powershell() | indent(10) | trim }}
+      - if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
+        name: 'Test binary'
+        run: |
+          {{ test_bash() | indent(10) | trim }}
+      - name: 'Upload Artifacts'
+        uses: 'actions/upload-artifact@v4'
+        with:
+          if-no-files-found: error
+          name: {{ settings.github_project_name }}-binaries-${{ '{{' }} matrix.suffix }}
+          path: |
+            ${{ '{{' }} matrix.dist_path }}
+      - if: github.ref_type == 'tag'
+        name: 'Zip files'
+        run: |
+          rm -fR _out
+          mkdir _out
+          zip -j _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}.zip ${{ '{{' }} matrix.dist_path }}
+      - if: github.ref_type == 'tag'
+        name: Upload package
+        uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: true
+          files: |
+            _out/*.zip
+    strategy:
+      matrix:
+        include:
+          - os: 'macos-15-intel'
+            dist_path: 'dist/*'
+            suffix: 'mac-x86_64'
+          - os: 'macos-latest'
+            dist_path: 'dist/*'
+            suffix: 'mac-arm64'
+          - os: 'windows-latest'
+            dist_path: 'dist/*.exe'
+            suffix: 'win-x86_64'
+          - os: 'windows-11-arm'
+            dist_path: 'dist/*.exe'
+            suffix: 'win-arm64'
+name: 'PyInstaller'
+'on':
+  pull_request:
+    branches:
+      - 'master'
+  push:
+    branches:
+      - 'master'
+    tags:
+      - 'v*.*.*'
+permissions:
+  contents: 'read'

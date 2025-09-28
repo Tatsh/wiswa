@@ -1,0 +1,30 @@
+{% from '.github/workflows/version-info.py.j2' import version_info %}
+{% macro build(settings) %}
+project_name=$(tomlq -r '.project.urls.repository|split("/")[-1]' pyproject.toml)
+vers=$(echo "$(tomlq -r '.project.version|split(".")|map(tonumber)|@csv' pyproject.toml),0")
+version=$(tomlq -r .project.version pyproject.toml)
+while IFS=$' ' read -r script_name python_path func_name; do
+    func_name="${func_name#"${func_name%%[![:space:]]*}"}"
+    func_name="${func_name%"${func_name##*[![:space:]]}"}"
+    cat > temp_script.py <<EOF
+from ${python_path} import ${func_name}
+if __name__ == '__main__':
+    ${func_name}()
+EOF
+    if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+        cat temp_script.py
+    fi
+    cat > version-info.txt <<EOF
+{{ version_info(settings) | trim }}
+EOF
+    if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+        cat version-info.txt
+    fi
+    echo "Building executable for '${script_name}'..."
+    poetry run -- pyinstaller --log-level ERROR --onefile -n "${script_name}" --optimize 1 \
+      --hidden-import colorlog -y --version-file version-info.txt temp_script.py
+    if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+        cat "${script_name}.spec"
+    fi
+done < <(tomlq -r '.project.scripts|to_entries[]|"\(.key) \(.value|split(":")|join(" "))"' pyproject.toml)
+{% endmacro %}

@@ -1,0 +1,8 @@
+{% macro test_bash() %}
+dist_files=(dist/*)
+echo "Found ${{ '{' ~ '#' }}dist_files[@]} files in dist/: ${dist_files[*]##*/}"
+for file in "${dist_files[@]}"; do
+    echo "Testing '${file}'."
+    "$file" --help
+done
+{% endmacro %}

@@ -14,6 +14,7 @@ buildsystems
 bytearray
 codeowners
 color
+colorlog
 commitizen
 conftest
 contenttypes
@@ -41,12 +42,14 @@ eamodio
 eeyore
 elif
 endfor
+endmacro
 endraw
 esbenp
 esbonio
 excinfo
 exponentcase
 fileprivate
+filevers
 fontawesome
 foxundermoon
 funcattributes
@@ -107,12 +110,15 @@ nullptr
 numpy
 numpydoc
 objc
+onefile
 pascalreitermann
 pathlib
 pipx
+prodvers
 pycache
 pydantic
 pydocstyle
+pyinstaller
 pylance
 pylint
 pypi
@@ -132,6 +138,7 @@ savestepsize
 schemafile
 sdist
 shellcheck
+softprops
 sphinxcontrib
 srcs
 startswith
@@ -147,6 +154,8 @@ timezone
 timonwong
 tojson
 tomlkit
+tomlq
+tonumber
 topython
 tryfirst
 tseslint
@@ -157,6 +166,7 @@ udvare
 varattributes
 vars
 vcpkg
+vers
 virtualenv
 wayou
 werror
