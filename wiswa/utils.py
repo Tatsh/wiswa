@@ -256,7 +256,7 @@ def write_templated_files_python(settings: Settings, templates_dir: Path,
         for file_path in (templates_dir / 'docs/conf.py.j2', templates_dir / 'docs/index.rst.j2'):
             write_file(resolve_template(file_path),
                        file_path.relative_to(templates_dir).with_suffix(''))
-    if settings['want_main']:
+    if settings['want_main'] or settings['has_multiple_entry_points']:
         write_file(resolve_template(templates_dir / '.github/workflows/pyinstaller.yml.j2'),
                    '.github/workflows/pyinstaller.yml',
                    overwrite=True)
