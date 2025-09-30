@@ -52,6 +52,7 @@ fileprivate
 filevers
 fontawesome
 foxundermoon
+fqxz
 funcattributes
 furb
 gcov

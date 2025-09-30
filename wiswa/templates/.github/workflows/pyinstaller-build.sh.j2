@@ -1,9 +1,33 @@
 {% from '.github/workflows/version-info.py.j2' import version_info %}
 {% macro build(settings) %}
+    {% if settings.pyinstaller.macos_exclusions %}
+macos_exclusions=(
+  {{ settings.pyinstaller.macos_exclusions | join("\n") | indent(2) | trim }}
+)
+    {% endif %}
+    {% if settings.pyinstaller.windows_exclusions %}
+windows_exclusions=(
+  {{ settings.pyinstaller.windows_exclusions | join("\n") | indent(2) | trim }}
+)
+    {% endif %}
 project_name=$(tomlq -r '.project.urls.repository|split("/")[-1]' pyproject.toml)
 vers=$(echo "$(tomlq -r '.project.version|split(".")|map(tonumber)|@csv' pyproject.toml),0")
 version=$(tomlq -r .project.version pyproject.toml)
 while IFS=$' ' read -r script_name python_path func_name; do
+    {% if settings.pyinstaller.windows_exclusions %}
+    if [[ "${{ '{{' }} matrix.os }}" == windows* ]] &&
+        printf '%s\0' "${windows_exclusions[@]}" | grep -Fqxz -- "${script_name}"; then
+        echo "Skipping ${script_name} on Windows."
+        continue
+    fi
+    {% endif %}
+    {% if settings.pyinstaller.macos_exclusions %}
+    if [[ "${{ '{{' }} matrix.os }}" == macos* ]] &&
+        printf '%s\0' "${macos_exclusions[@]}" | grep -Fqxz -- "${script_name}"; then
+        echo "Skipping ${script_name} on macOS."
+        continue
+    fi
+    {% endif %}
     func_name="${func_name#"${func_name%%[![:space:]]*}"}"
     func_name="${func_name%"${func_name##*[![:space:]]}"}"
     cat > temp_script.py <<EOF

@@ -45,6 +45,13 @@ local utils = import 'utils.libjsonnet';
   description: 'No description.',
   '#modules':: d.val(d.T.array, 'Array of modules (Python packages) in the project.'),
   modules: [self.primary_module],
+  '#pyinstaller':: d.obj('PyInstaller configuration.'),
+  pyinstaller: {
+    '#macos_exclusions':: d.val(d.T.array, 'Array of script names to exclude from macOS.'),
+    macos_exclusions: [],
+    '#windows_exclusions':: d.val(d.T.array, 'Array of script names to exclude from Windows.'),
+    windows_exclusions: [],
+  },
 
   '#social':: d.obj('Social media configuration (for badges).'),
   social: {
