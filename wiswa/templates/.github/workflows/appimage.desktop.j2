@@ -1,0 +1,9 @@
+{% macro desktop_entry(settings) %}
+[Desktop Entry]
+Type=Application
+Name=${script_name}
+Icon=${script_name}
+Categories={{ settings.appimage.categories | join(";") }};
+Terminal={{ 'true' if settings.appimage.terminal else 'false' }}
+X-AppImage-Version=${version}
+{% endmacro %}

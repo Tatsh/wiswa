@@ -1,0 +1,69 @@
+{% from '.github/workflows/appimage-build.sh.j2' import build %}
+{% from '.github/workflows/pyinstaller-test.sh.j2' import test_bash %}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: 'actions/checkout@v5'
+      - name: 'Install Poetry'
+        run: 'pipx install poetry yq'
+      - name: 'Set up Python'
+        uses: 'actions/setup-python@v6'
+        with:
+          cache: 'poetry'
+          python-version: '3.13'
+      - name: 'Install dependencies (Poetry)'
+        run: |
+          poetry install
+          poetry run -- pip install python-appimage
+          wget -O generic.svg 'https://raw.githubusercontent.com/KDE/breeze-icons/refs/heads/master/icons/preferences/32/preferences-other.svg'
+        shell: 'bash'
+      - name: 'Build with python-appimage'
+        run: |
+          {{ build(settings) | indent(10) | trim }}
+        shell: 'bash'
+      - name: 'Test binary'
+        run: |
+          {{ test_bash() | indent(10) | trim }}
+      - name: 'Upload Artifacts'
+        uses: 'actions/upload-artifact@v4'
+        with:
+          if-no-files-found: error
+          name: {{ settings.github_project_name }}-binaries-linux-x86_64
+          path: |
+            dist/*
+{% if settings.has_multiple_entry_points %}
+      - if: github.ref_type == 'tag'
+        name: 'Zip files'
+        run: |
+          rm -fR _out
+          mkdir _out
+          zip -j _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}.zip dist/*
+      - if: github.ref_type == 'tag'
+        name: Upload package
+        uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: true
+          files: |
+            _out/*.zip
+{% else %}
+      - if: github.ref_type == 'tag'
+        name: Upload package
+        uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: true
+          files: |
+            dist/*.AppImage
+{% endif %}
+name: 'AppImage'
+'on':
+  pull_request:
+    branches:
+      - 'master'
+  push:
+    branches:
+      - 'master'
+    tags:
+      - 'v*.*.*'
+permissions:
+  contents: 'read'

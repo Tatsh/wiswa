@@ -1,0 +1,58 @@
+{% from '.github/workflows/appimage.desktop.j2' import desktop_entry %}
+{% from '.github/workflows/appimage-appinfo.xml.j2' import appinfo %}
+{% macro build(settings) %}
+    {% if settings.appimage.exclusions %}
+exclusions=(
+  {{ settings.appimage.exclusions | join("\n") | indent(2) | trim }}
+)
+    {% endif %}
+project_name=$(tomlq -r '.project.urls.repository|split("/")[-1]' pyproject.toml)
+version=$(tomlq -r .project.version pyproject.toml)
+rm -fR dist
+mkdir dist
+while IFS=$' ' read -r script_name python_path func_name; do
+    {% if settings.appimage.exclusions %}
+    if printf '%s\0' "${exclusions[@]}" | grep -Fqxz -- "${script_name}"; then
+        echo "Skipping ${script_name}."
+        continue
+    fi
+    {% endif %}
+    rm -fR recipe
+    mkdir recipe
+    func_name="${func_name#"${func_name%%[![:space:]]*}"}"
+    func_name="${func_name%"${func_name##*[![:space:]]}"}"
+    cat > recipe/entrypoint.sh <<EOF
+{{ '{{' }} python-executable }} \${APPDIR}/opt/python{{ '{{' }} python-version }}/bin/${script_name} "\$@"
+EOF
+    chmod +x recipe/entrypoint.sh
+    if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+        cat recipe/entrypoint.sh
+    fi
+    cat > "recipe/${script_name}.desktop" <<EOF
+{{ desktop_entry(settings) | trim }}
+EOF
+    if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+        cat "recipe/${script_name}.desktop"
+    fi
+    cat > recipe/requirements.txt <<EOF
+$(pwd -P)
+EOF
+    if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+        cat recipe/requirements.txt
+    fi
+    cat > "recipe/${script_name}.appinfo.xml" <<EOF
+{{ appinfo() | trim }}
+EOF
+    if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+        cat "recipe/${script_name}.appinfo.xml"
+    fi
+    cp generic.svg "recipe/${script_name}.svg"
+    echo "Building executable for '${script_name}'..."
+    poetry run python -m python_appimage -v build app -p {{ settings.appimage.python_version }} recipe
+    {% if settings.has_multiple_entry_points %}
+    mv "${script_name}-x86_64.AppImage" "dist/${script_name}-x86_64.AppImage"
+    {% else %}
+    mv "${script_name}-x86_64.AppImage" "dist/${script_name}-${version}-x86_64.AppImage"
+    {% endif %}
+done < <(tomlq -r '.project.scripts|to_entries[]|"\(.key) \(.value|split(":")|join(" "))"' pyproject.toml)
+{% endmacro %}

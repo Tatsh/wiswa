@@ -2,7 +2,7 @@ local d = import 'doc-util/main.libsonnet';
 local utils = import 'utils.libjsonnet';
 
 {
-  '#': d.pkg(name='defaults', url='', help='', filename=std.thisFile),
+  '#':: d.pkg(name='defaults', url='', help='', filename=std.thisFile),
 
   local settings = self,
   local _g = settings.globals,

@@ -52,6 +52,19 @@ local utils = import 'utils.libjsonnet';
     '#windows_exclusions':: d.val(d.T.array, 'Array of script names to exclude from Windows.'),
     windows_exclusions: [],
   },
+  '#appimage':: d.obj('AppImage configuration.'),
+  appimage: {
+    '#exclusions':: d.val(d.T.array, 'Array of script names to exclude from Linux.'),
+    exclusions: [],
+    '#icons':: d.val(d.T.object, 'Dictionary of script names to icon URIs.'),
+    icons: {},
+    '#categories':: d.val(d.T.array, 'Array of AppImage categories. See https://specifications.freedesktop.org/menu-spec/latest/apa.html for valid values.'),
+    categories: ['Utility'],
+    '#python_version':: d.val(d.T.string, 'Python version to use for the AppImage.'),
+    python_version: '3.13',
+    '#terminal':: d.val(d.T.boolean, 'If the application is a terminal application.'),
+    terminal: true,
+  },
 
   '#social':: d.obj('Social media configuration (for badges).'),
   social: {
@@ -67,16 +80,6 @@ local utils = import 'utils.libjsonnet';
   },
 
   // General settings
-  skip: [
-    'CHANGELOG.md',
-    'CONTRIBUTING.md',
-    'README.md',
-    'SECURITY.md',
-    'docs/index.rst',
-    '_module_/__init__.py',
-    'tests/conftest.py',
-    'tests/test_main.py',
-  ],
   '#codeowners':: d.val(d.T.object, 'Code owners for the project. Dictionary of string to string. The value is usually the GitHub or GitLab username but this is host-dependent.'),
   codeowners: {
     '*': '@%s' % settings.github_username,
@@ -440,7 +443,7 @@ local utils = import 'utils.libjsonnet';
       },
     },
   ],
-  '#force_eslint': d.val(d.T.boolean, 'If ESLint tasks should be added on non-TypeScript projects.'),
+  '#force_eslint':: d.val(d.T.boolean, 'If ESLint tasks should be added on non-TypeScript projects.'),
   force_eslint: self.project_type == 'typescript',
 
   // package.json only
@@ -488,6 +491,6 @@ local utils = import 'utils.libjsonnet';
   },
 
   // Lua
-  '#luacheck': d.val(d.T.array, 'Array of configuration lines (strings).'),
+  '#luacheck':: d.val(d.T.array, 'Array of configuration lines (strings).'),
   luacheck: [],
 }

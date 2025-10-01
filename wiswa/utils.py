@@ -260,6 +260,9 @@ def write_templated_files_python(settings: Settings, templates_dir: Path,
         write_file(resolve_template(templates_dir / '.github/workflows/pyinstaller.yml.j2'),
                    '.github/workflows/pyinstaller.yml',
                    overwrite=True)
+        write_file(resolve_template(templates_dir / '.github/workflows/appimage.yml.j2'),
+                   '.github/workflows/appimage.yml',
+                   overwrite=True)
 
 
 def write_templated_files_typescript(settings: Settings, templates_dir: Path,

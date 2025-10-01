@@ -1,8 +1,8 @@
 local d = import 'doc-util/main.libsonnet';
 
 {
-  '#': d.pkg(name='cmake-format configuration.', help='', filename=std.thisFile),
-  '#get': d.fn('Get CMake format configuration.', [
+  '#':: d.pkg(name='cmake-format configuration.', help='', filename=std.thisFile),
+  '#get':: d.fn('Get CMake format configuration.', [
     d.arg('line_width', d.T.number, 100),
   ]),
   get(line_width=100):: {

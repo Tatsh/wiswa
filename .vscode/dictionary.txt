@@ -1,3 +1,6 @@
+appdir
+appimage
+appinfo
 asyncio
 autodoc
 automoc
@@ -86,6 +89,7 @@ jpathdir
 jquery
 jsonnet
 jsonschema
+launchable
 lextudio
 libjsonnet
 libname

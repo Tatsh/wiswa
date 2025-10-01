@@ -1,7 +1,7 @@
 local d = import 'doc-util/main.libsonnet';
 
 {
-  '#': d.pkg(name='utils', url='', help='', filename=std.thisFile),
+  '#':: d.pkg(name='utils', url='', help='', filename=std.thisFile),
 
   '#manifestToml':: d.fn('Convert an object to a TOML form (no indentation).',
                          [d.arg('value', d.T.object)]),

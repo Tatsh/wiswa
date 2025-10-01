@@ -1,0 +1,23 @@
+{% macro appinfo() %}
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>${script_name}</id>
+  <metadata_license>GFDL-1.3</metadata_license>
+  <project_license>MIT</project_license>
+  <name>${script_name}</name>
+  <summary>${script_name} from ${project_name}</summary>
+  <description>
+    <p>${script_name} from ${project_name}. - ${{ '{{' }} github.server_url }}/${{ '{{' }} github.repository }}</p>
+  </description>
+  <launchable type="desktop-id">${script_name}.desktop</launchable>
+  <url type="homepage">${{ '{{' }} github.server_url }}/${{ '{{' }} github.repository }}</url>
+  <screenshots>
+    <screenshot type="default">
+      <image></image>
+    </screenshot>
+  </screenshots>
+  <provides>
+    <id>${script_name}.desktop</id>
+  </provides>
+</component>
+{% endmacro %}
