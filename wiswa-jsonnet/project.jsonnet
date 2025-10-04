@@ -2,6 +2,7 @@ local github = import 'github.libjsonnet';
 local utils = import 'utils.libjsonnet';
 
 function(settings)
+  local cff = if settings.want_cff then { 'CITATION.cff': utils.manifestYaml(settings.citation) } else {};
   local github_items = if settings.using_github then {
                                                        '.github/FUNDING.yml': utils.manifestYaml(settings.github.funding),
                                                        '.github/dependabot.yml': utils.manifestYaml(settings.github.dependabot),
@@ -13,7 +14,7 @@ function(settings)
   local gitlab_items = if settings.using_gitlab then {
     '.gitlab-ci.yml': utils.manifestYaml(utils.settings.gitlab_ci),
   } else {};
-  local readthedocs_items = if settings.want_docs && settings.project_type == 'python' then {
+  local readthedocs_items = if settings.want_docs && settings.project_type == 'python' && settings.using_readthedocs then {
     '.readthedocs.yaml': utils.manifestYaml(settings.readthedocs),
   } else {};
   local tests_items = if settings.project_type == 'python' && settings.want_tests then {
@@ -52,9 +53,9 @@ function(settings)
     '.vscode/launch.json': std.manifestJson(settings.vscode.launch),
     '.vscode/settings.json': std.manifestJson(settings.vscode.settings),
     '.yarnrc.yml': utils.manifestYaml(settings.yarnrc),
-    'CITATION.cff': utils.manifestYaml(settings.citation),
     'package.json': std.manifestJson(settings.package_json),
   } +
+  cff +
   c_cpp_items +
   cz_json +
   github_items +

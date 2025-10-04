@@ -103,7 +103,7 @@ local utils = import 'utils.libjsonnet';
   '#want_cff':: d.val(d.T.boolean, 'If the project should have a `CITATION.cff` file.'),
   want_cff: true,
   '#want_codeql':: d.val(d.T.boolean, 'If the project should have a CodeQL configuration.'),
-  want_codeql: !self.stubs_only,
+  want_codeql: !self.stubs_only && self.using_github,
   '#want_docs':: d.val(d.T.boolean, 'If the project should will generate documentation.'),
   want_docs: true,
   '#want_djlint':: d.val(d.T.boolean, 'If the project should have a `djlint` configuration.'),
@@ -117,7 +117,7 @@ local utils = import 'utils.libjsonnet';
   '#want_tests':: d.val(d.T.boolean, 'If the project will have tests.'),
   want_tests: !self.stubs_only,
   '#want_yapf':: d.val(d.T.boolean, 'If the project will use YAPF for formatting.'),
-  want_yapf: true,
+  want_yapf: std.contains(self.supported_python_versions, '3.10') || std.contains(self.supported_python_versions, '3.11'),
   '#year':: d.val(d.T.string, 'Copyright year of the project.'),
   year: std.native('year')(),
 

@@ -79,7 +79,7 @@
       :target: https://bsky.app/profile/{{ settings.github.username }}.bsky.social
       :alt: Follow @{{ settings.github.username }}
 
-{% if settings.social.mastodon.id and settings.social.mastodon.domain %}
+{% if settings.social and settings.social.mastodon and settings.social.mastodon.id and settings.social.mastodon.domain %}
    .. image:: https://img.shields.io/mastodon/follow/{{ settings.social.mastodon.id }}?domain={{ settings.social.mastodon.domain }}&style=social
       :target: https://{{ settings.social.mastodon.domain }}/@{{ settings.github.username }}
       :alt: Mastodon Follow

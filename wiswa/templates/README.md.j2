@@ -42,7 +42,7 @@
 [![Stargazers](https://img.shields.io/github/stars/{{ settings.github.username }}/{{ settings.project_name }}?logo=github&style=flat)](https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/stargazers)
 
 [![@{{ settings.github.username }}](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fpublic.api.bsky.app%2Fxrpc%2Fapp.bsky.actor.getProfile%2F%3Factor%3Ddid%3Aplc%3Auq42idtvuccnmtl57nsucz72%26query%3D%24.followersCount%26style%3Dsocial%26logo%3Dbluesky%26label%3DFollow%2520%40{{ settings.github.username }}&query=%24.followersCount&style=social&logo=bluesky&label=Follow%20%40{{ settings.github.username }})](https://bsky.app/profile/{{ settings.github.username }}.bsky.social)
-{% if settings.social.mastodon.id and settings.social.mastodon.domain %}
+{% if settings.social and settings.social.mastodon and settings.social.mastodon.id and settings.social.mastodon.domain %}
 [![Mastodon Follow](https://img.shields.io/mastodon/follow/{{ settings.social.mastodon.id }}?domain={{ settings.social.mastodon.domain }}&style=social)](https://{{ settings.social.mastodon.domain }}/@{{ settings.github.username }})
 {% endif %}
 

@@ -86,11 +86,15 @@ def post_process_steps_python(settings: Settings) -> None:
     if not settings['want_yapf']:
         del pyproject_content['tool']['yapf']
         del pyproject_content['tool']['yapfignore']
-        package_json_content['check-formatting'] = ("yarn prettier -c . && poetry run ruff format "
-                                                    "--check . && yarn markdownlint-cli2 '**/*.md'"
-                                                    " '#node_modules'")
-        package_json_content['format'] = ("yarn prettier -w . && poetry run ruff format . "
-                                          "&& yarn markdownlint-cli2 '**/*.md' '#node_modules'")
+        pyproject_content['tool']['ruff']['lint']['ignore'] = sorted(
+            pyproject_content['tool']['ruff']['lint']['ignore'] + ['Q000', 'Q003'])
+        package_json_content['scripts']['check-formatting'] = (
+            "yarn prettier -c . && poetry run ruff format "
+            "--check . && yarn markdownlint-cli2 '**/*.md'"
+            " '#node_modules'")
+        package_json_content['scripts']['format'] = (
+            "yarn prettier -w . && poetry run ruff format . "
+            "&& yarn markdownlint-cli2 '**/*.md' '#node_modules'")
     Path('package.json').write_text(json.dumps(package_json_content, indent=2, sort_keys=True),
                                     encoding='utf-8')
     # tomlkit will strip empty sections.
@@ -256,7 +260,8 @@ def write_templated_files_python(settings: Settings, templates_dir: Path,
         for file_path in (templates_dir / 'docs/conf.py.j2', templates_dir / 'docs/index.rst.j2'):
             write_file(resolve_template(file_path),
                        file_path.relative_to(templates_dir).with_suffix(''))
-    if settings['want_main'] or settings['has_multiple_entry_points']:
+    if ((settings['want_main'] or settings['has_multiple_entry_points'])
+            and settings['using_github']):
         write_file(resolve_template(templates_dir / '.github/workflows/pyinstaller.yml.j2'),
                    '.github/workflows/pyinstaller.yml',
                    overwrite=True)
