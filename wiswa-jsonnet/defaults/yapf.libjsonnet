@@ -1,7 +1,25 @@
+local d = import 'doc-util/main.libsonnet';
+
 {
+  '#align_closing_bracket_with_visual_indent':: d.val(
+    d.T.boolean,
+    'If true, aligns the closing bracket with the visual indent of the line containing the opening bracket.',
+  ),
   align_closing_bracket_with_visual_indent: true,
+  '#allow_multiline_dictionary_keys':: d.val(
+    d.T.boolean,
+    'If true, allows dictionary keys to be split across multiple lines.',
+  ),
   allow_multiline_dictionary_keys: false,
+  '#allow_multiline_lambdas':: d.val(
+    d.T.boolean,
+    'If true, allows lambda functions to be split across multiple lines.',
+  ),
   allow_multiline_lambdas: false,
+  '#allow_split_before_dict_value':: d.val(
+    d.T.boolean,
+    'If true, allows splitting before the value in a dictionary entry.',
+  ),
   allow_split_before_dict_value: true,
   blank_line_before_class_docstring: false,
   blank_line_before_module_docstring: false,
@@ -42,5 +60,9 @@
   split_penalty_for_added_line_split: 30,
   split_penalty_import_names: 0,
   split_penalty_logical_operator: 300,
+  '#use_tabs':: d.val(
+    d.T.boolean,
+    'If true, uses tabs for indentation instead of spaces.',
+  ),
   use_tabs: false,
 }

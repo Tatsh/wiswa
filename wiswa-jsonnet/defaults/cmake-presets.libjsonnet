@@ -10,11 +10,15 @@ local d = import 'doc-util/main.libsonnet';
   '#configurePresets':: d.val(d.T.array, 'Array of CMake configure presets for vcpkg.'),
   configurePresets: [
     {
+      '#binaryDir':: d.val(d.T.string, 'Directory where build files are stored.'),
       binaryDir: '${sourceDir}/build',
+      '#cacheVariables':: d.val(d.T.object, 'CMake cache variables to set.'),
       cacheVariables: {
         CMAKE_TOOLCHAIN_FILE: '$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake',
       },
+      '#generator':: d.val(d.T.string, 'CMake generator to use.'),
       generator: 'Ninja',
+      '#name':: d.val(d.T.string, 'Name of the configure preset.'),
       name: 'vcpkg',
     },
   ],

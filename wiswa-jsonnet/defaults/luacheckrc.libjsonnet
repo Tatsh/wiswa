@@ -1,7 +1,12 @@
-// INI style
+local d = import 'doc-util/main.libsonnet';
+
 {
+  '#max_code_line_length':: d.val(d.T.number, 'Maximum allowed length for code lines.'),
   max_code_line_length: 100,
+  '#max_comment_line_length':: d.val(d.T.number, 'Maximum allowed length for comment lines.'),
   max_comment_line_length: 100,
+  '#max_line_length':: d.val(d.T.number, 'Maximum allowed length for any line.'),
   max_line_length: 100,
+  '#max_string_line_length':: d.val(d.T.number, 'Maximum allowed length for string lines.'),
   max_string_line_length: 100,
 }

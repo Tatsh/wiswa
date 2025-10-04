@@ -1,4 +1,9 @@
+local d = import 'doc-util/main.libsonnet';
+
 {
+  '#get':: d.fn('Get commitizen configuration.', [
+    d.arg('settings', d.T.object, {}),
+  ]),
   get(settings):: {
     local cpp_files = if settings.project_type == 'c' || settings.project_type == 'c++' then [
       'CMakeLists.txt',

@@ -85,8 +85,20 @@ local d = import 'doc-util/main.libsonnet';
     '#yapfignore':: d.obj('Configuration for YAPF ignore patterns.'),
     yapfignore: import 'defaults/yapfignore.libjsonnet',
   },
+  '#build-system':: d.obj(
+    d.T.object,
+    'Build system requirements and backend for the project.',
+  ),
   'build-system': {
+    '#requires':: d.val(
+      d.T.array,
+      'List of packages required to build the project, such as "poetry-core".'
+    ),
     requires: ['poetry-core'],
+    '#build-backend':: d.val(
+      d.T.string,
+      'Build backend to use, such as "poetry.core.masonry.api".'
+    ),
     'build-backend': 'poetry.core.masonry.api',
   },
 }

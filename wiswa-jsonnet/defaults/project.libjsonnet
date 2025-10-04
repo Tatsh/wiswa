@@ -1,4 +1,14 @@
+local d = import 'doc-util/main.libsonnet';
+
 {
+  '#dynamic':: d.val(
+    d.T.array,
+    'List of fields that are dynamic and should not be statically defined.'
+  ),
   dynamic: ['dependencies', 'requires-python'],
+  '#readme':: d.val(
+    d.T.string,
+    'The file to use as the README for the project, typically "README.md" or "README.rst".'
+  ),
   readme: 'README.md',
 }

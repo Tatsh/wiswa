@@ -12,6 +12,9 @@ local d = import 'doc-util/main.libsonnet';
       interval: interval,
     },
   }],
+  '#updates':: d.fn('Get dependabot configuration.', [
+    d.arg('settings', d.T.object, {}),
+  ]),
   updates(settings):: {
     updates: [
       {

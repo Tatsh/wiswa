@@ -4,15 +4,21 @@ local d = import 'doc-util/main.libsonnet';
   '#':: d.pkg(name='vcpkg', url='', help='', filename=std.thisFile),
   '#default-registry':: d.val(d.T.object, 'Default vcpkg registry configuration.'),
   'default-registry': {
+    '#baseline':: d.val(d.T.string, 'Git commit hash for the baseline of the registry.'),
     baseline: '0cf34c184ce990471435b5b9c92edcf7424930b1',
+    '#kind':: d.val(d.T.string, 'Type of the registry, e.g., "git".'),
     kind: 'git',
+    '#repository':: d.val(d.T.string, 'URL of the vcpkg registry repository.'),
     repository: 'https://github.com/microsoft/vcpkg',
   },
   '#registries':: d.val(d.T.array, 'Array of vcpkg registries.'),
   registries: [
     {
+      '#kind':: d.val(d.T.string, 'Type of registry, e.g., "artifact".'),
       kind: 'artifact',
+      '#location':: d.val(d.T.string, 'Location URL of the registry.'),
       location: 'https://github.com/microsoft/vcpkg-ce-catalog/archive/refs/heads/main.zip',
+      '#name':: d.val(d.T.string, 'Name of the registry.'),
       name: 'microsoft',
     },
   ],

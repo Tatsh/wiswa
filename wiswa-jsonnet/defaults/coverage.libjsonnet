@@ -1,15 +1,27 @@
+local d = import 'doc-util/main.libsonnet';
+
 {
+  '#report':: d.val(d.T.object, 'Coverage report configuration.'),
   report: {
+    '#exclude_also':: d.val(
+      d.T.array,
+      'List of additional patterns to exclude from coverage reporting.',
+    ),
     exclude_also: ['if TYPE_CHECKING:'],
+    '#omit':: d.val(d.T.array, 'List of file patterns to omit from coverage reporting.'),
     omit: [
       'conftest.py',
       'tests.py',
       'tests/test_*.py',
     ],
+    '#show_missing':: d.val(d.T.boolean, 'If true, shows lines that are missing coverage.'),
     show_missing: true,
   },
+  '#run':: d.val(d.T.object, 'Coverage run configuration.'),
   run: {
+    '#branch':: d.val(d.T.boolean, 'If true, measures branch coverage.'),
     branch: true,
+    '#omit':: d.val(d.T.array, 'List of file patterns to omit from coverage measurement.'),
     omit: [
       'conftest.py',
       'tests.py',

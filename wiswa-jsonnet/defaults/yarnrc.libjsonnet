@@ -1,4 +1,5 @@
 local d = import 'doc-util/main.libsonnet';
+
 {
   '#':: d.pkg(name='yarnrc', url='', help='', filename=std.thisFile),
   '#enableTelemetry':: d.val(d.T.bool, 'Enable/disable telemetry collection.', false),
@@ -8,6 +9,7 @@ local d = import 'doc-util/main.libsonnet';
   '#plugins':: d.val(d.T.array, 'List of plugins to load.'),
   plugins: [
     {
+      '#path':: d.val(d.T.string, 'Path to the plugin file.'),
       path: '.yarn/plugins/plugin-prettier-after-all-installed.cjs',
     },
   ],

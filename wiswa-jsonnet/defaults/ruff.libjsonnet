@@ -1,9 +1,17 @@
+local d = import 'doc-util/main.libsonnet';
+
 {
+  '#cache-dir':: d.val(d.T.string, 'Directory to use for Ruff cache.', '~/.cache/ruff'),
   'cache-dir': '~/.cache/ruff',
+  '#force-exclude':: d.val(d.T.boolean, 'If true, force exclude files even if they are explicitly included.', false),
   'force-exclude': true,
+  '#line-length':: d.val(d.T.number, 'Maximum allowed line length.', 100),
   'line-length': 100,
+  '#namespace-packages':: d.val(d.T.array, 'List of namespace packages in the project.', ['docs', 'tests']),
   'namespace-packages': ['docs', 'tests'],
+  '#unsafe-fixes':: d.val(d.T.boolean, 'If true, apply fixes that may be unsafe.', true),
   'unsafe-fixes': true,
+  '#lint':: d.obj('Configuration for Ruff linter.'),
   lint: {
     'extend-select': [
       'A',
