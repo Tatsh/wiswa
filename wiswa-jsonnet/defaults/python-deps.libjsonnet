@@ -1,6 +1,6 @@
-function(want_main, want_yapf, stubs_only, project_name) {
+function(want_main, want_yapf, stubs_only, project_name, want_bascom) {
   local want_main_deps = if want_main then { click: '^' + std.native('latestPypiPackageVersion')('click') } else {},
-  local bascom_dep = if !stubs_only && project_name != 'bascom' then { 'bascom': '^' + std.native('latestPypiPackageVersion')('bascom') } else {},
+  local bascom_dep = if want_bascom && !stubs_only && project_name != 'bascom' then { 'bascom': '^' + std.native('latestPypiPackageVersion')('bascom') } else {},
   local cz_path_dep = if project_name != 'cz-path' then { 'cz-path': '^' + std.native('latestPypiPackageVersion')('cz-path') } else {},
   main: {
     'typing-extensions': '^' + std.native('latestPypiPackageVersion')('typing-extensions'),

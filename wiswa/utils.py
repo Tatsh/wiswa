@@ -8,7 +8,7 @@ from http import HTTPStatus
 from pathlib import Path
 from shlex import quote
 from shutil import copyfile, rmtree
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 import getpass
 import json
 import logging
@@ -100,9 +100,9 @@ def post_process_steps_python(settings: Settings) -> None:
     # tomlkit will strip empty sections.
     Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8')
     subprocess_log_run(('poetry', 'lock'))
-    with_arg = ','.join(('docs' if settings['want_docs'] else '',
-                         'tests' if settings['want_tests'] else '', 'dev')).lstrip(',').rstrip(',')
-    subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg != ',' else ())))
+    with_arg = ','.join(x for x in ('docs' if settings['want_docs'] else '',
+                                    'tests' if settings['want_tests'] else '', 'dev') if x)
+    subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg else ())))
     subprocess_log_run(('poetry', 'install', '--all-groups', '--all-extras'))
     subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
 
@@ -141,7 +141,9 @@ def copy_static_files_python(settings: Settings, module_path: Path) -> None:
     """Copy static files to the current directory."""
     def copy_file(filename: str) -> None:
         static_path = module_path / 'static' / filename
-        output_file = Path(f'{settings["primary_module"]}/{filename}')
+        # Validate and sanitize primary_module to prevent path traversal
+        primary_module = Path(settings['primary_module']).name
+        output_file = Path(primary_module) / filename
         if non_empty_file_exists(output_file):
             log.debug('Skipping `%s`.', output_file)
             return
@@ -187,9 +189,14 @@ def download_yarn_plugins() -> None:
                                                                          encoding='utf-8')
 
 
-def _template_env(
-    module_path: Path, settings: Settings
-) -> tuple[jinja2.Environment, Path, Callable[[Path], jinja2.Template], Callable[..., None]]:
+class _TemplateEnvTuple(NamedTuple):
+    env: jinja2.Environment
+    templates_dir: Path
+    resolve_template: Callable[[Path], jinja2.Template]
+    write_file: Callable[..., None]
+
+
+def _template_env(module_path: Path, settings: Settings) -> _TemplateEnvTuple:
     env = jinja2.Environment(autoescape=jinja2.select_autoescape(),
                              extensions=(ToPythonExtension,),
                              loader=jinja2.PackageLoader(__package__),
@@ -214,7 +221,7 @@ def _template_env(
         output_file.write_text(f'{content.strip()}\n')
         log.debug('Wrote `%s`.', output_file)
 
-    return env, templates_dir, resolve_template, write_file
+    return _TemplateEnvTuple(env, templates_dir, resolve_template, write_file)
 
 
 def write_templated_files_c_cpp(templates_dir: Path, resolve_template: Callable[[Path],
@@ -289,13 +296,13 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
     Path('.github/copilot-instructions.md').unlink(missing_ok=True)
     write_file(resolve_template(templates_dir / '.github/instructions/general.instructions.md.j2'),
                '.github/instructions/general.instructions.md')
-    for file_path, overwrite in (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', False),
-                                 ('LICENSE.txt.j2', True), ('SECURITY.md.j2', True),
-                                 ('CHANGELOG.md.j2', False), (templates_dir / 'README.md.j2',
-                                                              False)):
-        write_file(resolve_template(templates_dir / file_path),
-                   (templates_dir / file_path).relative_to(templates_dir).with_suffix(''),
-                   overwrite=overwrite)
+    common_templates = (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', False),
+                        ('LICENSE.txt.j2', True), ('SECURITY.md.j2', True),
+                        ('CHANGELOG.md.j2', False), ('README.md.j2', False))
+    for template_name, overwrite in common_templates:
+        template_path = templates_dir / template_name
+        output_path = Path(template_name).with_suffix('')
+        write_file(resolve_template(template_path), output_path, overwrite=overwrite)
     match settings['project_type']:
         case 'python':
             write_templated_files_python(settings, templates_dir, resolve_template, write_file)
@@ -465,7 +472,7 @@ def evaluate_merged_settings(jpathdir: list[str],
         jpathdir=jpathdir,
         native_callbacks=NATIVE_CALLBACKS,
         tla_codes={
-            'defaults': (lib_path / 'defaults.libjsonnet').read_text(),
+            'defaults': (lib_path.resolve(strict=True) / 'defaults.libjsonnet').read_text(),
             'settings': settings,
             'user_defaults': user_defaults_jsonnet.read_text() if user_defaults else '{}',
         })
@@ -484,87 +491,101 @@ def download_yarn(version: str) -> None:
     target.chmod(0o755)
 
 
-def setup_github_project(settings: Settings) -> None:
-    if not settings['using_github']:
-        log.debug('Not running GitHub setup.')
-        return
-    owner, project = settings['repository_uri'].split('/')[-2:]
-    if not (token := keyring.get_password('tmu-github-api', getpass.getuser())):
+def _get_repo_config(settings: Settings) -> dict[str, Any]:
+    return {
+        'allow_auto_merge': False,
+        'allow_merge_commit': False,
+        'allow_rebase_merge': True,
+        'allow_squash_merge': True,
+        'allow_update_branch': True,
+        'archived': False,
+        'delete_branch_on_merge': True,
+        'dependabot_on_actions_enabled': True,
+        'dependency_graph_autosubmit_action_enabled': True,
+        'dependency_graph_autosubmit_action_use_labeled_runners': False,
+        'description': settings['description'],
+        'enable_max_pushes_checkbox': False,
+        'enable_repository_funding_links': True,
+        'has_discussions': False,
+        'has_downloads': True,
+        'has_issues': True,
+        'has_pages': True,
+        'has_projects': False,
+        'has_wiki': False,
+        'homepage': settings['homepage'],
+        'include_lfs_objects': False,
+        'security_and_analysis': {
+            'dependabot_security_updates': {
+                'status': 'enabled'
+            },
+            'secret_scanning': {
+                'status': 'enabled'
+            },
+            'secret_scanning_non_provider_patterns': {
+                'status': 'disabled'
+            },
+            'secret_scanning_push_protection': {
+                'status': 'enabled'
+            },
+            'secret_scanning_validity_checks': {
+                'status': 'disabled'
+            }
+        },
+        'squash_merge_commit_message': 'COMMIT_MESSAGES',
+        'squash_merge_commit_title': 'COMMIT_OR_PR_TITLE',
+        'use_squash_pr_title_as_default': False,
+        'vulnerability_updates_grouping_enabled': True,
+        'web_commit_signoff_required': True
+    }
+
+
+def _setup_github_session() -> tuple[requests_cache.CachedSession, str] | None:
+    """Set up GitHub API session with authentication."""
+    token = keyring.get_password('tmu-github-api', getpass.getuser())
+    if not token:
         log.warning('No GitHub token.')
-        return
-    log.debug('Got a token.')
-    repo_name = f'{owner}/{project}'
+        return None
+
     session = cached_session()
-    host = 'https://api.github.com'
     session.headers.update({
         'Accept': 'application/vnd.github+json',
         'Authorization': f'Bearer {token}',
         'X-GitHub-Api-Version': '2022-11-28'
     })
-    # The API cannot set the following settings as of 2024-04-12:
-    # Moderation options - Code review limits - Limit to users explicitly granted read or higher
-    # Repo sections - Include in the home page
-    # Actions - General - Permissions
-    #                   - Artifact and log retention
-    #                   - Approval for running fork pull request workflows from contributors
-    #                   - Workflow permissions -
-    #                                          - Allow GitHub Actions to create and approve pull
-    #                                            requests
-    # Code security - Automatic dependency submission
-    #               - Dependabot Alerts - Rules - Presets
-    #                                   - Grouped security updates
-    #                                   - Dependabot on Actions runners
-    #               - Code Scanning - Tools - Copilot Autofix
-    #                                       - Copilot Autofix for third party tools
-    #                               - Protection Rules - Security alert severity level
-    #                                                  - Standard alert severity level
+    return session, 'https://api.github.com'
+
+
+def _configure_github_repo(session: requests_cache.CachedSession, host: str, repo_name: str,
+                           settings: Settings) -> None:
+    """Configure basic repository settings."""
+    session.patch(f'{host}/repos/{repo_name}', json=_get_repo_config(settings)).raise_for_status()
+    session.put(f'{host}/repos/{repo_name}/topics',
+                json={
+                    'names': [x.replace(' ', '-') for x in settings['keywords']]
+                }).raise_for_status()
+
+    # Enable security features
+    for endpoint in [
+            'automated-security-fixes', 'private-vulnerability-reporting', 'vulnerability-alerts'
+    ]:
+        session.put(f'{host}/repos/{repo_name}/{endpoint}').raise_for_status()
+
+
+def setup_github_project(settings: Settings) -> None:
+    if not settings['using_github']:
+        log.debug('Not running GitHub setup.')
+        return
+
+    session_data = _setup_github_session()
+    if not session_data:
+        return
+
+    session, host = session_data
+    suffix = settings['repository_uri'].split('/')[-1]
+    repo_name = f"{settings['repository_uri'].split('/')[-2]}/{suffix}"
+
     try:
-        session.patch(f'{host}/repos/{repo_name}',
-                      json={
-                          'allow_auto_merge': False,
-                          'allow_merge_commit': False,
-                          'allow_rebase_merge': True,
-                          'allow_squash_merge': True,
-                          'allow_update_branch': True,
-                          'archived': False,
-                          'delete_branch_on_merge': True,
-                          'dependabot_on_actions_enabled': True,
-                          'dependency_graph_autosubmit_action_enabled': True,
-                          'dependency_graph_autosubmit_action_use_labeled_runners': False,
-                          'description': settings['description'],
-                          'enable_max_pushes_checkbox': False,
-                          'enable_repository_funding_links': True,
-                          'has_discussions': False,
-                          'has_downloads': True,
-                          'has_issues': True,
-                          'has_pages': True,
-                          'has_projects': False,
-                          'has_wiki': False,
-                          'homepage': settings['homepage'],
-                          'include_lfs_objects': False,
-                          'security_and_analysis': {
-                              'dependabot_security_updates': {
-                                  'status': 'enabled'
-                              },
-                              'secret_scanning': {
-                                  'status': 'enabled'
-                              },
-                              'secret_scanning_non_provider_patterns': {
-                                  'status': 'disabled'
-                              },
-                              'secret_scanning_push_protection': {
-                                  'status': 'enabled'
-                              },
-                              'secret_scanning_validity_checks': {
-                                  'status': 'disabled'
-                              }
-                          },
-                          'squash_merge_commit_message': 'COMMIT_MESSAGES',
-                          'squash_merge_commit_title': 'COMMIT_OR_PR_TITLE',
-                          'use_squash_pr_title_as_default': False,
-                          'vulnerability_updates_grouping_enabled': True,
-                          'web_commit_signoff_required': True
-                      }).raise_for_status()
+        _configure_github_repo(session, host, repo_name, settings)
         session.put(f'{host}/repos/{repo_name}/topics',
                     json={
                         'names': [x.replace(' ', '-') for x in settings['keywords']]

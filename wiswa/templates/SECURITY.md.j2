@@ -10,6 +10,8 @@
 
 ## Reporting a Vulnerability
 
+{% if settings.using_github %}
 Send me a direct message [on Bsky](https://bsky.app/profile/{{ settings.github.username | lower }}.bsky.social).
+{% endif %}
 
 {{ settings.security_addendum }}

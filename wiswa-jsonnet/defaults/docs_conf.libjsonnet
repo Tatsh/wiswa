@@ -41,12 +41,14 @@ local d = import 'doc-util/main.libsonnet';
         'toc.follow',
         'toc.sticky',
       ],
+      '#font':: d.val(d.T.boolean, 'sphinx_immaterial: Whether to use web fonts.'),
+      font: false,
       '#icon':: d.obj('sphinx_immaterial: Icons for the theme.'),
       icon: {
         '#edit':: d.val(d.T.string, 'Icon for edit action.'),
         edit: 'material/file-edit-outline',
         '#repo':: d.val(d.T.string, 'Icon for repository.'),
-        repo: 'fontawesome/brands/github'
+        repo: 'fontawesome/brands/github',
       },
       '#globaltoc_collapse':: d.val(d.T.boolean, 'sphinx_immaterial: Whether to collapse the global table of contents.'),
       globaltoc_collapse: true,

@@ -6,6 +6,7 @@ local d = import 'doc-util/main.libsonnet';
     'List of glob patterns to ignore in YAPF formatting.',
   ),
   ignore_patterns: [
+    '.venv/**',
     'node_modules/**',
   ],
 }

@@ -25,7 +25,11 @@ local d = import 'doc-util/main.libsonnet';
     },
   ],
   local python_deps = { pyright: '^' + std.native('latestNpmPackageVersion')('pyright') },
-  local python_scripts = {
+  local python_test_scripts = {
+    test: 'poetry run pytest',
+    'test:cov': 'yarn test --cov . --cov-report html --cov-report term-missing:skip-covered',
+  },
+  python_scripts(settings):: {
     'check-formatting': "yarn prettier -c . && poetry run yapf -prd . && yarn markdownlint-cli2 '**/*.md' '#node_modules'",
     'check-spelling': "yarn cspell --no-progress './**/*'  './**/.*'",
     format: "prettier -w . && poetry run yapf -ri . && yarn markdownlint-cli2 --fix '**/*.md' '#node_modules'",
@@ -34,9 +38,7 @@ local d = import 'doc-util/main.libsonnet';
     regen: 'poetry run wiswa',
     ruff: 'poetry run ruff check',
     'ruff:fix': 'poetry run ruff check --fix',
-    test: 'poetry run pytest',
-    'test:cov': 'yarn test --cov . --cov-report html --cov-report term-missing:skip-covered',
-  },
+  } + if settings.want_tests then python_test_scripts else {},
   local c_cpp_scripts = {
     build: 'cmake --preset=default -DBUILD_DOCS=ON && cmake --build build',
     'check-formatting': "cmake-format --check CMakeLists.txt src/CMakeLists.txt && clang-format -n src/*.cpp src/*.h && prettier -c . && markdownlint-cli2 '**/*.md' '#node_modules'",
@@ -69,9 +71,11 @@ local d = import 'doc-util/main.libsonnet';
     d.arg('settings', d.T.object),
   ]),
   get(settings): {
-    local man = if settings.want_man then ['man/%s.1' % (
-      if std.contains(std.stringChars(settings.project_name), '/') then
-      std.split(settings.project_name, '/')[1] else settings.project_name)
+    local man = if settings.want_man then [
+      'man/%s.1' % (
+        if std.contains(std.stringChars(settings.project_name), '/') then
+          std.split(settings.project_name, '/')[1] else settings.project_name
+      ),
     ] else [],
     local prettier_c_cpp = if settings.project_type == 'c++' || settings.project_type == 'c' then c_cpp_overrides else [],
     local prettier_cpp = if settings.cmake.uses_qt then qt_overrides else [],
@@ -153,7 +157,7 @@ local d = import 'doc-util/main.libsonnet';
       printWidth: settings.line_width,
       singleQuote: true,
     },
-    scripts: if settings.project_type == 'python' then python_scripts
+    scripts: if settings.project_type == 'python' then top.python_scripts(settings)
     else if settings.project_type == 'c++' || settings.project_type == 'c' then c_cpp_scripts
     else if settings.project_type == 'typescript' then top.typescript_scripts(settings)
     else {},

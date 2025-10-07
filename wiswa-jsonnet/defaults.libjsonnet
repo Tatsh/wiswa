@@ -7,7 +7,7 @@ local utils = import 'utils.libjsonnet';
   '#':: d.pkg(name='defaults', url='', help='', filename=std.thisFile),
 
   local deps = (import 'defaults/python-deps.libjsonnet')(
-    self.want_main, self.want_yapf, self.stubs_only, self.project_name
+    self.want_main, self.want_yapf, self.stubs_only, self.project_name, self.want_bascom
   ),
   local github = if settings.using_github then [import 'defaults/pre-commit-config/github.libjsonnet'] else [],
   local cff = if settings.want_cff then [import 'defaults/pre-commit-config/cff.libjsonnet'] else [],
@@ -26,6 +26,8 @@ local utils = import 'utils.libjsonnet';
   version: '0.0.0',
   '#keep_dist':: d.val(d.T.boolean, 'If the project should not ignore the `/dist/` directory.'),
   keep_dist: false,
+  '#want_bascom':: d.val(d.T.boolean, 'If the project should have bascom dependency.'),
+  want_bascom: true,
 
   '#github_username':: d.val(d.T.string, 'GitHub username.'),
   github_username: 'unknown',
@@ -384,9 +386,9 @@ local utils = import 'utils.libjsonnet';
         } + docs_section + tests_section,
       } + (if std.length(poetry_include) > 0 then { include: poetry_include } else {}),
       pyright+: {
-        include: ['./%s' % [m] for m in settings.modules] + [
+        include: ['./%s' % [m] for m in settings.modules] + if settings.want_tests then [
           './tests',
-        ],
+        ] else [],
         pythonVersion: settings.supported_python_versions[0],
       } + if settings.stubs_only then { reportImplicitOverride: 'none' } else {},
       ruff+: {
@@ -458,7 +460,7 @@ local utils = import 'utils.libjsonnet';
     packageManager: 'yarn@%s' % settings.yarn_version,
     repository: {
       type: 'git',
-      url: utils.gitHubGitSshUri(settings.github_username, settings.github_project_name),
+      url: if settings.using_github then utils.gitHubGitSshUri(settings.github_username, settings.github_project_name) else '%s.git' % settings.repository_uri,
     },
     version: settings.version,
   } + { scripts+: if settings.want_docs && settings.project_type == 'python' then {
@@ -479,6 +481,8 @@ local utils = import 'utils.libjsonnet';
                             '*.jsonnet',
                             '*.libjsonnet',
                             '*.lock',
+                            '.eslintignore',
+                            '.shellcheckrc',
                             '/.yarn/**/*.cjs',
                             '/dist/',
                           ] +
