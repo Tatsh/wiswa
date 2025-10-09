@@ -318,7 +318,7 @@ local utils = import 'utils.libjsonnet';
   // Python only
   local pyproject = import 'defaults/pyproject.libjsonnet',
   '#supported_python_versions':: d.val(d.T.array, 'Array of supported Python versions.'),
-  supported_python_versions: ['3.%d' % i for i in std.range(10, 13)],
+  supported_python_versions: ['3.%d' % i for i in std.range(10, 14)],
   '#primary_module':: d.val(d.T.string, 'Primary module name (Python package).'),
   primary_module: std.strReplace(self.project_name, '-', '_'),
   '#pyproject':: d.obj('Python project configuration (`pyproject.toml`).'),

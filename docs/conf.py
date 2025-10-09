@@ -40,6 +40,7 @@ html_theme_options = {
         'navigation.sections', 'navigation.top', 'search.share', 'search.suggest', 'toc.follow',
         'toc.sticky'
     ],
+    'font': False,
     'globaltoc_collapse': True,
     'icon': {
         'edit': 'material/file-edit-outline',

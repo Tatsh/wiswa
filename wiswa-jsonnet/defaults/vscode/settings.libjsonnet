@@ -31,10 +31,10 @@ local d = import 'doc-util/main.libsonnet';
       },
     ],
     'python.languageServer': 'Pylance',
-  } + if want_tests then {
-    'python.testing.pytestArgs': ['tests'],
-    'python.testing.pytestEnabled': true,
-  } else {} + {
+  } + (if want_tests then {
+         'python.testing.pytestArgs': ['tests'],
+         'python.testing.pytestEnabled': true,
+       } else {}) + {
     'restructuredtext.experimental': true,
     'restructuredtext.linter.disabledLinters': ['rstcheck'],
     'restructuredtext.linter.doc8.extraArgs': [
@@ -76,6 +76,7 @@ local d = import 'doc-util/main.libsonnet';
     'files.trimFinalNewlines': true,
     'files.trimTrailingWhitespace': true,
     'files.eol': '\n',
+
     'shellformat.flag': 'i 2 -ci -sr',
     'sortJSON.excludedFiles': [],
     'sortJSON.excludedPaths': [],

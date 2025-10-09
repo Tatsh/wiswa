@@ -57,7 +57,6 @@ fontawesome
 foxundermoon
 fqxz
 funcattributes
-furb
 gcov
 genindex
 getenv
@@ -74,13 +73,16 @@ hookimpl
 hostux
 hoverxref
 htmlcov
+intellicode
 internalerror
 intersphinx
 isodate
 isort
 itemgetter
 itertools
+ivangabriele
 iwyu
+jeffersonlicet
 jinja
 jinjahtml
 jmredfern
@@ -143,6 +145,7 @@ savestepsize
 schemafile
 sdist
 shellcheck
+shellformat
 softprops
 sphinxcontrib
 srcs
@@ -171,8 +174,11 @@ udvare
 varattributes
 vars
 vcpkg
+venv
 vers
 virtualenv
+visualstudioexptteam
+vscodeintellicode
 wayou
 werror
 wextra
@@ -182,6 +188,7 @@ wordwrap
 wraparguments
 wrapcollections
 wrapparameters
+wrapselection
 yapf
 yapfignore
 yarnrc
