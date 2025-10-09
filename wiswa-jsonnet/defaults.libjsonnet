@@ -319,6 +319,8 @@ local utils = import 'utils.libjsonnet';
   local pyproject = import 'defaults/pyproject.libjsonnet',
   '#supported_python_versions':: d.val(d.T.array, 'Array of supported Python versions.'),
   supported_python_versions: ['3.%d' % i for i in std.range(10, 14)],
+  '#python_dep_upper_boundary':: d.val(d.T.bool, 'If true, add upper boundary to Python version requirement.'),
+  python_dep_upper_boundary: false,
   '#primary_module':: d.val(d.T.string, 'Primary module name (Python package).'),
   primary_module: std.strReplace(self.project_name, '-', '_'),
   '#pyproject':: d.obj('Python project configuration (`pyproject.toml`).'),
@@ -366,10 +368,12 @@ local utils = import 'utils.libjsonnet';
       poetry+: {
         packages: [{ include: x } for x in settings.modules],
         dependencies: {
-          python: '>=%s,<3.%d' % [
+          python: if settings.python_dep_upper_boundary then ('>=%s,<3.%d' % [
             settings.supported_python_versions[0],
-            std.parseInt(settings.supported_python_versions[std.length(settings.supported_python_versions) - 1][2:]) + 1,
-          ],
+            std.parseInt(
+                settings.supported_python_versions[
+                    std.length(settings.supported_python_versions) - 1][2:]) + 1])
+            else ('>=%s,<4.0' % settings.supported_python_versions[0]),
         } + deps.main,
         local docs_section = if settings.want_docs then { docs: { optional: true, dependencies: deps.docs } } else {},
         local tests_section = if settings.want_tests then { tests: { optional: true, dependencies: deps.tests } } else {},
