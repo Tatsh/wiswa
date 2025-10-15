@@ -7,7 +7,7 @@ local utils = import 'utils.libjsonnet';
   '#':: d.pkg(name='defaults', url='', help='', filename=std.thisFile),
 
   local deps = (import 'defaults/python-deps.libjsonnet')(
-    self.want_main, self.want_yapf, self.stubs_only, self.project_name, self.want_bascom
+    self.want_main, self.want_yapf, self.stubs_only, self.project_name, self.want_coveralls
   ),
   local github = if settings.using_github then [import 'defaults/pre-commit-config/github.libjsonnet'] else [],
   local cff = if settings.want_cff then [import 'defaults/pre-commit-config/cff.libjsonnet'] else [],
@@ -26,8 +26,6 @@ local utils = import 'utils.libjsonnet';
   version: '0.0.0',
   '#keep_dist':: d.val(d.T.boolean, 'If the project should not ignore the `/dist/` directory.'),
   keep_dist: false,
-  '#want_bascom':: d.val(d.T.boolean, 'If the project should have bascom dependency.'),
-  want_bascom: true,
 
   '#github_username':: d.val(d.T.string, 'GitHub username.'),
   github_username: 'unknown',
@@ -67,6 +65,8 @@ local utils = import 'utils.libjsonnet';
     '#terminal':: d.val(d.T.boolean, 'If the application is a terminal application.'),
     terminal: true,
   },
+  '#want_coveralls':: d.val(d.T.boolean, 'If the project should upload coverage to Coveralls.'),
+  want_coveralls: self.using_github && !self.stubs_only,
 
   '#social':: d.obj('Social media configuration (for badges).'),
   social: {
@@ -174,8 +174,8 @@ local utils = import 'utils.libjsonnet';
     ],
     '#repos':: d.val(d.T.array, 'Array of pre-commit repositories.'),
     local yapf_precommit = if settings.want_yapf then
-        (import 'defaults/pre-commit-config/yapf.libjsonnet')
-        else [],
+      (import 'defaults/pre-commit-config/yapf.libjsonnet')
+    else [],
     local precommit_python_repos = if settings.project_type == 'python' then [
       import 'defaults/pre-commit-config/poetry.libjsonnet',
     ] + yapf_precommit + djlint else [],
@@ -371,11 +371,13 @@ local utils = import 'utils.libjsonnet';
         packages: [{ include: x } for x in settings.modules],
         dependencies: {
           python: if settings.python_dep_upper_boundary then ('>=%s,<3.%d' % [
-            settings.supported_python_versions[0],
-            std.parseInt(
-                settings.supported_python_versions[
-                    std.length(settings.supported_python_versions) - 1][2:]) + 1])
-            else ('>=%s,<4.0' % settings.supported_python_versions[0]),
+                                                                settings.supported_python_versions[0],
+                                                                std.parseInt(
+                                                                  settings.supported_python_versions[
+                                                                    std.length(settings.supported_python_versions) - 1][2:]
+                                                                ) + 1,
+                                                              ])
+          else ('>=%s,<4.0' % settings.supported_python_versions[0]),
         } + deps.main,
         local docs_section = if settings.want_docs then { docs: { optional: true, dependencies: deps.docs } } else {},
         local tests_section = if settings.want_tests then { tests: { optional: true, dependencies: deps.tests } } else {},

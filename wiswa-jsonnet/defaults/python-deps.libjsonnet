@@ -1,6 +1,6 @@
-function(want_main, want_yapf, stubs_only, project_name, want_bascom) {
+function(want_main, want_yapf, stubs_only, project_name, want_coveralls) {
   local want_main_deps = if want_main then { click: '^' + std.native('latestPypiPackageVersion')('click') } else {},
-  local bascom_dep = if want_bascom && !stubs_only && project_name != 'bascom' then { 'bascom': '^' + std.native('latestPypiPackageVersion')('bascom') } else {},
+  local bascom_dep = if want_main && !stubs_only && project_name != 'bascom' then { bascom: '^' + std.native('latestPypiPackageVersion')('bascom') } else {},
   local cz_path_dep = if project_name != 'cz-path' then { 'cz-path': '^' + std.native('latestPypiPackageVersion')('cz-path') } else {},
   main: {
     'typing-extensions': '^' + std.native('latestPypiPackageVersion')('typing-extensions'),
@@ -23,16 +23,15 @@ function(want_main, want_yapf, stubs_only, project_name, want_bascom) {
       { version: '^' + std.native('latestPypiPackageVersion')('sphinx'), python: '>=3.11' },
       { version: '^7.2.5', python: '<3.11' },
     ],
-    'sphinx-click': '^' + std.native('latestPypiPackageVersion')('sphinx-click'),
     'sphinx-datatables': '^' + std.native('latestPypiPackageVersion')('sphinx-datatables'),
     'sphinx-hoverxref': '^' + std.native('latestPypiPackageVersion')('sphinx-hoverxref'),
     'sphinx-immaterial': '^' + std.native('latestPypiPackageVersion')('sphinx-immaterial'),
-  },
+    tomlkit: '^' + std.native('latestPypiPackageVersion')('tomlkit'),
+  } + if want_main then { 'sphinx-click': '^' + std.native('latestPypiPackageVersion')('sphinx-click') } else {},
   tests: {
-    coveralls: { python: '<3.13', version: '^4.0.1' },
     mock: '^' + std.native('latestPypiPackageVersion')('mock'),
     pytest: '^' + std.native('latestPypiPackageVersion')('pytest'),
     'pytest-cov': '^' + std.native('latestPypiPackageVersion')('pytest-cov'),
     'pytest-mock': '^' + std.native('latestPypiPackageVersion')('pytest-mock'),
-  },
+  } + if want_coveralls then { coveralls: { python: '<3.13', version: '^4.0.1' } } else {},
 }
