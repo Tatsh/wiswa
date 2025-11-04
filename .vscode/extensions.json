@@ -4,6 +4,7 @@
     "aaron-bond.better-comments",
     "bierner.markdown-checkbox",
     "buianhthang.xml2json",
+    "charliermarsh.ruff",
     "christian-kohler.npm-intellisense",
     "christian-kohler.path-intellisense",
     "davidanson.vscode-markdownlint",

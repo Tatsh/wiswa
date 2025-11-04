@@ -66,8 +66,6 @@ githistory
 globaltoc
 gmock
 gnucxx
-googletest
-gtest
 henriiik
 hexliteralcase
 hookimpl
@@ -127,11 +125,9 @@ pycache
 pydantic
 pydocstyle
 pyinstaller
-pylance
 pylint
 pypi
 pyproject
-pyright
 pytest
 pyyaml
 qstringbuilder
@@ -174,7 +170,6 @@ tyriar
 udvare
 varattributes
 vars
-vcpkg
 venv
 vers
 virtualenv
