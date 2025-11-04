@@ -174,7 +174,7 @@ local utils = import 'utils.libjsonnet';
     ],
     '#repos':: d.val(d.T.array, 'Array of pre-commit repositories.'),
     local yapf_precommit = if settings.want_yapf then
-      (import 'defaults/pre-commit-config/yapf.libjsonnet')
+      [import 'defaults/pre-commit-config/yapf.libjsonnet']
     else [],
     local precommit_python_repos = if settings.project_type == 'python' then [
       import 'defaults/pre-commit-config/poetry.libjsonnet',
@@ -283,9 +283,19 @@ local utils = import 'utils.libjsonnet';
     '/CMakeUserPresets.json',
     '/vcpkg_installed/',
   ] else [],
+  local python_ignore = if self.project_type == 'python' then [
+    '.venv/',
+    '/docs/_build/',
+    '/man/_static/',
+    '/mypy-report*/',
+    '__pycache__/',
+    'cobertura.xml',
+    'htmlcov/',
+    'mypy-report.xml',
+  ] else [],
   local typescript_ignore = if self.project_type == 'typescript' then ['/coverage/'] else [],
   '#gitignore':: d.val(d.T.array, 'Array of .gitignore entries.'),
-  gitignore: std.set(self.shared_ignore + cpp_ignore + typescript_ignore +
+  gitignore: std.set(self.shared_ignore + python_ignore + cpp_ignore + typescript_ignore +
                      if !self.keep_dist then ['/dist/'] else []),
 
   // C/C++ only
@@ -494,7 +504,7 @@ local utils = import 'utils.libjsonnet';
                             '/.yarn/**/*.cjs',
                             '/dist/',
                           ] +
-                          cpp_prettierignore),
+                          cpp_prettierignore + python_ignore),
 
   // Yarn
   '#yarnrc':: d.obj('Yarn configuration.'),

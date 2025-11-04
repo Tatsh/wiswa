@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, cast
 import getpass
 import json
 import logging
+import re
 import subprocess as sp
 
 from bs4 import BeautifulSoup as Soup
@@ -376,7 +377,8 @@ def get_github_release_latest_tag(owner: str,
                                   repo: str,
                                   *,
                                   actions: bool = False,
-                                  skip_releases: bool = False) -> str:
+                                  skip_releases: bool = False,
+                                  allow_suffixes: bool = True) -> str:
     """
     Get the latest release tag from a GitHub repository.
 
@@ -395,7 +397,9 @@ def get_github_release_latest_tag(owner: str,
         (r := session.get(f'https://api.github.com/repos/{owner}/{repo}/tags', timeout=15)).ok
             and (tags := [x['name'] for x in r.json() if 'name' in x])):
         if actions or (owner == 'google' and repo == 'yapf'):
-            version = next(x for x in tags if x.startswith('v'))
+            version = next(
+                x for x in tags
+                if x.startswith('v') and (re.search(r'\d$', x) if not allow_suffixes else True))
         else:
             version = tags[0]
     if not version:
@@ -408,7 +412,7 @@ def get_github_release_latest_tag(owner: str,
 
 NATIVE_CALLBACKS: dict[str, tuple[tuple[str, ...], Callable[..., object]]] = {
     'githubLatestActionTag': (('owner', 'repo'), lambda owner, repo: get_github_release_latest_tag(
-        owner, repo, actions=True, skip_releases=True)),
+        owner, repo, actions=True, skip_releases=True, allow_suffixes=False)),
     'githubLatestReleaseTag': (('owner', 'repo'), get_github_release_latest_tag),
     'githubLatestTag': (
         ('owner', 'repo'),
