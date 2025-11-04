@@ -47,7 +47,7 @@
       'visualstudioexptteam.vscodeintellicode',
       'zainchen.json',
       'zengxingxin.sort-js-object-keys',
-    ] + if settings.project_type == 'python' then python_recommendations else [] + if settings.want_yapf then ['eeyore.yapf'] else []),
+    ] + (if settings.project_type == 'python' then python_recommendations else []) + (if settings.want_yapf then ['eeyore.yapf'] else [])),
     unwantedRecommendations: if settings.project_type == 'python' then python_unwanted_recommendations else [],
   },
 }
