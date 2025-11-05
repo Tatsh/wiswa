@@ -47,6 +47,8 @@ local utils = import 'utils.libjsonnet';
   modules: [self.primary_module],
   '#pyinstaller':: d.obj('PyInstaller configuration.'),
   pyinstaller: {
+    '#extra_args': d.val(d.T.array, 'Extra arguments to PyInstaller. Arguments will not be automatically escaped.'),
+    extra_args: [],
     '#macos_exclusions':: d.val(d.T.array, 'Array of script names to exclude from macOS.'),
     macos_exclusions: [],
     '#windows_exclusions':: d.val(d.T.array, 'Array of script names to exclude from Windows.'),
