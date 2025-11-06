@@ -234,8 +234,14 @@ local utils = import 'utils.libjsonnet';
     username: settings.github_username,
     '#workflows':: d.obj('GitHub Actions workflows configuration.'),
     workflows: {
+      appimage: {
+        apt_packages: [],
+      },
       codeql: {
         '#apt_packages':: d.val(d.T.array, 'Array of APT packages to install for CodeQL workflow.'),
+        apt_packages: [],
+      },
+      pyinstaller: {
         apt_packages: [],
       },
       qa: {

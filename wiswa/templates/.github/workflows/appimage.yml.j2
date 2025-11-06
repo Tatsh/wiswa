@@ -12,6 +12,10 @@ jobs:
         with:
           cache: 'poetry'
           python-version: '3.13'
+{% if settings.github.workflows.appimage.apt_packages %}
+      - name: 'Install dependencies'
+        run: 'sudo apt-get update && sudo apt-get install -y {{ settings.github.workflows.appimage.apt_packages | join(" ") }}'
+{% endif %}
       - name: 'Install dependencies (Poetry)'
         run: |
           poetry install
