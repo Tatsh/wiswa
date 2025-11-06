@@ -241,9 +241,6 @@ local utils = import 'utils.libjsonnet';
         '#apt_packages':: d.val(d.T.array, 'Array of APT packages to install for CodeQL workflow.'),
         apt_packages: [],
       },
-      pyinstaller: {
-        apt_packages: [],
-      },
       qa: {
         apt_packages: [],
       },
