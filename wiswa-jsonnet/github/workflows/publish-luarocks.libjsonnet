@@ -1,0 +1,27 @@
+{
+  jobs: {
+    publish: {
+      'runs-on': 'ubuntu-latest',
+      steps: [
+        {
+          uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
+        },
+        {
+          uses: 'leafo/gh-actions-luarocks@' + std.native('githubLatestActionTag')('actions', 'checkout'),
+        },
+        {
+          name: 'Upload package',
+          run: 'luarocks upload --api-key=${{ secrets.LUAROCKS_API_KEY }} *.rockspec',
+        },
+      ],
+    },
+  },
+  name: 'Publish to LuaRocks',
+  on: {
+    push: {
+      tags: [
+        'v*',
+      ],
+    },
+  },
+}

@@ -12,7 +12,7 @@ function(settings)
                                                      ) +
                                                      github.workflows(settings) else {};
   local gitlab_items = if settings.using_gitlab then {
-    '.gitlab-ci.yml': utils.manifestYaml(utils.settings.gitlab_ci),
+    '.gitlab-ci.yml': utils.manifestYaml(settings.gitlab_ci),
   } else {};
   local readthedocs_items = if settings.want_docs && settings.project_type == 'python' && settings.using_readthedocs then {
     '.readthedocs.yaml': utils.manifestYaml(settings.readthedocs),

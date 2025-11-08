@@ -26,6 +26,8 @@ local utils = import 'utils.libjsonnet';
   version: '0.0.0',
   '#keep_dist':: d.val(d.T.boolean, 'If the project should not ignore the `/dist/` directory.'),
   keep_dist: false,
+  '#using_pypi': d.val(d.T.boolean, 'If the project is published on PyPI.'),
+  using_pypi: self.project_type == 'python',
 
   '#github_username':: d.val(d.T.string, 'GitHub username.'),
   github_username: 'unknown',
@@ -240,6 +242,19 @@ local utils = import 'utils.libjsonnet';
       codeql: {
         '#apt_packages':: d.val(d.T.array, 'Array of APT packages to install for CodeQL workflow.'),
         apt_packages: [],
+      },
+      publish_npm_any: {
+        node_version: '24',
+        runs_on: 'ubuntu-latest',
+        registry_url: 'https://registry.npmjs.org/',
+      },
+      publish_pypi_any: {
+        python_version: '3.13',
+        runs_on: 'ubuntu-latest',
+      },
+      publish_winget: {
+        identifier: '%s.%s' % [settings.github_username, settings.github_project_name],
+        max_versions_to_keep: 3,
       },
       qa: {
         apt_packages: [],

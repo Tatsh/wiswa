@@ -1,0 +1,44 @@
+function(settings) {
+  jobs: {
+    publish: {
+      permissions: {
+        contents: 'read',
+        'id-token': 'write',
+      },
+      'runs-on': settings.github.workflows.publish_npm_any.runs_on,
+      steps: [
+        {
+          uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
+        },
+        {
+          name: 'Setup Node.js',
+          uses: 'actions/setup-node@' + std.native('githubLatestActionTag')('actions', 'setup-node'),
+          with: {
+            'node-version': settings.github.workflows.publish_npm_any.node_version,
+            'registry-url': settings.github.workflows.publish_npm_any.registry_url,
+          },
+        },
+        {
+          name: 'Update npm',
+          run: 'npm install -g npm@latest',
+        },
+        {
+          name: 'Install dependencies',
+          run: 'yarn',
+        },
+        {
+          name: 'Publish to NPM',
+          run: 'yarn npm publish --access public --provenance',
+        },
+      ],
+    },
+  },
+  name: 'Publish to NPM',
+  on: {
+    push: {
+      tags: [
+        'v*',
+      ],
+    },
+  },
+}

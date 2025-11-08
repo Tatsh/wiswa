@@ -91,6 +91,7 @@ jquery
 jsonnet
 jsonschema
 launchable
+leafo
 lextudio
 libjsonnet
 libname
@@ -99,6 +100,7 @@ linters
 luacheck
 luacheckrc
 luacov
+luarocks
 mainpage
 maxwidth
 mdfile
@@ -126,6 +128,7 @@ pydantic
 pydocstyle
 pyinstaller
 pylint
+pypa
 pypi
 pyproject
 pytest
@@ -135,6 +138,7 @@ qtcore
 ramda
 reflow
 regen
+rockspec
 rstcheck
 ruiquelhas
 samuelcolvin
@@ -170,6 +174,7 @@ tyriar
 udvare
 varattributes
 vars
+vedantmgoyal
 venv
 vers
 virtualenv
@@ -178,6 +183,7 @@ vscodeintellicode
 wayou
 werror
 wextra
+winget
 wiswa
 wmaurer
 wordwrap

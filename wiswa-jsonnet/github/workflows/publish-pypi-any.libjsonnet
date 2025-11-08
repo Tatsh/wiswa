@@ -1,0 +1,46 @@
+function(settings) {
+  jobs: {
+    publish: {
+      'runs-on': settings.github.workflows.publish_pypi_any.runs_on,
+      steps: [
+        {
+          uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
+        },
+        {
+          uses: 'actions/setup-python@' + std.native('githubLatestActionTag')('actions', 'setup-python'),
+          with: {
+            'python-version': settings.github.workflows.publish_pypi_any.python_version,
+          },
+        },
+        {
+          name: 'Install Poetry',
+          run: 'pipx install poetry',
+        },
+        {
+          run: 'poetry build',
+        },
+        {
+          uses: 'pypa/gh-action-pypi-publish@release/v1',
+        },
+        {
+          uses: 'softprops/action-gh-release@' + std.native('githubLatestActionTag')('softprops', 'action-gh-release'),
+          with: {
+            files: 'dist/*',
+          },
+        },
+      ],
+    },
+  },
+  name: 'Publish',
+  on: {
+    push: {
+      tags: [
+        'v*',
+      ],
+    },
+  },
+  permissions: {
+    contents: 'write',
+    'id-token': 'write',
+  },
+}
