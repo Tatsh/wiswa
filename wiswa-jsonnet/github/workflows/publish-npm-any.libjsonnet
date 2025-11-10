@@ -27,6 +27,10 @@ function(settings) {
           run: 'yarn',
         },
         {
+          name: 'Build',
+          run: 'yarn tsc',
+        },
+        {
           name: 'Publish to NPM',
           run: 'yarn npm publish --access public --provenance',
         },
