@@ -42,7 +42,7 @@ def cached_session() -> requests_cache.CachedSession:
     """Get a cached requests session."""
     return requests_cache.CachedSession(platformdirs.user_cache_path() / 'wiswa/http',
                                         backend='filesystem',
-                                        expiration=timedelta(days=1))
+                                        expiration=timedelta(minutes=30))
 
 
 def subprocess_log_run(*args: Any, **kwargs: Any) -> sp.CompletedProcess[Any]:
@@ -100,11 +100,12 @@ def post_process_steps_python(settings: Settings) -> None:
                                     encoding='utf-8')
     # tomlkit will strip empty sections.
     Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8')
-    subprocess_log_run(('poetry', 'lock'))
+    subprocess_log_run(('poetry', 'lock', '--no-cache'))
     with_arg = ','.join(x for x in ('docs' if settings['want_docs'] else '',
                                     'tests' if settings['want_tests'] else '', 'dev') if x)
-    subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg else ())))
-    subprocess_log_run(('poetry', 'install', '--all-groups', '--all-extras'))
+    subprocess_log_run(('poetry', 'update', '--no-cache', *((f'--with={with_arg}',) if with_arg else
+                                                            ())))
+    subprocess_log_run(('poetry', 'install', '--no-cache', '--all-groups', '--all-extras'))
     subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
 
 
