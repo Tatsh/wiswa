@@ -37,13 +37,13 @@ jobs:
           name: {{ settings.github_project_name }}-binaries-${{ '{{' }} matrix.suffix }}
           path: |
             ${{ '{{' }} matrix.dist_path }}
-      - if: "(matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'"
+      - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'
         name: 'Zip files'
         run: |
           rm -fR _out
           mkdir _out
           zip -j _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}-${{ '{{' }} matrix.suffix }}.zip ${{ '{{' }} matrix.dist_path }}
-      - if: "(matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm') && github.ref_type == 'tag'"
+      - if: (matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm') && github.ref_type == 'tag'
         name: 'Zip files'
         run: |
           Remove-Item -Force _out -ErrorAction Continue
