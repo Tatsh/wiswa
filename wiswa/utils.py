@@ -9,6 +9,7 @@ from pathlib import Path
 from shlex import quote
 from shutil import copyfile, rmtree
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
+from urllib.parse import quote as urllib_quote, urlencode
 import getpass
 import json
 import logging
@@ -42,7 +43,8 @@ def cached_session() -> requests_cache.CachedSession:
     """Get a cached requests session."""
     return requests_cache.CachedSession(platformdirs.user_cache_path() / 'wiswa/http',
                                         backend='filesystem',
-                                        expiration=timedelta(minutes=30))
+                                        cache_control=True,
+                                        expire_after=timedelta(minutes=30))
 
 
 def subprocess_log_run(*args: Any, **kwargs: Any) -> sp.CompletedProcess[Any]:
@@ -109,6 +111,114 @@ def post_process_steps_python(settings: Settings) -> None:
     subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
 
 
+def _check_readme_badges(settings: Settings) -> None:
+    """Check and correct README.md badges if file existed before template processing."""
+    if not settings['_readme_existed']:
+        return
+    readme = Path('README.md')
+    if not readme.exists():
+        return
+    content = readme.read_text(encoding='utf-8')
+    lines = content.split('\n')
+    expected: list[str] = []
+    social_expected: list[str] = []
+    if settings['project_type'] == 'python':
+        expected.extend(
+            (f"[![Python versions](https://img.shields.io/pypi/pyversions/"
+             f"{settings['pypi_project_name']}.svg?color=blue&logo=python&logoColor=white)]"
+             "(https://www.python.org/)",
+             f"[![PyPI - Version](https://img.shields.io/pypi/v/{settings['project_name']})]"
+             f"(https://pypi.org/project/{settings['pypi_project_name']}/)"))
+    if settings['using_github']:
+        expected.extend(
+            (f"[![GitHub tag (with filter)](https://img.shields.io/github/v/tag/"
+             f"{settings['github']['username']}/{settings['project_name']})]"
+             f"({settings['repository_uri']}/tags)",
+             f"[![License](https://img.shields.io/github/license/{settings['github']['username']}/"
+             f"{settings['project_name']})]({settings['repository_uri']}/blob/"
+             f"{settings['default_branch']}/LICENSE.txt)",
+             f"[![GitHub commits since latest release (by SemVer including pre-releases)]"
+             f"(https://img.shields.io/github/commits-since/{settings['github']['username']}/"
+             f"{settings['project_name']}/v{settings['version']}/{settings['default_branch']})]"
+             f"({settings['repository_uri']}/compare/v{settings['version']}"
+             f"...{settings['default_branch']})"))
+        if settings['want_codeql']:
+            expected.append(
+                f"[![CodeQL]({settings['repository_uri']}/actions/workflows/codeql.yml/badge.svg)]"
+                f"({settings['repository_uri']}/actions/workflows/codeql.yml)")
+        expected.append(f"[![QA]({settings['repository_uri']}/actions/workflows/qa.yml/badge.svg)]"
+                        f"({settings['repository_uri']}/actions/workflows/qa.yml)")
+        if settings['want_tests']:
+            expected.extend(
+                (f"[![Tests]({settings['repository_uri']}/actions/workflows/tests.yml/badge.svg)]"
+                 f"({settings['repository_uri']}/actions/workflows/tests.yml)",
+                 f"[![Coverage Status](https://coveralls.io/repos/github/"
+                 f"{settings['github']['username']}/{settings['project_name']}/badge.svg?"
+                 f"branch=master)](https://coveralls.io/github/{settings['github']['username']}/"
+                 f"{settings['project_name']}?branch={settings['default_branch']})"))
+    if settings['want_docs'] and settings['project_type'] == 'python':
+        expected.append(
+            f"[![Documentation Status](https://readthedocs.org/projects/{settings['project_name']}"
+            f"/badge/?version=latest)]({settings['documentation_uri']}/?badge=latest)")
+    if settings['project_type'] == 'python':
+        expected.extend(
+            ('[![mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)',
+             '[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?'
+             'logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)'))
+        if not settings['stubs_only'] and settings['want_tests']:
+            expected.extend(
+                ('[![pydocstyle](https://img.shields.io/badge/pydocstyle-enabled-AD4CD3)]'
+                 '(http://www.pydocstyle.org/en/stable/)',
+                 '[![pytest](https://img.shields.io/badge/pytest-zz?logo=Pytest&'
+                 'labelColor=black&color=black)](https://docs.pytest.org/en/stable/)'))
+        expected.extend(
+            ('[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com'
+             '/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)',
+             f"[![Downloads](https://static.pepy.tech/badge/{settings['project_name']}/month)]"
+             f"(https://pepy.tech/project/{settings['project_name']})"))
+    if settings['using_github']:
+        expected.append(
+            f"[![Stargazers](https://img.shields.io/github/stars/{settings['github']['username']}/"
+            f"{settings['project_name']}?logo=github&style=flat)]"
+            f"(https://github.com/{settings['github']['username']}/{settings['project_name']}/"
+            "stargazers)")
+    if settings['social']['bsky']:
+        outer_params = urlencode(
+            {
+                'style': 'social',
+                'logo': 'bluesky',
+                'label': f'Follow @{settings["social"]["bsky"]}',
+            },
+            errors='strict')
+        url = urllib_quote('https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile/?',
+                           safe='',
+                           errors='strict') + urlencode({
+                               'actor': 'did:plc:uq42idtvuccnmtl57nsucz72',
+                               'query': '$.followersCount'
+                           })
+        social_expected.append(
+            f'[![@{settings["social"]["bsky"]}]'
+            f'(https://img.shields.io/badge/dynamic/json?url={url}&{outer_params})]'
+            f'(https://bsky.app/profile/{settings["social"]["bsky"]}.bsky.social)')
+    if ((mastodon_id := settings['social']['mastodon']['id'])
+            and (domain := settings['social']['mastodon']['domain'])):
+        social_expected.append(
+            f"[![Mastodon Follow](https://img.shields.io/mastodon/follow/{mastodon_id}?"
+            f"domain={domain}&style=social)](https://{domain}/@{settings['github']['username']})")
+    # Find badge section (after title, before description).
+    start_idx = next((i for i, line in enumerate(lines) if line.startswith('#')), 0) + 1
+    while start_idx < len(lines) and not lines[start_idx].strip():
+        start_idx += 1
+    end_idx = start_idx
+    while end_idx < len(lines) and (lines[end_idx].startswith('[![') or
+                                    lines[end_idx].startswith('![') or not lines[end_idx].strip()):
+        end_idx += 1
+    readme.write_text('\n'.join(
+        (*lines[:start_idx], '', *expected, '', *social_expected, '', *lines[end_idx:])),
+                      encoding='utf-8')
+    log.debug('Updated README.md badges.')
+
+
 def post_process_steps(settings: Settings) -> None:
     """Run post-processing steps."""
     match settings['project_type']:
@@ -116,6 +226,7 @@ def post_process_steps(settings: Settings) -> None:
             post_process_steps_python(settings)
         case _:
             log.warning('No post-processing steps for project type `%s`.', settings['project_type'])
+    _check_readme_badges(settings)
     package_json = Path('package.json')
     package_json.write_text(json.dumps(json.loads(package_json.read_text(encoding='utf-8')),
                                        indent=2,
@@ -481,7 +592,7 @@ def evaluate_merged_settings(jpathdir: list[str],
             'settings': settings,
             'user_defaults': user_defaults_jsonnet.read_text() if user_defaults else '{}',
         })
-    return s, json.loads(s)
+    return s, (json.loads(s) | {'_readme_existed': Path('README.md').exists()})
 
 
 def download_yarn(version: str) -> None:

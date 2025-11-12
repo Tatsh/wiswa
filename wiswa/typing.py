@@ -96,26 +96,60 @@ class PyProject(TypedDict):
     """Tool section of pyproject.toml."""
 
 
+class SettingsGitHub(TypedDict):
+    """GitHub settings."""
+    username: str
+    """The GitHub username."""
+
+
+class SettingsSocialMastodon(TypedDict):
+    """Mastodon settings."""
+    id: str
+    """The Mastodon ID for the project or its maintainer."""
+    domain: str
+    """The Mastodon instance domain."""
+
+
+class SettingsSocial(TypedDict):
+    """Social media settings."""
+    bsky: str
+    """The Bluesky handle for the project or its maintainer."""
+    mastodon: SettingsSocialMastodon
+    """The Mastodon ID for the project or its maintainer."""
+
+
 class Settings(TypedDict):
     """Project settings."""
     default_branch: str
     """The default Git branch."""
     description: str
     """A short description of the project."""
+    documentation_uri: str
+    """The HTTP URI of the project's documentation."""
+    github: SettingsGitHub
+    """GitHub settings."""
     has_multiple_entry_points: bool
     """If the project has multiple entry points (CLI commands)."""
     homepage: str
     """The HTTP URI of the project's homepage."""
     keywords: Iterable[str]
     """A list of keywords describing the project."""
+    mastodon_id: str | None
+    """The Mastodon ID for the project or its maintainer."""
     primary_module: str
     """The primary module."""
+    project_name: str
+    """The name of the project."""
     project_type: ProjectType
     """The type of the project."""
+    pypi_project_name: str
+    """The name of the project on PyPI."""
     pyproject: PyProject
     """Parsed ``pyproject.toml``."""
     repository_uri: str
     """The HTTP URI of the project's repository (on GitHub, etc)."""
+    social: SettingsSocial
+    """Social media settings."""
     stubs_only: bool
     """If the project consists of only typing stubs."""
     using_github: bool
@@ -134,5 +168,8 @@ class Settings(TypedDict):
     """If the project will have tests."""
     want_yapf: bool
     """If the project will use YAPF for formatting."""
+    version: str
+    """The version of the project."""
     yarn_version: str
     """The version of Yarn to use."""
+    _readme_existed: bool

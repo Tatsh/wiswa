@@ -72,6 +72,7 @@ hookimpl
 hostux
 hoverxref
 htmlcov
+idtvuccnmtl
 intellicode
 internalerror
 intersphinx
@@ -114,6 +115,7 @@ netrc
 nhoizey
 noqa
 norecursedirs
+nsucz
 nullptr
 numpy
 numpydoc
