@@ -89,11 +89,15 @@ jobs:
           dist_files=(dist/*)
           echo "Found ${#dist_files[@]} files in dist/: ${dist_files[*]##*/}"
           for file in "${dist_files[@]}"; do
+              if [[ "${file}" == dist/index.*js ]]; then
+                  echo "Skipping index.js."
+                  continue
+              fi
               echo "Testing '${file}'."
               "./${file}" --help
           done
       - name: 'Upload Artifacts'
-        uses: 'actions/upload-artifact@v4'
+        uses: 'actions/upload-artifact@v5'
         with:
           if-no-files-found: error
           name: wiswa-binaries-linux-x86_64
@@ -117,4 +121,4 @@ name: 'AppImage'
     tags:
       - 'v*.*.*'
 permissions:
-  contents: 'read'
+  contents: 'write'
