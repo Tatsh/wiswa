@@ -55,16 +55,8 @@ def main(file: Path,
     setup_logging(
         debug=debug,
         loggers={
-            'urllib3': {
-                'level': 'DEBUG' if debug else 'INFO',
-                'handlers': ('console',),
-                'propagate': False,
-            },
-            'wiswa': {
-                'level': 'DEBUG' if debug else 'INFO',
-                'handlers': ('console',),
-                'propagate': False,
-            }
+            'urllib3': {},
+            'wiswa': {}
         },
     )
     log.debug('GitHub enabled: %s', not skip_github)
@@ -102,16 +94,8 @@ def gen_docs_main(jpath: tuple[str, ...] = (), *, debug: bool = False) -> None: 
     setup_logging(
         debug=debug,
         loggers={
-            'urllib3': {
-                'level': 'DEBUG' if debug else 'INFO',
-                'handlers': ('console',),
-                'propagate': False,
-            },
-            'wiswa': {
-                'level': 'DEBUG' if debug else 'INFO',
-                'handlers': ('console',),
-                'propagate': False,
-            }
+            'urllib3': {},
+            'wiswa': {}
         },
     )
     with (importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as
