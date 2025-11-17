@@ -102,27 +102,29 @@ def post_process_steps_python(settings: Settings) -> None:
                                     encoding='utf-8')
     # tomlkit will strip empty sections.
     Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8')
-    subprocess_log_run(('poetry', 'lock', '--no-cache'))
+    subprocess_log_run(('poetry', 'lock'))
     with_arg = ','.join(x for x in ('docs' if settings['want_docs'] else '',
                                     'tests' if settings['want_tests'] else '', 'dev') if x)
-    subprocess_log_run(('poetry', 'update', '--no-cache', *((f'--with={with_arg}',) if with_arg else
-                                                            ())))
-    subprocess_log_run(('poetry', 'install', '--no-cache', '--all-groups', '--all-extras'))
+    subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg else ())))
+    subprocess_log_run(('poetry', 'install', '--all-groups', '--all-extras'))
     subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
 
 
 def _check_readme_badges(settings: Settings) -> None:
     """Check and correct README.md badges if file existed before template processing."""
+    log.debug('Checking README.md badges.')
     if not settings['_readme_existed']:
+        log.debug('README.md did not exist before templating; skipping badge check.')
         return
     readme = Path('README.md')
     if not readme.exists():
+        log.debug('README.md was removed; skipping badge check.')
         return
     content = readme.read_text(encoding='utf-8')
     lines = content.split('\n')
     expected: list[str] = []
     social_expected: list[str] = []
-    if settings['project_type'] == 'python':
+    if settings['project_type'] == 'python' and not settings['private']:
         expected.extend(
             (f"[![Python versions](https://img.shields.io/pypi/pyversions/"
              f"{settings['pypi_project_name']}.svg?color=blue&logo=python&logoColor=white)]"
@@ -156,26 +158,37 @@ def _check_readme_badges(settings: Settings) -> None:
                  f"{settings['github']['username']}/{settings['project_name']}/badge.svg?"
                  f"branch=master)](https://coveralls.io/github/{settings['github']['username']}/"
                  f"{settings['project_name']}?branch={settings['default_branch']})"))
-    if settings['want_docs'] and settings['project_type'] == 'python':
-        expected.append(
-            f"[![Documentation Status](https://readthedocs.org/projects/{settings['project_name']}"
-            f"/badge/?version=latest)]({settings['documentation_uri']}/?badge=latest)")
+    if settings['want_docs']:
+        if settings['project_type'] == 'python' and not settings['private']:
+            expected.append(
+                f"[![Documentation Status](https://readthedocs.org/projects/{settings['project_name']}"
+                f"/badge/?version=latest)]({settings['documentation_uri']}/?badge=latest)")
+        elif settings['using_github']:
+            expected.append(f'[![GitHub Pages](https://github.com/{settings["github"]["username"]}/'
+                            f'{settings["project_name"]}/badge/pages)]'
+                            f'(https://{settings["github"]["username"]}.github.io/'
+                            f'{settings["project_name"]}/)')
     if settings['project_type'] == 'python':
+        if settings['using_django']:
+            expected.append('[![django](https://img.shields.io/badge/django-5.2-092E20?'
+                            'logo=django)](https://djangoproject.com/)')
         expected.extend(
-            ('[![mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)',
+            ('[![mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)',
              '[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?'
              'logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)'))
         if not settings['stubs_only'] and settings['want_tests']:
             expected.extend(
                 ('[![pydocstyle](https://img.shields.io/badge/pydocstyle-enabled-AD4CD3)]'
-                 '(http://www.pydocstyle.org/en/stable/)',
+                 '(https://www.pydocstyle.org/en/stable/)',
                  '[![pytest](https://img.shields.io/badge/pytest-zz?logo=Pytest&'
                  'labelColor=black&color=black)](https://docs.pytest.org/en/stable/)'))
-        expected.extend(
-            ('[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com'
-             '/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)',
-             f"[![Downloads](https://static.pepy.tech/badge/{settings['project_name']}/month)]"
-             f"(https://pepy.tech/project/{settings['project_name']})"))
+        expected.append(
+            '[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com'
+            '/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)')
+        if not settings['private']:
+            expected.append(
+                f"[![Downloads](https://static.pepy.tech/badge/{settings['project_name']}/month)]"
+                f"(https://pepy.tech/project/{settings['project_name']})")
     if settings['using_github']:
         expected.append(
             f"[![Stargazers](https://img.shields.io/github/stars/{settings['github']['username']}/"
@@ -205,6 +218,7 @@ def _check_readme_badges(settings: Settings) -> None:
         social_expected.append(
             f"[![Mastodon Follow](https://img.shields.io/mastodon/follow/{mastodon_id}?"
             f"domain={domain}&style=social)](https://{domain}/@{settings['github']['username']})")
+    social_expected.extend(settings['social']['custom_badges'])
     # Find badge section (after title, before description).
     start_idx = next((i for i, line in enumerate(lines) if line.startswith('#')), 0) + 1
     while start_idx < len(lines) and not lines[start_idx].strip():
@@ -410,7 +424,7 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
     write_file(resolve_template(templates_dir / '.github/instructions/general.instructions.md.j2'),
                '.github/instructions/general.instructions.md')
     common_templates = (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', False),
-                        ('LICENSE.txt.j2', True), ('SECURITY.md.j2', True),
+                        ('LICENSE.txt.j2', not settings['private']), ('SECURITY.md.j2', True),
                         ('CHANGELOG.md.j2', False), ('README.md.j2', False))
     for template_name, overwrite in common_templates:
         template_path = templates_dir / template_name

@@ -1,0 +1,23 @@
+{
+  get(settings):: {
+    local with_groups = if settings.want_docs && settings.want_tests then 'dev,docs,tests' else
+      if settings.want_docs then 'dev,docs' else
+        if settings.want_tests then 'dev,tests' else 'dev',
+    hooks: [
+      {
+        args: [
+          '--all-extras',
+          '-f',
+          'requirements.txt',
+          '-o',
+          'requirements.txt',
+          '--with=%s' % with_groups,
+          '--without-hashes',
+        ],
+        id: 'poetry-export',
+      },
+    ],
+    repo: 'https://github.com/python-poetry/poetry-plugin-export',
+    rev: std.native('githubLatestReleaseTag')('python-poetry', 'poetry-plugin-export'),
+  },
+}

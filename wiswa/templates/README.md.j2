@@ -1,8 +1,10 @@
 # {{ settings.directory_name }}
 
 {% if settings.project_type == 'python' %}
+  {% if not settings.private %}
 [![Python versions](https://img.shields.io/pypi/pyversions/{{ settings.pypi_project_name }}.svg?color=blue&logo=python&logoColor=white)](https://www.python.org/)
 [![PyPI - Version](https://img.shields.io/pypi/v/{{ settings.project_name }})](https://pypi.org/project/{{ settings.pypi_project_name }}/)
+  {% endif %}
 {% endif %}
 {% if settings.using_github %}
 [![GitHub tag (with filter)](https://img.shields.io/github/v/tag/{{ settings.github.username }}/{{ settings.project_name }})]({{ settings.repository_uri }}/tags)
@@ -15,36 +17,39 @@
 [![Coverage Status](https://coveralls.io/repos/github/{{ settings.github.username }}/{{ settings.project_name }}/badge.svg?branch=master)](https://coveralls.io/github/{{ settings.github.username }}/{{ settings.project_name }}?branch={{ settings.default_branch }})
     {% endif %}
 {% else %}
+  {% if not settings.private %}
 ![License](https://img.shields.io/badge/License-MIT-success.svg)
+  {% endif %}
 {% endif %}
 {% if settings.want_docs %}
-    {% if settings.project_type == 'python' %}
+    {% if settings.project_type == 'python' and settings.using_readthedocs %}
 [![Documentation Status](https://readthedocs.org/projects/{{ settings.project_name }}/badge/?version=latest)]({{ settings.documentation_uri }}/?badge=latest)
-    {% else %}
+    {% elif using_github %}
 [![GitHub Pages](https://github.com/Tatsh/{{ settings.project_name }}/actions/workflows/pages.yml/badge.svg)](https://tatsh.github.io/{{ settings.project_name }}/)
     {% endif %}
 {% endif %}
-{% if settings.using_django %}
-![django](https://img.shields.io/badge/django-5.1-092E20?logo=django)
-{% endif %}
 {% if settings.project_type == 'python' %}
-[![mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
+  {% if settings.using_django %}
+[![django](https://img.shields.io/badge/django-5.2-092E20?logo=django)](https://djangoproject.com/)
+  {% endif %}
+[![mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
     {% if not settings.stubs_only %}
-[![pydocstyle](https://img.shields.io/badge/pydocstyle-enabled-AD4CD3)](http://www.pydocstyle.org/en/stable/)
+[![pydocstyle](https://img.shields.io/badge/pydocstyle-enabled-AD4CD3)](https://www.pydocstyle.org/en/stable/)
 [![pytest](https://img.shields.io/badge/pytest-zz?logo=Pytest&labelColor=black&color=black)](https://docs.pytest.org/en/stable/)
     {% endif %}
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Downloads](https://static.pepy.tech/badge/{{ settings.project_name }}/month)](https://pepy.tech/project/{{ settings.project_name }})
 {% else %}
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
-{% endif %}
+{% endif %}{# If Python project #}
 [![Stargazers](https://img.shields.io/github/stars/{{ settings.github.username }}/{{ settings.project_name }}?logo=github&style=flat)](https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/stargazers)
 
 [![@{{ settings.github.username }}](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fpublic.api.bsky.app%2Fxrpc%2Fapp.bsky.actor.getProfile%2F%3Factor%3Ddid%3Aplc%3Auq42idtvuccnmtl57nsucz72%26query%3D%24.followersCount%26style%3Dsocial%26logo%3Dbluesky%26label%3DFollow%2520%40{{ settings.github.username }}&query=%24.followersCount&style=social&logo=bluesky&label=Follow%20%40{{ settings.github.username }})](https://bsky.app/profile/{{ settings.github.username }}.bsky.social)
 {% if settings.social and settings.social.mastodon and settings.social.mastodon.id and settings.social.mastodon.domain %}
 [![Mastodon Follow](https://img.shields.io/mastodon/follow/{{ settings.social.mastodon.id }}?domain={{ settings.social.mastodon.domain }}&style=social)](https://{{ settings.social.mastodon.domain }}/@{{ settings.github.username }})
-{% endif %}
+{% endif %}{# If Mastodon info is available #}
+{{ '\n'.join(settings.social.custom_badges) }}
 
 {{ settings.description | wordwrap(99) }}
 

@@ -99,7 +99,9 @@ local d = import 'doc-util/main.libsonnet';
         '.vscode/extensions.json',
         'dist/**',
         'man/**',
-      ],
+      ] + (if settings.saves_requirements_txt && settings.project_type == 'python' then [
+             'requirements.txt',
+           ] else []),
       language: 'en-GB',
       languageSettings: [
         {
@@ -161,5 +163,5 @@ local d = import 'doc-util/main.libsonnet';
     else if settings.project_type == 'c++' || settings.project_type == 'c' then c_cpp_scripts
     else if settings.project_type == 'typescript' then top.typescript_scripts(settings)
     else {},
-  },
+  } + (if settings.private then { private: true } else {}),
 }

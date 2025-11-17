@@ -116,6 +116,8 @@ class SettingsSocial(TypedDict):
     """The Bluesky handle for the project or its maintainer."""
     mastodon: SettingsSocialMastodon
     """The Mastodon ID for the project or its maintainer."""
+    custom_badges: list[str]
+    """Custom badges to include in the README."""
 
 
 class Settings(TypedDict):
@@ -138,6 +140,8 @@ class Settings(TypedDict):
     """The Mastodon ID for the project or its maintainer."""
     primary_module: str
     """The primary module."""
+    private: bool
+    """If the project is private."""
     project_name: str
     """The name of the project."""
     project_type: ProjectType
@@ -152,6 +156,8 @@ class Settings(TypedDict):
     """Social media settings."""
     stubs_only: bool
     """If the project consists of only typing stubs."""
+    using_django: bool
+    """If the project is using Django."""
     using_github: bool
     """If the project is hosted on GitHub primarily."""
     vscode: VSCode
