@@ -7,7 +7,6 @@
   reportImportCycles: 'error',
   reportMissingModuleSource: 'error',
   reportPropertyTypeMismatch: 'error',
-  reportShadowedImports: 'error',
   reportUnnecessaryTypeIgnoreComment: 'none',
   typeCheckingMode: 'off',
   useLibraryCodeForTypes: false,
