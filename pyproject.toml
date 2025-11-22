@@ -53,12 +53,12 @@ version_provider = "pep621"
 
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:"]
-omit = ["__main__.py", "conftest.py", "tests.py", "tests/test_*.py"]
+omit = ["__main__.py", "conftest.py", "tests.py", "tests/*/test_*.py", "tests/test_*.py"]
 show_missing = true
 
 [tool.coverage.run]
 branch = true
-omit = ["__main__.py", "conftest.py", "tests.py", "tests/test_*.py"]
+omit = ["__main__.py", "conftest.py", "tests.py", "tests/*/test_*.py", "tests/test_*.py"]
 
 [tool.djlint]
 max_line_length = 100
@@ -86,10 +86,10 @@ include = ["wiswa-jsonnet"]
 
 [tool.poetry.dependencies]
 bascom = "^0.0.4"
-click = "^8.3.0"
+click = "^8.3.1"
 jinja2 = "^3.1.6"
 jsonnet = "^0.21.0"
-keyring = "^25.6.0"
+keyring = "^25.7.0"
 python = ">=3.10,<4.0"
 requests = "^2.32.5"
 typing-extensions = "^4.15.0"
@@ -102,7 +102,7 @@ commitizen = "^4.10.0"
 cz-path = "^0.0.4"
 djlint = "^1.36.4"
 mypy = "^1.18.2"
-ruff = "^0.14.4"
+ruff = "^0.14.6"
 types-jsonnet = "^0.21.0.20250708"
 types-requests = "^2.32.4.20250913"
 yapf = "^0.43.0"
@@ -116,7 +116,7 @@ doc8 = "^2.0.0"
 docutils = "<0.22"
 esbonio = "^1.0.0"
 numpydoc = "^1.9.0"
-restructuredtext-lint = "^1.4.0"
+restructuredtext-lint = "^2.0.0"
 sphinx-click = "^6.1.0"
 sphinx-datatables = "^0.3.1"
 sphinx-hoverxref = "^1.4.2"
@@ -140,7 +140,7 @@ optional = true
 
 [tool.poetry.group.tests.dependencies]
 mock = "^5.2.0"
-pytest = "^9.0.0"
+pytest = "^9.0.1"
 pytest-cov = "^7.0.0"
 pytest-mock = "^3.15.1"
 
@@ -162,7 +162,6 @@ reportImplicitOverride = "warning"
 reportImportCycles = "error"
 reportMissingModuleSource = "error"
 reportPropertyTypeMismatch = "error"
-reportShadowedImports = "error"
 reportUnnecessaryTypeIgnoreComment = "none"
 typeCheckingMode = "off"
 useLibraryCodeForTypes = false
