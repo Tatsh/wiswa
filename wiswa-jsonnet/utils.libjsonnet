@@ -109,4 +109,5 @@ local d = import 'doc-util/main.libsonnet';
   ),
   latestPypiPackageVersion(package):: std.native('latestPypiPackageVersion')(package),
   githubLatestActionTag(owner, repo):: std.native('githubLatestActionTag')(owner, repo),
+  githubLatestReleaseTag(owner, repo):: std.native('githubLatestReleaseTag')(owner, repo),
 }

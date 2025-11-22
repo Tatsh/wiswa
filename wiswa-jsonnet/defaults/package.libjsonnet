@@ -27,7 +27,7 @@ local d = import 'doc-util/main.libsonnet';
   local python_deps = { pyright: '^' + std.native('latestNpmPackageVersion')('pyright') },
   local python_test_scripts = {
     test: 'poetry run pytest',
-    'test:cov': 'yarn test --cov . --cov-report html --cov-report term-missing:skip-covered',
+    'test:cov': 'yarn test --cov . --cov-branch --cov-report html --cov-report term-missing:skip-covered',
   },
   python_scripts(settings):: {
     'check-formatting': "yarn prettier -c . && poetry run yapf -prd . && yarn markdownlint-cli2 '**/*.md' '#node_modules'",

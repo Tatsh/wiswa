@@ -1,3 +1,5 @@
+local utils = import 'utils.libjsonnet';
+
 function(settings)
   {
     jobs: {
@@ -5,7 +7,7 @@ function(settings)
         'runs-on': settings.tests_run_on,
         steps: [
           {
-            uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
+            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
         ] + (if std.length(settings.github.workflows.tests.apt_packages) > 0 then [{
                name: 'Install dependencies',
@@ -21,7 +23,7 @@ function(settings)
           },
           {
             name: 'Coveralls',
-            uses: 'coverallsapp/github-action@' + std.native('githubLatestActionTag')('coverallsapp', 'github-action'),
+            uses: 'coverallsapp/github-action@' + utils.githubLatestActionTag('coverallsapp', 'github-action'),
           },
         ],
       },

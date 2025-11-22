@@ -1,11 +1,13 @@
+local utils = import 'utils.libjsonnet';
+
 function(settings)
   {
     jobs: {
-      build: {
+      qa: {
         'runs-on': settings.qa_runs_on,
         steps: [
           {
-            uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
+            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
           {
             name: 'Install Poetry',
@@ -17,7 +19,7 @@ function(settings)
              }] else []) + [
           {
             name: 'Set up Python ${{ matrix.python-version }}',
-            uses: 'actions/setup-python@' + std.native('githubLatestActionTag')('actions', 'setup-python'),
+            uses: 'actions/setup-python@' + utils.githubLatestActionTag('actions', 'setup-python'),
             with: {
               cache: 'poetry',
               'python-version': '${{ matrix.python-version }}',

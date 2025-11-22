@@ -33,17 +33,32 @@ function(settings)
             run: 'poetry install --with=tests',
           },
           {
+            name: 'Install pytest-action dependencies',
+            run: 'poetry run pip install pytest-md pytest-emoji',
+          },
+          {
             name: 'Install dependencies (Yarn)',
             run: 'yarn',
           },
           {
             name: 'Run tests',
-            run: 'yarn test --cov=. --cov-branch',
+            uses: 'pavelzw/pytest-action@' + utils.githubLatestActionTag('pavelzw', 'pytest-action'),
+            with: {
+              'click-to-expand': true,
+              'custom-arguments': '--cov . --cov-branch --cov-report term-missing:skip-covered --cov-report xml',
+              'custom-pytest': 'yarn test',
+              'job-summary': true,
+              'report-title': 'Test Report',
+              emoji: true,
+              verbose: true,
+            },
           },
           {
-            'if': 'matrix.python-version == 3.12',
-            name: 'Coveralls',
-            run: 'poetry run coveralls --service=github',
+            name: 'Coverage',
+            uses: 'coverallsapp/github-action@' + utils.githubLatestActionTag('coverallsapp', 'github-action'),
+            with: {
+              file: 'coverage.xml',
+            },
           },
         ],
         strategy: {
