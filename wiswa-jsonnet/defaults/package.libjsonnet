@@ -120,7 +120,6 @@ local d = import 'doc-util/main.libsonnet';
       'prettier-plugin-ini': '^' + std.native('latestNpmPackageVersion')('prettier-plugin-ini'),
       'prettier-plugin-sort-json': '^' + std.native('latestNpmPackageVersion')('prettier-plugin-sort-json'),
       'prettier-plugin-toml': '^' + std.native('latestNpmPackageVersion')('prettier-plugin-toml'),
-      'yarn-audit-fix': '^' + std.native('latestNpmPackageVersion')('yarn-audit-fix'),
     } + if settings.project_type == 'python' then python_deps else
       {} + if settings.project_type == 'typescript' then top.typescript_dev_deps(settings) else {},
     files: ['LICENSE.txt', 'README.md'] + man,
