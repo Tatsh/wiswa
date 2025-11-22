@@ -249,7 +249,8 @@ def _check_readme_badges(settings: Settings) -> None:  # noqa: C901, PLR0912
                                        'https://nextjs.org/'),)
                    if 'next' in settings['package_json']['dependencies'] else ()))))
     expected.append(
-        simple_icons_badge('Prettier', 'prettier', 'Prettier', 'F7B93E', 'https://prettier.io/'))
+        simple_icons_badge('Prettier', 'prettier', 'Prettier-enabled', 'black',
+                           'https://prettier.io/'))
     keywords_to_args = {
         'dotnet': ('.NET', 'dotnet', '.NET', '512BD4', 'https://dotnet.microsoft.com/'),
         'ffmpeg': ('FFmpeg', 'ffmpeg', 'FFmpeg', 'orange', 'https://ffmpeg.org/'),
@@ -301,7 +302,7 @@ def _check_readme_badges(settings: Settings) -> None:  # noqa: C901, PLR0912
             f"domain={domain}&style=social)](https://{domain}/@{settings['github']['username']})")
     if username := settings['social']['patreon']:
         social_expected.append(
-            simple_icons_badge('Patreon', 'patreon', username, 'F96854',
+            simple_icons_badge('Patreon', 'patreon', f'Patreon-{username}', 'F96854',
                                f'https://www.patreon.com/{username}'))
     if settings['social']['slashdot']:
         social_expected.append(
