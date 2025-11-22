@@ -110,6 +110,14 @@ class SettingsSocialMastodon(TypedDict):
     """The Mastodon instance domain."""
 
 
+class SettingsSocialTextAndURI(TypedDict):
+    """YouTube settings."""
+    text: str
+    """The text shown in badge."""
+    uri: str
+    """URI."""
+
+
 class SettingsSocial(TypedDict):
     """Social media settings."""
     bsky: str
@@ -118,6 +126,28 @@ class SettingsSocial(TypedDict):
     """The Mastodon ID for the project or its maintainer."""
     custom_badges: list[str]
     """Custom badges to include in the README."""
+    youtube: SettingsSocialTextAndURI
+    """YouTube settings."""
+    patreon: str
+    """Patreon settings."""
+    cashapp: str
+    """Cash App $Cashtag."""
+    slashdot: str
+    """The Slashdot username for the project or its maintainer."""
+    calendly: SettingsSocialTextAndURI
+    """The Calendly username for the project or its maintainer."""
+    buymeacoffee: str
+    """Buy Me a Coffee username."""
+    libera_irc: str
+    """The Libera.Chat IRC nickname for the project or its maintainer."""
+
+
+class PackageJSON(TypedDict):
+    """Parsed ``package.json``."""
+    dependencies: Mapping[str, str]
+    """A mapping of dependencies and their versions."""
+    devDependencies: Mapping[str, str]
+    """A mapping of development dependencies and their versions."""
 
 
 class Settings(TypedDict):
@@ -138,6 +168,8 @@ class Settings(TypedDict):
     """A list of keywords describing the project."""
     mastodon_id: str | None
     """The Mastodon ID for the project or its maintainer."""
+    package_json: PackageJSON
+    """Parsed ``package.json``."""
     primary_module: str
     """The primary module."""
     private: bool

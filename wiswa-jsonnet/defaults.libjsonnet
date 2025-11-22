@@ -87,6 +87,31 @@ local utils = import 'utils.libjsonnet';
       '#domain':: d.val(d.T.string, 'Mastodon instance domain.'),
       domain: 'hostux.social',
     },
+    '#youtube':: d.obj('YouTube configuration.'),
+    youtube: {
+      '#text':: d.val(d.T.string, 'YouTube channel name displayed in badge.'),
+      text: 'YouTube',
+      '#uri':: d.val(d.T.string, 'YouTube channel URI.'),
+      uri: '',
+    },
+    '#patreon':: d.obj('Patreon username.'),
+    patreon: '',
+    '#cashapp':: d.obj('Cash App $Cashtag.'),
+    cashapp: '',
+    '#slashdot':: d.val(d.T.string, 'Slashdot username.'),
+    slashdot: '',
+    '#calendly':: d.obj('Calendly configuration.'),
+    calendly: {
+      '#text': d.val(d.T.string, 'Calendly username displayed in badge.'),
+      text: 'Calendly',
+      '#uri': d.val(d.T.string, 'Calendly URI.'),
+      uri: '',
+    },
+    '#buymeacoffee':: d.obj('Buy Me a Coffee username.'),
+    buymeacoffee: '',
+    '#libera_irc':: d.val(d.T.string, 'Libera Chat IRC nick.'),
+    libera_irc: '',
+    '#custom_badges':: d.val(d.T.array, 'Array of custom badges (Markdown strings).'),
     custom_badges: [],
   },
 
@@ -516,6 +541,23 @@ local utils = import 'utils.libjsonnet';
     'gen-manpage': 'poetry run sphinx-build -T -E -b man -d docs/_build/doctrees -D language=en docs man',
   } else {}
   else {} },
+
+  // Publishing
+  '#publishing': d.obj('Publishing configuration.'),
+  publishing: {
+    '#appstore': d.val(d.T.string, 'App Store app identifier.'),
+    appstore: '',
+    '#chrome': d.val(d.T.string, 'Chrome Web Store app identifier.'),
+    chrome: '',  // chromewebstore
+    '#fdroid': d.val(d.T.string, 'F-Droid app identifier.'),
+    fdroid: '',
+    '#flathub': d.val(d.T.string, 'Flathub app identifier.'),
+    flathub: '',
+    '#nuget': d.val(d.T.string, 'NuGet package identifier.'),
+    nuget: '',
+    '#snapcraft': d.val(d.T.string, 'Snapcraft app identifier.'),
+    snapcraft: '',
+  },
 
   // Prettier
   '#prettierignore':: d.val(d.T.array, 'Array of patterns to ignore for Prettier.'),

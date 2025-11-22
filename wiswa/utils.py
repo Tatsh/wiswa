@@ -110,7 +110,12 @@ def post_process_steps_python(settings: Settings) -> None:
     subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
 
 
-def _check_readme_badges(settings: Settings) -> None:
+def simple_icons_badge(anchor_text: str, logo: str, label: str, color: str, uri: str) -> str:
+    """Generate a Simple Icons badge."""
+    return (f'[![{anchor_text}](https://img.shields.io/badge/{label}-{color}?logo={logo})]({uri})')
+
+
+def _check_readme_badges(settings: Settings) -> None:  # noqa: C901, PLR0912
     """Check and correct README.md badges if file existed before template processing."""
     log.debug('Checking README.md badges.')
     if not settings['_readme_existed']:
@@ -131,6 +136,18 @@ def _check_readme_badges(settings: Settings) -> None:
              "(https://www.python.org/)",
              f"[![PyPI - Version](https://img.shields.io/pypi/v/{settings['project_name']})]"
              f"(https://pypi.org/project/{settings['pypi_project_name']}/)"))
+    elif settings['project_type'] == 'lua':
+        expected.append(simple_icons_badge('Lua', 'lua', 'Lua', '2C2D72', 'https://www.lua.org/'))
+    elif settings['project_type'] == 'c':
+        expected.append(
+            simple_icons_badge('C', 'c', 'C', '00599C',
+                               'https://en.wikipedia.org/wiki/C_(programming_language)'))
+    elif settings['project_type'] == 'c++':
+        expected.append(simple_icons_badge('C++', 'c%2B%2B', 'C++', '00599C', 'https://isocpp.org'))
+    elif settings['project_type'] == 'xcode':
+        expected.append(
+            simple_icons_badge('Xcode', 'xcode', 'Xcode', '007ACC',
+                               'https://developer.apple.com/xcode/'))
     if settings['using_github']:
         expected.extend(
             (f"[![GitHub tag (with filter)](https://img.shields.io/github/v/tag/"
@@ -158,6 +175,9 @@ def _check_readme_badges(settings: Settings) -> None:
                  f"{settings['github']['username']}/{settings['project_name']}/badge.svg?"
                  f"branch=master)](https://coveralls.io/github/{settings['github']['username']}/"
                  f"{settings['project_name']}?branch={settings['default_branch']})"))
+        expected.append(
+            simple_icons_badge('Dependabot', 'dependabot', 'Dependabot-enabled', 'blue',
+                               'https://github.com/dependabot'))
     if settings['want_docs']:
         if settings['project_type'] == 'python' and not settings['private']:
             expected.append(
@@ -170,18 +190,27 @@ def _check_readme_badges(settings: Settings) -> None:
                             f'{settings["project_name"]}/)')
     if settings['project_type'] == 'python':
         if settings['using_django']:
-            expected.append('[![django](https://img.shields.io/badge/django-5.2-092E20?'
-                            'logo=django)](https://djangoproject.com/)')
+            expected.append(
+                simple_icons_badge('Django', 'django', 'Django', '092E20',
+                                   'https://djangoproject.com'))
+        expected.extend((
+            '[![mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)',
+            simple_icons_badge('pre-commit', 'pre-commit', 'pre--commit-enabled', 'brightgreen',
+                               'https://pre-commit.com/'),
+            simple_icons_badge('Poetry', 'poetry', 'Poetry', '242d3e', 'https://python-poetry.org'),
+        ))
+        name_mapping = {'sqlalchemy': 'SQLAlchemy', 'pydantic': 'Pydantic', 'jinja': 'Jinja'}
         expected.extend(
-            ('[![mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)',
-             '[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?'
-             'logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)'))
+            simple_icons_badge(name_mapping.get(package, package), package,
+                               name_mapping.get(package, package), 'black',
+                               f'https://pypi.org/project/{package}/')
+            for package in ('numpy', 'jinja', 'pandas', 'pydantic', 'scrapy', 'sqlalchemy')
+            if package in settings['pyproject']['tool']['poetry']['dependencies'])
         if not settings['stubs_only'] and settings['want_tests']:
-            expected.extend(
-                ('[![pydocstyle](https://img.shields.io/badge/pydocstyle-enabled-AD4CD3)]'
-                 '(https://www.pydocstyle.org/en/stable/)',
-                 '[![pytest](https://img.shields.io/badge/pytest-zz?logo=Pytest&'
-                 'labelColor=black&color=black)](https://docs.pytest.org/en/stable/)'))
+            expected.extend((simple_icons_badge('pydocstyle', 'pydocstyle', 'pydocstyle-enabled',
+                                                'AD4CD3', 'https://www.pydocstyle.org/'),
+                             simple_icons_badge('pytest', 'pytest', 'pytest-enabled', 'CFB97D',
+                                                'https://docs.pytest.org')))
         expected.append(
             '[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com'
             '/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)')
@@ -189,12 +218,48 @@ def _check_readme_badges(settings: Settings) -> None:
             expected.append(
                 f"[![Downloads](https://static.pepy.tech/badge/{settings['project_name']}/month)]"
                 f"(https://pepy.tech/project/{settings['project_name']})")
+    if Path('Dockerfile').exists():
+        expected.append(
+            simple_icons_badge('Docker', 'docker', 'Docker', 'black', 'https://www.docker.com/'))
     if settings['using_github']:
         expected.append(
             f"[![Stargazers](https://img.shields.io/github/stars/{settings['github']['username']}/"
             f"{settings['project_name']}?logo=github&style=flat)]"
             f"(https://github.com/{settings['github']['username']}/{settings['project_name']}/"
             "stargazers)")
+    if ((settings['project_type'] == 'c' or settings['project_type'] == 'c++')
+            and Path('CMakeLists.txt').exists()):
+        expected.append(
+            simple_icons_badge('CMake', 'cmake', 'CMake', '6E6E6E', 'https://cmake.org/'))
+    if settings['project_type'] == 'typescript':
+        expected.extend(
+            sorted(
+                (*(simple_icons_badge(dep, dep.replace('-', ''), dep, 'black',
+                                      f'https://www.npmjs.com/package/{dep}')
+                   for dep in ('bootstrap', 'react', 'sass', 'semantic-ui-react', 'sass',
+                               'tailwindcss') if dep in settings['package_json']['dependencies']),
+                 *(simple_icons_badge(dev_dep, dev_dep.replace('-', ''), dev_dep, 'black',
+                                      f'https://www.npmjs.com/package/{dev_dep}')
+                   for dev_dep in ('eslint', 'jest')
+                   if dev_dep in settings['package_json']['devDependencies']),
+                 simple_icons_badge('TypeScript', 'typescript', 'TypeScript', 'black',
+                                    'https://www.typescriptlang.org/'),
+                 simple_icons_badge('Yarn', 'yarn', 'Yarn', '4c335c', 'https://yarnpkg.com/'),
+                 *((simple_icons_badge('Next.js', 'nextdotjs', 'Next.js', '000000',
+                                       'https://nextjs.org/'),)
+                   if 'next' in settings['package_json']['dependencies'] else ()))))
+    expected.append(
+        simple_icons_badge('Prettier', 'prettier', 'Prettier', 'F7B93E', 'https://prettier.io/'))
+    keywords_to_args = {
+        'dotnet': ('.NET', 'dotnet', '.NET', '512BD4', 'https://dotnet.microsoft.com/'),
+        'ffmpeg': ('FFmpeg', 'ffmpeg', 'FFmpeg', 'orange', 'https://ffmpeg.org/'),
+        'kde': ('KDE Plasma', 'kdeplasma', 'KDE Plasma', 'blue', 'https://kde.org/'),
+        'qt': ('Qt', 'qt', 'Qt', '41cd52', 'https://www.qt.io/'),
+        'swift': ('Swift', 'swift', 'Swift', 'F05138', 'https://swift.org/'),
+    }
+    for keyword, args in keywords_to_args.items():
+        if keyword in settings['keywords']:
+            social_expected.append(simple_icons_badge(*args))
     if settings['social']['bsky']:
         outer_params = urlencode(
             {
@@ -213,11 +278,38 @@ def _check_readme_badges(settings: Settings) -> None:
             f'[![@{settings["social"]["bsky"]}]'
             f'(https://img.shields.io/badge/dynamic/json?url={url}&{outer_params})]'
             f'(https://bsky.app/profile/{settings["social"]["bsky"]}.bsky.social)')
+    if username := settings['social']['buymeacoffee']:
+        social_expected.append(
+            simple_icons_badge('Buy Me A Coffee', 'buymeacoffee',
+                               f'Buy%20Me%20a%20Coffee-{username}', 'black',
+                               f'https://buymeacoffee.com/{username}'))
+    if ((text := settings['social']['calendly']['text'])
+            and (uri := settings['social']['calendly']['uri'])):
+        social_expected.append(simple_icons_badge('Calendly', 'calendly', text, '00a2ff', uri))
+    if username := settings['social']['cashapp']:
+        social_expected.append(
+            simple_icons_badge('Cash App', 'cashapp', f'Cash%20App-{username}', '00C244',
+                               f'https://cash.app/{username}'))
+    if libera_irc := settings['social']['libera_irc']:
+        social_expected.append(
+            simple_icons_badge('Libera.Chat', 'liberadotchat', f'Libera.Chat-{libera_irc}', 'black',
+                               f'irc://irc.libera.chat/{libera_irc}'))
     if ((mastodon_id := settings['social']['mastodon']['id'])
             and (domain := settings['social']['mastodon']['domain'])):
         social_expected.append(
             f"[![Mastodon Follow](https://img.shields.io/mastodon/follow/{mastodon_id}?"
             f"domain={domain}&style=social)](https://{domain}/@{settings['github']['username']})")
+    if username := settings['social']['patreon']:
+        social_expected.append(
+            simple_icons_badge('Patreon', 'patreon', username, 'F96854',
+                               f'https://www.patreon.com/{username}'))
+    if settings['social']['slashdot']:
+        social_expected.append(
+            simple_icons_badge('Slashdot', 'slashdot', settings['social']['slashdot'], '066665',
+                               f'https://slashdot.org/~{settings["social"]["slashdot"]}'))
+    if ((uri := settings['social']['youtube']['uri'])
+            and (text := settings['social']['youtube']['text'])):
+        social_expected.append(simple_icons_badge('YouTube', 'youtube', text, 'FF0000', uri))
     social_expected.extend(settings['social']['custom_badges'])
     # Find badge section (after title, before description).
     start_idx = next((i for i, line in enumerate(lines) if line.startswith('#')), 0) + 1
