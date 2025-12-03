@@ -233,21 +233,21 @@ def _check_readme_badges(settings: Settings) -> None:  # noqa: C901, PLR0912
             simple_icons_badge('CMake', 'cmake', 'CMake', '6E6E6E', 'https://cmake.org/'))
     if settings['project_type'] == 'typescript':
         expected.extend(
-            sorted(
-                (*(simple_icons_badge(dep, dep.replace('-', ''), dep, 'black',
-                                      f'https://www.npmjs.com/package/{dep}')
-                   for dep in ('bootstrap', 'react', 'sass', 'semantic-ui-react', 'sass',
-                               'tailwindcss') if dep in settings['package_json']['dependencies']),
-                 *(simple_icons_badge(dev_dep, dev_dep.replace('-', ''), dev_dep, 'black',
-                                      f'https://www.npmjs.com/package/{dev_dep}')
-                   for dev_dep in ('eslint', 'jest')
-                   if dev_dep in settings['package_json']['devDependencies']),
-                 simple_icons_badge('TypeScript', 'typescript', 'TypeScript', 'black',
-                                    'https://www.typescriptlang.org/'),
-                 simple_icons_badge('Yarn', 'yarn', 'Yarn', '4c335c', 'https://yarnpkg.com/'),
-                 *((simple_icons_badge('Next.js', 'nextdotjs', 'Next.js', '000000',
-                                       'https://nextjs.org/'),)
-                   if 'next' in settings['package_json']['dependencies'] else ()))))
+            sorted((*(simple_icons_badge(dep, dep.replace('-', ''), dep, 'black',
+                                         f'https://www.npmjs.com/package/{dep}')
+                      for dep in ('bootstrap', 'react', 'sass', 'semantic-ui-react', 'sass',
+                                  'tailwindcss')
+                      if dep in settings['package_json'].get('dependencies', {})),
+                    *(simple_icons_badge(dev_dep, dev_dep.replace('-', ''), dev_dep, 'black',
+                                         f'https://www.npmjs.com/package/{dev_dep}')
+                      for dev_dep in ('eslint', 'jest')
+                      if dev_dep in settings['package_json']['devDependencies']),
+                    simple_icons_badge('TypeScript', 'typescript', 'TypeScript', 'black',
+                                       'https://www.typescriptlang.org/'),
+                    simple_icons_badge('Yarn', 'yarn', 'Yarn', '4c335c', 'https://yarnpkg.com/'),
+                    *((simple_icons_badge('Next.js', 'nextdotjs', 'Next.js', '000000',
+                                          'https://nextjs.org/'),)
+                      if 'next' in settings['package_json'].get('dependencies', {}) else ()))))
     expected.append(
         simple_icons_badge('Prettier', 'prettier', 'Prettier-enabled', 'black',
                            'https://prettier.io/'))
