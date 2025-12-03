@@ -4,11 +4,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: 'actions/checkout@v5'
+      - uses: 'actions/checkout@{{ github_latest_action_tag('actions', 'checkout') }}'
       - name: 'Install Poetry'
         run: 'pipx install poetry yq'
       - name: 'Set up Python'
-        uses: 'actions/setup-python@v6'
+        uses: 'actions/setup-python@{{ github_latest_action_tag('actions', 'setup-python') }}'
         with:
           cache: 'poetry'
           python-version: '3.13'
@@ -30,7 +30,7 @@ jobs:
         run: |
           {{ test_bash() | indent(10) | trim }}
       - name: 'Upload Artifacts'
-        uses: 'actions/upload-artifact@v5'
+        uses: 'actions/upload-artifact@{{ github_latest_action_tag('actions', 'upload-artifact') }}'
         with:
           if-no-files-found: error
           name: {{ settings.github_project_name }}-binaries-linux-x86_64
@@ -45,7 +45,7 @@ jobs:
           zip -j _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}.zip dist/*
       - if: github.ref_type == 'tag'
         name: Upload package
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@{{ github_latest_action_tag('softprops', 'action-gh-release') }}
         with:
           fail_on_unmatched_files: true
           files: |
@@ -53,7 +53,7 @@ jobs:
 {% else %}
       - if: github.ref_type == 'tag'
         name: Upload package
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@{{ github_latest_action_tag('softprops', 'action-gh-release') }}
         with:
           fail_on_unmatched_files: true
           files: |
