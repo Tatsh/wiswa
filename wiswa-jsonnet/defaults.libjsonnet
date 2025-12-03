@@ -243,7 +243,7 @@ local utils = import 'utils.libjsonnet';
     codeql: {
       '#languages':: d.val(d.T.array, 'Array of languages for CodeQL analysis.'),
       languages: (if settings.project_type == 'python' then ['python']
-                  else if settings.project_type == 'typescript' then ['javascript']
+                  else if settings.project_type == 'typescript' then ['javascript-typescript']
                   else if settings.project_type == 'c' || settings.project_type == 'c++' then ['cpp']
                   else []),
       '#runs_on':: d.val(d.T.string, 'Operating system for CodeQL runs on GitHub runners.'),
