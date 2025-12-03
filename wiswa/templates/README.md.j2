@@ -24,7 +24,7 @@
 {% if settings.want_docs %}
     {% if settings.project_type == 'python' and settings.using_readthedocs %}
 [![Documentation Status](https://readthedocs.org/projects/{{ settings.project_name }}/badge/?version=latest)]({{ settings.documentation_uri }}/?badge=latest)
-    {% elif using_github %}
+    {% elif settings.using_github %}
 [![GitHub Pages](https://github.com/Tatsh/{{ settings.project_name }}/actions/workflows/pages.yml/badge.svg)](https://tatsh.github.io/{{ settings.project_name }}/)
     {% endif %}
 {% endif %}
