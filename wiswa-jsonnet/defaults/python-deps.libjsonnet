@@ -20,7 +20,7 @@ function(want_main, want_yapf, stubs_only, project_name, want_coveralls) {
     numpydoc: '^' + std.native('latestPypiPackageVersion')('numpydoc'),
     'restructuredtext-lint': '^' + std.native('latestPypiPackageVersion')('restructuredtext-lint'),
     sphinx: [
-      { version: '^' + std.native('latestPypiPackageVersion')('sphinx'), python: '>=3.11' },
+      { version: '<9.0.0', python: '>=3.11' }, // https://github.com/click-contrib/sphinx-click/issues/157
       { version: '^7.2.5', python: '<3.11' },
     ],
     'sphinx-datatables': '^' + std.native('latestPypiPackageVersion')('sphinx-datatables'),
