@@ -31,7 +31,7 @@ jobs:
         run: |
           {{ test_bash() | indent(10) | trim }}
       - name: 'Upload Artifacts'
-        uses: 'actions/upload-artifact@{{ github_latest_action_tag('actions', 'upload-artifacts') }}'
+        uses: 'actions/upload-artifact@{{ github_latest_action_tag('actions', 'upload-artifact') }}'
         with:
           if-no-files-found: error
           name: {{ settings.github_project_name }}-binaries-${{ '{{' }} matrix.suffix }}

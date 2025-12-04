@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from functools import cache
 from http import HTTPStatus
 from pathlib import Path
@@ -23,13 +23,15 @@ import jinja2
 import keyring
 import platformdirs
 import requests
-import requests_cache
 import tomlkit
 
 from .constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
-from .extensions import ToPythonExtension
+from .extensions import GithubAPIExtension, ToPythonExtension
+from .session import cached_session
 
 if TYPE_CHECKING:
+    import requests_cache
+
     from .typing import Settings
 
 __all__ = ('copy_static_files', 'create_py_typed_files', 'download_yarn_plugins',
@@ -37,14 +39,6 @@ __all__ = ('copy_static_files', 'create_py_typed_files', 'download_yarn_plugins'
            'get_latest_yarn_version', 'post_process_steps', 'write_templated_files')
 
 log = logging.getLogger(__name__)
-
-
-def cached_session() -> requests_cache.CachedSession:
-    """Get a cached requests session."""
-    return requests_cache.CachedSession(platformdirs.user_cache_path() / 'wiswa/http',
-                                        backend='filesystem',
-                                        cache_control=True,
-                                        expire_after=timedelta(minutes=30))
 
 
 def subprocess_log_run(*args: Any, **kwargs: Any) -> sp.CompletedProcess[Any]:
@@ -418,7 +412,7 @@ class _TemplateEnvTuple(NamedTuple):
 
 def _template_env(module_path: Path, settings: Settings) -> _TemplateEnvTuple:
     env = jinja2.Environment(autoescape=jinja2.select_autoescape(),
-                             extensions=(ToPythonExtension,),
+                             extensions=(GithubAPIExtension, ToPythonExtension),
                              loader=jinja2.PackageLoader(__package__),
                              lstrip_blocks=True,
                              trim_blocks=True,
