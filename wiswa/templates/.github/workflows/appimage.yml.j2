@@ -36,6 +36,10 @@ jobs:
           name: {{ settings.github_project_name }}-binaries-linux-x86_64
           path: |
             dist/*
+      - name: 'Attest'
+        uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
+        with:
+          subject-path: 'dist/*'
 {% if settings.has_multiple_entry_points %}
       - if: github.ref_type == 'tag'
         name: 'Zip files'
@@ -44,6 +48,11 @@ jobs:
           mkdir _out
           zip -j _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}.zip dist/*
       - if: github.ref_type == 'tag'
+        name: 'Attest'
+        uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
+        with:
+          subject-path: '_out/*.zip'
+      - if: github.ref_type == 'tag'
         name: Upload package
         uses: softprops/action-gh-release@{{ github_latest_action_tag('softprops', 'action-gh-release') }}
         with:
@@ -51,6 +60,11 @@ jobs:
           files: |
             _out/*.zip
 {% else %}
+      - if: github.ref_type == 'tag'
+        name: 'Attest'
+        uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
+        with:
+          subject-path: 'dist/*.AppImage'
       - if: github.ref_type == 'tag'
         name: Upload package
         uses: softprops/action-gh-release@{{ github_latest_action_tag('softprops', 'action-gh-release') }}

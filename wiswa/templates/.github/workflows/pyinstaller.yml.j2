@@ -37,6 +37,10 @@ jobs:
           name: {{ settings.github_project_name }}-binaries-${{ '{{' }} matrix.suffix }}
           path: |
             ${{ '{{' }} matrix.dist_path }}
+      - name: 'Attest'
+        uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
+        with:
+          subject-path: '${{ '{{' }} matrix.dist_path }}'
       - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'
         name: 'Zip files'
         run: |
@@ -50,6 +54,11 @@ jobs:
           New-Item -ItemType Directory -Name _out
           Compress-Archive -Path ${{ '{{' }} matrix.dist_path }} -DestinationPath _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}-${{ '{{' }} matrix.suffix }}.zip
         shell: pwsh
+      - if: github.ref_type == 'tag'
+        name: 'Attest'
+        uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
+        with:
+          subject-path: '_out/*.zip'
       - if: github.ref_type == 'tag'
         name: Upload package
         uses: softprops/action-gh-release@{{ github_latest_action_tag('softprops', 'action-gh-release') }}
@@ -83,4 +92,6 @@ name: 'PyInstaller'
     tags:
       - 'v*.*.*'
 permissions:
+  attestations: 'write'
   contents: 'write'
+  id-token: 'write'
