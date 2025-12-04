@@ -24,7 +24,6 @@ function(want_main, want_yapf, stubs_only, project_name, want_coveralls) {
       { version: '^7.2.5', python: '<3.11' },
     ],
     'sphinx-datatables': '^' + std.native('latestPypiPackageVersion')('sphinx-datatables'),
-    'sphinx-hoverxref': '^' + std.native('latestPypiPackageVersion')('sphinx-hoverxref'),
     'sphinx-immaterial': '^' + std.native('latestPypiPackageVersion')('sphinx-immaterial'),
     tomlkit: '^' + std.native('latestPypiPackageVersion')('tomlkit'),
   } + if want_main then { 'sphinx-click': '^' + std.native('latestPypiPackageVersion')('sphinx-click') } else {},

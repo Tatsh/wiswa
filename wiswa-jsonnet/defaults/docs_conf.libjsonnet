@@ -117,7 +117,6 @@ local d = import 'doc-util/main.libsonnet';
   environment_variables: {},
   '#extensions':: d.val(d.T.array, 'Sphinx extensions to use.'),
   extensions: [
-    'hoverxref.extension',
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
