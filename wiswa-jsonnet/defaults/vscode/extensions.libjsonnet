@@ -2,6 +2,7 @@
   local python_recommendations = [
     'charliermarsh.ruff',
     'donjayamanne.python-environment-manager',  // Yes it is deprecated but it works.
+    'ms-python.mypy-type-checker',
     'ms-python.vscode-pylance',
     'samuelcolvin.jinjahtml',
     'zeshuaro.vscode-python-poetry',
@@ -28,7 +29,6 @@
       'jmredfern.sort-selection',
       'konstantin.wrapselection',
       'lextudio.restructuredtext',
-      'ms-python.mypy-type-checker',
       'naumovs.color-highlight',
       'nhoizey.gremlins',
       'pascalreitermann93.vscode-yaml-sort',
@@ -47,7 +47,7 @@
       'visualstudioexptteam.vscodeintellicode',
       'zainchen.json',
       'zengxingxin.sort-js-object-keys',
-    ] + (if settings.project_type == 'python' then python_recommendations else []) + (if settings.want_yapf then ['eeyore.yapf'] else [])),
+    ] + (if settings.project_type == 'python' then python_recommendations else []) + (if settings.project_type == 'python' && settings.want_yapf then ['eeyore.yapf'] else [])),
     unwantedRecommendations: if settings.project_type == 'python' then python_unwanted_recommendations else [],
   },
 }
