@@ -125,6 +125,9 @@ local d = import 'doc-util/main.libsonnet';
     files: ['LICENSE.txt', 'README.md'] + man,
     'markdownlint-cli2': {
       config: {
+        MD024: {
+          siblings_only: true,
+        },
         MD033: {
           allowed_elements: ['kbd'],
         },
