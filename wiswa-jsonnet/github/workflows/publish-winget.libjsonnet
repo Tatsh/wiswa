@@ -1,4 +1,4 @@
-function (settings) {
+function(settings) {
   jobs: {
     'update-winget': {
       'runs-on': 'windows-latest',
@@ -6,8 +6,8 @@ function (settings) {
         {
           uses: 'vedantmgoyal9/winget-releaser@main',
           with: {
-            identifier: settings.github.publish_winget.identifier,
-            'max-versions-to-keep': settings.github.publish_winget.max_versions_to_keep,
+            identifier: settings.github.workflows.publish_winget.identifier,
+            'max-versions-to-keep': settings.github.workflows.publish_winget.max_versions_to_keep,
             token: '${{ secrets.WINGET_TOKEN }}',
           },
         },
