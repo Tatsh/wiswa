@@ -255,7 +255,7 @@ def _check_readme_badges(settings: Settings) -> None:  # noqa: C901, PLR0912
     for keyword, args in keywords_to_args.items():
         if keyword in settings['keywords']:
             social_expected.append(simple_icons_badge(*args))
-    if settings['social']['bsky']:
+    if settings['social'].get('bsky'):
         outer_params = urlencode(
             {
                 'style': 'social',
@@ -273,39 +273,39 @@ def _check_readme_badges(settings: Settings) -> None:  # noqa: C901, PLR0912
             f'[![@{settings["social"]["bsky"]}]'
             f'(https://img.shields.io/badge/dynamic/json?url={url}&{outer_params})]'
             f'(https://bsky.app/profile/{settings["social"]["bsky"]}.bsky.social)')
-    if username := settings['social']['buymeacoffee']:
+    if username := settings['social'].get('buymeacoffee'):
         social_expected.append(
             simple_icons_badge('Buy Me A Coffee', 'buymeacoffee',
                                f'Buy%20Me%20a%20Coffee-{username}', 'black',
                                f'https://buymeacoffee.com/{username}'))
-    if ((text := settings['social']['calendly']['text'])
-            and (uri := settings['social']['calendly']['uri'])):
+    if ((text := settings['social'].get('calendly', {}).get('text'))
+            and (uri := settings['social'].get('calendly', {}).get('uri'))):
         social_expected.append(simple_icons_badge('Calendly', 'calendly', text, '00a2ff', uri))
-    if username := settings['social']['cashapp']:
+    if username := settings['social'].get('cashapp'):
         social_expected.append(
             simple_icons_badge('Cash App', 'cashapp', f'Cash%20App-{username}', '00C244',
                                f'https://cash.app/{username}'))
-    if libera_irc := settings['social']['libera_irc']:
+    if libera_irc := settings['social'].get('libera_irc'):
         social_expected.append(
             simple_icons_badge('Libera.Chat', 'liberadotchat', f'Libera.Chat-{libera_irc}', 'black',
                                f'irc://irc.libera.chat/{libera_irc}'))
-    if ((mastodon_id := settings['social']['mastodon']['id'])
-            and (domain := settings['social']['mastodon']['domain'])):
+    if ((mastodon_id := settings['social'].get('mastodon', {}).get('id'))
+            and (domain := settings['social'].get('mastodon', {}).get('domain'))):
         social_expected.append(
             f"[![Mastodon Follow](https://img.shields.io/mastodon/follow/{mastodon_id}?"
             f"domain={domain}&style=social)](https://{domain}/@{settings['github']['username']})")
-    if username := settings['social']['patreon']:
+    if username := settings['social'].get('patreon'):
         social_expected.append(
             simple_icons_badge('Patreon', 'patreon', f'Patreon-{username}', 'F96854',
                                f'https://www.patreon.com/{username}'))
-    if settings['social']['slashdot']:
+    if settings['social'].get('slashdot'):
         social_expected.append(
             simple_icons_badge('Slashdot', 'slashdot', settings['social']['slashdot'], '066665',
                                f'https://slashdot.org/~{settings["social"]["slashdot"]}'))
-    if ((uri := settings['social']['youtube']['uri'])
-            and (text := settings['social']['youtube']['text'])):
+    if ((uri := settings['social'].get('youtube', {}).get('uri'))
+            and (text := settings['social'].get('youtube', {}).get('text'))):
         social_expected.append(simple_icons_badge('YouTube', 'youtube', text, 'FF0000', uri))
-    social_expected.extend(settings['social']['custom_badges'])
+    social_expected.extend(settings['social'].get('custom_badges', []))
     # Find badge section (after title, before description).
     start_idx = next((i for i, line in enumerate(lines) if line.startswith('#')), 0) + 1
     while start_idx < len(lines) and not lines[start_idx].strip():
