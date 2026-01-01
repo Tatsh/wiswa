@@ -114,6 +114,7 @@ luacheckrc
 luacov
 luarocks
 mainpage
+manylinux
 maxwidth
 mdfile
 modindex
