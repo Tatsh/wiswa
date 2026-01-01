@@ -78,7 +78,6 @@ henriiik
 hexliteralcase
 hookimpl
 hostux
-hoverxref
 htmlcov
 idtvuccnmtl
 intellicode

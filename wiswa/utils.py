@@ -125,11 +125,11 @@ def _check_readme_badges(settings: Settings) -> None:  # noqa: C901, PLR0912
     social_expected: list[str] = []
     if settings['project_type'] == 'python' and not settings['private']:
         expected.extend(
-            (f"[![Python versions](https://img.shields.io/pypi/pyversions/"
-             f"{settings['pypi_project_name']}.svg?color=blue&logo=python&logoColor=white)]"
-             "(https://www.python.org/)",
-             f"[![PyPI - Version](https://img.shields.io/pypi/v/{settings['project_name']})]"
-             f"(https://pypi.org/project/{settings['pypi_project_name']}/)"))
+            ((f"[![Python versions](https://img.shields.io/pypi/pyversions/"
+              f"{settings['pypi_project_name']}.svg?color=blue&logo=python&logoColor=white)]"
+              "(https://www.python.org/)"),
+             (f"[![PyPI - Version](https://img.shields.io/pypi/v/{settings['project_name']})]"
+              f"(https://pypi.org/project/{settings['pypi_project_name']}/)")))
     elif settings['project_type'] == 'lua':
         expected.append(simple_icons_badge('Lua', 'lua', 'Lua', '2C2D72', 'https://www.lua.org/'))
     elif settings['project_type'] == 'c':
@@ -144,17 +144,17 @@ def _check_readme_badges(settings: Settings) -> None:  # noqa: C901, PLR0912
                                'https://developer.apple.com/xcode/'))
     if settings['using_github']:
         expected.extend(
-            (f"[![GitHub tag (with filter)](https://img.shields.io/github/v/tag/"
-             f"{settings['github']['username']}/{settings['project_name']})]"
-             f"({settings['repository_uri']}/tags)",
-             f"[![License](https://img.shields.io/github/license/{settings['github']['username']}/"
-             f"{settings['project_name']})]({settings['repository_uri']}/blob/"
-             f"{settings['default_branch']}/LICENSE.txt)",
-             f"[![GitHub commits since latest release (by SemVer including pre-releases)]"
-             f"(https://img.shields.io/github/commits-since/{settings['github']['username']}/"
-             f"{settings['project_name']}/v{settings['version']}/{settings['default_branch']})]"
-             f"({settings['repository_uri']}/compare/v{settings['version']}"
-             f"...{settings['default_branch']})"))
+            ((f"[![GitHub tag (with filter)](https://img.shields.io/github/v/tag/"
+              f"{settings['github']['username']}/{settings['project_name']})]"
+              f"({settings['repository_uri']}/tags)"),
+             (f"[![License](https://img.shields.io/github/license/{settings['github']['username']}/"
+              f"{settings['project_name']})]({settings['repository_uri']}/blob/"
+              f"{settings['default_branch']}/LICENSE.txt)"),
+             (f"[![GitHub commits since latest release (by SemVer including pre-releases)]"
+              f"(https://img.shields.io/github/commits-since/{settings['github']['username']}/"
+              f"{settings['project_name']}/v{settings['version']}/{settings['default_branch']})]"
+              f"({settings['repository_uri']}/compare/v{settings['version']}"
+              f"...{settings['default_branch']})")))
         if settings['want_codeql']:
             expected.append(
                 f"[![CodeQL]({settings['repository_uri']}/actions/workflows/codeql.yml/badge.svg)]"
@@ -163,12 +163,12 @@ def _check_readme_badges(settings: Settings) -> None:  # noqa: C901, PLR0912
                         f"({settings['repository_uri']}/actions/workflows/qa.yml)")
         if settings['want_tests']:
             expected.extend(
-                (f"[![Tests]({settings['repository_uri']}/actions/workflows/tests.yml/badge.svg)]"
-                 f"({settings['repository_uri']}/actions/workflows/tests.yml)",
-                 f"[![Coverage Status](https://coveralls.io/repos/github/"
-                 f"{settings['github']['username']}/{settings['project_name']}/badge.svg?"
-                 f"branch=master)](https://coveralls.io/github/{settings['github']['username']}/"
-                 f"{settings['project_name']}?branch={settings['default_branch']})"))
+                ((f"[![Tests]({settings['repository_uri']}/actions/workflows/tests.yml/badge.svg)]"
+                  f"({settings['repository_uri']}/actions/workflows/tests.yml)"),
+                 (f"[![Coverage Status](https://coveralls.io/repos/github/"
+                  f"{settings['github']['username']}/{settings['project_name']}/badge.svg?"
+                  f"branch=master)](https://coveralls.io/github/{settings['github']['username']}/"
+                  f"{settings['project_name']}?branch={settings['default_branch']})")))
         expected.append(
             simple_icons_badge('Dependabot', 'dependabot', 'Dependabot-enabled', 'blue',
                                'https://github.com/dependabot'))
