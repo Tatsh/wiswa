@@ -2,7 +2,7 @@
 {% from '.github/workflows/pyinstaller-test.sh.j2' import test_bash %}
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ '{{' }} matrix.system.image }}
     steps:
       - uses: 'actions/checkout@{{ github_latest_action_tag('actions', 'checkout') }}'
       - name: 'Install Poetry'
@@ -33,22 +33,16 @@ jobs:
         uses: 'actions/upload-artifact@{{ github_latest_action_tag('actions', 'upload-artifact') }}'
         with:
           if-no-files-found: error
-          name: {{ settings.github_project_name }}-binaries-linux-x86_64
+          name: {{ settings.github_project_name }}-binaries-linux-${{ '{{' }} matrix.system.arch }}
           path: |
             dist/*
-      - name: 'Attest'
-        uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
-        with:
-          subject-path: 'dist/*'
 {% if settings.has_multiple_entry_points %}
-      - if: github.ref_type == 'tag'
-        name: 'Zip files'
+      - name: 'Zip files'
         run: |
           rm -fR _out
           mkdir _out
           zip -j _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}.zip dist/*
-      - if: github.ref_type == 'tag'
-        name: 'Attest'
+      - name: 'Attest'
         uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
         with:
           subject-path: '_out/*.zip'
@@ -60,8 +54,7 @@ jobs:
           files: |
             _out/*.zip
 {% else %}
-      - if: github.ref_type == 'tag'
-        name: 'Attest'
+      - name: 'Attest'
         uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
         with:
           subject-path: 'dist/*.AppImage'
@@ -73,11 +66,13 @@ jobs:
           files: |
             dist/*.AppImage
 {% endif %}
+    strategy:
+      matrix:
+        system:
+          - { arch: aarch64, image: ubuntu-24.04-arm }
+          - { arch: x86_64, image: ubuntu-latest }
 name: 'AppImage'
 'on':
-  pull_request:
-    branches:
-      - 'master'
   push:
     branches:
       - 'master'
