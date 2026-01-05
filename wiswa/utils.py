@@ -483,12 +483,15 @@ def write_templated_files_python(settings: Settings, templates_dir: Path,
                        file_path.relative_to(templates_dir).with_suffix(''))
     if ((settings['want_main'] or settings['has_multiple_entry_points'])
             and settings['using_github']):
-        write_file(resolve_template(templates_dir / '.github/workflows/pyinstaller.yml.j2'),
-                   '.github/workflows/pyinstaller.yml',
-                   overwrite=True)
-        write_file(resolve_template(templates_dir / '.github/workflows/appimage.yml.j2'),
-                   '.github/workflows/appimage.yml',
-                   overwrite=True)
+        if (settings['supported_platforms'] == 'all' or 'windows' in settings['supported_platforms']
+                or 'macos' in settings['supported_platforms']):
+            write_file(resolve_template(templates_dir / '.github/workflows/pyinstaller.yml.j2'),
+                       '.github/workflows/pyinstaller.yml',
+                       overwrite=True)
+        if settings['supported_platforms'] == 'all' or 'linux' in settings['supported_platforms']:
+            write_file(resolve_template(templates_dir / '.github/workflows/appimage.yml.j2'),
+                       '.github/workflows/appimage.yml',
+                       overwrite=True)
 
 
 def write_templated_files_typescript(settings: Settings, templates_dir: Path,

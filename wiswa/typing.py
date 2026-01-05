@@ -188,6 +188,11 @@ class Settings(TypedDict):
     """Social media settings."""
     stubs_only: bool
     """If the project consists of only typing stubs."""
+    supported_platforms: str | list[str]
+    """
+    Supported platforms for the project, "all", string, or an array of strings. Values: "windows",
+    "linux", "macos", "ios".
+    """
     using_django: bool
     """If the project is using Django."""
     using_github: bool

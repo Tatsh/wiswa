@@ -22,14 +22,18 @@ jobs:
         run: |
           {{ build(settings) | indent(10) | trim }}
         shell: 'bash'
+{% if settings.supported_platforms == 'all' or 'windows' in settings.supported_platforms %}
       - if: matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm'
         name: 'Test binary'
         run: |
           {{ test_powershell() | indent(10) | trim }}
+{% endif %}
+{% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
       - if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
         name: 'Test binary'
         run: |
           {{ test_bash() | indent(10) | trim }}
+{% endif %}
       - name: 'Upload Artifacts'
         uses: 'actions/upload-artifact@{{ github_latest_action_tag('actions', 'upload-artifact') }}'
         with:
@@ -41,12 +45,15 @@ jobs:
         uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
         with:
           subject-path: '${{ '{{' }} matrix.dist_path }}'
+{% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
       - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'
         name: 'Zip files'
         run: |
           rm -fR _out
           mkdir _out
           zip -j _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}-${{ '{{' }} matrix.suffix }}.zip ${{ '{{' }} matrix.dist_path }}
+{% endif %}
+{% if settings.supported_platforms == 'all' or 'windows' in settings.supported_platforms %}
       - if: (matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm') && github.ref_type == 'tag'
         name: 'Zip files'
         run: |
@@ -54,6 +61,7 @@ jobs:
           New-Item -ItemType Directory -Name _out
           Compress-Archive -Path ${{ '{{' }} matrix.dist_path }} -DestinationPath _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}-${{ '{{' }} matrix.suffix }}.zip
         shell: pwsh
+{% endif %}
       - if: github.ref_type == 'tag'
         name: 'Attest'
         uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
@@ -69,18 +77,24 @@ jobs:
     strategy:
       matrix:
         include:
+{% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
           - os: 'macos-15-intel'
             dist_path: 'dist/*'
             suffix: 'mac-x86_64'
           - os: 'macos-latest'
             dist_path: 'dist/*'
             suffix: 'mac-arm64'
+{% endif %}
+{% if settings.supported_platforms == 'all' or 'windows' in settings.supported_platforms %}
           - os: 'windows-latest'
             dist_path: 'dist/*.exe'
             suffix: 'win-x86_64'
+  {% if not settings.private %}
           - os: 'windows-11-arm'
             dist_path: 'dist/*.exe'
             suffix: 'win-arm64'
+  {% endif %}
+{% endif %}
 name: 'PyInstaller'
 'on':
   push:

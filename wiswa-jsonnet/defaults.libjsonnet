@@ -32,6 +32,8 @@ local utils = import 'utils.libjsonnet';
   saves_requirements_txt: false,
   '#private': d.val(d.T.boolean, 'If the project is private (not published).'),
   private: false,
+  '#supported_platforms':: d.val(d.T.string, 'Supported platforms for the project, "all", string, or an array of strings. Values: "windows", "linux", "macos", "ios".'),
+  supported_platforms: 'all',
 
   '#github_username':: d.val(d.T.string, 'GitHub username.'),
   github_username: 'unknown',
