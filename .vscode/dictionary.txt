@@ -22,7 +22,6 @@ cashapp
 cashtag
 charliermarsh
 chromewebstore
-codeowners
 color
 colorlog
 commitizen
@@ -32,7 +31,6 @@ contrib
 coveragerc
 coverallsapp
 cpack
-cpptools
 dataclasses
 datarootdir
 datatable
