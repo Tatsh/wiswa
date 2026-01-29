@@ -152,6 +152,8 @@ local utils = import 'utils.libjsonnet';
   has_multiple_entry_points: false,
   '#want_man':: d.val(d.T.boolean, 'If the project will have manual pages.'),
   want_man: self.want_main,
+  '#want_snap':: d.val(d.T.boolean, 'If the project will have a Snapcraft configuration.'),
+  want_snap: self.project_type != 'xcode' && self.want_main && !self.private,
   '#want_tests':: d.val(d.T.boolean, 'If the project will have tests.'),
   want_tests: !self.stubs_only,
   '#want_yapf':: d.val(d.T.boolean, 'If the project will use YAPF for formatting.'),
@@ -572,6 +574,7 @@ local utils = import 'utils.libjsonnet';
                             '*.jsonnet',
                             '*.libjsonnet',
                             '*.lock',
+                            '*.mdc',
                             '.eslintignore',
                             '.shellcheckrc',
                             '/.yarn/**/*.cjs',
@@ -588,4 +591,40 @@ local utils = import 'utils.libjsonnet';
   // Lua
   '#luacheck':: d.val(d.T.array, 'Array of configuration lines (strings).'),
   luacheck: [],
+
+  // Snap
+  '#snap_python_stage_packages':: d.val(d.T.array, 'Array of additional APT packages to install in the Snapcraft Python part.'),
+  snap_python_stage_packages: [],
+  local python_part = if settings.project_type == 'python' then {
+    [settings.project_name]: {
+      plugin: 'poetry',
+      source: '.',
+      'stage-packages': settings.snap_python_stage_packages,
+    },
+  } else {},
+  '#snapcraft':: d.obj('Snapcraft configuration.'),
+  snapcraft: {
+    apps: {
+      [settings.project_name]: {
+        command: 'bin/%s' % settings.project_name,
+        plugs: ['home', 'network', 'network-bind'],
+      },
+    },
+    base: 'core24',
+    confinement: 'strict',
+    description: settings.description,
+    grade: if settings.private then 'devel' else 'stable',
+    name: settings.project_name,
+    parts: python_part,
+    platforms: {
+      amd64: {
+        'build-on': 'amd64',
+      },
+      arm64: {
+        'build-on': 'arm64',
+      },
+    },
+    summary: settings.description,
+    version: settings.version,
+  },
 }

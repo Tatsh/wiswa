@@ -44,6 +44,9 @@ function(settings)
   local typescript_items = if settings.project_type == 'typescript' then {
     'tsconfig.json': std.manifestJson(settings.tsconfig),
   } else {};
+  local snap_items = if settings.want_snap then {
+    'snapcraft.yaml': utils.manifestYaml(settings.snapcraft),
+  } else {};
   {
     '.gitattributes': utils.manifestLines(settings.gitattributes),
     '.gitignore': utils.manifestLines(settings.gitignore),
@@ -63,6 +66,7 @@ function(settings)
   lua_items +
   python_items +
   readthedocs_items +
+  snap_items +
   tests_items +
   typescript_items +
   xcode_items

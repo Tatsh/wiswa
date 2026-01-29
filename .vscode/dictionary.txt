@@ -69,6 +69,7 @@ funcattributes
 gcov
 genindex
 getenv
+getline
 ggdb
 githistory
 globaltoc
@@ -164,6 +165,7 @@ schemafile
 sdist
 shellcheck
 shellformat
+snapcore
 snapcraft
 softprops
 sphinxcontrib

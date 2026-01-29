@@ -1,6 +1,6 @@
 # TODO
 
-- [ ] use <https://github.com/actions/attest-build-provenance> for all assets
+- [x] use <https://github.com/actions/attest-build-provenance> for all assets
 - [ ] Badges for settings.publishing section
 
 ## annotations and reports for each job
@@ -12,10 +12,10 @@
 
 ## Custom action things
 
-- [ ] custom pyinstaller action
-- [ ] custom publish action?
-- [ ] custom appImage action
-- [ ] custom snap action?
+- [x] custom pyinstaller action
+- [x] custom publish action?
+- [x] custom appImage action
+- [x] custom snap action?
 - [ ] custom flatpak action?
 
 ## Code signing

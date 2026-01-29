@@ -6,6 +6,7 @@ local winget_publish = import 'github/workflows/publish-winget.libjsonnet';
 local qa_other = import 'github/workflows/qa-other.libjsonnet';
 local qa_python = import 'github/workflows/qa-python.libjsonnet';
 local qa_typescript = import 'github/workflows/qa-typescript.libjsonnet';
+local snap_python = import 'github/workflows/snap-python.libjsonnet';
 local tests_typescript = import 'github/workflows/tests-typescript.libjsonnet';
 local tests = import 'github/workflows/tests.libjsonnet';
 local utils = import 'utils.libjsonnet';
@@ -43,6 +44,10 @@ local utils = import 'utils.libjsonnet';
   ) + (
     if settings.project_type == 'c++' || settings.project_type == 'c' then {
       '.github/workflows/publish-winget.yml': utils.manifestYaml(winget_publish(settings)),
+    } else {}
+  ) + (
+    if settings.want_snap && settings.project_type == 'python' then {
+      '.github/workflows/snap.yml': utils.manifestYaml(snap_python(settings)),
     } else {}
   ),
 }
