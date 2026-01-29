@@ -374,16 +374,23 @@ def copy_static_files_python(settings: Settings, module_path: Path) -> None:
 
 def copy_static_files(settings: Settings, module_path: Path) -> None:
     """Copy static files to the current directory."""
+    Path('.cursor/rules').mkdir(parents=True, exist_ok=True)
     Path('.github/instructions').mkdir(parents=True, exist_ok=True)
     for name in ('json-yaml', 'markdown', 'toml-ini'):
+        copyfile(module_path / 'static/.cursor/rules' / f'{name}.mdc', f'.cursor/rules/{name}.mdc')
         copyfile(module_path / 'static/.github/instructions' / f'{name}.instructions.md',
                  f'.github/instructions/{name}.instructions.md')
     match settings['project_type']:
         case 'c++':
             copyfile(module_path / 'static/.github/instructions/cpp.instructions.md',
                      '.github/instructions/cpp.instructions.md')
+            copyfile(module_path / 'static/.cursor/rules/cpp.mdc', '.cursor/rules/cpp.mdc')
         case 'python':
             if not settings['stubs_only']:
+                copyfile(module_path / 'static/.cursor/rules/python.mdc',
+                         '.cursor/rules/python.mdc')
+                copyfile(module_path / 'static/.cursor/rules/python-tests.mdc',
+                         '.cursor/rules/python-tests.mdc')
                 copyfile(module_path / 'static/.github/instructions/python.instructions.md',
                          '.github/instructions/python.instructions.md')
                 copyfile(module_path / 'static/.github/instructions/python-tests.instructions.md',
