@@ -41,10 +41,12 @@ jobs:
           name: {{ settings.github_project_name }}-binaries-${{ '{{' }} matrix.suffix }}
           path: |
             ${{ '{{' }} matrix.dist_path }}
+  {% if not settings.private %}
       - name: 'Attest'
         uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
         with:
           subject-path: '${{ '{{' }} matrix.dist_path }}'
+  {% endif %}
 {% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
       - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'
         name: 'Zip files'
@@ -62,11 +64,13 @@ jobs:
           Compress-Archive -Path ${{ '{{' }} matrix.dist_path }} -DestinationPath _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}-${{ '{{' }} matrix.suffix }}.zip
         shell: pwsh
 {% endif %}
+  {% if not settings.private %}
       - if: github.ref_type == 'tag'
         name: 'Attest'
         uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
         with:
           subject-path: '_out/*.zip'
+  {% endif %}
       - if: github.ref_type == 'tag'
         name: Upload package
         uses: softprops/action-gh-release@{{ github_latest_action_tag('softprops', 'action-gh-release') }}

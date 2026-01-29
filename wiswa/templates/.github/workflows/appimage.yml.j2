@@ -42,10 +42,12 @@ jobs:
           rm -fR _out
           mkdir _out
           zip -j _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}.zip dist/*
+  {% if not settings.private %}
       - name: 'Attest'
         uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
         with:
           subject-path: '_out/*.zip'
+  {% endif %}
       - if: github.ref_type == 'tag'
         name: Upload package
         uses: softprops/action-gh-release@{{ github_latest_action_tag('softprops', 'action-gh-release') }}
@@ -54,10 +56,12 @@ jobs:
           files: |
             _out/*.zip
 {% else %}
+  {% if not settings.private %}
       - name: 'Attest'
         uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
         with:
           subject-path: 'dist/*.AppImage'
+  {% endif %}
       - if: github.ref_type == 'tag'
         name: Upload package
         uses: softprops/action-gh-release@{{ github_latest_action_tag('softprops', 'action-gh-release') }}
