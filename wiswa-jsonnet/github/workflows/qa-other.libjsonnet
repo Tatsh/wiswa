@@ -12,7 +12,7 @@ function(settings) {
            }] else []) + [
         {
           name: 'Install dependencies (Yarn)',
-          run: 'yarn' + (if settings.project_type == 'c' || settings.project_type == 'c++' then '\npip install cmake-format pyyaml' else ''),
+          run: 'yarn',
         },
         {
           name: 'Check formatting',
