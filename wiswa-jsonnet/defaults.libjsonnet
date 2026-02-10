@@ -140,8 +140,20 @@ local utils = import 'utils.libjsonnet';
   stubs_only: false,
   '#want_cff':: d.val(d.T.boolean, 'If the project should have a `CITATION.cff` file.'),
   want_cff: true,
+  '#want_claude':: d.val(d.T.boolean, 'If the project should include `.claude/settings.local.json`.'),
+  want_claude: false,
+  '#claude_settings_local':: d.obj('JSON object written to `.claude/settings.local.json` when want_claude is true.'),
+  claude_settings_local: {
+    permissions: {
+      allow: ['Bash(yarn test)', 'Bash(yarn test:cov:*)'],
+    },
+  },
   '#want_codeql':: d.val(d.T.boolean, 'If the project should have a CodeQL configuration.'),
   want_codeql: !self.stubs_only && self.using_github,
+  '#want_copilot':: d.val(d.T.boolean, 'If the project should include `.github/instructions` dir and files.'),
+  want_copilot: true,
+  '#want_cursor':: d.val(d.T.boolean, 'If the project should include `.cursor` dir and files.'),
+  want_cursor: true,
   '#want_docs':: d.val(d.T.boolean, 'If the project should will generate documentation.'),
   want_docs: true,
   '#want_djlint':: d.val(d.T.boolean, 'If the project should have a `djlint` configuration.'),
@@ -412,12 +424,14 @@ local utils = import 'utils.libjsonnet';
       },
     },
     tool+: {
+      local primary_module_path = std.join('/', std.split(settings.primary_module, '.')),
+      local poetry_package_includes = std.set([std.split(m, '.')[0] for m in settings.modules]),
       commitizen+: {
         remove_path_prefixes: std.set(pyproject.tool.commitizen.remove_path_prefixes + [
-          settings.primary_module,
+          primary_module_path,
         ]),
         version_files: std.set(pyproject.tool.commitizen.version_files +
-                               ['%s/__init__.py' % settings.primary_module] +
+                               ['%s/__init__.py' % primary_module_path] +
                                (if !settings.stubs_only then ['docs/index.rst'] else [])),
       },
       coverage+: {
@@ -436,7 +450,7 @@ local utils = import 'utils.libjsonnet';
       local poetry_include = (if settings.want_docs && settings.want_man then ['man'] else []) +
                              (if settings.want_tests then [{ path: 'tests', format: 'sdist' }] else []),
       poetry+: {
-        packages: [{ include: x } for x in settings.modules],
+        packages: [{ include: x } for x in poetry_package_includes],
         dependencies: {
           python: if settings.python_dep_upper_boundary then ('>=%s,<3.%d' % [
                                                                 settings.supported_python_versions[0],
@@ -462,7 +476,7 @@ local utils = import 'utils.libjsonnet';
         } + docs_section + tests_section,
       } + (if std.length(poetry_include) > 0 then { include: poetry_include } else {}),
       pyright+: {
-        include: ['./%s' % [m] for m in settings.modules] + if settings.want_tests then [
+        include: ['./%s' % [r] for r in poetry_package_includes] + if settings.want_tests then [
           './tests',
         ] else [],
         pythonVersion: settings.supported_python_versions[0],

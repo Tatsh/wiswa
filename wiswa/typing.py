@@ -1,7 +1,7 @@
 """Types."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -199,8 +199,16 @@ class Settings(TypedDict):
     """If the project is hosted on GitHub primarily."""
     vscode: VSCode
     """Visual Studio Code settings."""
+    want_claude: bool
+    """If the project should include ``.claude/settings.local.json``."""
     want_codeql: bool
     """If the project should include ``.github/workflows/codeql.yml``."""
+    want_copilot: bool
+    """If the project should include ``.github/instructions`` dir and files."""
+    want_cursor: bool
+    """If the project should include ``.cursor`` dir and files."""
+    claude_settings_local: dict[str, Any]
+    """JSON object written to ``.claude/settings.local.json`` when ``want_claude`` is true."""
     want_docs: bool
     """If the project will generate documentation."""
     want_main: bool

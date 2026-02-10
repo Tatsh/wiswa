@@ -338,12 +338,12 @@ def post_process_steps(settings: Settings) -> None:
 
 
 def create_py_typed_files(settings: Settings) -> None:
-    """Create ``py.typed`` files for all packages."""
-    for path in (Path(x['include']) for x in settings['pyproject']['tool']['poetry']['packages']):
-        path.mkdir(parents=True, exist_ok=True)
-        target = path / 'py.typed'
-        target.touch()
-        log.debug('Touched `%s`.', target)
+    """Create ``py.typed`` in the primary module directory (same location as its __init__.py)."""
+    path = Path(primary_module_to_path(settings['primary_module']))
+    path.mkdir(parents=True, exist_ok=True)
+    target = path / 'py.typed'
+    target.touch()
+    log.debug('Touched `%s`.', target)
 
 
 def non_empty_file_exists(output_file: Path) -> bool:
@@ -351,13 +351,29 @@ def non_empty_file_exists(output_file: Path) -> bool:
     return output_file.exists() and len(output_file.read_text(encoding='utf-8').strip()) != 0
 
 
+def primary_module_to_path(primary_module: str) -> str:
+    """Convert a dotted module name to a filesystem path, validating against path traversal.
+
+    Raises
+    ------
+    ValueError
+        If the module name contains path traversal or empty segments.
+    """
+    path_str = primary_module.replace('.', '/')
+    parts = path_str.split('/')
+    for part in parts:
+        if part in {'', '.', '..'}:
+            msg = f'Invalid primary_module (path traversal or empty segment): {primary_module!r}'
+            raise ValueError(msg)
+    return path_str
+
+
 def copy_static_files_python(settings: Settings, module_path: Path) -> None:
     """Copy static files to the current directory."""
     def copy_file(filename: str) -> None:
         static_path = module_path / 'static' / filename
-        # Validate and sanitize primary_module to prevent path traversal
-        primary_module = Path(settings['primary_module']).name
-        output_file = Path(primary_module) / filename
+        module_path_str = primary_module_to_path(settings['primary_module'])
+        output_file = Path(module_path_str) / filename
         if non_empty_file_exists(output_file):
             log.debug('Skipping `%s`.', output_file)
             return
@@ -372,32 +388,113 @@ def copy_static_files_python(settings: Settings, module_path: Path) -> None:
         copy_file('main.py')
 
 
+def _remove_empty_dirs(path: Path, stop_at: Path = Path()) -> None:
+    """Remove directory and parents while empty, until stop_at."""
+    while path.exists() and path.is_dir() and path != stop_at:
+        if any(path.iterdir()):
+            break
+        path.rmdir()
+        path = path.parent
+
+
+def _cursor_and_instruction_pairs(
+    module_path: Path,
+    project_type: str,
+    *,
+    stubs_only: bool,
+) -> tuple[list[tuple[Path, Path]], list[tuple[Path, Path]]]:
+    """Return (cursor_rules_pairs, instruction_pairs) that would be copied for this config."""
+    cursor_pairs: list[tuple[Path, Path]] = []
+    instruction_pairs: list[tuple[Path, Path]] = []
+    for name in ('json-yaml', 'markdown', 'toml-ini'):
+        cursor_pairs.append((
+            Path(f'.cursor/rules/{name}.mdc'),
+            module_path / 'static/.cursor/rules' / f'{name}.mdc',
+        ))
+        instruction_pairs.append((
+            Path(f'.github/instructions/{name}.instructions.md'),
+            module_path / 'static/.github/instructions' / f'{name}.instructions.md',
+        ))
+    match project_type:
+        case 'c++':
+            instruction_pairs.append((
+                Path('.github/instructions/cpp.instructions.md'),
+                module_path / 'static/.github/instructions/cpp.instructions.md',
+            ))
+            cursor_pairs.append((
+                Path('.cursor/rules/cpp.mdc'),
+                module_path / 'static/.cursor/rules/cpp.mdc',
+            ))
+        case 'python':
+            if not stubs_only:
+                cursor_pairs.extend([
+                    (Path('.cursor/rules/python.mdc'),
+                     module_path / 'static/.cursor/rules/python.mdc'),
+                    (Path('.cursor/rules/python-tests.mdc'),
+                     module_path / 'static/.cursor/rules/python-tests.mdc'),
+                ])
+                instruction_pairs.extend([
+                    (Path('.github/instructions/python.instructions.md'),
+                     module_path / 'static/.github/instructions/python.instructions.md'),
+                    (Path('.github/instructions/python-tests.instructions.md'),
+                     module_path / 'static/.github/instructions/python-tests.instructions.md'),
+                ])
+        case _:
+            pass
+    return cursor_pairs, instruction_pairs
+
+
 def copy_static_files(settings: Settings, module_path: Path) -> None:
     """Copy static files to the current directory."""
-    Path('.cursor/rules').mkdir(parents=True, exist_ok=True)
-    Path('.github/instructions').mkdir(parents=True, exist_ok=True)
-    for name in ('json-yaml', 'markdown', 'toml-ini'):
-        copyfile(module_path / 'static/.cursor/rules' / f'{name}.mdc', f'.cursor/rules/{name}.mdc')
-        copyfile(module_path / 'static/.github/instructions' / f'{name}.instructions.md',
-                 f'.github/instructions/{name}.instructions.md')
+    cursor_pairs, instruction_pairs = _cursor_and_instruction_pairs(
+        module_path,
+        settings['project_type'],
+        stubs_only=settings['stubs_only'],
+    )
+    if settings['want_cursor']:
+        Path('.cursor/rules').mkdir(parents=True, exist_ok=True)
+        for dest, src in cursor_pairs:
+            copyfile(src, dest)
+            log.debug('Wrote `%s`.', dest)
+    else:
+        for dest, src in cursor_pairs:
+            if dest.exists() and src.exists() and dest.read_text() == src.read_text():
+                dest.unlink()
+                log.debug('Removed `%s` (matched would-be content).', dest)
+        _remove_empty_dirs(Path('.cursor/rules'), Path())
+        if Path('.cursor').exists() and not any(Path('.cursor').iterdir()):
+            Path('.cursor').rmdir()
+    if settings['want_copilot']:
+        Path('.github/instructions').mkdir(parents=True, exist_ok=True)
+        for dest, src in instruction_pairs:
+            copyfile(src, dest)
+            log.debug('Wrote `%s`.', dest)
+    else:
+        for dest, src in instruction_pairs:
+            if dest.exists() and src.exists() and dest.read_text() == src.read_text():
+                dest.unlink()
+                log.debug('Removed `%s` (matched would-be content).', dest)
+        _remove_empty_dirs(Path('.github/instructions'), Path('.github'))
+    claude_settings_path = Path('.claude/settings.local.json')
+    claude_expected = json.dumps(settings['claude_settings_local'], indent=2)
+    if settings['want_claude']:
+        claude_settings_path.parent.mkdir(parents=True, exist_ok=True)
+        claude_settings_path.write_text(f'{claude_expected}\n', encoding='utf-8')
+        log.debug('Wrote `%s`.', claude_settings_path)
+    else:
+        expected_text = f'{claude_expected}\n'
+        if (claude_settings_path.exists()
+                and claude_settings_path.read_text(encoding='utf-8') == expected_text):
+            claude_settings_path.unlink()
+            log.debug('Removed `%s` (matched would-be content).', claude_settings_path)
+        _remove_empty_dirs(Path('.claude'), Path())
     match settings['project_type']:
-        case 'c++':
-            copyfile(module_path / 'static/.github/instructions/cpp.instructions.md',
-                     '.github/instructions/cpp.instructions.md')
-            copyfile(module_path / 'static/.cursor/rules/cpp.mdc', '.cursor/rules/cpp.mdc')
         case 'python':
-            if not settings['stubs_only']:
-                copyfile(module_path / 'static/.cursor/rules/python.mdc',
-                         '.cursor/rules/python.mdc')
-                copyfile(module_path / 'static/.cursor/rules/python-tests.mdc',
-                         '.cursor/rules/python-tests.mdc')
-                copyfile(module_path / 'static/.github/instructions/python.instructions.md',
-                         '.github/instructions/python.instructions.md')
-                copyfile(module_path / 'static/.github/instructions/python-tests.instructions.md',
-                         '.github/instructions/python-tests.instructions.md')
             copy_static_files_python(settings, module_path)
         case _:
-            log.warning('No static files to copy for project type `%s`.', settings['project_type'])
+            if settings['project_type'] != 'c++':
+                log.warning('No static files to copy for project type `%s`.',
+                            settings['project_type'])
 
 
 def download_yarn_plugins() -> None:
@@ -478,7 +575,7 @@ def write_templated_files_python(settings: Settings, templates_dir: Path,
                                  write_file: Callable[..., object]) -> None:
     if not settings['stubs_only']:
         write_file(resolve_template(templates_dir / '_module_/__init__.py.j2'),
-                   f'{settings["primary_module"]}/__init__.py')
+                   f'{primary_module_to_path(settings["primary_module"])}/__init__.py')
     if settings['want_tests']:
         write_file(resolve_template(templates_dir / 'tests/conftest.py.j2'), 'tests/conftest.py')
         if settings['want_main'] and not settings['has_multiple_entry_points']:
@@ -518,8 +615,19 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
     """Write templated files."""
     _, templates_dir, resolve_template, write_file = _template_env(module_path, settings)
     Path('.github/copilot-instructions.md').unlink(missing_ok=True)
-    write_file(resolve_template(templates_dir / '.github/instructions/general.instructions.md.j2'),
-               '.github/instructions/general.instructions.md')
+    general_instructions = Path('.github/instructions/general.instructions.md')
+    general_instructions_template = (
+        templates_dir / '.github/instructions/general.instructions.md.j2'
+    )
+    if settings['want_copilot']:
+        write_file(resolve_template(general_instructions_template), general_instructions)
+    else:
+        template = resolve_template(general_instructions_template)
+        expected = f'{template.render({"settings": settings}).strip()}\n'
+        if (general_instructions.exists()
+                and general_instructions.read_text(encoding='utf-8') == expected):
+            general_instructions.unlink()
+            log.debug('Removed `%s` (matched would-be content).', general_instructions)
     common_templates = (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', False),
                         ('LICENSE.txt.j2', not settings['private']), ('SECURITY.md.j2', True),
                         ('CHANGELOG.md.j2', False), ('README.md.j2', False))
