@@ -1,0 +1,17 @@
+EXTENSION_MAPPING      = .jsonnet=C++ .libjsonnet=C++ .libsonnet=C++
+FILE_PATTERNS          = *.*sonnet
+FILTER_PATTERNS        = *.*sonnet=/home/tatsh/dev/jsonnet/doxysonnet
+FILTER_SOURCE_FILES    = YES
+FILTER_SOURCE_PATTERNS = *.*sonnet=/home/tatsh/dev/jsonnet/doxysonnet
+HIDE_UNDOC_CLASSES     = YES
+HIDE_UNDOC_MEMBERS     = YES
+INPUT                  = wiswa-jsonnet README.md
+OPTIMIZE_OUTPUT_FOR_C  = YES
+OUTPUT_DIRECTORY       = docs/_build-doxygen
+PROJECT_NAME           = wiswa
+RECURSIVE              = YES
+SORT_BRIEF_DOCS = YES
+SORT_GROUP_NAMES = YES
+SORT_MEMBERS_CTORS_1ST = YES
+SORT_BY_SCOPE_NAME = YES
+USE_MDFILE_AS_MAINPAGE = README.md

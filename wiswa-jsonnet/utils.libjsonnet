@@ -1,83 +1,114 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+ * @file utils.libjsonnet
+ * @namespace utils
+ * @brief A collection of utility functions for manipulating settings.
+ */
 {
-  '#':: d.pkg(name='utils', url='', help='', filename=std.thisFile),
-
-  '#manifestToml':: d.fn('Convert an object to a TOML form (no indentation).',
-                         [d.arg('value', d.T.object)]),
+  /**
+   * @brief Convert an object to a TOML form with no indentation.
+   * @param value The object to convert to TOML.
+   * @returns The TOML representation of the object.
+   * @rv string
+   */
   manifestToml(value)::
     std.manifestTomlEx(value, ''),
 
-  '#manifestLines':: d.fn('Convert an array to a string with each element on a new line.',
-                          [d.arg('value', d.T.array)]),
+  /**
+   * @brief Convert an array to a string with each element on a new line.
+   * @param value The array to convert.
+   * @returns A string with each element on a new line.
+   * @rv string
+   */
   manifestLines(value)::
     std.join('\n', std.set(value)),
 
 
-  '#manifestYaml':: d.fn(
-    'Convert an object to a YAML form (indented in array and keys not quoted).',
-    [d.arg('value', d.T.object)]
-  ),
+  /**
+   * @brief Convert an object to a YAML form with indented arrays and unquoted keys.
+   * @param value The object to convert to YAML.
+   * @returns The YAML representation of the object.
+   * @rv string
+   */
   manifestYaml(value)::
     std.manifestYamlDoc(value, true, false),
 
-  '#citationAuthors':: d.fn(
-    'Convert an array of authors to a format suitable for citation metadata.',
-    [d.arg('authors', d.T.array)]
-  ),
+  /**
+   * @brief Convert an array of authors to a format suitable for citation metadata.
+   * @param authors The array of author objects.
+   * @returns An array of objects with `family-names` and `given-names` fields.
+   */
   citationAuthors(authors)::
     [{
       'family-names': x['family-names'],
       'given-names': x['given-names'],
     } for x in authors],
 
-
-  '#gitHubGitSshUri':: d.fn(
-    'Generate a Git SSH URI for a GitHub repository.',
-    [d.arg('github_username', d.T.string), d.arg('project_name', d.T.string)]
-  ),
+  /**
+   * @brief Generate a Git SSH URI for a GitHub repository.
+   * @param github_username The GitHub username.
+   * @param project_name The project name.
+   * @returns A Git SSH URI (string).
+   * @pt string, string
+   * @rv string
+   */
   gitHubGitSshUri(github_username, project_name)::
     'git@github.com:%s/%s.git' % [
       github_username,
       std.strReplace(std.strReplace(project_name, '@', ''), '/', '-'),
     ],
 
-  '#readTheDocsUri':: d.fn(
-    'Generate a readthedocs.org URI for a project.',
-    [d.arg('project_name', d.T.string)]
-  ),
+  /**
+   * @brief Generate a readthedocs.org URI for a project.
+   * @param project_name The project name.
+   * @returns A readthedocs.org URI (string).
+   * @pt string
+   * @rv string
+   */
   readTheDocsUri(project_name):: 'https://%s.readthedocs.org' % project_name,
 
-  '#gitHubRepositoryUri':: d.fn(
-    'Generate a GitHub repository URI.',
-    [d.arg('github_username', d.T.string), d.arg('project_name', d.T.string)]
-  ),
+  /**
+   * @brief Generate a GitHub repository URI.
+   * @param github_username The GitHub username.
+   * @param project_name The project name.
+   * @returns A GitHub repository URI (string).
+   * @pt string, string
+   * @rv string
+   */
   gitHubRepositoryUri(github_username, project_name)::
     'https://github.com/%s/%s' % [
       github_username,
       std.strReplace(std.strReplace(project_name, '@', ''), '/', '-'),
     ],
 
-  '#pyprojectAuthors':: d.fn(
-    'Convert an array of authors to a format suitable for pyproject.toml.',
-    [d.arg('authors', d.T.array)]
-  ),
+  /**
+   * @brief Convert an array of authors to a format suitable for pyproject.toml.
+   * @param authors The array of author objects.
+   * @returns An array of objects with `name` and `email` fields.
+   * @pt string[]
+   * @rv object[]
+   */
   pyprojectAuthors(authors)::
     [{
       name: x.name,
       email: x.email,
     } for x in authors],
 
-  '#gitLabCi':: d.fn(
-    'Generate a Gitlab CI configuration.',
-    [d.arg('settings', d.T.object)]
-  ),
+  /**
+   * @brief Generate a GitLab CI configuration.
+   * @param settings The settings object.
+   * @returns A GitLab CI configuration object.
+   * @rv object
+   */
   gitLabCi(settings):: {},
 
-  '#pyprojectClassifiers':: d.fn(
-    'Generate a sorted unique list of PyPI classifiers.',
-    [d.arg('settings', d.T.object), d.arg('classifiers', d.T.array)]
-  ),
+  /**
+   * @brief Generate a sorted unique list of PyPI classifiers.
+   * @param settings The settings object.
+   * @param classifiers Additional classifiers to include.
+   * @returns A sorted unique array of classifier strings.
+   * @pt object, string[]
+   * @rv string[]
+   */
   pyprojectClassifiers(settings, classifiers=[])::
     std.set(classifiers + [
       'Development Status :: 4 - Beta',
@@ -88,26 +119,72 @@ local d = import 'doc-util/main.libsonnet';
       ('Programming Language :: Python :: %s' % i)
       for i in settings.supported_python_versions
     ]),
-  '#latestNpmPackageVersionCaret':: d.fn(
-    'Get the latest version of an npm package, prefixed with a caret (^).',
-    [d.arg('package', d.T.string)]
-  ),
+  /**
+   * @brief Get the latest version of an npm package, prefixed with a caret (^).
+   *
+   * Requires a native function `latestNpmPackageVersion` to be defined in the Jsonnet environment.
+   *
+   * @param package The npm package name.
+   * @returns The latest version string prefixed with `^`.
+   * @pt string
+   * @rv string
+   */
   latestNpmPackageVersionCaret(package):: '^' + std.native('latestNpmPackageVersion')(package),
-  '#latestPypiPackageVersionCaret':: d.fn(
-    'Get the latest version of a PyPI package, prefixed with a caret (^).',
-    [d.arg('package', d.T.string)]
-  ),
+  /**
+   * @brief Get the latest version of a PyPI package, prefixed with a caret (^).
+   *
+   * Requires a native function `latestPypiPackageVersion` to be defined in the Jsonnet environment.
+   *
+   * @param package The PyPI package name.
+   * @returns The latest version string prefixed with `^`.
+   * @pt string
+   * @rv string
+   */
   latestPypiPackageVersionCaret(package):: '^' + std.native('latestPypiPackageVersion')(package),
-  '#latestPypiPackageVersionTilde':: d.fn(
-    'Get the latest version of a PyPI package, prefixed with a tilde (~).',
-    [d.arg('package', d.T.string)]
-  ),
+  /**
+   * @brief Get the latest version of a PyPI package, prefixed with a tilde (~).
+   *
+   * Requires a native function `latestPypiPackageVersion` to be defined in the Jsonnet environment.
+   *
+   * @param package The PyPI package name.
+   * @returns The latest version string prefixed with `~`.
+   * @pt string
+   * @rv string
+   */
   latestPypiPackageVersionTilde(package):: '~' + std.native('latestPypiPackageVersion')(package),
-  '#latestPypiPackageVersion':: d.fn(
-    'Get the latest version of a PyPI package.',
-    [d.arg('package', d.T.string)]
-  ),
+  /**
+   * @brief Get the latest version of a PyPI package.
+   *
+   * Requires a native function `latestPypiPackageVersion` to be defined in the Jsonnet environment.
+   *
+   * @param package The PyPI package name.
+   * @returns The latest version string.
+   * @pt string
+   * @rv string
+   */
   latestPypiPackageVersion(package):: std.native('latestPypiPackageVersion')(package),
+  /**
+   * @brief Get the latest action tag for a GitHub repository.
+   *
+   * Requires a native function `githubLatestActionTag` to be defined in the Jsonnet environment.
+   *
+   * @param owner The repository owner.
+   * @param repo The repository name.
+   * @returns The latest action tag (string).
+   * @pt string, string
+   * @rv string
+   */
   githubLatestActionTag(owner, repo):: std.native('githubLatestActionTag')(owner, repo),
+  /**
+   * @brief Get the latest release tag for a GitHub repository.
+   *
+   * Requires a native function `githubLatestReleaseTag` to be defined in the Jsonnet environment.
+   *
+   * @param owner The repository owner.
+   * @param repo The repository name.
+   * @returns The latest release tag (string).
+   * @pt string, string
+   * @rv string
+   */
   githubLatestReleaseTag(owner, repo):: std.native('githubLatestReleaseTag')(owner, repo),
 }

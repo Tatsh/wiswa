@@ -24,6 +24,7 @@
 /docs/_build/
 /man/_static/
 /mypy-report*/
+Doxyfile
 __pycache__/
 cobertura.xml
 coverage.xml

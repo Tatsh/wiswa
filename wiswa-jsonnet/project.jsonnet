@@ -1,6 +1,12 @@
+/**
+ * @file project.jsonnet
+ * @namespace root
+ * @brief Main Jsonnet file that generates the project files based on the provided settings.
+ */
 local github = import 'github.libjsonnet';
 local utils = import 'utils.libjsonnet';
 
+/** @brief The main function called to generate the project files. */
 function(settings)
   local cff = if settings.want_cff then { 'CITATION.cff': utils.manifestYaml(settings.citation) } else {};
   local github_items = if settings.using_github then {

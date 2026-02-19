@@ -1,27 +1,24 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+ * @file defaults/cmake-presets.libjsonnet
+ * @namespace cmake_presets
+ * @brief Default settings for `CMakePresets.json`.
+ */
 {
-  '#':: d.pkg(
-    name='cmake-presets',
-    url='https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html',
-    help='CMake presets for use with vcpkg.',
-    filename=std.thisFile,
-  ),
-  '#configurePresets':: d.val(d.T.array, 'Array of CMake configure presets for vcpkg.'),
+  /** @brief CMake presets for use with vcpkg. */
   configurePresets: [
     {
-      '#binaryDir':: d.val(d.T.string, 'Directory where build files are stored.'),
+      /** @brief Directory where build files are stored. */
       binaryDir: '${sourceDir}/build',
-      '#cacheVariables':: d.val(d.T.object, 'CMake cache variables to set.'),
+      /** @brief CMake cache variables to set. */
       cacheVariables: {
         CMAKE_TOOLCHAIN_FILE: '$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake',
       },
-      '#generator':: d.val(d.T.string, 'CMake generator to use.'),
+      /** @brief CMake generator to use. */
       generator: 'Ninja',
-      '#name':: d.val(d.T.string, 'Name of the configure preset.'),
+      /** @brief Name of the configure preset. */
       name: 'vcpkg',
     },
   ],
-  '#version':: d.val(d.T.number, 'Version of the CMake presets.'),
+  /** @brief Version of the CMake presets. */
   version: 2,
 }

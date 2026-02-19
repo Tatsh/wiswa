@@ -12,6 +12,10 @@ local tests = import 'github/workflows/tests.libjsonnet';
 local utils = import 'utils.libjsonnet';
 
 {
+  /**
+   * Generate GitHub Actions workflow files based on the provided settings.
+   * @param settings Object containing configuration for the workflows.
+   */
   workflows(settings): {
     '.github/workflows/qa.yml': utils.manifestYaml(
       if settings.project_type == 'python' then qa_python(settings)

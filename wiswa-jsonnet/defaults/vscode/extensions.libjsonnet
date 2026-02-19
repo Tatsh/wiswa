@@ -1,3 +1,8 @@
+/**
+ * @file extensions.libjsonnet
+ * @namespace vscode::extensions
+ * @brief Generate extension recommendations for `extensions.json`.
+ */
 {
   local python_recommendations = [
     'charliermarsh.ruff',
@@ -8,6 +13,13 @@
     'zeshuaro.vscode-python-poetry',
   ],
   local python_unwanted_recommendations = ['ms-python.vscode-python-envs'],
+  /**
+   * Get the extension recommendations based on the project settings.
+   * @param settings The project settings.
+   * @returns An object with `recommendations` and `unwantedRecommendations` arrays.
+   * @pt object
+   * @rv object
+   */
   get(settings):: {
     recommendations: std.set([
       'Grafana.vscode-jsonnet',

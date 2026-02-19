@@ -1,15 +1,19 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+ * @file yarnrc.libjsonnet
+ * @namespace yarnrc
+ * @brief Default settings for `.yarnrc.yml`.
+ */
 {
-  '#':: d.pkg(name='yarnrc', url='', help='', filename=std.thisFile),
-  '#enableTelemetry':: d.val(d.T.bool, 'Enable/disable telemetry collection.', false),
+  /** @brief Enable/disable telemetry collection. */
   enableTelemetry: false,
-  '#nodeLinker':: d.val(d.T.string, 'Node linker to use.', 'node-modules'),
+  /** @brief Node linker to use. */
   nodeLinker: 'node-modules',
-  '#plugins':: d.val(d.T.array, 'List of plugins to load.'),
+  /**
+   * @brief List of plugins to load.
+   * @var object[]
+   */
   plugins: [
     {
-      '#path':: d.val(d.T.string, 'Path to the plugin file.'),
       path: '.yarn/plugins/plugin-prettier-after-all-installed.cjs',
     },
   ],

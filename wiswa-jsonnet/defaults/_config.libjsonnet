@@ -1,9 +1,9 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+ * @file _config.libjsonnet
+ * @namespace _config
+ * @brief Jekyll configuration for GitHub Pages.
+ */
 {
-  '#':: d.pkg('_config',
-              'https://jekyllrb.com/docs/configuration/options/',
-              'Jekyll configuration options.'),
-  '#theme':: d.val(d.T.string, 'Jekyll theme to use.'),
+  /** @brief Jekyll theme to use. */
   theme: 'jekyll-theme-hacker',
 }
