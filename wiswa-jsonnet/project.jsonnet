@@ -34,7 +34,6 @@ function(settings)
   } else {};
   local c_cpp_items = if settings.project_type == 'c' || settings.project_type == 'c++' then {
     '.clang-format': utils.manifestYaml(settings.clang_format),
-    '.cmake-format.yaml': utils.manifestYaml(settings.cmake_format),
     '.vscode/c_cpp_properties.json': std.manifestJson(settings.vscode.c_cpp),
     'CMakePresets.json': std.manifestJson(settings.cmake_presets),
     'CMakeUserPresets.json': std.manifestJson(settings.cmake_user_presets),

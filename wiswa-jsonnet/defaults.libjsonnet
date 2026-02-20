@@ -593,15 +593,12 @@ local utils = import 'utils.libjsonnet';
 
   // C/C++ only
   local clang_format = import 'defaults/clang-format.libjsonnet',
-  local cmake_format = import 'defaults/cmake-format.libjsonnet',
   local cmake_user_presets = import 'defaults/cmake-user-presets.libjsonnet',
   local vcpkg = import 'defaults/vcpkg.libjsonnet',
   local vcpkg_config = import 'defaults/vcpkg-config.libjsonnet',
   vcpkg_root: '/home/tatsh/dev/vcpkg',
   /** @brief Clang format configuration. */
   clang_format: clang_format.get(self.line_width, self.c_cpp_tab_size),
-  /** @brief cmake-format configuration. */
-  cmake_format: cmake_format.get(self.line_width),
   /** @brief CMake presets. */
   cmake_presets: import 'defaults/cmake-presets.libjsonnet',
   /** @brief CMake user presets. */
