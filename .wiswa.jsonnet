@@ -11,6 +11,8 @@ local utils = import 'utils.libjsonnet';
   copilot: {
     intro: 'Wiswa is a tool to generate and manage Python projects.',
   },
+  shared_ignore+: ['/docs/_build*/'],
+  prettierignore+: ['Doxyfile'],
   pyproject+: {
     project+: {
       scripts+: { '_wiswa-gen-docs': 'wiswa.main:gen_docs_main' },

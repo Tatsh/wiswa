@@ -48,7 +48,7 @@ alwaysApply: false
 - Left curly braces/brackets go on the same line as the start of the statement.
 - Use `clang-format` regularly to format the file after ensuring syntax is correct.
 - Includes should be grouped with a single blank line between the groups, in this order:
-  - System headers like <vector>
+  - System headers like `<vector>`
   - `windows.h`
   - Other Windows headers that must come after `windows.h`
   - 3rd party headers like Qt

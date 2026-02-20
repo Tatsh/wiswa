@@ -1,6 +1,3 @@
-aiofiles
-aiohttp
-aioresponses
 altool
 appdir
 appimage
@@ -154,7 +151,6 @@ pascalreitermann
 pathlib
 pavelzw
 pipx
-proc
 prodvers
 pycache
 pydantic
@@ -165,13 +161,11 @@ pypa
 pypi
 pyproject
 pytest
-pyyaml
 qstringbuilder
 qtcore
 ramda
 reflow
 regen
-resp
 rockspec
 rstcheck
 ruiquelhas
@@ -191,7 +185,6 @@ sphinxcontrib
 srcs
 startswith
 staticfiles
-stdlib
 strequal
 strongified
 tagfile

@@ -21,6 +21,7 @@
 /.yarn/install-state.gz
 /build/
 /dist/
+/docs/_build*/
 /docs/_build/
 /man/_static/
 /mypy-report*/
