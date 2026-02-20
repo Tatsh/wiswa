@@ -1,8 +1,8 @@
 EXTENSION_MAPPING      = .jsonnet=C++ .libjsonnet=C++ .libsonnet=C++
 FILE_PATTERNS          = *.*sonnet
-FILTER_PATTERNS        = *.*sonnet="/home/tatsh/dev/jsonnet/doxysonnet --import-path=wiswa-jsonnet"
+FILTER_PATTERNS        = *.*sonnet="/home/tatsh/dev/jsonnet/doxysonnet --import-path=wiswa-jsonnet --show-default-value"
 FILTER_SOURCE_FILES    = YES
-FILTER_SOURCE_PATTERNS = *.*sonnet="/home/tatsh/dev/jsonnet/doxysonnet --import-path=wiswa-jsonnet"
+FILTER_SOURCE_PATTERNS = *.*sonnet="/home/tatsh/dev/jsonnet/doxysonnet --import-path=wiswa-jsonnet --show-default-value"
 GENERATE_LATEX         = NO
 HIDE_UNDOC_CLASSES     = YES
 HIDE_UNDOC_MEMBERS     = YES
