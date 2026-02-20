@@ -4,7 +4,7 @@ function(settings) {
       'runs-on': settings.qa_runs_on,
       steps: [
         {
-          uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
+          uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
         },
       ] + (if std.length(settings.github.workflows.qa.apt_packages) > 0 then [{
              name: 'Install dependencies',

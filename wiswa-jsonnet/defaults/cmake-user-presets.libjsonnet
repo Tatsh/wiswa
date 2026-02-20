@@ -1,13 +1,16 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+ * @file defaults/cmake-user-presets.libjsonnet
+ * @namespace cmake_user_presets
+ * @brief CMake user presets.
+ */
 {
-  '#':: d.pkg(name='cmake-user-presets',
-              url='https://cmake.org/cmake/help/latest/manual/cmake-user-presets.7.html',
-              help='CMake user presets',
-              filename=std.thisFile),
-  '#get':: d.fn('Get CMake user presets.', [
-    d.arg('vcpkg_root', d.T.string, '/home/tatsh/dev/vcpkg'),
-  ]),
+  /**
+   * @brief Get CMake user presets.
+   * @param vcpkg_root Root directory of vcpkg.
+   * @returns An object representing CMake user presets.
+   * @pt string
+   * @rv object
+   */
   get(vcpkg_root='/home/tatsh/dev/vcpkg'):: {
     configurePresets: [
       {

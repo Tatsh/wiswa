@@ -1,4 +1,16 @@
+/**
+ * @file extensions.libjsonnet
+ * @namespace vscode::launch
+ * @brief Generate `launch.json` content for Visual Studio Code.
+ */
 {
+  /**
+   * Generate `launch.json` content for Visual Studio Code.
+   * @param settings The project settings.
+   * @returns An object representing the `launch.json` content.
+   * @pt object
+   * @rv object
+   */
   get(settings):: {
     configurations: if settings.project_type == 'python' then [
       {

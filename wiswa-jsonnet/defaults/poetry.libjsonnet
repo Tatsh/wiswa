@@ -1,26 +1,15 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+ * @file poetry.libjsonnet
+ * @namespace poetry
+ * @brief Configuration for Poetry, a Python dependency management tool.
+ */
 {
-  '#':: d.pkg(
-    name='tool-poetry',
-    url='https://python-poetry.org/',
-    help='Configuration for Poetry, a Python dependency management tool.',
-    filename=std.thisFile,
-  ),
-  '#group':: d.obj(
-    d.T.object,
-    'Optional dependency groups for organizing dependencies.',
-  ),
+  /** @brief Configuration for Poetry, a Python dependency management tool. */
+  /** @brief Optional dependency groups for organizing dependencies. */
   group: {
-    '#dev':: d.obj(
-      d.T.object,
-      'Development dependencies, used for development and testing purposes.',
-    ),
+    /** @brief Development dependencies, used for development and testing purposes. */
     dev: {
-      '#optional':: d.val(
-        d.T.boolean,
-        'Whether this group is optional.',
-      ),
+      /** @brief Whether this group is optional. */
       optional: true,
     },
   },

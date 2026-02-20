@@ -1,36 +1,38 @@
+local utils = import 'utils.libjsonnet';
+
 function(want_main, want_yapf, stubs_only, project_name, want_coveralls) {
-  local want_main_deps = if want_main then { click: '^' + std.native('latestPypiPackageVersion')('click') } else {},
-  local bascom_dep = if want_main && !stubs_only && project_name != 'bascom' then { bascom: '^' + std.native('latestPypiPackageVersion')('bascom') } else {},
-  local cz_path_dep = if project_name != 'cz-path' then { 'cz-path': '^' + std.native('latestPypiPackageVersion')('cz-path') } else {},
+  local want_main_deps = if want_main then { click: utils.latestPypiPackageVersionCaret('click') } else {},
+  local bascom_dep = if want_main && !stubs_only && project_name != 'bascom' then { bascom: utils.latestPypiPackageVersionCaret('bascom') } else {},
+  local cz_path_dep = if project_name != 'cz-path' then { 'cz-path': utils.latestPypiPackageVersionCaret('cz-path') } else {},
   main: {
-    'typing-extensions': '^' + std.native('latestPypiPackageVersion')('typing-extensions'),
+    'typing-extensions': utils.latestPypiPackageVersionCaret('typing-extensions'),
   } + want_main_deps + bascom_dep,
   dev: {
-    commitizen: '^' + std.native('latestPypiPackageVersion')('commitizen'),
-    djlint: '^' + std.native('latestPypiPackageVersion')('djlint'),
-    mypy: '^' + std.native('latestPypiPackageVersion')('mypy'),
-    ruff: '^' + std.native('latestPypiPackageVersion')('ruff'),
-  } + cz_path_dep + (if want_yapf then { yapf: '^' + std.native('latestPypiPackageVersion')('yapf') } else {}),
+    commitizen: utils.latestPypiPackageVersionCaret('commitizen'),
+    djlint: utils.latestPypiPackageVersionCaret('djlint'),
+    mypy: utils.latestPypiPackageVersionCaret('mypy'),
+    ruff: utils.latestPypiPackageVersionCaret('ruff'),
+  } + cz_path_dep + (if want_yapf then { yapf: utils.latestPypiPackageVersionCaret('yapf') } else {}),
   docs: {
-    'autodoc-pydantic': '^' + std.native('latestPypiPackageVersion')('autodoc-pydantic'),
-    doc8: '^' + std.native('latestPypiPackageVersion')('doc8'),
+    'autodoc-pydantic': utils.latestPypiPackageVersionCaret('autodoc-pydantic'),
+    doc8: utils.latestPypiPackageVersionCaret('doc8'),
     docutils: '<0.22',  // due to Sphinx requirement
-    'enum-tools': { extras: ['sphinx'], version: '^' + std.native('latestPypiPackageVersion')('enum-tools') },
-    esbonio: '^' + std.native('latestPypiPackageVersion')('esbonio'),
-    numpydoc: '^' + std.native('latestPypiPackageVersion')('numpydoc'),
-    'restructuredtext-lint': '^' + std.native('latestPypiPackageVersion')('restructuredtext-lint'),
+    'enum-tools': { extras: ['sphinx'], version: utils.latestPypiPackageVersionCaret('enum-tools') },
+    esbonio: utils.latestPypiPackageVersionCaret('esbonio'),
+    numpydoc: utils.latestPypiPackageVersionCaret('numpydoc'),
+    'restructuredtext-lint': utils.latestPypiPackageVersionCaret('restructuredtext-lint'),
     sphinx: [
-      { version: '<9.0.0', python: '>=3.11' }, // https://github.com/jbms/sphinx-immaterial/pull/477
+      { version: '<9.0.0', python: '>=3.11' },  // https://github.com/jbms/sphinx-immaterial/pull/477
       { version: '^7.2.5', python: '<3.11' },
     ],
-    'sphinx-datatables': '^' + std.native('latestPypiPackageVersion')('sphinx-datatables'),
-    'sphinx-immaterial': '^' + std.native('latestPypiPackageVersion')('sphinx-immaterial'),
-    tomlkit: '^' + std.native('latestPypiPackageVersion')('tomlkit'),
-  } + if want_main then { 'sphinx-click': '^' + std.native('latestPypiPackageVersion')('sphinx-click') } else {},
+    'sphinx-datatables': utils.latestPypiPackageVersionCaret('sphinx-datatables'),
+    'sphinx-immaterial': utils.latestPypiPackageVersionCaret('sphinx-immaterial'),
+    tomlkit: utils.latestPypiPackageVersionCaret('tomlkit'),
+  } + if want_main then { 'sphinx-click': utils.latestPypiPackageVersionCaret('sphinx-click') } else {},
   tests: {
-    mock: '^' + std.native('latestPypiPackageVersion')('mock'),
-    pytest: '^' + std.native('latestPypiPackageVersion')('pytest'),
-    'pytest-cov': '^' + std.native('latestPypiPackageVersion')('pytest-cov'),
-    'pytest-mock': '^' + std.native('latestPypiPackageVersion')('pytest-mock'),
+    mock: utils.latestPypiPackageVersionCaret('mock'),
+    pytest: utils.latestPypiPackageVersionCaret('pytest'),
+    'pytest-cov': utils.latestPypiPackageVersionCaret('pytest-cov'),
+    'pytest-mock': utils.latestPypiPackageVersionCaret('pytest-mock'),
   } + if want_coveralls then { coveralls: { python: '<3.13', version: '^4.0.1' } } else {},
 }

@@ -1,4 +1,12 @@
+local utils = import 'utils.libjsonnet';
+
+/**
+ * @file defaults/pre-commit-config/github.libjsonnet
+ * @namespace pre_commit_config::github
+ * @brief Check schemas for JSON and YAML files. For `.pre-commit-config.yaml`.
+ */
 {
+  /** @brief Hooks. */
   hooks: [
     {
       id: 'check-github-actions',
@@ -16,6 +24,8 @@
       name: 'validate package.json',
     },
   ],
+  /** @brief Repository. */
   repo: 'https://github.com/python-jsonschema/check-jsonschema',
-  rev: std.native('githubLatestReleaseTag')('python-jsonschema', 'check-jsonschema'),
+  /** @brief Revision. */
+  rev: utils.githubLatestReleaseTag('python-jsonschema', 'check-jsonschema'),
 }

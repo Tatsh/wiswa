@@ -1,10 +1,35 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+ * @file vcpkg.libjsonnet
+ * @brief Default configuration for vcpkg package manager.
+ * @namespace vcpkg
+ */
 {
-  '#':: d.pkg(name='vcpkg', url='', help='', filename=std.thisFile),
-  '#get':: d.fn('Get vcpkg configuration.', [
-    d.arg('settings', d.T.object),
-  ]),
+  /**
+   * @brief Get the default configuration for vcpkg.
+   * @param settings The settings object.
+   * @returns An object containing the default vcpkg configuration.
+   * @pt object
+   * @rv object
+   * @sa [vcpkg.json Reference](https://learn.microsoft.com/en-us/vcpkg/reference/vcpkg-json)
+   *
+   * <dl>
+   * <dt>Returned Structure</dt>
+   * <dd>
+   * @code
+   * {
+   *   dependencies: string[],
+   *   description: string,
+   *   documentation: string,
+   *   homepage: string,
+   *   license: string,
+   *   maintainers: string[],
+   *   name: string,
+   *   version: string,
+   * }
+   * @endcode
+   * </dd>
+   * </dl>
+   */
   get(settings):: {
     dependencies: [],
     description: settings.description,

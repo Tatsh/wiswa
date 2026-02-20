@@ -8,11 +8,11 @@ function(settings) {
       'runs-on': settings.github.workflows.publish_npm_any.runs_on,
       steps: [
         {
-          uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
+          uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
         },
         {
           name: 'Setup Node.js',
-          uses: 'actions/setup-node@' + std.native('githubLatestActionTag')('actions', 'setup-node'),
+          uses: 'actions/setup-node@' + utils.githubLatestActionTag('actions', 'setup-node'),
           with: {
             'node-version': settings.github.workflows.publish_npm_any.node_version,
             'registry-url': settings.github.workflows.publish_npm_any.registry_url,

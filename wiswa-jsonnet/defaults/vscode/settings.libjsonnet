@@ -1,10 +1,20 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+ * @file settings.libjsonnet
+ * @namespace vscode::settings
+ * @brief Generate `settings.json` content for Visual Studio Code.
+ */
 {
-  '#':: d.pkg(name='vscode-settings', url='https://code.visualstudio.com/docs/configure/settings#_settings-json-file', help='', filename=std.thisFile),
-  '#get':: d.fn('Get VS Code settings.', [
-    d.arg('settings', d.T.object, 'Settings.'),
-  ]),
+  /**
+   * @brief Generate Python-specific settings.
+   * @param python_tab_size Tab size for Python files.
+   * @param python_package_index_depth Depth for Python package indexing.
+   * @param rst_tab_size Tab size for reStructuredText files.
+   * @param want_tests Whether to add pytest settings.
+   * @param want_yapf Whether to use YAPF as the default formatter for Python.
+   * @returns An object representing Python-specific settings.
+   * @pt int, int, int, bool, bool
+   * @rv object
+   */
   python_items(python_tab_size=4, python_package_index_depth=100, rst_tab_size=3, want_tests=true, want_yapf=true):: {
     '[python]': {
       'editor.defaultFormatter': if want_yapf then 'eeyore.yapf' else 'charliermarsh.ruff',
@@ -43,6 +53,13 @@ local d = import 'doc-util/main.libsonnet';
     ],
     'restructuredtext.linter.run': 'onSave',
   },
+  /**
+   * @brief Generate C/C++-specific settings.
+   * @param c_cpp_tab_size Tab size for C/C++ files.
+   * @returns An object representing C/C++-specific settings.
+   * @pt int
+   * @rv object
+   */
   cpp_items(c_cpp_tab_size=4):: {
     '[c]': {
       'editor.defaultFormatter': 'ms-vscode.cpptools',
@@ -54,6 +71,13 @@ local d = import 'doc-util/main.libsonnet';
     },
     'C_Cpp.default.configurationProvider': 'ms-vscode.cmake-tools',
   },
+  /**
+   * @brief Get the main settings for Visual Studio Code.
+   * @param settings The project settings.
+   * @returns An object representing the main settings for Visual Studio Code.
+   * @pt object
+   * @rv object
+   */
   get(settings):: {
     '[jsonnet]': {
       'editor.defaultFormatter': 'Grafana.vscode-jsonnet',

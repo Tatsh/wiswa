@@ -1,13 +1,15 @@
+local utils = import 'utils.libjsonnet';
+
 function(settings) {
   jobs: {
     publish: {
       'runs-on': settings.github.workflows.publish_pypi_any.runs_on,
       steps: [
         {
-          uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
+          uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
         },
         {
-          uses: 'actions/setup-python@' + std.native('githubLatestActionTag')('actions', 'setup-python'),
+          uses: 'actions/setup-python@' + utils.githubLatestActionTag('actions', 'setup-python'),
           with: {
             'python-version': settings.github.workflows.publish_pypi_any.python_version,
           },
@@ -23,7 +25,7 @@ function(settings) {
           uses: 'pypa/gh-action-pypi-publish@release/v1',
         },
         {
-          uses: 'softprops/action-gh-release@' + std.native('githubLatestActionTag')('softprops', 'action-gh-release'),
+          uses: 'softprops/action-gh-release@' + utils.githubLatestActionTag('softprops', 'action-gh-release'),
           with: {
             files: 'dist/*',
           },

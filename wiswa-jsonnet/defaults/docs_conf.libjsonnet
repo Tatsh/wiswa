@@ -1,30 +1,46 @@
-local d = import 'doc-util/main.libsonnet';
+/**
+ * @file defaults/docs_conf.libjsonnet
+ * @namespace docs_conf
+ * @brief Default configuration for Sphinx documentation.
+ */
 {
-  '#':: d.pkg(name='docs_conf', url='', help='', filename=std.thisFile),
-  '#config':: d.obj('Sphinx configuration (top level of `conf.py`).'),
+  /** @brief Sphinx configuration (outputs to `docs/conf.py`). */
   config: {
-    '#datatables_class':: d.val(d.T.string, 'CSS class for DataTables.'),
+    /** @brief CSS class for DataTables. */
     datatables_class: 'sphinx-datatable',
-    '#datatables_options':: d.obj('Options for DataTables.'),
+    /** @brief Options for DataTables. */
     datatables_options: {
-      '#paging':: d.val(d.T.boolean, 'If pagination should be enabled.'),
+      /** @brief If pagination should be enabled. */
       paging: false,
     },
-    '#datatables_version':: d.val(d.T.string, 'Version of DataTables to use.'),
+    /** @brief Version of DataTables to use. */
     datatables_version: '1.13.4',
-    '#intersphinx_mapping':: d.obj('Mapping for intersphinx (object of string to `[url, null | string]`).'),
+    /**
+     * @brief Mapping for intersphinx (object of string to `[url, null | string]`).
+     *
+     * <dl>
+     * <dt>Structure</dt>
+     * <dd>
+     * @code
+     * { [key: string]: [string, null | string]; }
+     * @endcode
+     * </dd>
+     * </dl>
+     */
     intersphinx_mapping: {
-      '#python':: d.val(d.T.array, 'Python documentation mapping.'),
       python: [
         'https://docs.python.org/3',
         null,
       ],
     },
-    '#html_theme':: d.val(d.T.string, 'HTML theme to use.'),
+    /** @brief HTML theme to use. */
     html_theme: 'sphinx_immaterial',
-    '#html_theme_options':: d.obj('Options for the HTML theme.'),
+    /** @brief Options for the HTML theme. */
     html_theme_options: {
-      '#features':: d.val(d.T.array, 'sphinx_immaterial: Features to enable in the theme.'),
+      /**
+       * @brief Features to enable in the theme.
+       * @var string[]
+       */
       features: [
         'announce.dismiss',
         'content.action.edit',
@@ -41,18 +57,39 @@ local d = import 'doc-util/main.libsonnet';
         'toc.follow',
         'toc.sticky',
       ],
-      '#font':: d.val(d.T.boolean, 'sphinx_immaterial: Whether to use web fonts.'),
+      /** @brief Whether to use web fonts. */
       font: false,
-      '#icon':: d.obj('sphinx_immaterial: Icons for the theme.'),
+      /** @brief Icons for the theme. */
       icon: {
-        '#edit':: d.val(d.T.string, 'Icon for edit action.'),
+        /** @brief Icon for edit action. */
         edit: 'material/file-edit-outline',
-        '#repo':: d.val(d.T.string, 'Icon for repository.'),
+        /** @brief Icon for repository. */
         repo: 'fontawesome/brands/github',
       },
-      '#globaltoc_collapse':: d.val(d.T.boolean, 'sphinx_immaterial: Whether to collapse the global table of contents.'),
+      /** @brief Whether to collapse the global table of contents. */
       globaltoc_collapse: true,
-      '#palette':: d.val(d.T.array, 'sphinx_immaterial: Color palette for the theme.'),
+      /**
+       * @brief Color palette for the theme.
+       * @var object[]
+       *
+       * <dl>
+       * <dt>Structure</dt>
+       * <dd>
+       * @code
+       * {
+       *   media: string;
+       *   scheme?: string;
+       *   primary?: string;
+       *   accent?: string;
+       *   toggle?: {
+       *     icon: string;
+       *     name: string;
+       *   };
+       * }[]
+       * @endcode
+       * </dd>
+       * </dl>
+       */
       palette: [
         {
           media: '(prefers-color-scheme)',
@@ -82,25 +119,26 @@ local d = import 'doc-util/main.libsonnet';
           },
         },
       ],
+      /** @brief Whether the table of contents title should be the page title. */
       toc_title_is_page_title: true,
     },
   },
-  '#django':: d.obj('Django settings for Sphinx documentation.'),
+  /** @brief Django settings for Sphinx documentation. */
   django: {
-    '#monkeypatch':: d.val(d.T.boolean, 'Whether to monkeypatch Django (needed for type hints).'),
+    /** @brief Whether to monkeypatch Django (needed for type hints). */
     monkeypatch: true,
-    '#settings_module':: d.val(d.T.string, 'Django settings module to use.'),
+    /** @brief Django settings module to use. */
     settings_module: 'settings',
-    '#settings':: d.obj('Django settings.'),
+    /** @brief Django settings. */
     settings: {
-      '#DATABASES':: d.val(d.T.object, 'Django databases configuration.'),
+      /** @brief Django databases configuration. */
       DATABASES: {
         default: {
           ENGINE: 'django.db.backends.sqlite3',
           NAME: ':memory:',
         },
       },
-      '#INSTALLED_APPS':: d.val(d.T.array, 'Django installed applications.'),
+      /** @brief Django installed applications. */
       INSTALLED_APPS: [
         'django.contrib.admin',
         'django.contrib.auth',
@@ -109,13 +147,28 @@ local d = import 'doc-util/main.libsonnet';
         'django.contrib.messages',
         'django.contrib.staticfiles',
       ],
-      '#PATH_PREFIX':: d.val(d.T.string, 'Django path prefix for static files.'),
+      /** @brief Django path prefix for static files. */
       PATH_PREFIX: '',
     },
   },
-  '#environment_variables':: d.val(d.T.object, 'Environment variables for Sphinx documentation.'),
+  /**
+   * @brief Environment variables for Sphinx documentation.
+   * @var object
+   *
+   * <dl>
+   * <dt>Structure</dt>
+   * <dd>
+   * @code
+   * { [key: string]: string; }
+   * @endcode
+   * </dd>
+   * </dl>
+   */
   environment_variables: {},
-  '#extensions':: d.val(d.T.array, 'Sphinx extensions to use.'),
+  /**
+   * @brief Sphinx extensions to use.
+   * @var string[]
+   */
   extensions: [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',

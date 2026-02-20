@@ -1,5 +1,8 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+ * @file defaults/coverage.libjsonnet
+ * @namespace coverage
+ * @brief Default configuration for coverage reporting and measurement.
+ */
 {
   local shared_omit = [
     'conftest.py',
@@ -7,23 +10,29 @@ local d = import 'doc-util/main.libsonnet';
     'tests/*/test_*.py',
     'tests/test_*.py',
   ],
-  '#report':: d.val(d.T.object, 'Coverage report configuration.'),
+  /** @brief Coverage report configuration. */
   report: {
-    '#exclude_also':: d.val(
-      d.T.array,
-      'List of additional patterns to exclude from coverage reporting.',
-    ),
+    /**
+     * @brief List of additional patterns to exclude from coverage reporting.
+     * @var string[]
+     */
     exclude_also: ['if TYPE_CHECKING:'],
-    '#omit':: d.val(d.T.array, 'List of file patterns to omit from coverage reporting.'),
+    /**
+     * @brief List of file patterns to omit from coverage reporting.
+     * @var string[]
+     */
     omit: shared_omit,
-    '#show_missing':: d.val(d.T.boolean, 'If true, shows lines that are missing coverage.'),
+    /** @brief If true, shows lines that are missing coverage. */
     show_missing: true,
   },
-  '#run':: d.val(d.T.object, 'Coverage run configuration.'),
+  /** @brief Coverage run configuration. */
   run: {
-    '#branch':: d.val(d.T.boolean, 'If true, measures branch coverage.'),
+    /** @brief If true, measures branch coverage. */
     branch: true,
-    '#omit':: d.val(d.T.array, 'List of file patterns to omit from coverage measurement.'),
+    /**
+     * @brief List of file patterns to omit from coverage measurement.
+     * @var string[]
+     */
     omit: shared_omit,
   },
 }

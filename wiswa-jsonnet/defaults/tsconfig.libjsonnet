@@ -1,61 +1,65 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+ * @file tsconfig.libjsonnet
+ * @brief Default configuration for TypeScript projects.
+ * @namespace tsconfig
+ * @sa [TSConfig Reference](https://www.typescriptlang.org/tsconfig/)
+ */
 {
-  '#compilerOptions':: d.obj(d.T.object, 'TypeScript compiler options.'),
+  /** @brief TypeScript compiler options. */
   compilerOptions: {
-    '#allowJs':: d.val(d.T.boolean, 'Allow JavaScript files to be compiled.', true),
+    /** @brief Allow JavaScript files to be compiled. */
     allowJs: true,
-    '#alwaysStrict':: d.val(d.T.boolean, 'Enable all strict type-checking options.', true),
+    /** @brief Enable all strict type-checking options. */
     alwaysStrict: true,
-    '#baseUrl':: d.val(d.T.string, 'Base directory to resolve non-relative module names.'),
+    /** @brief Base directory to resolve non-relative module names. */
     baseUrl: 'src',
-    '#disableReferencedProjectLoad':: d.val(d.T.boolean, 'Disable loading of referenced projects.', true),
+    /** @brief Disable loading of referenced projects. */
     disableReferencedProjectLoad: true,
-    '#disableSolutionSearching':: d.val(d.T.boolean, 'Disable searching for solutions.', true),
+    /** @brief Disable searching for solutions. */
     disableSolutionSearching: true,
-    '#esModuleInterop':: d.val(d.T.boolean, 'Enable interoperability between CommonJS and ES Modules.', true),
+    /** @brief Enable interoperability between CommonJS and ES Modules. */
     esModuleInterop: true,
-    '#experimentalDecorators':: d.val(d.T.boolean, 'Enable experimental support for decorators.', true),
+    /** @brief Enable experimental support for decorators. */
     experimentalDecorators: true,
-    '#forceConsistentCasingInFileNames':: d.val(d.T.boolean, 'Ensure consistent casing in file names.', true),
+    /** @brief Ensure consistent casing in file names. */
     forceConsistentCasingInFileNames: true,
-    '#isolatedModules':: d.val(d.T.boolean, 'Compile each file as a separate module.', true),
+    /** @brief Compile each file as a separate module. */
     isolatedModules: true,
-    '#lib':: d.val(d.T.array, 'List of library files to be included in the compilation.'),
+    /** @brief List of library files to be included in the compilation. */
     lib: ['dom', 'dom.iterable', 'esnext'],
-    '#module':: d.val(d.T.string, 'Module code generation method.', 'commonjs'),
+    /** @brief Module code generation method. */
     module: 'commonjs',
-    '#moduleResolution':: d.val(d.T.string, 'Module resolution strategy.', 'node'),
+    /** @brief Module resolution strategy. */
     moduleResolution: 'node',
-    '#noErrorTruncation':: d.val(d.T.boolean, 'Disable truncation of error messages.', true),
+    /** @brief Disable truncation of error messages. */
     noErrorTruncation: true,
-    '#noFallthroughCasesInSwitch':: d.val(d.T.boolean, 'Report errors for fallthrough cases in switch statements.', true),
+    /** @brief Report errors for fallthrough cases in switch statements. */
     noFallthroughCasesInSwitch: true,
-    '#noImplicitAny':: d.val(d.T.boolean, 'Raise error on expressions and declarations with an implied "any" type.', true),
+    /** @brief Raise error on expressions and declarations with an implied "any" type. */
     noImplicitAny: true,
-    '#noImplicitReturns':: d.val(d.T.boolean, 'Report error when not all code paths in function return a value.', true),
+    /** @brief Report error when not all code paths in function return a value. */
     noImplicitReturns: true,
-    '#noImplicitThis':: d.val(d.T.boolean, 'Raise error on "this" expressions with an implied "any" type.', true),
+    /** @brief Raise error on "this" expressions with an implied "any" type. */
     noImplicitThis: true,
-    '#outDir':: d.val(d.T.string, 'Directory to output compiled JavaScript files.', './dist/'),
+    /** @brief Directory to output compiled JavaScript files. */
     outDir: './dist/',
-    '#preserveConstEnums':: d.val(d.T.boolean, 'Do not erase const enum declarations in generated code.', true),
+    /** @brief Do not erase const enum declarations in generated code. */
     preserveConstEnums: true,
-    '#pretty':: d.val(d.T.boolean, 'Enable pretty output.', true),
+    /** @brief Enable pretty output. */
     pretty: true,
-    '#resolveJsonModule':: d.val(d.T.boolean, 'Enable importing .json files as modules.', true),
+    /** @brief Enable importing .json files as modules. */
     resolveJsonModule: true,
-    '#skipLibCheck':: d.val(d.T.boolean, 'Skip type checking of declaration files.', true),
+    /** @brief Skip type checking of declaration files. */
     skipLibCheck: true,
-    '#sourceMap':: d.val(d.T.boolean, 'Generate corresponding .map files for debugging.', true),
+    /** @brief Generate corresponding .map files for debugging. */
     sourceMap: true,
-    '#strict':: d.val(d.T.boolean, 'Enable all strict type-checking options.', true),
+    /** @brief Enable all strict type-checking options. */
     strict: true,
-    '#stripInternal':: d.val(d.T.boolean, 'Remove declarations marked as @internal in the generated .d.ts files.', true),
+    /** @brief Remove declarations marked as @internal in the generated .d.ts files. */
     stripInternal: true,
-    '#target':: d.val(d.T.string, 'Specify ECMAScript target version.', 'es6'),
+    /** @brief Specify ECMAScript target version. */
     target: 'es6',
   },
-  '#include':: d.val(d.T.array, 'List of files or directories to include in the compilation.'),
+  /** @brief List of files or directories to include in the compilation. */
   include: ['src'],
 }

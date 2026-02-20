@@ -1,9 +1,17 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+ * @file defaults/cz.libjsonnet
+ * @namespace cz
+ * @brief Default configuration for commitizen.
+ */
 {
-  '#get':: d.fn('Get commitizen configuration.', [
-    d.arg('settings', d.T.object, {}),
-  ]),
+  /**
+   * @brief Get commitizen configuration.
+   * @param settings The project settings.
+   * @returns An object representing the commitizen configuration.
+   * @pt object
+   * @rv object
+   * @sa [Commitizen Configuration Options](https://commitizen-tools.github.io/commitizen/config/configuration_file/#configuration-options)
+   */
   get(settings):: {
     local cpp_files = if settings.project_type == 'c' || settings.project_type == 'c++' then [
       'CMakeLists.txt',

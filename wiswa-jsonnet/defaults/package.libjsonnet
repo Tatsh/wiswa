@@ -1,8 +1,11 @@
-local d = import 'doc-util/main.libsonnet';
+local utils = import 'utils.libjsonnet';
 
+/**
+ * @file package.libjsonnet
+ * @namespace package_json
+ * @brief Default configuration for `package.json` files.
+ */
 {
-  '#':: d.pkg(name='package', url='https://docs.npmjs.com/cli/v11/configuring-npm/package-json', help='', filename=std.thisFile),
-
   local c_cpp_overrides = [{
     files: [
       '.clang-format',
@@ -24,7 +27,7 @@ local d = import 'doc-util/main.libsonnet';
       },
     },
   ],
-  local python_deps = { pyright: '^' + std.native('latestNpmPackageVersion')('pyright') },
+  local python_deps = { pyright: utils.latestNpmPackageVersionCaret('pyright') },
   local python_test_scripts = {
     test: 'poetry run pytest',
     'test:cov': 'yarn test --cov . --cov-branch --cov-report html --cov-report term-missing:skip-covered',
@@ -47,17 +50,17 @@ local d = import 'doc-util/main.libsonnet';
     qa: 'yarn check-spelling && yarn check-formatting',
   },
   typescript_dev_deps(settings):: {
-    '@eslint/js': '^' + std.native('latestNpmPackageVersion')('@eslint/js'),
-    '@types/node': '^' + std.native('latestNpmPackageVersion')('@types/node'),
-    eslint: '^' + std.native('latestNpmPackageVersion')('eslint'),
-    'ts-node': '^' + std.native('latestNpmPackageVersion')('ts-node'),
-    typedoc: '^' + std.native('latestNpmPackageVersion')('typedoc'),
-    'typescript-eslint': '^' + std.native('latestNpmPackageVersion')('typescript-eslint'),
-    typescript: '^' + std.native('latestNpmPackageVersion')('typescript'),
+    '@eslint/js': utils.latestNpmPackageVersionCaret('@eslint/js'),
+    '@types/node': utils.latestNpmPackageVersionCaret('@types/node'),
+    eslint: utils.latestNpmPackageVersionCaret('eslint'),
+    'ts-node': utils.latestNpmPackageVersionCaret('ts-node'),
+    typedoc: utils.latestNpmPackageVersionCaret('typedoc'),
+    'typescript-eslint': utils.latestNpmPackageVersionCaret('typescript-eslint'),
+    typescript: utils.latestNpmPackageVersionCaret('typescript'),
   } + if settings.want_tests then {
-    '@types/jest': '^' + std.native('latestNpmPackageVersion')('@types/jest'),
-    jest: '^' + std.native('latestNpmPackageVersion')('jest'),
-    'ts-jest': '^' + std.native('latestNpmPackageVersion')('ts-jest'),
+    '@types/jest': utils.latestNpmPackageVersionCaret('@types/jest'),
+    jest: utils.latestNpmPackageVersionCaret('jest'),
+    'ts-jest': utils.latestNpmPackageVersionCaret('ts-jest'),
   } else {},
   typescript_scripts(settings):: {
     'check-formatting': "yarn prettier -c . && yarn markdownlint-cli2 '**/*.md' '#node_modules'",
@@ -67,9 +70,13 @@ local d = import 'doc-util/main.libsonnet';
   } + if settings.want_tests then { test: 'jest' } else {},
   local top = self,
 
-  '#get':: d.fn('Get package.json content.', [
-    d.arg('settings', d.T.object),
-  ]),
+  /**
+   * @brief Get the content of `package.json` based on the provided settings.
+   * @param settings The project settings object containing configuration options.
+   * @returns An object representing the content of `package.json`.
+   * @pt object
+   * @rv object
+   */
   get(settings): {
     local man = if settings.want_man then [
       'man/%s.1' % (
@@ -113,13 +120,13 @@ local d = import 'doc-util/main.libsonnet';
     },
     description: settings.description,
     devDependencies: {
-      '@prettier/plugin-xml': '^' + std.native('latestNpmPackageVersion')('@prettier/plugin-xml'),
-      cspell: '^' + std.native('latestNpmPackageVersion')('cspell'),
-      'markdownlint-cli2': '^' + std.native('latestNpmPackageVersion')('markdownlint-cli2'),
-      prettier: '^' + std.native('latestNpmPackageVersion')('prettier'),
-      'prettier-plugin-ini': '^' + std.native('latestNpmPackageVersion')('prettier-plugin-ini'),
-      'prettier-plugin-sort-json': '^' + std.native('latestNpmPackageVersion')('prettier-plugin-sort-json'),
-      'prettier-plugin-toml': '^' + std.native('latestNpmPackageVersion')('prettier-plugin-toml'),
+      '@prettier/plugin-xml': utils.latestNpmPackageVersionCaret('@prettier/plugin-xml'),
+      cspell: utils.latestNpmPackageVersionCaret('cspell'),
+      'markdownlint-cli2': utils.latestNpmPackageVersionCaret('markdownlint-cli2'),
+      prettier: utils.latestNpmPackageVersionCaret('prettier'),
+      'prettier-plugin-ini': utils.latestNpmPackageVersionCaret('prettier-plugin-ini'),
+      'prettier-plugin-sort-json': utils.latestNpmPackageVersionCaret('prettier-plugin-sort-json'),
+      'prettier-plugin-toml': utils.latestNpmPackageVersionCaret('prettier-plugin-toml'),
     } + if settings.project_type == 'python' then python_deps else
       {} + if settings.project_type == 'typescript' then top.typescript_dev_deps(settings) else {},
     files: ['LICENSE.txt', 'README.md'] + man,

@@ -1,8 +1,19 @@
+local utils = import 'utils.libjsonnet';
+
+/**
+ * @file defaults/pre-commit-config/djlint.libjsonnet
+ * @namespace pre_commit_config::djlint
+ * @brief Pre-commit hook configuration for djLint.
+ * @sa [djLint GitHub Repository](https://github.com/djlint/djLint)
+ */
 {
+  /** @brief Add hooks `djlint-reformat-jinja` and `djlint-jinja`. */
   hooks: [
     { id: 'djlint-reformat-jinja' },
     { id: 'djlint-jinja' },
   ],
+  /** @brief Repository. */
   repo: 'https://github.com/djlint/djLint',
-  rev: std.native('githubLatestReleaseTag')('djlint', 'djLint'),
+  /** @brief Revision. */
+  rev: utils.githubLatestReleaseTag('djlint', 'djLint'),
 }

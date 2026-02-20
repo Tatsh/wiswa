@@ -1,10 +1,12 @@
+local utils = import 'utils.libjsonnet';
+
 /**
  * @file defaults/pre-commit-config/clang-format.libjsonnet
  * @namespace pre_commit_config::clang_format
  * @brief clang-format hook configuration for `.pre-commit-config.yaml`.
  */
 {
-  /** @brief Hooks. */
+  /** @brief Add `clang-format` hook. */
   hooks: [
     {
       id: 'clang-format',
@@ -17,5 +19,5 @@
   /** @brief Repository. */
   repo: 'https://github.com/pre-commit/mirrors-clang-format',
   /** @brief Revision. */
-  rev: std.native('githubLatestReleaseTag')('pre-commit', 'mirrors-clang-format'),
+  rev: utils.githubLatestReleaseTag('pre-commit', 'mirrors-clang-format'),
 }

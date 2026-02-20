@@ -24,7 +24,7 @@ local utils = import 'utils.libjsonnet';
    * @brief Yarn version to use.
    * @var string
    */
-  yarn_version: std.native('latestYarnVersion')(),
+  yarn_version: utils.latestYarnVersion(),
   /** @brief License. */
   license: 'MIT',
   /** @brief Version. */
@@ -283,7 +283,7 @@ local utils = import 'utils.libjsonnet';
    *
    * @var int
    */
-  year: std.native('year')(),
+  year: utils.year(),
 
   // Detailed settings
   /** @brief Line width for code formatting. */
@@ -545,7 +545,7 @@ local utils = import 'utils.libjsonnet';
      * Requires a native function `isodate()` to be defined in the Jsonnet environment that returns
      * the current date in ISO 8601 format (YYYY-MM-DD).
      */
-    'date-released': std.native('isodate')(),
+    'date-released': utils.isodate(),
     /**
      * @brief Array of authors.
      * @sa [What is a CITATION.cff file?](https://citation-file-format.github.io/#/what-is-a-citation-cff-file)
@@ -764,7 +764,6 @@ local utils = import 'utils.libjsonnet';
   // package.json only
   /** @brief Configuration for `package.json`. */
   package_json: package.get(self) + {
-    /** @brief Contributors. */
     contributors: ['%s <%s>' % [x.name, x.email] for x in settings.authors],
     homepage: settings.homepage,
     keywords: settings.keywords,

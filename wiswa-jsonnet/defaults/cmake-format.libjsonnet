@@ -1,10 +1,15 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+  * @file defaults/cmake-format.libjsonnet
+  * @namespace cmake_format
+  * @brief Default configuration for CMake format.
+ */
 {
-  '#':: d.pkg(name='cmake-format configuration.', help='', filename=std.thisFile),
-  '#get':: d.fn('Get CMake format configuration.', [
-    d.arg('line_width', d.T.number, 100),
-  ]),
+  /** @brief Get CMake format configuration.
+   * @param line_width Maximum line width for formatted CMake files.
+   * @returns An object representing the CMake format configuration.
+   * @pt int
+   * @rv object
+   */
   get(line_width=100):: {
     format: {
       autosort: true,

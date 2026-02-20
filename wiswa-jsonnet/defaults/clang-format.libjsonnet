@@ -1,11 +1,18 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+  * @file defaults/clang-format.libjsonnet
+  * @namespace clang_format
+  * @brief Default configuration for Clang format.
+  * @sa [clang-format Style Options](https://clang.llvm.org/docs/ClangFormatStyleOptions.html)
+ */
 {
-  '#':: d.pkg(name='Clang format configuration.', help='', filename=std.thisFile),
-  '#get':: d.fn('Get Clang format configuration.', [
-    d.arg('line_width', d.T.number, 100),
-    d.arg('tab_size', d.T.number, 4),
-  ]),
+  /**
+   * @brief Get Clang format configuration.
+   * @param line_width Maximum line width.
+   * @param tab_size Tab size.
+   * @returns An object representing the Clang format configuration.
+   * @pt int, int
+   * @rv object
+   */
   get(line_width=100, tab_size=4):: {
     AccessModifierOffset: -tab_size,
     AlignAfterOpenBracket: 'Align',

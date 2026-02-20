@@ -1,10 +1,8 @@
-local d = import 'doc-util/main.libsonnet';
-
 {
-  '#ignore_patterns':: d.val(
-    d.T.array,
-    'List of glob patterns to ignore in YAPF formatting.',
-  ),
+  /**
+   * @brief List of glob patterns to ignore in YAPF formatting.
+   * @var string[]
+   */
   ignore_patterns: [
     '.venv/**',
     'node_modules/**',

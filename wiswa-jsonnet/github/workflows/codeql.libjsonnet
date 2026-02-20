@@ -14,7 +14,7 @@ function(settings)
         steps: [
           {
             name: 'Checkout repository',
-            uses: 'actions/checkout@' + std.native('githubLatestActionTag')('actions', 'checkout'),
+            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
         ] + (if std.length(settings.github.workflows.codeql.apt_packages) > 0 then [{
                name: 'Install dependencies',
@@ -22,14 +22,14 @@ function(settings)
              }] else []) + [
           {
             name: 'Initialize CodeQL',
-            uses: 'github/codeql-action/init@' + std.native('githubLatestActionTag')('github', 'codeql-action'),
+            uses: 'github/codeql-action/init@' + utils.githubLatestActionTag('github', 'codeql-action'),
             with: {
               languages: '${{ matrix.language }}',
             },
           },
           {
             name: 'Perform CodeQL Analysis',
-            uses: 'github/codeql-action/analyze@' + std.native('githubLatestActionTag')('github', 'codeql-action'),
+            uses: 'github/codeql-action/analyze@' + utils.githubLatestActionTag('github', 'codeql-action'),
             with: {
               category: '/language:${{matrix.language}}',
             },

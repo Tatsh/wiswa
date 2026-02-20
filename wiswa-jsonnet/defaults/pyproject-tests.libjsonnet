@@ -1,15 +1,17 @@
-local d = import 'doc-util/main.libsonnet';
+/**
+ * @file pyproject-tests.libjsonnet
+ * @namespace pyproject_tests
+ * @brief `[tool]` section in `tests/pyproject.toml`.
+ */
 {
-  '#':: d.pkg(name='pyproject-tests', url='', help='', filename=std.thisFile),
-  '#tool':: d.obj('`[tool]` section in `pyproject.toml`.'),
   tool: {
-    '#ruff':: d.obj('`[tool.ruff]` section in `pyproject.toml`.'),
+    /** @brief `[tool.ruff]` section in `pyproject.toml`. */
     ruff: {
-      '#extend':: d.val(d.T.string, 'Extend the top-level `pyproject.toml` with this Ruff configuration.'),
+      /** @brief Extend the top-level `pyproject.toml` with this Ruff configuration. */
       extend: '../pyproject.toml',
-      '#lint':: d.obj('`[tool.ruff.lint]` section in `pyproject.toml`.'),
+      /** @brief `[tool.ruff.lint]` section in `pyproject.toml`. */
       lint: {
-        '#extend-ignore':: d.val(d.T.array, 'Ignore these rules for tests.'),
+        /** @brief Ignore these rules for tests. */
         'extend-ignore': [
           'ARG001',
           'ARG002',
@@ -26,9 +28,9 @@ local d = import 'doc-util/main.libsonnet';
           'S105',
           'S106',
         ],
-        '#pep8-naming':: d.obj('`[tool.ruff.lint.pep8-naming]` section in `pyproject.toml`.'),
+        /** @brief `[tool.ruff.lint.pep8-naming]` section in `pyproject.toml`. */
         'pep8-naming': {
-          '#extend-ignore-names':: d.val(d.T.array, 'Ignore these names for tests.'),
+          /** @brief Ignore these names for tests. */
           'extend-ignore-names': [
             'test_*',
           ],

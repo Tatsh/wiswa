@@ -1,30 +1,35 @@
-local d = import 'doc-util/main.libsonnet';
-
+/**
+ * @file ruff.libjsonnet
+ * @brief Default configuration for Ruff linter and formatter.
+ * @namespace ruff
+ * @sa [Ruff Documentation](https://docs.astral.sh/ruff/configuration/)
+ */
 {
-  '#cache-dir':: d.val(d.T.string, 'Directory to use for Ruff cache.', '~/.cache/ruff'),
+  /** @brief Directory to use for Ruff cache. */
   'cache-dir': '~/.cache/ruff',
-  '#force-exclude':: d.val(d.T.boolean, 'If true, force exclude files even if they are explicitly included.', false),
+  /** @brief If true, force exclude files even if they are explicitly included. */
   'force-exclude': true,
-  '#format':: d.obj('Configuration for code formatting.'),
+  /** @brief Configuration for code formatting. */
   format: {
-    '#docstring-code-format':: d.val(d.T.boolean, 'If true, format code in docstrings.', true),
+    /** @brief If true, format code in docstrings. */
     'docstring-code-format': true,
-    '#line-ending':: d.val(d.T.string, 'Line ending style to use.', 'lf'),
+    /** @brief Line ending style to use. */
     'line-ending': 'lf',
-    '#preview':: d.val(d.T.boolean, 'If true, enable preview features.', true),
+    /** @brief If true, enable preview features. */
     preview: true,
-    '#quote-style':: d.val(d.T.string, 'Quote style to use.', 'single'),
+    /** @brief Quote style to use. */
     'quote-style': 'single',
   },
-  '#line-length':: d.val(d.T.number, 'Maximum allowed line length.', 100),
+  /** @brief Maximum allowed line length. */
   'line-length': 100,
-  '#namespace-packages':: d.val(d.T.array, 'List of namespace packages in the project.', ['docs', 'tests']),
+  /** @brief List of namespace packages in the project. */
   'namespace-packages': ['docs', 'tests'],
-  '#unsafe-fixes':: d.val(d.T.boolean, 'If true, apply fixes that may be unsafe.', true),
+  /** @brief If true, apply fixes that may be unsafe. */
   'unsafe-fixes': true,
-  '#lint':: d.obj('Configuration for Ruff linter.'),
+  /** @brief Configuration for Ruff linter. */
   lint: {
     'extend-select': ['ALL'],
+    /** @brief List of error codes to ignore. */
     ignore: [
       'ANN401',
       'COM812',
@@ -43,6 +48,7 @@ local d = import 'doc-util/main.libsonnet';
       'UP046',
       'UP047',
     ],
+    /** @brief If true, enable preview features. */
     preview: true,
     'flake8-builtins': {
       'allowed-modules': ['types', 'typing'],
@@ -52,13 +58,16 @@ local d = import 'doc-util/main.libsonnet';
       'inline-quotes': 'single',
       'multiline-quotes': 'double',
     },
+    /** @brief Configuration for Ruff's isort implementation. */
     isort: {
+      /** @brief If true, isort will be case-sensitive when sorting imports. */
       'case-sensitive': true,
       'combine-as-imports': true,
       'from-first': true,
       'required-imports': ['from __future__ import annotations'],
       'section-order': ['future', 'standard-library', 'third-party', 'local-folder'],
     },
+    /** @brief Configuration for Ruff's mccabe implementation. */
     mccabe: {
       'max-complexity': 20,
     },

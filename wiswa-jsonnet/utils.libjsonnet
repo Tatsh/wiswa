@@ -120,6 +120,17 @@
       for i in settings.supported_python_versions
     ]),
   /**
+   * @brief Get the latest version of an npm package.
+   *
+   * Requires a native function `latestNpmPackageVersion` to be defined in the Jsonnet environment.
+   *
+   * @param package The npm package name.
+   * @returns The latest version string.
+   * @pt string
+   * @rv string
+   */
+  latestNpmPackageVersion(package):: std.native('latestNpmPackageVersion')(package),
+  /**
    * @brief Get the latest version of an npm package, prefixed with a caret (^).
    *
    * Requires a native function `latestNpmPackageVersion` to be defined in the Jsonnet environment.
@@ -129,7 +140,7 @@
    * @pt string
    * @rv string
    */
-  latestNpmPackageVersionCaret(package):: '^' + std.native('latestNpmPackageVersion')(package),
+  latestNpmPackageVersionCaret(package):: '^' + self.latestNpmPackageVersion(package),
   /**
    * @brief Get the latest version of a PyPI package, prefixed with a caret (^).
    *
@@ -140,7 +151,7 @@
    * @pt string
    * @rv string
    */
-  latestPypiPackageVersionCaret(package):: '^' + std.native('latestPypiPackageVersion')(package),
+  latestPypiPackageVersionCaret(package):: '^' + self.latestPypiPackageVersion(package),
   /**
    * @brief Get the latest version of a PyPI package, prefixed with a tilde (~).
    *
@@ -151,7 +162,7 @@
    * @pt string
    * @rv string
    */
-  latestPypiPackageVersionTilde(package):: '~' + std.native('latestPypiPackageVersion')(package),
+  latestPypiPackageVersionTilde(package):: '~' + self.latestPypiPackageVersion(package),
   /**
    * @brief Get the latest version of a PyPI package.
    *
@@ -187,4 +198,34 @@
    * @rv string
    */
   githubLatestReleaseTag(owner, repo):: std.native('githubLatestReleaseTag')(owner, repo),
+  /**
+   * @brief Get the latest tag for a GitHub repository.
+   *
+   * Requires a native function `githubLatestTag` to be defined in the Jsonnet environment.
+   *
+   * @param owner The repository owner.
+   * @param repo The repository name.
+   * @returns The latest tag (string).
+   * @pt string, string
+   * @rv string
+   */
+  githubLatestTag(owner, repo):: std.native('githubLatestTag')(owner, repo),
+  /**
+   * @brief Get the latest version of Yarn.
+   * @returns The latest Yarn version (string).
+   * @rv string
+   */
+  latestYarnVersion():: std.native('latestYarnVersion')(),
+  /**
+   * @brief Get the current year.
+   * @returns The current year as an integer.
+   * @rv int
+   */
+  year():: std.native('year')(),
+  /**
+   * @brief Get the current date in ISO format.
+   * @returns The current date as a string in ISO format (YYYY-MM-DD).
+   * @rv string
+   */
+  isodate():: std.native('isodate')(),
 }

@@ -4,18 +4,32 @@
  * @brief Default settings for `CMakePresets.json`.
  */
 {
-  /** @brief CMake presets for use with vcpkg. */
+  /**
+   * @brief CMake presets for use with vcpkg.
+   *
+   *
+   * <dl>
+   * <dt>Structure</dt>
+   * <dd>
+   * @code
+   * {
+   *   binaryDir: string;
+   *   cacheVariables: { [key: string]: string; };
+   *   generator: string;
+   *   name: string;
+   * }
+   * @endcode
+   * </dd>
+   * </dt>
+   * </dl>
+   */
   configurePresets: [
     {
-      /** @brief Directory where build files are stored. */
       binaryDir: '${sourceDir}/build',
-      /** @brief CMake cache variables to set. */
       cacheVariables: {
         CMAKE_TOOLCHAIN_FILE: '$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake',
       },
-      /** @brief CMake generator to use. */
       generator: 'Ninja',
-      /** @brief Name of the configure preset. */
       name: 'vcpkg',
     },
   ],

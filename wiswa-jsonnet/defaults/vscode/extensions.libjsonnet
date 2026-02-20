@@ -19,6 +19,18 @@
    * @returns An object with `recommendations` and `unwantedRecommendations` arrays.
    * @pt object
    * @rv object
+   *
+   * <dl>
+   * <dt>Returned Structure</dt>
+   * <dd>
+   * @code
+   * {
+   *   recommendations: string[],
+   *   unwantedRecommendations: string[],
+   * }
+   * @endcode
+   * </dd>
+   * </dl>
    */
   get(settings):: {
     recommendations: std.set([
