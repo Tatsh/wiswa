@@ -33,9 +33,9 @@ local utils = import 'utils.libjsonnet';
     'test:cov': 'yarn test --cov . --cov-branch --cov-report html --cov-report term-missing:skip-covered',
   },
   python_scripts(settings):: {
-    'check-formatting': "yarn prettier -c . && poetry run yapf -prd . && yarn markdownlint-cli2 '**/*.md' '#node_modules'",
+    'check-formatting': 'yarn prettier -c . && poetry run yapf -prd . && yarn markdownlint-cli2',
     'check-spelling': "yarn cspell --no-progress './**/*'  './**/.*'",
-    format: "prettier -w . && poetry run yapf -ri . && yarn markdownlint-cli2 --fix '**/*.md' '#node_modules'",
+    format: 'prettier -w . && poetry run yapf -ri . && yarn markdownlint-cli2 --fix',
     mypy: 'poetry run mypy',
     qa: 'yarn mypy . && yarn ruff . && yarn check-spelling && yarn check-formatting',
     regen: 'poetry run wiswa',
@@ -44,7 +44,7 @@ local utils = import 'utils.libjsonnet';
   } + if settings.want_tests then python_test_scripts else {},
   local c_cpp_scripts = {
     build: 'cmake --preset=default -DBUILD_DOCS=ON && cmake --build build',
-    'check-formatting': "cmake-format --check CMakeLists.txt src/CMakeLists.txt && clang-format -n src/*.cpp src/*.h && prettier -c . && markdownlint-cli2 '**/*.md' '#node_modules'",
+    'check-formatting': 'cmake-format --check CMakeLists.txt src/CMakeLists.txt && clang-format -n src/*.cpp src/*.h && prettier -c . && yarn markdownlint-cli2',
     'check-spelling': 'cspell --no-progress .',
     format: 'cmake-format -i CMakeLists.txt src/CMakeLists.txt && clang-format -i src/*.cpp src/*.h && yarn prettier -w .',
     qa: 'yarn check-spelling && yarn check-formatting',
@@ -63,9 +63,9 @@ local utils = import 'utils.libjsonnet';
     'ts-jest': utils.latestNpmPackageVersionCaret('ts-jest'),
   } else {},
   typescript_scripts(settings):: {
-    'check-formatting': "yarn prettier -c . && yarn markdownlint-cli2 '**/*.md' '#node_modules'",
+    'check-formatting': 'yarn prettier -c . && yarn markdownlint-cli2',
     'check-spelling': "yarn cspell --no-progress './**/*'  './**/.*'",
-    format: "prettier -w . && yarn markdownlint-cli2 --fix '**/*.md' '#node_modules'",
+    format: 'prettier -w . && yarn markdownlint-cli2 --fix',
     qa: 'yarn eslint && yarn check-spelling && yarn check-formatting',
   } + if settings.want_tests then { test: 'jest' } else {},
   local top = self,
@@ -145,6 +145,13 @@ local utils = import 'utils.libjsonnet';
           tables: false,
         },
       },
+      gitignore: true,
+      globs: [
+        '**/*.md',
+        '**/*.mdc',
+      ],
+      noBanner: true,
+      showFound: true,
     },
     prettier: {
       endOfLine: 'lf',

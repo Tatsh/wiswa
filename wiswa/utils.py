@@ -86,12 +86,9 @@ def post_process_steps_python(settings: Settings) -> None:
         pyproject_content['tool']['ruff']['lint']['ignore'] = sorted(
             pyproject_content['tool']['ruff']['lint']['ignore'] + ['Q000', 'Q003'])
         package_json_content['scripts']['check-formatting'] = (
-            "yarn prettier -c . && poetry run ruff format "
-            "--check . && yarn markdownlint-cli2 '**/*.md'"
-            " '#node_modules'")
+            'yarn prettier -c . && poetry run ruff format --check . && yarn markdownlint-cli2')
         package_json_content['scripts']['format'] = (
-            "yarn prettier -w . && poetry run ruff format . "
-            "&& yarn markdownlint-cli2 '**/*.md' '#node_modules'")
+            'yarn prettier -w . && poetry run ruff format . && yarn markdownlint-cli2')
     Path('package.json').write_text(json.dumps(package_json_content, indent=2, sort_keys=True),
                                     encoding='utf-8')
     # tomlkit will strip empty sections.
@@ -616,9 +613,8 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
     _, templates_dir, resolve_template, write_file = _template_env(module_path, settings)
     Path('.github/copilot-instructions.md').unlink(missing_ok=True)
     general_instructions = Path('.github/instructions/general.instructions.md')
-    general_instructions_template = (
-        templates_dir / '.github/instructions/general.instructions.md.j2'
-    )
+    general_instructions_template = (templates_dir /
+                                     '.github/instructions/general.instructions.md.j2')
     if settings['want_copilot']:
         write_file(resolve_template(general_instructions_template), general_instructions)
     else:
