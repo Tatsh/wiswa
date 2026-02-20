@@ -149,6 +149,7 @@ numpydoc
 objc
 onefile
 osslsigncode
+paramdoc
 pascalreitermann
 pathlib
 pavelzw
