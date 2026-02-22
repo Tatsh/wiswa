@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from decimal import Decimal
+from functools import partial
 from typing import TYPE_CHECKING, Any
 import re
 
 from jinja2.ext import Extension
 
-from .queries import get_github_release_latest_tag
+from .utils.versions import get_github_release_latest_tag
 
 if TYPE_CHECKING:
     import jinja2
@@ -69,16 +70,11 @@ class ToPythonExtension(Extension):  # pragma: no cover
         environment.filters['topython'] = topython
 
 
-def _github_latest_action_tag(owner: str, repo: str) -> str:
-    return get_github_release_latest_tag(owner,
-                                         repo,
-                                         actions=True,
-                                         skip_releases=True,
-                                         allow_suffixes=False)
-
-
 class GithubAPIExtension(Extension):  # pragma: no cover
     """Extension for Github API calls."""
     def __init__(self, environment: jinja2.Environment) -> None:
         super().__init__(environment)
-        environment.globals['github_latest_action_tag'] = _github_latest_action_tag
+        environment.globals['github_latest_action_tag'] = partial(get_github_release_latest_tag,
+                                                                  actions=True,
+                                                                  skip_releases=True,
+                                                                  allow_suffixes=False)
