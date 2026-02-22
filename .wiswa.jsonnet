@@ -20,9 +20,11 @@ local utils = import 'utils.libjsonnet';
     tool+: {
       poetry+: {
         dependencies+: {
+          'requests-cache': utils.latestPypiPackageVersionCaret('requests-cache'),
           jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
           jsonnet: utils.latestPypiPackageVersionCaret('jsonnet'),
           keyring: utils.latestPypiPackageVersionCaret('keyring'),
+          lxml: utils.latestPypiPackageVersionCaret('lxml'),
           requests: utils.latestPypiPackageVersionCaret('requests'),
         },
         group+: {

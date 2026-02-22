@@ -121,6 +121,7 @@ luacheck
 luacheckrc
 luacov
 luarocks
+lxml
 mainpage
 makecert
 manylinux
