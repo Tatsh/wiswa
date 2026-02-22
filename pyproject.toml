@@ -27,7 +27,6 @@ email = "audvare@gmail.com"
 name = "Andrew Udvare"
 
 [project.scripts]
-_wiswa-gen-docs = "wiswa.main:gen_docs_main"
 wiswa = "wiswa.main:main"
 
 [project.urls]

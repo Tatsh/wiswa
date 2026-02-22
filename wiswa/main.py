@@ -80,27 +80,3 @@ def main(file: Path,
         post_process_steps(loaded)
         if not skip_github:
             setup_github_project(loaded)
-
-
-@click.command(context_settings={'help_option_names': ('-h', '--help')})
-@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
-@click.option('-J',
-              '--jpath',
-              multiple=True,
-              help=('Add a directory to the Jsonnet search path '
-                    '(only used when evaluating settings).'))
-def gen_docs_main(jpath: tuple[str, ...] = (), *, debug: bool = False) -> None:  # pragma: no cover
-    """Generate Jsonnet documentation."""
-    setup_logging(
-        debug=debug,
-        loggers={
-            'urllib3': {},
-            'wiswa': {}
-        },
-    )
-    with (importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as
-          lib_path, importlib.resources.as_file(importlib.resources.files('wiswa'))):
-        jpathdir = ['/usr/share/jsonnet', *jpath, str(lib_path)]
-        merged_settings, _ = evaluate_merged_settings(jpathdir, lib_path, '{}')
-        evaluate_jsonnet_project(lib_path, jpathdir, merged_settings, lib_path / 'docs.jsonnet',
-                                 Path('docs/jsonnet'))
