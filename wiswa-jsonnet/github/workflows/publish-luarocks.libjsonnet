@@ -1,3 +1,5 @@
+local utils = import 'utils.libjsonnet';
+
 {
   jobs: {
     publish: {

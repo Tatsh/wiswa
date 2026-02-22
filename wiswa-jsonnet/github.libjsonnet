@@ -1,5 +1,5 @@
 local codeql = import 'github/workflows/codeql.libjsonnet';
-local lua_publish = import 'github/workflows/publish-lua.libjsonnet';
+local lua_publish = import 'github/workflows/publish-luarocks.libjsonnet';
 local npm_publish_any = import 'github/workflows/publish-npm-any.libjsonnet';
 local pypi_publish_any = import 'github/workflows/publish-pypi-any.libjsonnet';
 local winget_publish = import 'github/workflows/publish-winget.libjsonnet';
