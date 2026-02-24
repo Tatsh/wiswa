@@ -1,4 +1,10 @@
 local package = import 'defaults/package.libjsonnet';
+local pre_commit_configs = {
+  cff: [import 'defaults/pre-commit-config/cff.libjsonnet'],
+  djlint: [import 'defaults/pre-commit-config/djlint.libjsonnet'],
+  github: [import 'defaults/pre-commit-config/github.libjsonnet'],
+};
+local python_deps = import 'defaults/python-deps.libjsonnet';
 local vscode_settings = import 'defaults/vscode/settings.libjsonnet';
 local utils = import 'utils.libjsonnet';
 
@@ -8,12 +14,17 @@ local utils = import 'utils.libjsonnet';
  * @namespace defaults
  */
 {
-  local deps = (import 'defaults/python-deps.libjsonnet')(
-    self.want_main, self.want_yapf, self.stubs_only, self.project_name, self.want_coveralls
+  local deps = python_deps(
+    self.want_main,
+    self.want_yapf,
+    self.stubs_only,
+    self.project_name,
+    self.want_coveralls,
+    self.want_sqlfluff
   ),
-  local github = if settings.using_github then [import 'defaults/pre-commit-config/github.libjsonnet'] else [],
-  local cff = if settings.want_cff then [import 'defaults/pre-commit-config/cff.libjsonnet'] else [],
-  local djlint = if settings.want_djlint then [import 'defaults/pre-commit-config/djlint.libjsonnet'] else [],
+  local github = if settings.using_github then pre_commit_configs.github else [],
+  local cff = if settings.want_cff then pre_commit_configs.cff else [],
+  local djlint = if settings.want_djlint then pre_commit_configs.djlint else [],
   local local_hooks = import 'defaults/pre-commit-config/local.libjsonnet',
   local rtd = import 'defaults/readthedocs.libjsonnet',
   local settings = self,
@@ -134,6 +145,8 @@ local utils = import 'utils.libjsonnet';
    * @var boolean
    */
   want_coveralls: self.using_github && !self.stubs_only,
+  /** @brief If the project will use SQLFluff. */
+  want_sqlfluff: false,
 
   /**
    * @brief Social media configuration (for badges).
@@ -719,7 +732,7 @@ local utils = import 'utils.libjsonnet';
                 else {}),
         'target-version': 'py3%s' % settings.supported_python_versions[0][2:],
       },
-    },
+    } + (if settings.want_sqlfluff then { sqlfluff: import 'defaults/sqlfluff.libsonnet' } else {}),
   },
   /** @brief Sphinx documentation configuration. */
   docs_conf: (import 'defaults/docs_conf.libjsonnet') + {

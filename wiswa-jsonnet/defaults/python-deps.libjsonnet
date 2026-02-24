@@ -1,6 +1,6 @@
 local utils = import 'utils.libjsonnet';
 
-function(want_main, want_yapf, stubs_only, project_name, want_coveralls) {
+function(want_main, want_yapf, stubs_only, project_name, want_coveralls, want_sqlfluff) {
   local want_main_deps = if want_main then { click: utils.latestPypiPackageVersionCaret('click') } else {},
   local bascom_dep = if want_main && !stubs_only && project_name != 'bascom' then { bascom: utils.latestPypiPackageVersionCaret('bascom') } else {},
   local cz_path_dep = if project_name != 'cz-path' then { 'cz-path': utils.latestPypiPackageVersionCaret('cz-path') } else {},
@@ -12,7 +12,9 @@ function(want_main, want_yapf, stubs_only, project_name, want_coveralls) {
     djlint: utils.latestPypiPackageVersionCaret('djlint'),
     mypy: utils.latestPypiPackageVersionCaret('mypy'),
     ruff: utils.latestPypiPackageVersionCaret('ruff'),
-  } + cz_path_dep + (if want_yapf then { yapf: utils.latestPypiPackageVersionCaret('yapf') } else {}),
+  } + cz_path_dep + (
+    if want_yapf then { yapf: utils.latestPypiPackageVersionCaret('yapf') } else {}
+  ) + (if want_sqlfluff then { sqlfluff: utils.latestPypiPackageVersionCaret('sqlfluff') } else {}),
   docs: {
     'autodoc-pydantic': utils.latestPypiPackageVersionCaret('autodoc-pydantic'),
     doc8: utils.latestPypiPackageVersionCaret('doc8'),
