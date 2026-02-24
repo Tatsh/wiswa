@@ -36,6 +36,7 @@ contrib
 coveragerc
 coverallsapp
 cpack
+ctes
 dataclasses
 datarootdir
 datatable
@@ -156,6 +157,7 @@ prodvers
 pycache
 pydantic
 pydocstyle
+pyformat
 pyinstaller
 pylint
 pypa
@@ -183,6 +185,7 @@ snapcore
 snapcraft
 softprops
 sphinxcontrib
+sqlfluff
 srcs
 startswith
 staticfiles
@@ -192,6 +195,7 @@ tagfile
 tagfiles
 tamasfe
 tatsh
+templater
 testpaths
 timezone
 timonwong

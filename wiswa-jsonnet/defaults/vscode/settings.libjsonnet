@@ -103,7 +103,19 @@
     'shellformat.flag': 'i 2 -ci -sr',
     'sortJSON.excludedFiles': [],
     'sortJSON.excludedPaths': [],
-  } + if settings.project_type == 'c' || settings.project_type == 'c++' then self.cpp_items(settings.c_cpp_tab_size) else {} + if settings.project_type == 'python' then self.python_items(
-    settings.python_tab_size, settings.python_package_index_depth, settings.rst_tab_size, settings.want_tests, settings.want_yapf
-  ) else {} + if settings.want_yapf then { 'yaml.format.printWidth': settings.line_width } else {},
+  } + (
+    if settings.project_type == 'c' || settings.project_type == 'c++' then
+      self.cpp_items(settings.c_cpp_tab_size) else {}
+  ) + (
+    if settings.project_type == 'python' then
+      self.python_items(
+        settings.python_tab_size,
+        settings.python_package_index_depth,
+        settings.rst_tab_size,
+        settings.want_tests,
+        settings.want_yapf
+      ) else {}
+  ) + (
+    if settings.using_gitlab then { 'yaml.customTags': ['!reference sequence'] } else {}
+  ) + { 'yaml.format.printWidth': settings.line_width },
 }
