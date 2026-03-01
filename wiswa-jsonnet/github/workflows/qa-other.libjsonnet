@@ -1,3 +1,4 @@
+local cache_yarn = import 'github/workflows/_cache-yarn.libsonnet';
 local utils = import 'utils.libjsonnet';
 
 function(settings) {
@@ -12,6 +13,7 @@ function(settings) {
              name: 'Install dependencies',
              run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
            }] else []) + [
+        cache_yarn,
         {
           name: 'Install dependencies (Yarn)',
           run: 'yarn',

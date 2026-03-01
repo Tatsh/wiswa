@@ -1,3 +1,4 @@
+local cache_yarn = import 'github/workflows/_cache-yarn.libsonnet';
 local utils = import 'utils.libjsonnet';
 
 function(settings)
@@ -30,6 +31,7 @@ function(settings)
             run: if settings.want_tests then 'poetry install --with=dev,tests'
             else 'poetry install --with=dev',
           },
+          cache_yarn,
           {
             name: 'Install dependencies (Yarn)',
             run: 'yarn',

@@ -1,3 +1,4 @@
+local cache_yarn = import 'github/workflows/_cache-yarn.libsonnet';
 local utils = import 'utils.libjsonnet';
 
 function(settings) {
@@ -24,6 +25,7 @@ function(settings) {
           name: 'Update npm',
           run: 'npm install -g npm@latest',
         },
+        cache_yarn,
         {
           name: 'Install dependencies',
           run: 'yarn',
@@ -34,7 +36,7 @@ function(settings) {
         },
         {
           name: 'Publish to NPM',
-          run: 'yarn npm publish --access public --provenance',
+          run: 'yarn npm publish',
         },
       ],
     },
