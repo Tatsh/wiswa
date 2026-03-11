@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
 import importlib.resources
 import logging
 import os
+import re
 
 from bascom import setup_logging
 import click
@@ -21,9 +23,34 @@ from .utils import (
     write_templated_files,
 )
 
+if TYPE_CHECKING:
+    from .typing import Settings
+
 __all__ = ('main',)
 
 log = logging.getLogger(__name__)
+_DEP_NAME_RE = re.compile(r'^([A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?)')
+
+
+def _has_legacy_poetry_deps(settings: Settings) -> bool:
+    if settings.get('package_manager') != 'uv':
+        return False
+    python_deps = cast('dict[str, Any]', settings.get('python_deps', {}))
+    pyproject = settings.get('pyproject', {})
+    project = pyproject.get('project', {})
+    dep_groups = cast('dict[str, Any]', pyproject.get('dependency-groups', {}))
+    for group_name, resolved_deps in (
+        ('main', list(project.get('dependencies', ()))),
+            *((name, list(dep_groups.get(name, ()))) for name in ('dev', 'docs', 'tests')),
+    ):
+        canonical = set(python_deps.get(group_name, {}))
+        if not canonical:
+            continue
+        for dep in resolved_deps:
+            m = _DEP_NAME_RE.match(dep)
+            if m and m.group(1) not in canonical:
+                return True
+    return False
 
 
 @click.command(context_settings={'help_option_names': ('-h', '--help')})
@@ -68,6 +95,9 @@ def main(file: Path,
                                                            lib_path,
                                                            file.read_text(encoding='utf-8'),
                                                            user_defaults=user_defaults)
+        if _has_legacy_poetry_deps(loaded):
+            log.warning('pyproject.tool.poetry.*.dependencies is deprecated. '
+                        'Move dependencies to python_deps.main/dev/docs/tests in .wiswa.jsonnet.')
         if not skip_jsonnet:
             evaluate_jsonnet_project(lib_path, jpathdir, merged_settings)
         if not skip_templates:

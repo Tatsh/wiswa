@@ -1,6 +1,7 @@
 local utils = import 'utils.libjsonnet';
 
 function(settings)
+  local is_uv = settings.package_manager == 'uv';
   {
     jobs: {
       test: {
@@ -12,11 +13,13 @@ function(settings)
           {
             uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
-          {
-            name: 'Install Poetry',
-            run: 'pipx install poetry',
-          },
-        ] + (if std.length(settings.github.workflows.tests.apt_packages) > 0 then [{
+        ] + (if is_uv then [{
+               name: 'Install uv',
+               uses: 'astral-sh/setup-uv@' + utils.githubLatestActionTag('astral-sh', 'setup-uv'),
+             }] else [{
+               name: 'Install Poetry',
+               run: 'pipx install poetry',
+             }]) + (if std.length(settings.github.workflows.tests.apt_packages) > 0 then [{
                name: 'Install dependencies',
                run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.tests.apt_packages),
              }] else []) + [
@@ -24,17 +27,17 @@ function(settings)
             name: 'Set up Python ${{ matrix.python-version }}',
             uses: 'actions/setup-python@' + utils.githubLatestActionTag('actions', 'setup-python'),
             with: {
-              cache: 'poetry',
               'python-version': '${{ matrix.python-version }}',
-            },
+            } + if !is_uv then { cache: 'poetry' } else {},
           },
           {
-            name: 'Install dependencies (Poetry)',
-            run: 'poetry install --with=tests',
+            name: if is_uv then 'Install dependencies (uv)' else 'Install dependencies (Poetry)',
+            run: if is_uv then 'uv sync --group tests' else 'poetry install --with=tests',
           },
           {
             name: 'Install pytest-action dependencies',
-            run: 'poetry run pip install pytest-md pytest-emoji',
+            run: if is_uv then 'uv pip install pytest-md pytest-emoji'
+                 else 'poetry run pip install pytest-md pytest-emoji',
           },
           {
             name: 'Install dependencies (Yarn)',

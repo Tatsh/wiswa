@@ -1,6 +1,6 @@
 # How to contribute to {{ settings.project_name }}
 
-Thank you for your interest in contributing to {{ settings.project_name }}! Please follow these guidelines to help maintain code quality and consistency.
+{{ ('Thank you for your interest in contributing to %s! Please follow these guidelines to help maintain code quality and consistency.' % settings.project_name) | wordwrap(100) }}
 
 ## General Guidelines
 
@@ -13,18 +13,27 @@ Thank you for your interest in contributing to {{ settings.project_name }}! Plea
 - Contributors are listed in `package.json`.
 {% endif %}
 - Update relevant fields in `.wiswa.jsonnet` such as authors, dependencies, etc.
-- All contributed code must have a license compatible with the project's license ({{ settings.license }}).
+{{ ("- All contributed code must have a license compatible with the project's license (%s)." % settings.license) | wordwrap(100) }}
 - Add missing words to `.vscode/dictionary.txt` as necessary (sorted and lower-cased).
 
 ## Development Environment
 
 {% if settings.project_type == 'python' %}
+  {% if settings.package_manager == 'uv' %}
+- Use [uv](https://docs.astral.sh/uv/) to manage Python dependencies:
+  - Install dependencies: `uv sync`
+  - Add a dependency: `uv add <package>`
+  - Add a dev dependency: `uv add --group dev <package>`
+  - Add a test dependency: `uv add --group tests <package>`
+  - Add a docs dependency (rarely needed): `uv add --group docs <package>`
+  {% else %}
 - Use [Poetry](https://python-poetry.org/) to manage Python dependencies:
   - Install dependencies: `poetry install`
   - Add a dependency: `poetry add <package>`
   - Add a dev dependency: `poetry add --group dev <package>`
   - Add a test dependency: `poetry add --group tests <package>`
   - Add a docs dependency (rarely needed): `poetry add --group docs <package>`
+  {% endif %}
 {% elif settings.project_type == 'c++' or settings.project_type == 'c' %}
 - Use [vcpkg](https://vcpkg.io/) to manage C/C++ dependencies:
   - Install dependencies: `vcpkg install`
@@ -72,8 +81,8 @@ The above all need to pass for any code changes to be accepted.
 - Prefer latest Python features (3.10+).
 - For subprocess, avoid `shell=True` and `check=False`.
 - Alias subprocess as `import subprocess as sp`.
-- Add public facing API elements to `__all__`. Prefer not to use underscore-prefix except in 'private'
-  method names. Do not create class attributes that invoke name mangling.
+- Add public facing API elements to `__all__`. Prefer not to use underscore-prefix except in
+  'private' method names. Do not create class attributes that invoke name mangling.
 - See [Python instructions] for full details.
 
 ## Python Tests Guidelines
@@ -136,9 +145,13 @@ locally or allowing Dependabot to do them.
    commits.
 4. Submit a pull request with a clear description of your changes.
 
+{% if settings.project_type == 'c++' %}
 [C++ instructions]: .github/instructions/cpp.instructions.md
+{% endif %}
 [Markdown instructions]: .github/instructions/markdown.instructions.md
+{% if settings.project_type == 'python' %}
 [Python instructions]: .github/instructions/python.instructions.md
 [Python tests instructions]: .github/instructions/python-tests.instructions.md
+{% endif %}
 [JSON/YAML guidelines]: .github/instructions/json-yaml.instructions.md
 [TOML/INI guidelines]: .github/instructions/toml-ini.instructions.md

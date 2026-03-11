@@ -9,7 +9,7 @@
   /** @brief Enables experimental features in Pyright that are not yet stabilised. */
   enableExperimentalFeatures: true,
   /** @brief Excludes specified paths from type checking and analysis. */
-  exclude: ['**/.*', '**/__pycache__', '**/node_modules'],
+  exclude: ['.venv', '**/node_modules', '**/__pycache__', '**/.*'],
   /** @brief Specifies the target platform for platform-specific type analysis. */
   pythonPlatform: 'Linux',
   /** @brief Reports calls in default initializer expressions as warnings, since they are evaluated once at function definition time. */

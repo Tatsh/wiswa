@@ -2,6 +2,7 @@ local cache_yarn = import 'github/workflows/_cache-yarn.libsonnet';
 local utils = import 'utils.libjsonnet';
 
 function(settings)
+  local is_uv = settings.package_manager == 'uv';
   {
     jobs: {
       qa: {
@@ -10,11 +11,13 @@ function(settings)
           {
             uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
-          {
-            name: 'Install Poetry',
-            run: 'pipx install poetry',
-          },
-        ] + (if std.length(settings.github.workflows.qa.apt_packages) > 0 then [{
+        ] + (if is_uv then [{
+               name: 'Install uv',
+               uses: 'astral-sh/setup-uv@' + utils.githubLatestActionTag('astral-sh', 'setup-uv'),
+             }] else [{
+               name: 'Install Poetry',
+               run: 'pipx install poetry',
+             }]) + (if std.length(settings.github.workflows.qa.apt_packages) > 0 then [{
                name: 'Install dependencies',
                run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
              }] else []) + [
@@ -22,14 +25,15 @@ function(settings)
             name: 'Set up Python ${{ matrix.python-version }}',
             uses: 'actions/setup-python@' + utils.githubLatestActionTag('actions', 'setup-python'),
             with: {
-              cache: 'poetry',
               'python-version': '${{ matrix.python-version }}',
-            },
+            } + if !is_uv then { cache: 'poetry' } else {},
           },
           {
-            name: 'Install dependencies (Poetry)',
-            run: if settings.want_tests then 'poetry install --with=dev,tests'
-            else 'poetry install --with=dev',
+            name: if is_uv then 'Install dependencies (uv)' else 'Install dependencies (Poetry)',
+            run: if is_uv then (if settings.want_tests then 'uv sync --group dev --group tests'
+                                else 'uv sync --group dev')
+                 else (if settings.want_tests then 'poetry install --with=dev,tests'
+                       else 'poetry install --with=dev'),
           },
           cache_yarn,
           {

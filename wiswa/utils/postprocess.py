@@ -29,6 +29,9 @@ def _subprocess_log_run(*args: Any, **kwargs: Any) -> sp.CompletedProcess[Any]:
 
 
 def _post_process_steps_python(settings: Settings) -> None:
+    is_uv = settings['package_manager'] == 'uv'
+    if is_uv:
+        Path('poetry.lock').unlink(missing_ok=True)
     if not settings['want_tests']:
         rmtree('tests', ignore_errors=True)
         Path('.github/workflows/tests.yml').unlink(missing_ok=True)
@@ -40,7 +43,10 @@ def _post_process_steps_python(settings: Settings) -> None:
     if not settings['want_docs']:
         rmtree('docs', ignore_errors=True)
         Path('.readthedocs.yaml').unlink(missing_ok=True)
-        del pyproject_content['tool']['poetry']['group']['docs']
+        if is_uv:
+            pyproject_content.get('dependency-groups', {}).pop('docs', None)
+        else:
+            del pyproject_content['tool']['poetry']['group']['docs']
     if not settings['want_codeql']:
         Path('.github/workflows/codeql.yml').unlink(missing_ok=True)
     if settings['want_man']:
@@ -56,9 +62,13 @@ def _post_process_steps_python(settings: Settings) -> None:
                 {*pyproject_content['tool']['commitizen']['version_files'], f'man/{module}.1'})
     if not settings['want_tests']:
         del pyproject_content['tool']['coverage']
-        del pyproject_content['tool']['poetry']['group']['tests']
+        if is_uv:
+            pyproject_content.get('dependency-groups', {}).pop('tests', None)
+        else:
+            del pyproject_content['tool']['poetry']['group']['tests']
         del pyproject_content['tool']['pytest']
         rmtree('tests', ignore_errors=True)
+    run_cmd = 'uv run' if is_uv else 'poetry run'
     package_json_content = json.loads(Path('package.json').read_text(encoding='utf-8'))
     if not settings['want_yapf']:
         del pyproject_content['tool']['yapf']
@@ -66,19 +76,28 @@ def _post_process_steps_python(settings: Settings) -> None:
         pyproject_content['tool']['ruff']['lint']['ignore'] = sorted(
             pyproject_content['tool']['ruff']['lint']['ignore'] + ['Q000', 'Q003'])
         package_json_content['scripts']['check-formatting'] = (
-            'yarn prettier -c . && poetry run ruff format --check . && yarn markdownlint-cli2')
+            f'yarn prettier -c . && {run_cmd} ruff format --check . && yarn markdownlint-cli2')
         package_json_content['scripts']['format'] = (
-            'yarn prettier -w . && poetry run ruff format . && yarn markdownlint-cli2')
+            f'yarn prettier -w . && {run_cmd} ruff format . && yarn markdownlint-cli2')
     Path('package.json').write_text(json.dumps(package_json_content, indent=2, sort_keys=True),
                                     encoding='utf-8')
-    # tomlkit will strip empty sections.
     Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8')
-    _subprocess_log_run(('poetry', 'lock'))
-    with_arg = ','.join(x for x in ('docs' if settings['want_docs'] else '',
-                                    'tests' if settings['want_tests'] else '', 'dev') if x)
-    _subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg else ())))
-    _subprocess_log_run(('poetry', 'install', '--all-groups', '--all-extras'))
-    _subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
+    if is_uv:
+        _subprocess_log_run(('uv', 'lock'))
+        groups = [
+            g for g in ('docs' if settings['want_docs'] else '',
+                        'tests' if settings['want_tests'] else '', 'dev') if g
+        ]
+        group_args = tuple(f'--group={g}' for g in groups)
+        _subprocess_log_run(('uv', 'sync', *group_args))
+        _subprocess_log_run(('uv', 'run', 'ruff', 'check', '--fix'), check=False)
+    else:
+        _subprocess_log_run(('poetry', 'lock'))
+        with_arg = ','.join(x for x in ('docs' if settings['want_docs'] else '',
+                                        'tests' if settings['want_tests'] else '', 'dev') if x)
+        _subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg else ())))
+        _subprocess_log_run(('poetry', 'install', '--all-groups', '--all-extras'))
+        _subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
 
 
 @cache
@@ -149,6 +168,17 @@ def _docs_badges(settings: Settings) -> Iterator[str]:
                f'(https://{gh}.github.io/{name}/)')
 
 
+def _get_main_dependency_names(settings: Settings) -> set[str]:
+    """Get the set of main dependency package names regardless of package manager."""
+    names = set(settings['python_deps']['main'])
+    if settings['package_manager'] == 'uv':
+        names |= {
+            dep.split('>')[0].split('<')[0].split('=')[0].split('!')[0].split('[')[0].strip()
+            for dep in settings['pyproject']['project'].get('dependencies', ())
+        }
+    return names
+
+
 def _python_tool_badges(settings: Settings) -> Iterator[str]:
     if settings['project_type'] != 'python':
         return
@@ -158,13 +188,18 @@ def _python_tool_badges(settings: Settings) -> Iterator[str]:
     yield '[![mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)'
     yield _simple_icons_badge('pre-commit', 'pre-commit', 'pre--commit-enabled', 'brightgreen',
                               'https://pre-commit.com/')
-    yield _simple_icons_badge('Poetry', 'poetry', 'Poetry', '242d3e', 'https://python-poetry.org')
+    if settings['package_manager'] == 'uv':
+        yield _simple_icons_badge('uv', 'astral', 'uv', '261230', 'https://docs.astral.sh/uv/')
+    else:
+        yield _simple_icons_badge('Poetry', 'poetry', 'Poetry', '242d3e',
+                                  'https://python-poetry.org')
+    dep_names = _get_main_dependency_names(settings)
     name_mapping = {'jinja': 'Jinja', 'pydantic': 'Pydantic', 'sqlalchemy': 'SQLAlchemy'}
     yield from (_simple_icons_badge(name_mapping.get(package, package), package,
                                     name_mapping.get(package, package), 'black',
                                     f'https://pypi.org/project/{package}/')
                 for package in ('numpy', 'jinja', 'pandas', 'pydantic', 'scrapy', 'sqlalchemy')
-                if package in settings['pyproject']['tool']['poetry']['dependencies'])
+                if package in dep_names)
     if not settings['stubs_only'] and settings['want_tests']:
         yield _simple_icons_badge('pydocstyle', 'pydocstyle', 'pydocstyle-enabled', 'AD4CD3',
                                   'https://www.pydocstyle.org/')

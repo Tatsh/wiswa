@@ -48,7 +48,7 @@ EOF
     fi
     cp generic.svg "recipe/${script_name}.svg"
     echo "Building executable for '${script_name}'..."
-    poetry run python -m python_appimage -v build app -l "manylinux2014_${{ '{{' }} matrix.system.arch }}" -p {{ settings.appimage.python_version }} recipe
+    {{ 'uv run' if settings.package_manager == 'uv' else 'poetry run' }} python -m python_appimage -v build app -l "manylinux2014_${{ '{{' }} matrix.system.arch }}" -p {{ settings.appimage.python_version }} recipe
     {% if settings.has_multiple_entry_points %}
     mv "${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage" "dist/${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage"
     {% else %}

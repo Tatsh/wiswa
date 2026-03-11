@@ -45,7 +45,7 @@ EOF
         cat version-info.txt
     fi
     echo "Building executable for '${script_name}'..."
-    poetry run -- pyinstaller --log-level ERROR --onefile -n "${script_name}" --optimize 1 \
+    {{ 'uv run' if settings.package_manager == 'uv' else 'poetry run --' }} pyinstaller --log-level ERROR --onefile -n "${script_name}" --optimize 1 \
       --hidden-import colorlog -y --version-file version-info.txt \
 {% if settings.pyinstaller.extra_args %}
       {{ settings.pyinstaller.extra_args | join(" ") }} \

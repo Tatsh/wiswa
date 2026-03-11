@@ -58,16 +58,11 @@
     pytest: import 'defaults/pytest.libjsonnet',
     /** Configuration for Ruff. */
     ruff: import 'defaults/ruff.libjsonnet',
+    /** Configuration for uv. */
+    uv: import 'defaults/uv.libjsonnet',
     /** Configuration for YAPF. */
     yapf: import 'defaults/yapf.libjsonnet',
     /** Configuration for YAPF ignore patterns. */
     yapfignore: import 'defaults/yapfignore.libjsonnet',
-  },
-  /** Build system requirements and backend for the project. */
-  'build-system': {
-    /** List of packages required to build the project, such as "poetry-core". */
-    requires: ['poetry-core'],
-    /** Build backend to use, such as "poetry.core.masonry.api". */
-    'build-backend': 'poetry.core.masonry.api',
   },
 }

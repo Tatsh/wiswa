@@ -56,18 +56,13 @@
 ## Installation
 
 {% if settings.project_type == 'python' %}
-### Poetry
-
-```shell
-poetry add {{ settings.directory_name }}
-```
-
-### Pip
-
 ```shell
 pip install {{ settings.directory_name }}
 ```
-    {% if settings.want_main %}
+{% else %}
+Not yet written.
+{% endif %}
+{% if settings.want_main %}
 ## Usage
 
 Add `-d` to show debug logs.
@@ -75,7 +70,4 @@ Add `-d` to show debug logs.
 ```shell
 {{ settings.directory_name }}
 ```
-    {% endif %}
-{% else %}
-Not yet written.
 {% endif %}

@@ -6,18 +6,35 @@ jobs:
     runs-on: ${{ '{{' }} matrix.os }}
     steps:
       - uses: 'actions/checkout@{{ github_latest_action_tag('actions', 'checkout') }}'
+{% if settings.package_manager == 'uv' %}
+      - name: 'Install yq'
+        run: 'pipx install yq'
+      - name: 'Install uv'
+        uses: 'astral-sh/setup-uv@{{ github_latest_action_tag('astral-sh', 'setup-uv') }}'
+{% else %}
       - name: 'Install Poetry'
         run: 'pipx install poetry yq'
+{% endif %}
       - name: 'Set up Python'
         uses: 'actions/setup-python@{{ github_latest_action_tag('actions', 'setup-python') }}'
         with:
+{% if settings.package_manager != 'uv' %}
           cache: 'poetry'
+{% endif %}
           python-version: '3.13'
+{% if settings.package_manager == 'uv' %}
+      - name: 'Install dependencies (uv)'
+        run: |
+          uv sync
+          uv pip install pyinstaller
+        shell: 'bash'
+{% else %}
       - name: 'Install dependencies (Poetry)'
         run: |
           poetry install
           poetry run -- pip install pyinstaller
         shell: 'bash'
+{% endif %}
       - name: 'Build with PyInstaller'
         run: |
           {{ build(settings) | indent(10) | trim }}

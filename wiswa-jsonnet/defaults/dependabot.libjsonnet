@@ -5,9 +5,9 @@
  */
 {
   local interval = 'weekly',
-  local python_settings = [{
+  local python_settings(settings) = [{
     directory: '/',
-    'package-ecosystem': 'pip',
+    'package-ecosystem': if settings.package_manager == 'uv' then 'uv' else 'pip',
     schedule: {
       interval: interval,
     },
@@ -36,7 +36,7 @@
           interval: interval,
         },
       },
-    ] + if settings.project_type == 'python' then python_settings else [],
+    ] + if settings.project_type == 'python' then python_settings(settings) else [],
     version: 2,
   },
 }

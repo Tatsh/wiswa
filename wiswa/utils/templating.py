@@ -123,6 +123,17 @@ def _write_templated_files_typescript(settings: Settings, templates_dir: Path,
                overwrite=True)
 
 
+def _should_overwrite_contributing(settings: Settings) -> bool:
+    """Return whether CONTRIBUTING.md should be overwritten due to a package manager switch."""
+    contributing = Path('CONTRIBUTING.md')
+    if not contributing.exists():
+        return False
+    content = contributing.read_text(encoding='utf-8')
+    if settings['package_manager'] == 'uv' and 'poetry' in content.lower():
+        return True
+    return bool(settings['package_manager'] == 'poetry' and 'uv sync' in content)
+
+
 def write_templated_files(module_path: Path, settings: Settings) -> None:
     """Write templated files."""
     _, templates_dir, resolve_template, write_file = _template_env(module_path, settings)
@@ -139,7 +150,8 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
                 and general_instructions.read_text(encoding='utf-8') == expected):
             general_instructions.unlink()
             log.debug('Removed `%s` (matched would-be content).', general_instructions)
-    common_templates = (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', False),
+    contributing_overwrite = _should_overwrite_contributing(settings)
+    common_templates = (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', contributing_overwrite),
                         ('LICENSE.txt.j2', not settings['private']), ('SECURITY.md.j2', True),
                         ('CHANGELOG.md.j2', False), ('README.md.j2', False))
     for template_name, overwrite in common_templates:

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypedDict
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
+PackageManager = Literal['poetry', 'uv']
 ProjectType = Literal['c', 'c++', 'generic', 'lua', 'python', 'typescript', 'xcode']
 
 
@@ -78,6 +79,8 @@ class PyProjectProject(TypedDict, total=False):
     """A list of authors of the project."""
     classifiers: Iterable[str]
     """A list of classifiers for the project."""
+    dependencies: Sequence[str]
+    """A list of PEP 508 dependency strings (used with uv)."""
     description: str
     """A short description of the project."""
     license: str
@@ -88,12 +91,36 @@ class PyProjectProject(TypedDict, total=False):
     """The version of the project."""
 
 
-class PyProject(TypedDict):
+class PyProjectBuildSystem(TypedDict, total=False):
+    """``[build-system]`` section of pyproject.toml."""
+    requires: Sequence[str]
+    """Build system requirements."""
+    build_backend: str
+    """Build backend to use."""
+
+
+class PyProject(TypedDict, total=False):
     """Parsed ``pyproject.toml``."""
+    build_system: PyProjectBuildSystem
+    """Build system section of pyproject.toml."""
+    dependency_groups: Mapping[str, Sequence[str]]
+    """Dependency groups (used with uv)."""
     project: PyProjectProject
     """Project section of pyproject.toml."""
     tool: PyProjectTool
     """Tool section of pyproject.toml."""
+
+
+class PythonDeps(TypedDict, total=False):
+    """Python dependency groups in Poetry-style syntax."""
+    main: Mapping[str, Any]
+    """Main project dependencies."""
+    dev: Mapping[str, Any]
+    """Development dependencies."""
+    docs: Mapping[str, Any]
+    """Documentation dependencies."""
+    tests: Mapping[str, Any]
+    """Test dependencies."""
 
 
 class SettingsGitHub(TypedDict):
@@ -180,6 +207,8 @@ class Settings(TypedDict):
     """The type of the project."""
     pypi_project_name: str
     """The name of the project on PyPI."""
+    python_deps: PythonDeps
+    """Python dependencies in Poetry-style syntax."""
     pyproject: PyProject
     """Parsed ``pyproject.toml``."""
     repository_uri: str
@@ -215,6 +244,8 @@ class Settings(TypedDict):
     """If the project will have a script entry point."""
     want_man: bool
     """If the project will have manual pages."""
+    package_manager: PackageManager
+    """The Python package manager to use ('poetry' or 'uv')."""
     want_tests: bool
     """If the project will have tests."""
     want_yapf: bool

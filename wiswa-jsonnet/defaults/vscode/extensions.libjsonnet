@@ -4,14 +4,13 @@
  * @brief Generate extension recommendations for `extensions.json`.
  */
 {
-  local python_recommendations = [
+  local python_recommendations(settings) = [
     'charliermarsh.ruff',
-    'donjayamanne.python-environment-manager',  // Yes it is deprecated but it works.
+    'donjayamanne.python-environment-manager',
     'ms-python.mypy-type-checker',
     'ms-python.vscode-pylance',
     'samuelcolvin.jinjahtml',
-    'zeshuaro.vscode-python-poetry',
-  ],
+  ] + if settings.package_manager == 'uv' then [] else ['zeshuaro.vscode-python-poetry'],
   local python_unwanted_recommendations = ['ms-python.vscode-python-envs'],
   /**
    * Get the extension recommendations based on the project settings.
@@ -71,7 +70,8 @@
       'visualstudioexptteam.vscodeintellicode',
       'zainchen.json',
       'zengxingxin.sort-js-object-keys',
-    ] + (if settings.project_type == 'python' then python_recommendations else []) + (if settings.project_type == 'python' && settings.want_yapf then ['eeyore.yapf'] else [])),
+    ] + (if settings.project_type == 'python' then python_recommendations(settings)
+         else []) + (if settings.project_type == 'python' && settings.want_yapf then ['eeyore.yapf'] else [])),
     unwantedRecommendations: if settings.project_type == 'python' then python_unwanted_recommendations else [],
   },
 }

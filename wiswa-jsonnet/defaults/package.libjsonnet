@@ -28,20 +28,23 @@ local utils = import 'utils.libjsonnet';
     },
   ],
   local python_deps = { pyright: utils.latestNpmPackageVersionCaret('pyright') },
-  local python_test_scripts = {
-    test: 'poetry run pytest',
+  local python_test_scripts(run_cmd) = {
+    test: '%s pytest' % run_cmd,
     'test:cov': 'yarn test --cov . --cov-branch --cov-report html --cov-report term-missing:skip-covered',
   },
-  python_scripts(settings):: {
-    'check-formatting': 'yarn prettier -c . && poetry run yapf -prd . && yarn markdownlint-cli2',
+  local python_scripts(settings) = {
+    local run_cmd = if settings.package_manager == 'uv' then 'uv run' else 'poetry run',
+    'check-formatting': 'yarn prettier -c . && %s yapf -prd . && yarn markdownlint-cli2' % run_cmd,
     'check-spelling': "yarn cspell --no-progress './**/*'  './**/.*'",
-    format: 'prettier -w . && poetry run yapf -ri . && yarn markdownlint-cli2 --fix',
-    mypy: 'poetry run mypy',
+    format: 'prettier -w . && %s yapf -ri . && yarn markdownlint-cli2 --fix' % run_cmd,
+    mypy: '%s mypy' % run_cmd,
     qa: 'yarn mypy . && yarn ruff . && yarn check-spelling && yarn check-formatting',
-    regen: 'poetry run wiswa',
-    ruff: 'poetry run ruff check',
-    'ruff:fix': 'poetry run ruff check --fix',
-  } + if settings.want_tests then python_test_scripts else {},
+    regen: '%s wiswa' % run_cmd,
+    ruff: '%s ruff check' % run_cmd,
+    'ruff:fix': '%s ruff check --fix' % run_cmd,
+  } + if settings.want_tests then python_test_scripts(
+    if settings.package_manager == 'uv' then 'uv run' else 'poetry run'
+  ) else {},
   local c_cpp_scripts = {
     build: 'cmake --preset=default -DBUILD_DOCS=ON && cmake --build build',
     'check-formatting': 'clang-format -n src/*.cpp src/*.h && prettier -c . && yarn markdownlint-cli2',
@@ -164,6 +167,15 @@ local utils = import 'utils.libjsonnet';
             parser: 'json',
           },
         },
+        {
+          files: [
+            '*.md',
+            '*.mdc',
+          ],
+          options: {
+            parser: 'markdown',
+          },
+        },
       ] + prettier_c_cpp + prettier_cpp,
       plugins: [
         '@prettier/plugin-xml',
@@ -175,7 +187,7 @@ local utils = import 'utils.libjsonnet';
       printWidth: settings.line_width,
       singleQuote: true,
     },
-    scripts: if settings.project_type == 'python' then top.python_scripts(settings)
+    scripts: if settings.project_type == 'python' then python_scripts(settings)
     else if settings.project_type == 'c++' || settings.project_type == 'c' then c_cpp_scripts
     else if settings.project_type == 'typescript' then top.typescript_scripts(settings)
     else {},

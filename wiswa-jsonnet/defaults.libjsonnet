@@ -14,14 +14,15 @@ local utils = import 'utils.libjsonnet';
  * @namespace defaults
  */
 {
-  local deps = python_deps(
+  local default_deps = python_deps(
     self.want_main,
     self.want_yapf,
     self.stubs_only,
     self.project_name,
     self.want_coveralls,
-    self.want_sqlfluff
+    self.want_sqlfluff,
   ),
+  local is_uv = self.package_manager == 'uv',
   local github = if settings.using_github then pre_commit_configs.github else [],
   local cff = if settings.want_cff then pre_commit_configs.cff else [],
   local djlint = if settings.want_djlint then pre_commit_configs.djlint else [],
@@ -29,6 +30,8 @@ local utils = import 'utils.libjsonnet';
   local rtd = import 'defaults/readthedocs.libjsonnet',
   local settings = self,
 
+  /** @brief Package manager. Valid values: poetry, uv. */
+  package_manager: 'poetry',
   /** @brief Project type. Valid values: python, typescript, xcode, c, c++, generic. */
   project_type: 'python',
   /**
@@ -213,12 +216,12 @@ local utils = import 'utils.libjsonnet';
    * @brief If the project uses Django.
    * @var boolean
    */
-  using_django: 'django' in self.pyproject.tool.poetry.dependencies,
+  using_django: 'django' in self.python_deps.main,
   /**
    * @brief If the project uses Django REST Framework.
    * @var boolean
    */
-  using_drf: 'djangorestframework' in self.pyproject.tool.poetry.dependencies,
+  using_drf: 'djangorestframework' in self.python_deps.main,
   /**
    * @brief If the project is hosted on GitHub.
    * @var boolean
@@ -402,12 +405,13 @@ local utils = import 'utils.libjsonnet';
     local yapf_precommit = if settings.want_yapf then
       [import 'defaults/pre-commit-config/yapf.libjsonnet']
     else [],
-    local poetry_plugin_export = if settings.project_type == 'python' && settings.saves_requirements_txt then
+    local poetry_plugin_export = if settings.project_type == 'python' && settings.saves_requirements_txt && !is_uv then
       [(import 'defaults/pre-commit-config/poetry-plugin-export.libjsonnet').get(settings)]
     else [],
-    local precommit_python_repos = if settings.project_type == 'python' then [
-      import 'defaults/pre-commit-config/poetry.libjsonnet',
-    ] + poetry_plugin_export + yapf_precommit + djlint else [],
+    local pkg_mgr_hooks = if is_uv then [import 'defaults/pre-commit-config/uv.libjsonnet']
+                           else [import 'defaults/pre-commit-config/poetry.libjsonnet'],
+    local precommit_python_repos = if settings.project_type == 'python' then
+      pkg_mgr_hooks + poetry_plugin_export + yapf_precommit + djlint else [],
     local precommit_c_cpp_repos = if settings.project_type == 'c' || settings.project_type == 'c++' then [
       import 'defaults/pre-commit-config/clang-format.libjsonnet',
     ] else [],
@@ -443,7 +447,16 @@ local utils = import 'utils.libjsonnet';
     settings: vscode_settings.get(settings),
   },
   /** @brief ReadTheDocs configuration. */
-  readthedocs: rtd,
+  readthedocs: rtd {
+    build+: {
+      jobs+: {
+        post_install: if is_uv then [
+          'pip install uv',
+          'uv sync --group docs --all-extras --no-dev',
+        ] else rtd.build.jobs.post_install,
+      },
+    },
+  },
 
   // GitHub
   /** @brief GitHub settings. */
@@ -638,8 +651,50 @@ local utils = import 'utils.libjsonnet';
   python_dep_upper_boundary: false,
   /** @brief Primary module name (Python package). */
   primary_module: std.strReplace(self.project_name, '-', '_'),
+  /**
+   * @brief Python dependencies in Poetry-style syntax.
+   *
+   * Users add project-specific deps with `python_deps+: { main+: { colorlog: '^6.0' } }`.
+   * Values may be version strings (`^1.0`), objects (`{ extras: ['x'], version: '^1.0' }`),
+   * or arrays of `{ version, python }` objects for marker-conditional deps.
+   * Wiswa converts these to the correct format for the chosen package manager.
+   */
+  python_deps: default_deps,
   /** @brief Python project configuration (`pyproject.toml`). */
   pyproject: pyproject {
+    local primary_module_path = std.join('/', std.split(settings.primary_module, '.')),
+    local poetry_package_includes = std.set([std.split(m, '.')[0] for m in settings.modules]),
+    local python_req = if settings.python_dep_upper_boundary then ('>=%s,<3.%d' % [
+                                                                    settings.supported_python_versions[0],
+                                                                    std.parseInt(
+                                                                      settings.supported_python_versions[
+                                                                        std.length(settings.supported_python_versions) - 1][2:]
+                                                                    ) + 1,
+                                                                  ])
+                       else ('>=%s,<4.0' % settings.supported_python_versions[0]),
+    local py_deps = settings.python_deps,
+    local to_pep508(group) = std.sort(
+      std.flatMap(function(k) utils.formatPep508Deps(k, group[k]), std.objectFields(group))
+    ),
+    local has_poetry = std.objectHasAll(self.tool, 'poetry'),
+    local poetry_obj = if has_poetry then self.tool.poetry else {},
+    local poetry_deps_obj = if has_poetry && std.objectHas(poetry_obj, 'dependencies')
+                             then poetry_obj.dependencies
+                             else {},
+    local poetry_group = if has_poetry && std.objectHas(poetry_obj, 'group')
+                          then poetry_obj.group
+                          else {},
+    local poetry_group_deps(name) =
+      if std.objectHas(poetry_group, name)
+         && std.objectHas(poetry_group[name], 'dependencies')
+      then poetry_group[name].dependencies
+      else {},
+    local legacy_poetry_deps =
+      if is_uv then
+        { [k]: poetry_deps_obj[k] for k in std.objectFields(poetry_deps_obj) if k != 'python' }
+      else {},
+    local legacy_poetry_group_deps(name) =
+      if is_uv then poetry_group_deps(name) else {},
     project+: {
       authors: utils.pyprojectAuthors(settings.authors),
       classifiers: utils.pyprojectClassifiers(settings),
@@ -655,10 +710,20 @@ local utils = import 'utils.libjsonnet';
         Issues: (if settings.using_github then '%s/issues' else '%s/-/issues') % settings.repository_uri,
         repository: settings.repository_uri,
       },
-    },
+    } + if is_uv then {
+      dependencies: std.sort(to_pep508(py_deps.main) + to_pep508(legacy_poetry_deps)),
+      'requires-python': python_req,
+      dynamic:: super.dynamic,
+    } else {},
+    [if is_uv then 'dependency-groups']: {
+      dev: std.sort(to_pep508(py_deps.dev) + to_pep508(legacy_poetry_group_deps('dev'))),
+    } + (if settings.want_docs then {
+           docs: std.sort(to_pep508(py_deps.docs) + to_pep508(legacy_poetry_group_deps('docs'))),
+         } else {})
+      + (if settings.want_tests then {
+           tests: std.sort(to_pep508(py_deps.tests) + to_pep508(legacy_poetry_group_deps('tests'))),
+         } else {}),
     tool+: {
-      local primary_module_path = std.join('/', std.split(settings.primary_module, '.')),
-      local poetry_package_includes = std.set([std.split(m, '.')[0] for m in settings.modules]),
       commitizen+: {
         remove_path_prefixes: std.set(pyproject.tool.commitizen.remove_path_prefixes + [
           primary_module_path,
@@ -682,29 +747,22 @@ local utils = import 'utils.libjsonnet';
       mypy+: { python_version: settings.supported_python_versions[0] },
       local poetry_include = (if settings.want_docs && settings.want_man then ['man'] else []) +
                              (if settings.want_tests then [{ path: 'tests', format: 'sdist' }] else []),
-      poetry+: {
+      [if !is_uv then 'poetry']+: {
         packages: [{ include: x } for x in poetry_package_includes],
         dependencies: {
-          python: if settings.python_dep_upper_boundary then ('>=%s,<3.%d' % [
-                                                                settings.supported_python_versions[0],
-                                                                std.parseInt(
-                                                                  settings.supported_python_versions[
-                                                                    std.length(settings.supported_python_versions) - 1][2:]
-                                                                ) + 1,
-                                                              ])
-          else ('>=%s,<4.0' % settings.supported_python_versions[0]),
-        } + deps.main,
-        local docs_section = if settings.want_docs then { docs: { optional: true, dependencies: deps.docs } } else {},
-        local tests_section = if settings.want_tests then { tests: { optional: true, dependencies: deps.tests } } else {},
+          python: python_req,
+        } + py_deps.main,
+        local docs_section = if settings.want_docs then { docs: { optional: true, dependencies: py_deps.docs } } else {},
+        local tests_section = if settings.want_tests then { tests: { optional: true, dependencies: py_deps.tests } } else {},
         group+: {
           dev+: {
-            dependencies: deps.dev,
+            dependencies: py_deps.dev,
           },
           docs+: {
-            dependencies: deps.docs,
+            dependencies: py_deps.docs,
           },
           tests+: {
-            dependencies: deps.tests,
+            dependencies: py_deps.tests,
           },
         } + docs_section + tests_section,
       } + (if std.length(poetry_include) > 0 then { include: poetry_include } else {}),
@@ -732,7 +790,15 @@ local utils = import 'utils.libjsonnet';
                 else {}),
         'target-version': 'py3%s' % settings.supported_python_versions[0][2:],
       },
-    } + (if settings.want_sqlfluff then { sqlfluff: import 'defaults/sqlfluff.libsonnet' } else {}),
+    } + (if settings.want_sqlfluff then { sqlfluff: import 'defaults/sqlfluff.libsonnet' } else {})
+      + (if is_uv then { poetry:: super.poetry } else { uv:: super.uv }),
+    'build-system': if is_uv then {
+      requires: ['hatchling'],
+      'build-backend': 'hatchling.build',
+    } else {
+      requires: ['poetry-core'],
+      'build-backend': 'poetry.core.masonry.api',
+    },
   },
   /** @brief Sphinx documentation configuration. */
   docs_conf: (import 'defaults/docs_conf.libjsonnet') + {
@@ -785,12 +851,15 @@ local utils = import 'utils.libjsonnet';
       url: if settings.using_github then utils.gitHubGitSshUri(settings.github_username, settings.github_project_name) else '%s.git' % settings.repository_uri,
     },
     version: settings.version,
-  } + { scripts+: if settings.want_docs && settings.project_type == 'python' then {
-    'gen-docs': 'poetry run sphinx-build -T -E -b html -d docs/_build/doctrees -D language=en docs docs/_build/html',
-  } + if settings.want_man && settings.project_type == 'python' then {
-    'gen-manpage': 'poetry run sphinx-build -T -E -b man -d docs/_build/doctrees -D language=en docs man',
-  } else {}
-  else {} },
+  } + {
+    local run_cmd = if is_uv then 'uv run' else 'poetry run',
+    scripts+: if settings.want_docs && settings.project_type == 'python' then {
+      'gen-docs': '%s sphinx-build -T -E -b html -d docs/_build/doctrees -D language=en docs docs/_build/html' % run_cmd,
+    } + if settings.want_man && settings.project_type == 'python' then {
+      'gen-manpage': '%s sphinx-build -T -E -b man -d docs/_build/doctrees -D language=en docs man' % run_cmd,
+    } else {}
+    else {},
+  },
 
   // Publishing
   /** @brief Publishing configuration. */
@@ -823,7 +892,6 @@ local utils = import 'utils.libjsonnet';
                             '*.libjsonnet',
                             '*.libsonnet',
                             '*.lock',
-                            '*.mdc',
                             '.eslintignore',
                             '.shellcheckrc',
                             '/.yarn/**/*.cjs',
@@ -866,10 +934,10 @@ local utils = import 'utils.libjsonnet';
   snap_python_stage_packages: [],
   local python_part = if settings.project_type == 'python' then {
     [settings.project_name]: {
-      plugin: 'poetry',
+      plugin: if is_uv then 'python' else 'poetry',
       source: '.',
       'stage-packages': settings.snap_python_stage_packages,
-    },
+    } + (if is_uv then { 'python-packages': ['.'] } else {}),
   } else {},
   /** @brief Snapcraft configuration. */
   snapcraft: {

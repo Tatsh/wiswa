@@ -5,23 +5,41 @@ jobs:
     runs-on: ${{ '{{' }} matrix.system.image }}
     steps:
       - uses: 'actions/checkout@{{ github_latest_action_tag('actions', 'checkout') }}'
+{% if settings.package_manager == 'uv' %}
+      - name: 'Install yq'
+        run: 'pipx install yq'
+      - name: 'Install uv'
+        uses: 'astral-sh/setup-uv@{{ github_latest_action_tag('astral-sh', 'setup-uv') }}'
+{% else %}
       - name: 'Install Poetry'
         run: 'pipx install poetry yq'
+{% endif %}
       - name: 'Set up Python'
         uses: 'actions/setup-python@{{ github_latest_action_tag('actions', 'setup-python') }}'
         with:
+{% if settings.package_manager != 'uv' %}
           cache: 'poetry'
+{% endif %}
           python-version: '3.13'
 {% if settings.github.workflows.appimage.apt_packages %}
       - name: 'Install dependencies'
         run: 'sudo apt-get update && sudo apt-get install -y {{ settings.github.workflows.appimage.apt_packages | join(" ") }}'
 {% endif %}
+{% if settings.package_manager == 'uv' %}
+      - name: 'Install dependencies (uv)'
+        run: |
+          uv sync
+          uv pip install python-appimage
+          wget -O generic.svg 'https://raw.githubusercontent.com/KDE/breeze-icons/refs/heads/master/icons/preferences/32/preferences-other.svg'
+        shell: 'bash'
+{% else %}
       - name: 'Install dependencies (Poetry)'
         run: |
           poetry install
           poetry run -- pip install python-appimage
           wget -O generic.svg 'https://raw.githubusercontent.com/KDE/breeze-icons/refs/heads/master/icons/preferences/32/preferences-other.svg'
         shell: 'bash'
+{% endif %}
       - name: 'Build with python-appimage'
         run: |
           {{ build(settings) | indent(10) | trim }}

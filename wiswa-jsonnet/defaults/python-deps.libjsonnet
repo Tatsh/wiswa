@@ -1,40 +1,47 @@
 local utils = import 'utils.libjsonnet';
 
+/**
+ * @brief Default Python dependency definitions in Poetry-style syntax.
+ *
+ * All version specifiers use Poetry conventions (^, ~, etc.). Conversion to PEP 508 for uv
+ * happens at pyproject.toml assembly time.
+ */
 function(want_main, want_yapf, stubs_only, project_name, want_coveralls, want_sqlfluff) {
-  local want_main_deps = if want_main then { click: utils.latestPypiPackageVersionCaret('click') } else {},
-  local bascom_dep = if want_main && !stubs_only && project_name != 'bascom' then { bascom: utils.latestPypiPackageVersionCaret('bascom') } else {},
-  local cz_path_dep = if project_name != 'cz-path' then { 'cz-path': utils.latestPypiPackageVersionCaret('cz-path') } else {},
+  local ver(package) = utils.latestPypiPackageVersionCaret(package),
+  local want_main_deps = if want_main then { click: ver('click') } else {},
+  local bascom_dep = if want_main && !stubs_only && project_name != 'bascom' then { bascom: ver('bascom') } else {},
+  local cz_path_dep = if project_name != 'cz-path' then { 'cz-path': ver('cz-path') } else {},
   main: {
-    'typing-extensions': utils.latestPypiPackageVersionCaret('typing-extensions'),
+    'typing-extensions': ver('typing-extensions'),
   } + want_main_deps + bascom_dep,
   dev: {
-    commitizen: utils.latestPypiPackageVersionCaret('commitizen'),
-    djlint: utils.latestPypiPackageVersionCaret('djlint'),
-    mypy: utils.latestPypiPackageVersionCaret('mypy'),
-    ruff: utils.latestPypiPackageVersionCaret('ruff'),
+    commitizen: ver('commitizen'),
+    djlint: ver('djlint'),
+    mypy: ver('mypy'),
+    ruff: ver('ruff'),
   } + cz_path_dep + (
-    if want_yapf then { yapf: utils.latestPypiPackageVersionCaret('yapf') } else {}
-  ) + (if want_sqlfluff then { sqlfluff: utils.latestPypiPackageVersionCaret('sqlfluff') } else {}),
+    if want_yapf then { yapf: ver('yapf') } else {}
+  ) + (if want_sqlfluff then { sqlfluff: ver('sqlfluff') } else {}),
   docs: {
-    'autodoc-pydantic': utils.latestPypiPackageVersionCaret('autodoc-pydantic'),
-    doc8: utils.latestPypiPackageVersionCaret('doc8'),
-    docutils: '<0.22',  // due to Sphinx requirement
-    'enum-tools': { extras: ['sphinx'], version: utils.latestPypiPackageVersionCaret('enum-tools') },
-    esbonio: utils.latestPypiPackageVersionCaret('esbonio'),
-    numpydoc: utils.latestPypiPackageVersionCaret('numpydoc'),
-    'restructuredtext-lint': utils.latestPypiPackageVersionCaret('restructuredtext-lint'),
+    'autodoc-pydantic': ver('autodoc-pydantic'),
+    doc8: ver('doc8'),
+    docutils: '<0.22',
+    'enum-tools': { extras: ['sphinx'], version: ver('enum-tools') },
+    esbonio: ver('esbonio'),
+    numpydoc: ver('numpydoc'),
+    'restructuredtext-lint': ver('restructuredtext-lint'),
     sphinx: [
-      { version: '<9.0.0', python: '>=3.11' },  // https://github.com/jbms/sphinx-immaterial/pull/477
+      { version: '<9.0.0', python: '>=3.11' },
       { version: '^7.2.5', python: '<3.11' },
     ],
-    'sphinx-datatables': utils.latestPypiPackageVersionCaret('sphinx-datatables'),
-    'sphinx-immaterial': utils.latestPypiPackageVersionCaret('sphinx-immaterial'),
-    tomlkit: utils.latestPypiPackageVersionCaret('tomlkit'),
-  } + if want_main then { 'sphinx-click': utils.latestPypiPackageVersionCaret('sphinx-click') } else {},
+    'sphinx-datatables': ver('sphinx-datatables'),
+    'sphinx-immaterial': ver('sphinx-immaterial'),
+    tomlkit: ver('tomlkit'),
+  } + (if want_main then { 'sphinx-click': ver('sphinx-click') } else {}),
   tests: {
-    mock: utils.latestPypiPackageVersionCaret('mock'),
-    pytest: utils.latestPypiPackageVersionCaret('pytest'),
-    'pytest-cov': utils.latestPypiPackageVersionCaret('pytest-cov'),
-    'pytest-mock': utils.latestPypiPackageVersionCaret('pytest-mock'),
-  } + if want_coveralls then { coveralls: { python: '<3.13', version: '^4.0.1' } } else {},
+    mock: ver('mock'),
+    pytest: ver('pytest'),
+    'pytest-cov': ver('pytest-cov'),
+    'pytest-mock': ver('pytest-mock'),
+  } + if want_coveralls then { coveralls: ver('coveralls') } else {},
 }
