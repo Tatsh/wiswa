@@ -9,7 +9,6 @@ autodoc
 automoc
 automodule
 autorcc
-autosort
 autosubmit
 autouic
 bascom

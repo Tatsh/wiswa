@@ -12,7 +12,9 @@ grade: 'stable'
 name: 'wiswa'
 parts:
   wiswa:
-    plugin: 'poetry'
+    plugin: 'python'
+    python-packages:
+      - '.'
     source: '.'
     stage-packages: []
 platforms:
