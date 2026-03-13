@@ -150,6 +150,8 @@ local utils = import 'utils.libjsonnet';
   want_coveralls: self.using_github && !self.stubs_only,
   /** @brief If the project will use SQLFluff. */
   want_sqlfluff: false,
+  /** @brief If the project will publish to WinGet using GitHub Actions (C/C++ only). */
+  want_winget: true,
 
   /**
    * @brief Social media configuration (for badges).

@@ -48,7 +48,7 @@ local utils = import 'utils.libjsonnet';
       '.github/workflows/publish.yml': utils.manifestYaml(lua_publish),
     } else {}
   ) + (
-    if settings.project_type == 'c++' || settings.project_type == 'c' then {
+    if (settings.project_type == 'c++' || settings.project_type == 'c') && settings.want_winget then {
       '.github/workflows/publish-winget.yml': utils.manifestYaml(winget_publish(settings)),
     } else {}
   ) + (
