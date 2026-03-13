@@ -31,7 +31,7 @@ local utils = import 'utils.libjsonnet';
   local settings = self,
 
   /** @brief Package manager. Valid values: poetry, uv. */
-  package_manager: 'poetry',
+  package_manager: 'uv',
   /** @brief Project type. Valid values: python, typescript, xcode, c, c++, generic. */
   project_type: 'python',
   /**
@@ -409,7 +409,7 @@ local utils = import 'utils.libjsonnet';
       [(import 'defaults/pre-commit-config/poetry-plugin-export.libjsonnet').get(settings)]
     else [],
     local pkg_mgr_hooks = if is_uv then [import 'defaults/pre-commit-config/uv.libjsonnet']
-                           else [import 'defaults/pre-commit-config/poetry.libjsonnet'],
+    else [import 'defaults/pre-commit-config/poetry.libjsonnet'],
     local precommit_python_repos = if settings.project_type == 'python' then
       pkg_mgr_hooks + poetry_plugin_export + yapf_precommit + djlint else [],
     local precommit_c_cpp_repos = if settings.project_type == 'c' || settings.project_type == 'c++' then [
@@ -665,13 +665,13 @@ local utils = import 'utils.libjsonnet';
     local primary_module_path = std.join('/', std.split(settings.primary_module, '.')),
     local poetry_package_includes = std.set([std.split(m, '.')[0] for m in settings.modules]),
     local python_req = if settings.python_dep_upper_boundary then ('>=%s,<3.%d' % [
-                                                                    settings.supported_python_versions[0],
-                                                                    std.parseInt(
-                                                                      settings.supported_python_versions[
-                                                                        std.length(settings.supported_python_versions) - 1][2:]
-                                                                    ) + 1,
-                                                                  ])
-                       else ('>=%s,<4.0' % settings.supported_python_versions[0]),
+                                                                     settings.supported_python_versions[0],
+                                                                     std.parseInt(
+                                                                       settings.supported_python_versions[
+                                                                         std.length(settings.supported_python_versions) - 1][2:]
+                                                                     ) + 1,
+                                                                   ])
+    else ('>=%s,<4.0' % settings.supported_python_versions[0]),
     local py_deps = settings.python_deps,
     local to_pep508(group) = std.sort(
       std.flatMap(function(k) utils.formatPep508Deps(k, group[k]), std.objectFields(group))
@@ -679,11 +679,11 @@ local utils = import 'utils.libjsonnet';
     local has_poetry = std.objectHasAll(self.tool, 'poetry'),
     local poetry_obj = if has_poetry then self.tool.poetry else {},
     local poetry_deps_obj = if has_poetry && std.objectHas(poetry_obj, 'dependencies')
-                             then poetry_obj.dependencies
-                             else {},
+    then poetry_obj.dependencies
+    else {},
     local poetry_group = if has_poetry && std.objectHas(poetry_obj, 'group')
-                          then poetry_obj.group
-                          else {},
+    then poetry_obj.group
+    else {},
     local poetry_group_deps(name) =
       if std.objectHas(poetry_group, name)
          && std.objectHas(poetry_group[name], 'dependencies')
@@ -716,82 +716,82 @@ local utils = import 'utils.libjsonnet';
       dynamic:: super.dynamic,
     } else {},
     [if is_uv then 'dependency-groups']: {
-      dev: std.sort(to_pep508(py_deps.dev) + to_pep508(legacy_poetry_group_deps('dev'))),
-    } + (if settings.want_docs then {
-           docs: std.sort(to_pep508(py_deps.docs) + to_pep508(legacy_poetry_group_deps('docs'))),
-         } else {})
-      + (if settings.want_tests then {
-           tests: std.sort(to_pep508(py_deps.tests) + to_pep508(legacy_poetry_group_deps('tests'))),
-         } else {}),
+                                           dev: std.sort(to_pep508(py_deps.dev) + to_pep508(legacy_poetry_group_deps('dev'))),
+                                         } + (if settings.want_docs then {
+                                                docs: std.sort(to_pep508(py_deps.docs) + to_pep508(legacy_poetry_group_deps('docs'))),
+                                              } else {})
+                                         + (if settings.want_tests then {
+                                              tests: std.sort(to_pep508(py_deps.tests) + to_pep508(legacy_poetry_group_deps('tests'))),
+                                            } else {}),
     tool+: {
-      commitizen+: {
-        remove_path_prefixes: std.set(pyproject.tool.commitizen.remove_path_prefixes + [
-          primary_module_path,
-        ]),
-        version_files: std.set(pyproject.tool.commitizen.version_files +
-                               ['%s/__init__.py' % primary_module_path] +
-                               (if !settings.stubs_only then ['docs/index.rst'] else [])),
-      },
-      coverage+: {
-        report+: {
-          omit: std.set(pyproject.tool.coverage.report.omit + (
-            if settings.want_main then ['__main__.py'] else []
-          )),
-        },
-        run+: {
-          omit: std.set(pyproject.tool.coverage.run.omit + (
-            if settings.want_main then ['__main__.py'] else []
-          )),
-        },
-      },
-      mypy+: { python_version: settings.supported_python_versions[0] },
-      local poetry_include = (if settings.want_docs && settings.want_man then ['man'] else []) +
-                             (if settings.want_tests then [{ path: 'tests', format: 'sdist' }] else []),
-      [if !is_uv then 'poetry']+: {
-        packages: [{ include: x } for x in poetry_package_includes],
-        dependencies: {
-          python: python_req,
-        } + py_deps.main,
-        local docs_section = if settings.want_docs then { docs: { optional: true, dependencies: py_deps.docs } } else {},
-        local tests_section = if settings.want_tests then { tests: { optional: true, dependencies: py_deps.tests } } else {},
-        group+: {
-          dev+: {
-            dependencies: py_deps.dev,
-          },
-          docs+: {
-            dependencies: py_deps.docs,
-          },
-          tests+: {
-            dependencies: py_deps.tests,
-          },
-        } + docs_section + tests_section,
-      } + (if std.length(poetry_include) > 0 then { include: poetry_include } else {}),
-      pyright+: {
-        include: ['./%s' % [r] for r in poetry_package_includes] + if settings.want_tests then [
-          './tests',
-        ] else [],
-        pythonVersion: settings.supported_python_versions[0],
-      } + if settings.stubs_only then { reportImplicitOverride: 'none' } else {},
-      ruff+: {
-        lint+: if settings.stubs_only then {
-          ignore: std.set(pyproject.tool.ruff.lint.ignore + [
-            'A002',
-            'E303',
-            'FBT001',
-            'I001',
-            'N',
-            'S',
-            'T201',
-            'TID252',
-          ]),
-        } else (if settings.want_main then {
-                  'per-file-ignores': { 'main.py': ['PLR0913'] },
-                }
-                else {}),
-        'target-version': 'py3%s' % settings.supported_python_versions[0][2:],
-      },
-    } + (if settings.want_sqlfluff then { sqlfluff: import 'defaults/sqlfluff.libsonnet' } else {})
-      + (if is_uv then { poetry:: super.poetry } else { uv:: super.uv }),
+             commitizen+: {
+               remove_path_prefixes: std.set(pyproject.tool.commitizen.remove_path_prefixes + [
+                 primary_module_path,
+               ]),
+               version_files: std.set(pyproject.tool.commitizen.version_files +
+                                      ['%s/__init__.py' % primary_module_path] +
+                                      (if !settings.stubs_only then ['docs/index.rst'] else [])),
+             },
+             coverage+: {
+               report+: {
+                 omit: std.set(pyproject.tool.coverage.report.omit + (
+                   if settings.want_main then ['__main__.py'] else []
+                 )),
+               },
+               run+: {
+                 omit: std.set(pyproject.tool.coverage.run.omit + (
+                   if settings.want_main then ['__main__.py'] else []
+                 )),
+               },
+             },
+             mypy+: { python_version: settings.supported_python_versions[0] },
+             local poetry_include = (if settings.want_docs && settings.want_man then ['man'] else []) +
+                                    (if settings.want_tests then [{ path: 'tests', format: 'sdist' }] else []),
+             [if !is_uv then 'poetry']+: {
+               packages: [{ include: x } for x in poetry_package_includes],
+               dependencies: {
+                 python: python_req,
+               } + py_deps.main,
+               local docs_section = if settings.want_docs then { docs: { optional: true, dependencies: py_deps.docs } } else {},
+               local tests_section = if settings.want_tests then { tests: { optional: true, dependencies: py_deps.tests } } else {},
+               group+: {
+                 dev+: {
+                   dependencies: py_deps.dev,
+                 },
+                 docs+: {
+                   dependencies: py_deps.docs,
+                 },
+                 tests+: {
+                   dependencies: py_deps.tests,
+                 },
+               } + docs_section + tests_section,
+             } + (if std.length(poetry_include) > 0 then { include: poetry_include } else {}),
+             pyright+: {
+               include: ['./%s' % [r] for r in poetry_package_includes] + if settings.want_tests then [
+                 './tests',
+               ] else [],
+               pythonVersion: settings.supported_python_versions[0],
+             } + if settings.stubs_only then { reportImplicitOverride: 'none' } else {},
+             ruff+: {
+               lint+: if settings.stubs_only then {
+                 ignore: std.set(pyproject.tool.ruff.lint.ignore + [
+                   'A002',
+                   'E303',
+                   'FBT001',
+                   'I001',
+                   'N',
+                   'S',
+                   'T201',
+                   'TID252',
+                 ]),
+               } else (if settings.want_main then {
+                         'per-file-ignores': { 'main.py': ['PLR0913'] },
+                       }
+                       else {}),
+               'target-version': 'py3%s' % settings.supported_python_versions[0][2:],
+             },
+           } + (if settings.want_sqlfluff then { sqlfluff: import 'defaults/sqlfluff.libsonnet' } else {})
+           + (if is_uv then { poetry:: super.poetry } else { uv:: super.uv }),
     'build-system': if is_uv then {
       requires: ['hatchling'],
       'build-backend': 'hatchling.build',
