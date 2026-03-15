@@ -454,7 +454,7 @@ local utils = import 'utils.libjsonnet';
       jobs+: {
         post_install: if is_uv then [
           'pip install uv',
-          'uv sync --group docs --all-extras --no-dev',
+          'UV_PROJECT_ENVIRONMENT="$READTHEDOCS_VIRTUALENV_PATH" uv sync --group docs --inexact --all-extras --no-dev',
         ] else rtd.build.jobs.post_install,
       },
     },
