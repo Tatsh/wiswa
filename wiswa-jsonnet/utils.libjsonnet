@@ -62,7 +62,10 @@
         for entry in val
       ]
     else if std.isObject(val) then
-      ['%s[%s]%s' % [name, std.join(',', val.extras), self.poetryVerToPep508(val.version)]]
+      local extrasPart = if std.objectHas(val, 'extras') && std.length(val.extras) > 0
+      then '[%s]' % std.join(',', val.extras)
+      else '';
+      ['%s%s%s' % [name, extrasPart, self.poetryVerToPep508(val.version)]]
     else
       ['%s%s' % [name, self.poetryVerToPep508(val)]],
 
