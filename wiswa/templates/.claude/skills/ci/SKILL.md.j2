@@ -144,8 +144,9 @@ For Python files, strip the `{{ settings.primary_module }}/` prefix and replace 
 
 1. Stage files for each logical commit using `git add` with specific file paths.
 2. If `CHANGELOG.md` was updated by the changelog agent, stage it with the relevant commit.
-3. Write the commit message to `/tmp/commit-msg` using the **Write** tool (not Bash `cat`), then
-   commit with `git commit -S -s -F /tmp/commit-msg`.
+3. Create a unique temp file with `mktemp /tmp/commit-msg-XXXXXXXX`, write the commit message there
+   using the **Write** tool (not Bash `cat`), then commit with `git commit -S -s -F <tempfile>`.
+   Multiple Claude instances may run concurrently, so never use a fixed path.
 
 4. If a pre-commit hook fails, fix the issue, re-stage (use appropriate agent if there is one), and
    try to commit again.
