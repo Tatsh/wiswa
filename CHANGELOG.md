@@ -43,6 +43,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `prettier`).
 - Formatting scripts use `ruff format` instead of `yapf` when `want_yapf` is false.
 - Publish workflow now creates draft releases.
+- `.claude/settings.local.json.dist` is now generated dynamically from `claude_settings_local`
+  instead of being copied from a static file. It is written alongside `.claude/settings.local.json`
+  when `want_claude` is true.
 
 ### Removed
 

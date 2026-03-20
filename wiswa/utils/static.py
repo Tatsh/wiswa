@@ -1,4 +1,5 @@
 """Copying static files into the project."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -161,17 +162,13 @@ def copy_static_files(settings: Settings, module_path: Path) -> None:
     _sync_json_file(Path('.claude/settings.local.json'),
                     settings['claude_settings_local'],
                     wanted=settings['want_claude'])
+    _sync_json_file(Path('.claude/settings.local.json.dist'),
+                    settings['claude_settings_local'],
+                    wanted=settings['want_claude'])
     claude_agent_pairs = _claude_agent_pairs(module_path)
     _sync_file_pairs(claude_agent_pairs,
                      Path('.claude/agents'),
                      Path('.claude'),
-                     wanted=settings.get('want_claude_agents', False))
-    dist_pairs: list[tuple[Path,
-                           Path]] = [(Path('.claude/settings.local.json.dist'),
-                                      module_path / 'static/.claude/settings.local.json.dist')]
-    _sync_file_pairs(dist_pairs,
-                     Path('.claude'),
-                     Path(),
                      wanted=settings.get('want_claude_agents', False))
     match settings['project_type']:
         case 'python':
