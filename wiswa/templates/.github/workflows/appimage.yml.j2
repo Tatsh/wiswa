@@ -54,6 +54,14 @@ jobs:
           name: {{ settings.github_project_name }}-binaries-linux-${{ '{{' }} matrix.system.arch }}
           path: |
             dist/*
+  {% if not settings.private %}
+      - name: 'Generate SBOM'
+        uses: 'anchore/sbom-action@{{ github_latest_action_tag('anchore', 'sbom-action') }}'
+        with:
+          path: 'dist/'
+          output-file: 'sbom.spdx.json'
+          upload-artifact: false
+  {% endif %}
 {% if settings.has_multiple_entry_points %}
       - name: 'Zip files'
         run: |
@@ -65,6 +73,11 @@ jobs:
         uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
         with:
           subject-path: '_out/*.zip'
+      - name: 'Attest SBOM'
+        uses: 'actions/attest-sbom@{{ github_latest_action_tag('actions', 'attest-sbom') }}'
+        with:
+          subject-path: '_out/*.zip'
+          sbom-path: 'sbom.spdx.json'
   {% endif %}
       - if: github.ref_type == 'tag'
         name: Upload package
@@ -80,6 +93,11 @@ jobs:
         uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
         with:
           subject-path: 'dist/*.AppImage'
+      - name: 'Attest SBOM'
+        uses: 'actions/attest-sbom@{{ github_latest_action_tag('actions', 'attest-sbom') }}'
+        with:
+          subject-path: 'dist/*.AppImage'
+          sbom-path: 'sbom.spdx.json'
   {% endif %}
       - if: github.ref_type == 'tag'
         name: Upload package

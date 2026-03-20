@@ -23,6 +23,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Expanded default Claude permissions (git, grep, formatting, QA, and test commands).
 - `github.immutable_releases` setting (defaults to `true`) that enables immutable releases on the
   GitHub repository, preventing release assets from being modified after publication.
+- SBOM attestation in PyInstaller and AppImage workflows using `anchore/sbom-action` and
+  `actions/attest-sbom`.
 
 ### Fixed
 

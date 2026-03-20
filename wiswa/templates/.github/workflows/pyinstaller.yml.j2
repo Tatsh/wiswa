@@ -103,6 +103,17 @@ jobs:
         uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
         with:
           subject-path: '${{ '{{' }} matrix.dist_path }}'
+      - name: 'Generate SBOM'
+        uses: 'anchore/sbom-action@{{ github_latest_action_tag('anchore', 'sbom-action') }}'
+        with:
+          path: 'dist/'
+          output-file: 'sbom.spdx.json'
+          upload-artifact: false
+      - name: 'Attest SBOM'
+        uses: 'actions/attest-sbom@{{ github_latest_action_tag('actions', 'attest-sbom') }}'
+        with:
+          subject-path: '${{ '{{' }} matrix.dist_path }}'
+          sbom-path: 'sbom.spdx.json'
   {% endif %}
 {% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
       - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'
@@ -127,6 +138,12 @@ jobs:
         uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
         with:
           subject-path: '_out/*.zip'
+      - if: github.ref_type == 'tag'
+        name: 'Attest SBOM'
+        uses: 'actions/attest-sbom@{{ github_latest_action_tag('actions', 'attest-sbom') }}'
+        with:
+          subject-path: '_out/*.zip'
+          sbom-path: 'sbom.spdx.json'
   {% endif %}
       - if: github.ref_type == 'tag'
         name: Upload package

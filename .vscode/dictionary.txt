@@ -1,4 +1,5 @@
 altool
+anchore
 appdir
 appimage
 appinfo
