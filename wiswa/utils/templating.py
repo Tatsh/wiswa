@@ -95,7 +95,8 @@ def _write_templated_files_python(settings: Settings, templates_dir: Path,
             write_file(resolve_template(templates_dir / 'tests/test_main.py.j2'),
                        'tests/test_main.py')
     if settings['want_docs']:
-        for file_path in (templates_dir / 'docs/conf.py.j2', templates_dir / 'docs/index.rst.j2'):
+        for file_path in (templates_dir / 'docs/conf.py.j2', templates_dir / 'docs/index.rst.j2',
+                          templates_dir / 'docs/badges.rst.j2'):
             write_file(resolve_template(file_path),
                        file_path.relative_to(templates_dir).with_suffix(''))
     if ((settings['want_main'] or settings['has_multiple_entry_points'])

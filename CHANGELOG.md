@@ -29,6 +29,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Badges in `docs/index.rst.j2` extracted into a separate `docs/badges.rst.j2` template included
+  via `.. include:: badges.rst`, allowing the badge-sync agent to update badges independently.
 - `want_claude` now defaults to `true`.
 - `package.json` scripts no longer prefix tool commands with `yarn` (e.g. `yarn prettier` is now
   `prettier`).

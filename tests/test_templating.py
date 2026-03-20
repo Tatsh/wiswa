@@ -32,8 +32,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'private': False,
         'using_django': False,
     }
-    base.update(overrides)
-    return base
+    return base | overrides
 
 
 def _mock_template_env(mocker: MockerFixture,
@@ -197,3 +196,31 @@ def test_write_templated_files_contributing_no_overwrite_matching(tmp_path: Path
     write_templated_files(tmp_path, settings)
     contrib_writes = [f for f in written_files if 'CONTRIBUTING' in f]
     assert len(contrib_writes) == 1
+
+
+def test_write_templated_files_python_want_docs(tmp_path: Path, mocker: MockerFixture) -> None:
+    _, _, written_files = _mock_template_env(mocker, tmp_path)
+    mocker.patch('wiswa.utils.templating._should_overwrite_contributing', return_value=False)
+    settings = cast(
+        'Any',
+        _make_settings(want_docs=True,
+                       want_tests=False,
+                       want_copilot=False,
+                       want_claude_agents=False))
+    write_templated_files(tmp_path, settings)
+    assert 'docs/conf.py' in written_files
+    assert 'docs/index.rst' in written_files
+    assert 'docs/badges.rst' in written_files
+
+
+def test_write_templated_files_python_no_docs(tmp_path: Path, mocker: MockerFixture) -> None:
+    _, _, written_files = _mock_template_env(mocker, tmp_path)
+    mocker.patch('wiswa.utils.templating._should_overwrite_contributing', return_value=False)
+    settings = cast(
+        'Any',
+        _make_settings(want_docs=False,
+                       want_tests=False,
+                       want_copilot=False,
+                       want_claude_agents=False))
+    write_templated_files(tmp_path, settings)
+    assert not any('docs/' in f for f in written_files)

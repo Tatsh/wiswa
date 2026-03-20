@@ -819,7 +819,10 @@ local utils = import 'utils.libjsonnet';
                ]),
                version_files: std.set(pyproject.tool.commitizen.version_files +
                                       ['%s/__init__.py' % primary_module_path] +
-                                      (if !settings.stubs_only then ['docs/index.rst'] else [])),
+                                      (if !settings.stubs_only then [
+                                         'docs/badges.rst',
+                                         'docs/index.rst',
+                                       ] else [])),
              },
              coverage+: {
                report+: {
