@@ -9,8 +9,6 @@ import re
 
 from jinja2.ext import Extension
 
-from .utils.versions import get_github_release_latest_tag
-
 if TYPE_CHECKING:
     import jinja2
 
@@ -19,7 +17,6 @@ __all__ = ('GithubAPIExtension', 'ToPythonExtension')
 
 def topython(  # noqa: PLR0911
         obj: Any, *, convert_strings: bool = True, list_to_tuple: bool = False) -> Any:
-    """Convert an object to a Python representation as a string."""
     data: Any
     if isinstance(obj, str):
         if convert_strings:
@@ -64,16 +61,17 @@ def topython(  # noqa: PLR0911
 
 
 class ToPythonExtension(Extension):  # pragma: no cover
-    """Extension class that exports filter ``topython``."""
+    """Extension that exports the ``topython`` :py:class:`~jinja2.Environment` filter."""
     def __init__(self, environment: jinja2.Environment) -> None:
         super().__init__(environment)
         environment.filters['topython'] = topython
 
 
 class GithubAPIExtension(Extension):  # pragma: no cover
-    """Extension for Github API calls."""
+    """Extension for GitHub API calls."""
     def __init__(self, environment: jinja2.Environment) -> None:
         super().__init__(environment)
+        from .utils.versions import get_github_release_latest_tag  # noqa: PLC0415
         environment.globals['github_latest_action_tag'] = partial(get_github_release_latest_tag,
                                                                   actions=True,
                                                                   skip_releases=True,
