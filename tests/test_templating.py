@@ -55,9 +55,13 @@ def test_write_templated_files_claude_agents_wanted(tmp_path: Path, mocker: Mock
     agents_dir.mkdir(parents=True)
     (agents_dir / 'my-agent.md.j2').write_text('agent content')
     (agents_dir / 'readme.txt').write_text('not a template')
-    skills_dir = tmp_path / '.claude/skills/ci'
-    skills_dir.mkdir(parents=True)
-    (skills_dir / 'skill.md.j2').write_text('skill content')
+    skills_ci_dir = tmp_path / '.claude/skills/ci'
+    skills_ci_dir.mkdir(parents=True)
+    (skills_ci_dir / 'skill.md.j2').write_text('skill content')
+    skills_release_dir = tmp_path / '.claude/skills/release'
+    skills_release_dir.mkdir(parents=True)
+    (skills_release_dir / 'checklist.md.j2').write_text('release checklist')
+    (skills_release_dir / 'notes.txt').write_text('not a template')
     (tmp_path / 'CLAUDE.md.j2').write_text('claude')
     (tmp_path / 'AGENTS.md.j2').write_text('agents')
     _, _, written_files = _mock_template_env(mocker, tmp_path)
@@ -67,9 +71,11 @@ def test_write_templated_files_claude_agents_wanted(tmp_path: Path, mocker: Mock
     write_templated_files(tmp_path, settings)
     assert '.claude/agents/my-agent.md' in written_files
     assert '.claude/skills/ci/skill.md' in written_files
+    assert '.claude/skills/release/checklist.md' in written_files
     assert 'CLAUDE.md' in written_files
     assert 'AGENTS.md' in written_files
     assert not any('readme.txt' in f for f in written_files)
+    assert not any('notes.txt' in f for f in written_files)
 
 
 def test_write_templated_files_claude_agents_not_wanted(tmp_path: Path,

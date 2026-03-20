@@ -132,12 +132,14 @@ def _write_templated_files_claude(templates_dir: Path, resolve_template: Callabl
             if file_path.suffix == '.j2':
                 output = Path('.claude/agents') / file_path.stem
                 write_file(resolve_template(file_path), output, overwrite=True)
-    skills_dir = templates_dir / '.claude/skills/ci'
+    skills_dir = templates_dir / '.claude/skills'
     if skills_dir.is_dir():
-        for file_path in sorted(skills_dir.iterdir()):
-            if file_path.suffix == '.j2':
-                output = Path('.claude/skills/ci') / file_path.stem
-                write_file(resolve_template(file_path), output, overwrite=True)
+        for skill_subdir in sorted(skills_dir.iterdir()):
+            if skill_subdir.is_dir():
+                for file_path in sorted(skill_subdir.iterdir()):
+                    if file_path.suffix == '.j2':
+                        output = Path('.claude/skills') / skill_subdir.name / file_path.stem
+                        write_file(resolve_template(file_path), output, overwrite=True)
     write_file(resolve_template(templates_dir / 'CLAUDE.md.j2'), 'CLAUDE.md')
     write_file(resolve_template(templates_dir / 'AGENTS.md.j2'), 'AGENTS.md')
 
