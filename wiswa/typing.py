@@ -1,13 +1,13 @@
 """Types."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
-PackageManager = Literal['poetry', 'uv']
-ProjectType = Literal['c', 'c++', 'generic', 'lua', 'python', 'typescript', 'xcode']
+PackageManager: TypeAlias = Literal['poetry', 'uv']
+ProjectType: TypeAlias = Literal['c', 'c++', 'generic', 'lua', 'python', 'typescript', 'xcode']
 
 
 class VSCodeLaunchConfiguration(TypedDict):
@@ -230,6 +230,8 @@ class Settings(TypedDict):
     """Visual Studio Code settings."""
     want_claude: bool
     """If the project should include ``.claude/settings.local.json``."""
+    want_claude_agents: bool
+    """If the project should include ``.claude/agents/`` and related files."""
     want_codeql: bool
     """If the project should include ``.github/workflows/codeql.yml``."""
     want_copilot: bool

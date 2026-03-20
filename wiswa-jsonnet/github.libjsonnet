@@ -4,6 +4,7 @@ local npm_publish_any = import 'github/workflows/publish-npm-any.libjsonnet';
 local pypi_publish_any = import 'github/workflows/publish-pypi-any.libjsonnet';
 local winget_publish = import 'github/workflows/publish-winget.libjsonnet';
 local qa_other = import 'github/workflows/qa-other.libjsonnet';
+local release = import 'github/workflows/release.libjsonnet';
 local qa_python = import 'github/workflows/qa-python.libjsonnet';
 local qa_typescript = import 'github/workflows/qa-typescript.libjsonnet';
 local snap_python = import 'github/workflows/snap-python.libjsonnet';
@@ -54,6 +55,10 @@ local utils = import 'utils.libjsonnet';
   ) + (
     if settings.want_snap && settings.project_type == 'python' then {
       '.github/workflows/snap.yml': utils.manifestYaml(snap_python(settings)),
+    } else {}
+  ) + (
+    if (settings.want_main || settings.has_multiple_entry_points) && settings.project_type == 'python' then {
+      '.github/workflows/release.yml': utils.manifestYaml(release(settings)),
     } else {}
   ),
 }

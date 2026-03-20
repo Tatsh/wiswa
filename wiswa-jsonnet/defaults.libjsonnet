@@ -1,7 +1,6 @@
 local package = import 'defaults/package.libjsonnet';
 local pre_commit_configs = {
   cff: [import 'defaults/pre-commit-config/cff.libjsonnet'],
-  djlint: [import 'defaults/pre-commit-config/djlint.libjsonnet'],
   github: [import 'defaults/pre-commit-config/github.libjsonnet'],
 };
 local python_deps = import 'defaults/python-deps.libjsonnet';
@@ -25,7 +24,6 @@ local utils = import 'utils.libjsonnet';
   local is_uv = self.package_manager == 'uv',
   local github = if settings.using_github then pre_commit_configs.github else [],
   local cff = if settings.want_cff then pre_commit_configs.cff else [],
-  local djlint = if settings.want_djlint then pre_commit_configs.djlint else [],
   local local_hooks = import 'defaults/pre-commit-config/local.libjsonnet',
   local rtd = import 'defaults/readthedocs.libjsonnet',
   local settings = self,
@@ -122,6 +120,50 @@ local utils = import 'utils.libjsonnet';
      * @var string[]
      */
     windows_exclusions: [],
+    /**
+     * @brief If non-empty, only build these script names (overrides exclusions).
+     * @var string[]
+     */
+    include_only: [],
+    /**
+     * @brief Packages to pass as `--collect-data` arguments.
+     * @var string[]
+     */
+    collect_data: [],
+    /**
+     * @brief Packages to pass as `--collect-submodules` arguments.
+     * @var string[]
+     */
+    collect_submodules: [],
+    /**
+     * @brief Modules to pass as `--hidden-import` arguments.
+     * @var string[]
+     */
+    hidden_imports: ['colorlog'],
+    /**
+     * @brief Extra test commands to run on each built binary (e.g. subcommands).
+     *
+     * Each entry is appended after the binary path. For example, `['add-cdda-times --help']`
+     * produces `./dist/binary add-cdda-times --help` in addition to the default `--help` test.
+     * @var string[]
+     */
+    test_commands: [],
+    /**
+     * @brief Extra arguments to `uv sync` or `poetry install`.
+     * @var string[]
+     */
+    uv_sync_args: [],
+    /** @brief vcpkg configuration for building native dependencies. */
+    vcpkg: {
+      /** @brief Whether vcpkg setup steps are generated. */
+      enabled: false,
+      /**
+       * @brief Dictionary of matrix.os values to vcpkg target configurations.
+       *
+       * Each value is an object with `triplet` (string) and `packages` (string[]).
+       */
+      targets: {},
+    },
   },
   /** @brief AppImage configuration (for Python only). */
   appimage: {
@@ -130,6 +172,11 @@ local utils = import 'utils.libjsonnet';
      * @var string[]
      */
     exclusions: [],
+    /**
+     * @brief If non-empty, only build these script names (overrides exclusions).
+     * @var string[]
+     */
+    include_only: [],
     /** @brief Dictionary of script names to icon URIs. */
     icons: {},
     /**
@@ -142,6 +189,22 @@ local utils = import 'utils.libjsonnet';
     python_version: '3.13',
     /** @brief If the application is a terminal application. */
     terminal: true,
+    /**
+     * @brief Extra test commands to run on each built binary (e.g. subcommands).
+     * @var string[]
+     */
+    test_commands: [],
+    /**
+     * @brief Extra arguments to `uv sync` or `poetry install`.
+     * @var string[]
+     */
+    uv_sync_args: [],
+    /**
+     * @brief Regex filter for `uv export` output to add optional deps to requirements.txt.
+     *
+     * If non-empty, runs `uv export | grep -E '<filter>'` and appends matches.
+     */
+    requirements_filter: '',
   },
   /**
    * @brief If the project should upload coverage to Coveralls.
@@ -241,7 +304,9 @@ local utils = import 'utils.libjsonnet';
   /** @brief If the project should have a `CITATION.cff` file. */
   want_cff: true,
   /** @brief If the project should include `.claude/settings.local.json`. */
-  want_claude: false,
+  want_claude: true,
+  /** @brief If the project should include `.claude/agents/` and related files (requires want_claude). */
+  want_claude_agents: self.want_claude,
   /** @brief JSON object written to `.claude/settings.local.json` when `want_claude` is true. */
   claude_settings_local: {
     /** @brief Permissions dictionary. */
@@ -250,7 +315,19 @@ local utils = import 'utils.libjsonnet';
        * @brief Allowed commands.
        * @var string[]
        */
-      allow: ['Bash(yarn test)', 'Bash(yarn test:cov:*)'],
+      allow: [
+        'Bash(git add:*)',
+        'Bash(git check-ignore:*)',
+        'Bash(git commit:*)',
+        'Bash(git status:*)',
+        'Bash(grep:*)',
+        'Bash(yarn format:*)',
+        'Bash(yarn markdownlint-cli2:*)',
+        'Bash(yarn prettier:*)',
+        'Bash(yarn qa:*)',
+        'Bash(yarn test)',
+        'Bash(yarn test:cov:*)',
+      ],
     },
   },
   /**
@@ -264,8 +341,6 @@ local utils = import 'utils.libjsonnet';
   want_cursor: true,
   /** @brief If the project should will generate documentation. */
   want_docs: true,
-  /** @brief If the project should have a `djlint` configuration. */
-  want_djlint: false,
   /** @brief If the project should have a main module (for CLI). */
   want_main: false,
   /** @brief If the project has multiple entry points (CLI commands). */
@@ -413,7 +488,7 @@ local utils = import 'utils.libjsonnet';
     local pkg_mgr_hooks = if is_uv then [import 'defaults/pre-commit-config/uv.libjsonnet']
     else [import 'defaults/pre-commit-config/poetry.libjsonnet'],
     local precommit_python_repos = if settings.project_type == 'python' then
-      pkg_mgr_hooks + poetry_plugin_export + yapf_precommit + djlint else [],
+      pkg_mgr_hooks + poetry_plugin_export + yapf_precommit else [],
     local precommit_c_cpp_repos = if settings.project_type == 'c' || settings.project_type == 'c++' then [
       import 'defaults/pre-commit-config/clang-format.libjsonnet',
     ] else [],
@@ -436,6 +511,17 @@ local utils = import 'utils.libjsonnet';
      */
     repos: [(import 'defaults/pre-commit-config/main.libjsonnet').get(settings)] +
            precommit_python_repos + precommit_c_cpp_repos + github + cff + [local_hooks.get(settings)],
+    ci: {
+      skip: [
+        'check-jsonschema',
+        'cspell',
+        'detect-aws-credentials',
+        'fix-formatting-markdown',
+        'fix-formatting-prettier',
+        'fix-ruff',
+        'yarn-check-lock',
+      ],
+    },
   },
   /** @brief Visual Studio Code configuration. */
   vscode: {
@@ -603,6 +689,7 @@ local utils = import 'utils.libjsonnet';
     '/CMakeUserPresets.json',
     '/vcpkg_installed/',
   ] else [],
+  local claude_ignore = if self.want_claude then ['.claude/settings.local.json'] else [],
   local python_ignore = if self.project_type == 'python' then [
     '.venv/',
     '/docs/_build/',
@@ -617,7 +704,7 @@ local utils = import 'utils.libjsonnet';
   local typescript_ignore = if self.project_type == 'typescript' then ['/coverage/'] else [],
   /** @brief Array of .gitignore entries. */
   gitignore: std.set(self.shared_ignore + python_ignore + cpp_ignore + typescript_ignore +
-                     if !self.keep_dist then ['/dist/'] else []),
+                     claude_ignore + if !self.keep_dist then ['/dist/'] else []),
 
   // C/C++ only
   local clang_format = import 'defaults/clang-format.libjsonnet',
@@ -933,11 +1020,13 @@ local utils = import 'utils.libjsonnet';
    * @brief Array of additional APT packages to install in the Snapcraft Python part.
    * @var string[]
    */
+  snap_python_build_packages: [],
   snap_python_stage_packages: [],
   local python_part = if settings.project_type == 'python' then {
     [settings.project_name]: {
       plugin: if is_uv then 'python' else 'poetry',
       source: '.',
+      'build-packages': settings.snap_python_build_packages,
       'stage-packages': settings.snap_python_stage_packages,
     } + (if is_uv then { 'python-packages': ['.'] } else {}),
   } else {},

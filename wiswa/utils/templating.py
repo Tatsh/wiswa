@@ -123,8 +123,26 @@ def _write_templated_files_typescript(settings: Settings, templates_dir: Path,
                overwrite=True)
 
 
+def _write_templated_files_claude(templates_dir: Path, resolve_template: Callable[[Path],
+                                                                                  jinja2.Template],
+                                  write_file: Callable[..., Any]) -> None:
+    agents_dir = templates_dir / '.claude/agents'
+    if agents_dir.is_dir():
+        for file_path in sorted(agents_dir.iterdir()):
+            if file_path.suffix == '.j2':
+                output = Path('.claude/agents') / file_path.stem
+                write_file(resolve_template(file_path), output, overwrite=True)
+    skills_dir = templates_dir / '.claude/skills/ci'
+    if skills_dir.is_dir():
+        for file_path in sorted(skills_dir.iterdir()):
+            if file_path.suffix == '.j2':
+                output = Path('.claude/skills/ci') / file_path.stem
+                write_file(resolve_template(file_path), output, overwrite=True)
+    write_file(resolve_template(templates_dir / 'CLAUDE.md.j2'), 'CLAUDE.md')
+    write_file(resolve_template(templates_dir / 'AGENTS.md.j2'), 'AGENTS.md')
+
+
 def _should_overwrite_contributing(settings: Settings) -> bool:
-    """Return whether CONTRIBUTING.md should be overwritten due to a package manager switch."""
     contributing = Path('CONTRIBUTING.md')
     if not contributing.exists():
         return False
@@ -135,7 +153,16 @@ def _should_overwrite_contributing(settings: Settings) -> bool:
 
 
 def write_templated_files(module_path: Path, settings: Settings) -> None:
-    """Write templated files."""
+    """
+    Write templated files.
+
+    Parameters
+    ----------
+    module_path : Path
+        Path to the :py:mod:`wiswa` package directory.
+    settings : Settings
+        Project settings.
+    """
     _, templates_dir, resolve_template, write_file = _template_env(module_path, settings)
     Path('.github/copilot-instructions.md').unlink(missing_ok=True)
     general_instructions = Path('.github/instructions/general.instructions.md')
@@ -150,6 +177,8 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
                 and general_instructions.read_text(encoding='utf-8') == expected):
             general_instructions.unlink()
             log.debug('Removed `%s` (matched would-be content).', general_instructions)
+    if settings.get('want_claude_agents', False):
+        _write_templated_files_claude(templates_dir, resolve_template, write_file)
     contributing_overwrite = _should_overwrite_contributing(settings)
     common_templates = (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', contributing_overwrite),
                         ('LICENSE.txt.j2', not settings['private']), ('SECURITY.md.j2', True),

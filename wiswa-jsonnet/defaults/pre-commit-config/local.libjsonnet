@@ -75,7 +75,7 @@ local eslint = import 'defaults/pre-commit-config/eslint.libjsonnet';
         ],
       },
       {
-        entry: 'yarn check-spelling --no-must-find-files --no-summary',
+        entry: 'yarn cspell --no-progress --no-must-find-files --no-summary',
         id: 'cspell',
         language: 'node',
         name: 'check spelling',

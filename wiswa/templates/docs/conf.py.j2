@@ -64,9 +64,7 @@ extensions += ['sphinx_click']
     {% if key == 'intersphinx_mapping' %}
 {{ key }} = {{ value | topython(list_to_tuple=True) }}
     {% elif key == 'numpydoc_validation_checks' %}
-    {# djlint:off #}
 {{ key }} = {% raw %}{{% endraw %}{{ value[1:-1] }}{% raw %}}{% endraw %}
-    {# djlint:on #}
     {% elif key.startswith('numpydoc_') %}
 {{ key }} = {{ value }}
     {% else %}

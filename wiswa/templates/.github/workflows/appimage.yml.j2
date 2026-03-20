@@ -28,7 +28,7 @@ jobs:
 {% if settings.package_manager == 'uv' %}
       - name: 'Install dependencies (uv)'
         run: |
-          uv sync
+          uv sync{{ ' ' + settings.appimage.uv_sync_args | join(' ') if settings.appimage.uv_sync_args else '' }}
           uv pip install python-appimage
           wget -O generic.svg 'https://raw.githubusercontent.com/KDE/breeze-icons/refs/heads/master/icons/preferences/32/preferences-other.svg'
         shell: 'bash'
@@ -46,7 +46,7 @@ jobs:
         shell: 'bash'
       - name: 'Test binary'
         run: |
-          {{ test_bash() | indent(10) | trim }}
+          {{ test_bash(settings.appimage.test_commands) | indent(10) | trim }}
       - name: 'Upload Artifacts'
         uses: 'actions/upload-artifact@{{ github_latest_action_tag('actions', 'upload-artifact') }}'
         with:
@@ -70,6 +70,7 @@ jobs:
         name: Upload package
         uses: softprops/action-gh-release@{{ github_latest_action_tag('softprops', 'action-gh-release') }}
         with:
+          draft: true
           fail_on_unmatched_files: true
           files: |
             _out/*.zip
@@ -84,6 +85,7 @@ jobs:
         name: Upload package
         uses: softprops/action-gh-release@{{ github_latest_action_tag('softprops', 'action-gh-release') }}
         with:
+          draft: true
           fail_on_unmatched_files: true
           files: |
             dist/*.AppImage

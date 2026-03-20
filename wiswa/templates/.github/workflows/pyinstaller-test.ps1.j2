@@ -1,8 +1,11 @@
-{% macro test_powershell() %}
+{% macro test_powershell(test_commands) %}
 $distFiles = Get-ChildItem -Path dist\*.exe
 Write-Host "Found $($distFiles.Count) files in dist/: $(( $distFiles | ForEach-Object { $_.Name } ) -join ', ')"
 foreach ($file in $distFiles) {
   Write-Host "Testing '$($file.FullName)'."
   & $file.FullName --help
+{% for cmd in test_commands %}
+  & $file.FullName {{ cmd }}
+{% endfor %}
 }
 {% endmacro %}

@@ -28,21 +28,6 @@
     },
     /** Configuration for code coverage. */
     coverage: import 'defaults/coverage.libjsonnet',
-    /** Configuration for Jinja2 template linter. */
-    djlint: {
-      /** Profile for Jinja2 linting, such as "jinja" or "django". */
-      profile: 'jinja',
-      /** Maximum line length for Jinja2 templates. */
-      max_line_length: 100,
-      /** Whether to enforce no trailing newline in templates. */
-      no_line_after_yaml: true,
-      /** Whether to preserve blank lines in templates. */
-      preserve_blank_lines: true,
-      /** Whether to preserve leading spaces in templates. */
-      preserve_leading_space: true,
-      /** Whether to use .gitignore patterns for ignoring files. */
-      use_gitignore: true,
-    },
     /** Configuration for doc8, a documentation linter. */
     doc8: {
       /** Maximum line length for documentation files. */

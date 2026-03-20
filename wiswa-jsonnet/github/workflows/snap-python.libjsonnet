@@ -71,6 +71,7 @@ function(settings)
             name: 'Upload package',
             uses: 'softprops/action-gh-release@' + utils.githubLatestActionTag('softprops', 'action-gh-release'),
             with: {
+              draft: true,
               fail_on_unmatched_files: true,
               files: '*.snap',
             },

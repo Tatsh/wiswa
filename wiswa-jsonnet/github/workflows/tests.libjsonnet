@@ -32,7 +32,7 @@ function(settings)
           },
           {
             name: if is_uv then 'Install dependencies (uv)' else 'Install dependencies (Poetry)',
-            run: if is_uv then 'uv sync --group tests' else 'poetry install --with=tests',
+            run: if is_uv then 'uv sync --group tests --all-extras' else 'poetry install --with=tests --all-extras',
           },
           {
             name: 'Install pytest-action dependencies',

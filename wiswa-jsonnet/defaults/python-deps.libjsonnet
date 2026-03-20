@@ -16,7 +16,6 @@ function(want_main, want_yapf, stubs_only, project_name, want_coveralls, want_sq
   } + want_main_deps + bascom_dep,
   dev: {
     commitizen: ver('commitizen'),
-    djlint: ver('djlint'),
     mypy: ver('mypy'),
     ruff: ver('ruff'),
   } + cz_path_dep + (

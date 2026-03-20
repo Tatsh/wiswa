@@ -22,10 +22,50 @@ jobs:
           cache: 'poetry'
 {% endif %}
           python-version: '3.13'
+{% if settings.pyinstaller.vcpkg.enabled %}
+  {% for os_name, target in settings.pyinstaller.vcpkg.targets.items() %}
+      - if: matrix.os == '{{ os_name }}'
+        name: 'Cache vcpkg installed packages'
+        uses: 'actions/cache@{{ github_latest_action_tag('actions', 'cache') }}'
+        with:
+          key: vcpkg-{{ target.triplet }}-{{ target.packages | join('-') }}-${{ '{{' }} hashFiles('.github/workflows/pyinstaller.yml') }}
+          path: '~/vcpkg/installed'
+      - if: matrix.os == '{{ os_name }}'
+        name: 'Set up vcpkg'
+        run: |
+          $cachedInstalled = $null
+          if (Test-Path "$env:USERPROFILE\vcpkg\installed") {
+            $cachedInstalled = "$env:TEMP\vcpkg-installed"
+            Move-Item "$env:USERPROFILE\vcpkg\installed" $cachedInstalled
+            Remove-Item -Recurse -Force "$env:USERPROFILE\vcpkg"
+          }
+          git clone --depth 1 https://github.com/microsoft/vcpkg "$env:USERPROFILE\vcpkg"
+          if ($cachedInstalled) {
+            Move-Item $cachedInstalled "$env:USERPROFILE\vcpkg\installed"
+          }
+          & "$env:USERPROFILE\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
+    {% for pkg in target.packages %}
+          & "$env:USERPROFILE\vcpkg\vcpkg.exe" install {{ pkg }} --triplet {{ target.triplet }}
+    {% endfor %}
+
+          $installed = "$env:USERPROFILE\vcpkg\installed\{{ target.triplet }}"
+
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\vcpkg"
+          Add-Content -Path $env:GITHUB_PATH -Value "$installed\tools\pkgconf"
+          Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_ROOT=$env:USERPROFILE\vcpkg"
+          Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_DEFAULT_TRIPLET={{ target.triplet }}"
+          Add-Content -Path $env:GITHUB_ENV -Value "OPENSSL_DIR=$installed"
+          Add-Content -Path $env:GITHUB_ENV -Value "PKG_CONFIG_PATH=$installed\lib\pkgconfig"
+          Add-Content -Path $env:GITHUB_ENV -Value "CMAKE_PREFIX_PATH=$installed"
+          Add-Content -Path $env:GITHUB_ENV -Value "LIB=$installed\lib"
+          Add-Content -Path $env:GITHUB_ENV -Value "INCLUDE=$installed\include"
+        shell: 'pwsh'
+  {% endfor %}
+{% endif %}
 {% if settings.package_manager == 'uv' %}
       - name: 'Install dependencies (uv)'
         run: |
-          uv sync
+          uv sync{{ ' ' + settings.pyinstaller.uv_sync_args | join(' ') if settings.pyinstaller.uv_sync_args else '' }}
           uv pip install pyinstaller
         shell: 'bash'
 {% else %}
@@ -43,13 +83,13 @@ jobs:
       - if: matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm'
         name: 'Test binary'
         run: |
-          {{ test_powershell() | indent(10) | trim }}
+          {{ test_powershell(settings.pyinstaller.test_commands) | indent(10) | trim }}
 {% endif %}
 {% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
       - if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
         name: 'Test binary'
         run: |
-          {{ test_bash() | indent(10) | trim }}
+          {{ test_bash(settings.pyinstaller.test_commands) | indent(10) | trim }}
 {% endif %}
       - name: 'Upload Artifacts'
         uses: 'actions/upload-artifact@{{ github_latest_action_tag('actions', 'upload-artifact') }}'
@@ -92,6 +132,7 @@ jobs:
         name: Upload package
         uses: softprops/action-gh-release@{{ github_latest_action_tag('softprops', 'action-gh-release') }}
         with:
+          draft: true
           fail_on_unmatched_files: true
           files: |
             _out/*.zip

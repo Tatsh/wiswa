@@ -28,15 +28,21 @@ local utils = import 'utils.libjsonnet';
     },
   ],
   local python_deps = { pyright: utils.latestNpmPackageVersionCaret('pyright') },
+  local dictionary_update = "rm -f .vscode/dictionary.txt && cspell --no-progress './**/*' './**/.*' 2>&1 | grep -oP '(?<=Unknown word \\()\\S+(?=\\))' | python3 -c \"import sys; print('\\n'.join(sorted(set(l.strip().lower() for l in sys.stdin if l.strip()))))\" > .vscode/dictionary.txt",
   local python_test_scripts(run_cmd) = {
     test: '%s pytest' % run_cmd,
     'test:cov': 'yarn test --cov . --cov-branch --cov-report html --cov-report term-missing:skip-covered',
   },
   local python_scripts(settings) = {
     local run_cmd = if settings.package_manager == 'uv' then 'uv run' else 'poetry run',
-    'check-formatting': 'yarn prettier -c . && %s yapf -prd . && yarn markdownlint-cli2' % run_cmd,
-    'check-spelling': "yarn cspell --no-progress './**/*'  './**/.*'",
-    format: 'prettier -w . && %s yapf -ri . && yarn markdownlint-cli2 --fix' % run_cmd,
+    local fmt_check = if settings.want_yapf then '%s yapf -prd .' % run_cmd
+                      else '%s ruff format --check .' % run_cmd,
+    local fmt_apply = if settings.want_yapf then '%s yapf -ri .' % run_cmd
+                      else '%s ruff format .' % run_cmd,
+    'check-formatting': 'prettier -c . && %s && markdownlint-cli2' % fmt_check,
+    'check-spelling': "cspell --no-progress './**/*'  './**/.*'",
+    'dict:update': dictionary_update,
+    format: 'prettier -w . && %s && markdownlint-cli2 --fix' % fmt_apply,
     mypy: '%s mypy' % run_cmd,
     qa: 'yarn mypy . && yarn ruff . && yarn check-spelling && yarn check-formatting',
     regen: '%s wiswa' % run_cmd,
@@ -47,9 +53,10 @@ local utils = import 'utils.libjsonnet';
   ) else {},
   local c_cpp_scripts = {
     build: 'cmake --preset=default -DBUILD_DOCS=ON && cmake --build build',
-    'check-formatting': 'clang-format -n src/*.cpp src/*.h && prettier -c . && yarn markdownlint-cli2',
+    'check-formatting': 'clang-format -n src/*.cpp src/*.h && prettier -c . && markdownlint-cli2',
     'check-spelling': 'cspell --no-progress .',
-    format: 'clang-format -i src/*.cpp src/*.h && yarn prettier -w .',
+    'dict:update': dictionary_update,
+    format: 'clang-format -i src/*.cpp src/*.h && prettier -w .',
     qa: 'yarn check-spelling && yarn check-formatting',
   },
   typescript_dev_deps(settings):: {
@@ -66,10 +73,11 @@ local utils = import 'utils.libjsonnet';
     'ts-jest': utils.latestNpmPackageVersionCaret('ts-jest'),
   } else {},
   typescript_scripts(settings):: {
-    'check-formatting': 'yarn prettier -c . && yarn markdownlint-cli2',
-    'check-spelling': "yarn cspell --no-progress './**/*'  './**/.*'",
-    format: 'prettier -w . && yarn markdownlint-cli2 --fix',
-    qa: 'yarn eslint && yarn check-spelling && yarn check-formatting',
+    'check-formatting': 'prettier -c . && markdownlint-cli2',
+    'check-spelling': "cspell --no-progress './**/*'  './**/.*'",
+    'dict:update': dictionary_update,
+    format: 'prettier -w . && markdownlint-cli2 --fix',
+    qa: 'eslint && yarn check-spelling && yarn check-formatting',
   } + if settings.want_tests then { test: 'jest' } else {},
   local top = self,
 
@@ -163,6 +171,12 @@ local utils = import 'utils.libjsonnet';
       overrides: [
         {
           files: ['package.json'],
+          options: {
+            parser: 'json',
+          },
+        },
+        {
+          files: ['*.json.dist'],
           options: {
             parser: 'json',
           },

@@ -22,6 +22,7 @@ buymeacoffee
 bytearray
 cashapp
 cashtag
+cdrommsf
 certreq
 charliermarsh
 chromewebstore
@@ -36,6 +37,8 @@ coveragerc
 coverallsapp
 cpack
 ctes
+ctypes
+dashcam
 dataclasses
 datarootdir
 datatable
@@ -53,6 +56,7 @@ donjayamanne
 dotjoshjohnson
 doxyfile
 doxysonnet
+dunder
 dversion
 eamodio
 eeyore
@@ -74,6 +78,7 @@ fontawesome
 foxundermoon
 fqxz
 funcattributes
+functools
 gcov
 genindex
 getenv
@@ -108,6 +113,7 @@ jquery
 jsonnet
 jsonschema
 kdeplasma
+kwargs
 launchable
 leafo
 lextudio
@@ -130,6 +136,8 @@ mdfile
 modindex
 monkeypatch
 msys
+mymod
+myproject
 mypy
 namedebug
 namedtuples
@@ -146,12 +154,14 @@ numpy
 numpydoc
 objc
 onefile
+oneline
 osslsigncode
 paramdoc
 pascalreitermann
 pathlib
 pavelzw
 pipx
+plistlib
 prodvers
 pycache
 pydantic
@@ -177,12 +187,14 @@ savestepsize
 schemafile
 sdist
 sectigo
+setattr
 shellcheck
 shellformat
 signtool
 snapcore
 snapcraft
 softprops
+soupsieve
 sphinxcontrib
 sqlfluff
 srcs
@@ -200,6 +212,7 @@ timezone
 timonwong
 tojson
 tomlkit
+tomllib
 tomlq
 tonumber
 topython
@@ -208,11 +221,15 @@ tseslint
 typeattributes
 typedoc
 tyriar
+ubyte
 udvare
 undoc
+urllib
+userprofile
 varattributes
 vars
 vedantmgoyal
+vendored
 venv
 vers
 virtualenv
@@ -236,3 +253,4 @@ yarnrc
 zainchen
 zengxingxin
 zeshuaro
+ångström

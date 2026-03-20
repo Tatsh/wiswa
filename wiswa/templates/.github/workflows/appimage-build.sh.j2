@@ -1,58 +1,79 @@
 {% from '.github/workflows/appimage.desktop.j2' import desktop_entry %}
 {% from '.github/workflows/appimage-appinfo.xml.j2' import appinfo %}
+{% macro _build_body(settings) %}
+rm -fR recipe
+mkdir recipe
+cat > recipe/entrypoint.sh <<EOF
+{{ '{{' }} python-executable }} \${APPDIR}/opt/python{{ '{{' }} python-version }}/bin/${script_name} "\$@"
+EOF
+chmod +x recipe/entrypoint.sh
+if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+    cat recipe/entrypoint.sh
+fi
+cat > "recipe/${script_name}.desktop" <<EOF
+{{ desktop_entry(settings) | trim }}
+EOF
+if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+    cat "recipe/${script_name}.desktop"
+fi
+cat > recipe/requirements.txt <<EOF
+$(pwd -P)
+EOF
+{% if settings.appimage.requirements_filter %}
+uv export --no-hashes --all-extras --no-annotate | awk '{ print $1 }' | grep -E '{{ settings.appimage.requirements_filter }}' >> recipe/requirements.txt
+{% endif %}
+if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+    cat recipe/requirements.txt
+fi
+cat > "recipe/${script_name}.appinfo.xml" <<EOF
+{{ appinfo() | trim }}
+EOF
+if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
+    cat "recipe/${script_name}.appinfo.xml"
+fi
+cp generic.svg "recipe/${script_name}.svg"
+echo "Building AppImage for '${script_name}'..."
+{{ 'uv run' if settings.package_manager == 'uv' else 'poetry run' }} python -m python_appimage -v build app -l "manylinux2014_${{ '{{' }} matrix.system.arch }}" -p {{ settings.appimage.python_version }} recipe
+{% if settings.has_multiple_entry_points %}
+mv "${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage" "dist/${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage"
+{% else %}
+mv "${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage" "dist/${script_name}-${version}-${{ '{{' }} matrix.system.arch }}.AppImage"
+{% endif %}
+{% endmacro %}
 {% macro build(settings) %}
-    {% if settings.appimage.exclusions %}
-exclusions=(
-  {{ settings.appimage.exclusions | join("\n") | indent(2) | trim }}
-)
-    {% endif %}
+    {% set single = settings.appimage.include_only | length == 1 %}
 project_name=$(tomlq -r '.project.urls.repository|split("/")[-1]' pyproject.toml)
 version=$(tomlq -r .project.version pyproject.toml)
 rm -fR dist
 mkdir dist
+    {% if single %}
+script_name='{{ settings.appimage.include_only[0] }}'
+{{ _build_body(settings) }}
+    {% else %}
+        {% if settings.appimage.include_only | length > 1 %}
+include_only=(
+  {{ settings.appimage.include_only | join("\n") | indent(2) | trim }}
+)
+        {% elif settings.appimage.exclusions %}
+exclusions=(
+  {{ settings.appimage.exclusions | join("\n") | indent(2) | trim }}
+)
+        {% endif %}
 while IFS=$' ' read -r script_name python_path func_name; do
-    {% if settings.appimage.exclusions %}
+        {% if settings.appimage.include_only | length > 1 %}
+    if ! printf '%s\0' "${include_only[@]}" | grep -Fqxz -- "${script_name}"; then
+        echo "Skipping ${script_name} (not in include_only)."
+        continue
+    fi
+        {% elif settings.appimage.exclusions %}
     if printf '%s\0' "${exclusions[@]}" | grep -Fqxz -- "${script_name}"; then
         echo "Skipping ${script_name}."
         continue
     fi
-    {% endif %}
-    rm -fR recipe
-    mkdir recipe
+        {% endif %}
     func_name="${func_name#"${func_name%%[![:space:]]*}"}"
     func_name="${func_name%"${func_name##*[![:space:]]}"}"
-    cat > recipe/entrypoint.sh <<EOF
-{{ '{{' }} python-executable }} \${APPDIR}/opt/python{{ '{{' }} python-version }}/bin/${script_name} "\$@"
-EOF
-    chmod +x recipe/entrypoint.sh
-    if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
-        cat recipe/entrypoint.sh
-    fi
-    cat > "recipe/${script_name}.desktop" <<EOF
-{{ desktop_entry(settings) | trim }}
-EOF
-    if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
-        cat "recipe/${script_name}.desktop"
-    fi
-    cat > recipe/requirements.txt <<EOF
-$(pwd -P)
-EOF
-    if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
-        cat recipe/requirements.txt
-    fi
-    cat > "recipe/${script_name}.appinfo.xml" <<EOF
-{{ appinfo() | trim }}
-EOF
-    if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
-        cat "recipe/${script_name}.appinfo.xml"
-    fi
-    cp generic.svg "recipe/${script_name}.svg"
-    echo "Building executable for '${script_name}'..."
-    {{ 'uv run' if settings.package_manager == 'uv' else 'poetry run' }} python -m python_appimage -v build app -l "manylinux2014_${{ '{{' }} matrix.system.arch }}" -p {{ settings.appimage.python_version }} recipe
-    {% if settings.has_multiple_entry_points %}
-    mv "${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage" "dist/${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage"
-    {% else %}
-    mv "${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage" "dist/${script_name}-${version}-${{ '{{' }} matrix.system.arch }}.AppImage"
-    {% endif %}
+    {{ _build_body(settings) | indent(4) | trim }}
 done < <(tomlq -r '.project.scripts|to_entries[]|"\(.key) \(.value|split(":")|join(" "))"' pyproject.toml)
+    {% endif %}
 {% endmacro %}

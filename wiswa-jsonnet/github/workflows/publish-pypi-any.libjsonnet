@@ -32,7 +32,11 @@ function(settings)
           {
             uses: 'softprops/action-gh-release@' + utils.githubLatestActionTag('softprops', 'action-gh-release'),
             with: {
-              files: 'dist/*',
+              draft: true,
+              files: |||
+                dist/*.tar.gz
+                dist/*.whl
+              |||,
             },
           },
         ],

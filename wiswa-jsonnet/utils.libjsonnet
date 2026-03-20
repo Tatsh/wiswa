@@ -65,7 +65,10 @@
       local extrasPart = if std.objectHas(val, 'extras') && std.length(val.extras) > 0
       then '[%s]' % std.join(',', val.extras)
       else '';
-      ['%s%s%s' % [name, extrasPart, self.poetryVerToPep508(val.version)]]
+      local platformPart = if std.objectHas(val, 'platform')
+      then "; sys_platform == '%s'" % val.platform
+      else '';
+      ['%s%s%s%s' % [name, extrasPart, self.poetryVerToPep508(val.version), platformPart]]
     else
       ['%s%s' % [name, self.poetryVerToPep508(val)]],
 
