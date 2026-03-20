@@ -76,9 +76,9 @@ def _post_process_steps_python(settings: Settings) -> None:
         pyproject_content['tool']['ruff']['lint']['ignore'] = sorted(
             pyproject_content['tool']['ruff']['lint']['ignore'] + ['Q000', 'Q003'])
         package_json_content['scripts']['check-formatting'] = (
-            f'yarn prettier -c . && {run_cmd} ruff format --check . && yarn markdownlint-cli2')
+            f'prettier -c . && {run_cmd} ruff format --check . && markdownlint-cli2')
         package_json_content['scripts']['format'] = (
-            f'yarn prettier -w . && {run_cmd} ruff format . && yarn markdownlint-cli2')
+            f'prettier -w . && {run_cmd} ruff format . && markdownlint-cli2')
     Path('package.json').write_text(json.dumps(package_json_content, indent=2, sort_keys=True),
                                     encoding='utf-8')
     Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8')
@@ -169,7 +169,6 @@ def _docs_badges(settings: Settings) -> Iterator[str]:
 
 
 def _get_main_dependency_names(settings: Settings) -> set[str]:
-    """Get the set of main dependency package names regardless of package manager."""
     names = set(settings['python_deps']['main'])
     if settings['package_manager'] == 'uv':
         names |= {
@@ -305,7 +304,6 @@ def _social_badges(settings: Settings) -> Iterator[str]:
 
 def _replace_badge_section(readme: Path, lines: Sequence[str], expected: Sequence[str],
                            social_expected: Sequence[str]) -> None:
-    """Find the badge section in a README and replace it with given badges."""
     start_idx = next((i for i, line in enumerate(lines) if line.startswith('#')), 0) + 1
     while start_idx < len(lines) and not lines[start_idx].strip():
         start_idx += 1
@@ -319,7 +317,6 @@ def _replace_badge_section(readme: Path, lines: Sequence[str], expected: Sequenc
 
 
 def _check_readme_badges(settings: Settings) -> None:
-    """Check and correct README.md badges if file existed before template processing."""
     log.debug('Checking README.md badges.')
     if not settings['_readme_existed']:
         log.debug('README.md did not exist before templating; skipping badge check.')
@@ -338,7 +335,14 @@ def _check_readme_badges(settings: Settings) -> None:
 
 
 def post_process_steps(settings: Settings) -> None:
-    """Run post-processing steps."""
+    """
+    Run post-processing steps after project generation.
+
+    Parameters
+    ----------
+    settings : Settings
+        Project settings.
+    """
     match settings['project_type']:
         case 'python':
             _post_process_steps_python(settings)
