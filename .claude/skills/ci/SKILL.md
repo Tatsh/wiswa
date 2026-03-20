@@ -103,7 +103,9 @@ Closes: #123
 
 ### Subject line rules
 
-- Format: `component.name: short description`.
+- Format: `component.name: short description`. Component name must be lowercase and must skip the
+  first period if present (`vscode` not `.vscode`, `README.md` -> `readme` not `README`), and must
+  omit the period with extension.
 - Lowercase after the colon (unless a proper noun).
 - No period at the end.
 - Maximum 72 characters.
