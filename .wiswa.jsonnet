@@ -18,6 +18,11 @@ local utils = import 'utils.libjsonnet';
       scripts+: { '_wiswa-gen-docs': 'wiswa.main:gen_docs_main' },
     },
     tool+: {
+      local extra_omit = ['typing.py'],
+      coverage+: {
+        report+: { omit+: extra_omit },
+        run+: { omit+: extra_omit },
+      },
       poetry+: {
         dependencies+: {
           'requests-cache': utils.latestPypiPackageVersionCaret('requests-cache'),

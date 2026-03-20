@@ -97,12 +97,26 @@ version_provider = "pep621"
 
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:"]
-omit = ["__main__.py", "conftest.py", "tests.py", "tests/*/test_*.py", "tests/test_*.py"]
+omit = [
+  "__main__.py",
+  "conftest.py",
+  "tests.py",
+  "tests/*/test_*.py",
+  "tests/test_*.py",
+  "typing.py",
+]
 show_missing = true
 
 [tool.coverage.run]
 branch = true
-omit = ["__main__.py", "conftest.py", "tests.py", "tests/*/test_*.py", "tests/test_*.py"]
+omit = [
+  "__main__.py",
+  "conftest.py",
+  "tests.py",
+  "tests/*/test_*.py",
+  "tests/test_*.py",
+  "typing.py",
+]
 
 [tool.doc8]
 max-line-length = 100
