@@ -30,7 +30,6 @@ If any changed files are under `{{ settings.primary_module }}/` or `tests/`, run
 1. **copy-editor** - fix prose in comments, docstrings, and strings.
 1. **test-writer** - generate/update tests for new/changed code. **Skip if the only changes are in
    `tests/`.**
-1. **coverage-improver** - find coverage gaps and write tests.
 1. **qa-fixer** - format and fix lint/spelling issues.
 
 ### When user-facing changes are being committed
@@ -149,7 +148,6 @@ For Python files, strip the `{{ settings.primary_module }}/` prefix and replace 
 3. Create a unique temp file with `mktemp /tmp/commit-msg-XXXXXXXX`, write the commit message there
    using the **Write** tool (not Bash `cat`), then commit with `git commit -S -s -F <tempfile>`.
    Multiple Claude instances may run concurrently, so never use a fixed path.
-
 4. If a pre-commit hook fails, fix the issue, re-stage (use appropriate agent if there is one), and
    try to commit again.
 5. After all commits, run `git status` to verify clean state.
