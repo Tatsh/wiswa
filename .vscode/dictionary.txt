@@ -210,6 +210,8 @@ tamasfe
 tatsh
 templater
 testpaths
+testrepo
+testuser
 timezone
 timonwong
 tojson
