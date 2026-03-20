@@ -132,6 +132,7 @@ lxml
 mainpage
 makecert
 manylinux
+mktemp
 maxwidth
 mdfile
 modindex
