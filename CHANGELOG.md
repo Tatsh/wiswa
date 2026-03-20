@@ -21,6 +21,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Prettier override for `*.json.dist` files.
 - Pre-commit CI skip list for hooks that should not run in CI.
 - Expanded default Claude permissions (git, grep, formatting, QA, and test commands).
+- `github.immutable_releases` setting (defaults to `true`) that enables immutable releases on the
+  GitHub repository, preventing release assets from being modified after publication.
 
 ### Fixed
 

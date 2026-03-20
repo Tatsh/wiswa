@@ -22,6 +22,8 @@ if TYPE_CHECKING:
 
     from wiswa.typing import Settings
 
+__all__ = ('evaluate_jsonnet_file', 'evaluate_jsonnet_project', 'evaluate_merged_settings')
+
 log = logging.getLogger(__name__)
 
 NATIVE_CALLBACKS: dict[str, tuple[tuple[str, ...], Callable[..., Any]]] = {

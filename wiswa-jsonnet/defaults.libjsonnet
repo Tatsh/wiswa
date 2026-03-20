@@ -584,6 +584,8 @@ local utils = import 'utils.libjsonnet';
       std.asciiLower(settings.github_username),
       settings.github_project_name,
     ],
+    /** @brief If releases should be immutable (prevent asset modification after publish). */
+    immutable_releases: true,
     /** @brief If GitHub Pages is using Jekyll. */
     pages_using_jekyll: true,
     /** @brief GitHub username. */

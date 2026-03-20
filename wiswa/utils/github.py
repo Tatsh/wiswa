@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from wiswa.typing import Settings
     import requests_cache
 
+__all__ = ('setup_github_project',)
+
 log = logging.getLogger(__name__)
 
 
@@ -66,7 +68,6 @@ def _get_repo_config(settings: Settings) -> dict[str, Any]:
 
 
 def _setup_github_session() -> tuple[requests_cache.CachedSession, str] | None:
-    """Set up GitHub API session with authentication."""
     token = keyring.get_password('tmu-github-api', getpass.getuser())
     if not token:
         log.warning('No GitHub token.')
@@ -83,7 +84,6 @@ def _setup_github_session() -> tuple[requests_cache.CachedSession, str] | None:
 
 def _configure_github_repo(session: requests_cache.CachedSession, host: str, repo_name: str,
                            settings: Settings) -> None:
-    """Configure basic repository settings."""
     session.patch(f'{host}/repos/{repo_name}', json=_get_repo_config(settings)).raise_for_status()
     session.put(f'{host}/repos/{repo_name}/topics',
                 json={
@@ -95,10 +95,19 @@ def _configure_github_repo(session: requests_cache.CachedSession, host: str, rep
             'automated-security-fixes', 'private-vulnerability-reporting', 'vulnerability-alerts'
     ]:
         session.put(f'{host}/repos/{repo_name}/{endpoint}').raise_for_status()
+    if settings['github']['immutable_releases']:
+        session.put(f'{host}/repos/{repo_name}/immutable-releases').raise_for_status()
 
 
 def setup_github_project(settings: Settings) -> None:
-    """Configure the GitHub repository (topics, rulesets, security, Pages)."""
+    """
+    Configure the GitHub repository (topics, rulesets, security, Pages).
+
+    Parameters
+    ----------
+    settings : Settings
+        The project settings dictionary.
+    """
     if not settings['using_github']:
         log.debug('Not running GitHub setup.')
         return

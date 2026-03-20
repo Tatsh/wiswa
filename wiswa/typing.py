@@ -6,6 +6,12 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
+__all__ = ('PackageJSON', 'PackageManager', 'ProjectType', 'PyProject', 'PyProjectBuildSystem',
+           'PyProjectProject', 'PyProjectTool', 'PyProjectToolCommitizen', 'PyProjectToolPoetry',
+           'PyProjectToolPoetryPackage', 'PythonDeps', 'Settings', 'SettingsGitHub',
+           'SettingsSocial', 'SettingsSocialMastodon', 'SettingsSocialTextAndURI', 'VSCode',
+           'VSCodeLaunch', 'VSCodeLaunchConfiguration')
+
 PackageManager: TypeAlias = Literal['poetry', 'uv']
 ProjectType: TypeAlias = Literal['c', 'c++', 'generic', 'lua', 'python', 'typescript', 'xcode']
 
@@ -125,6 +131,8 @@ class PythonDeps(TypedDict, total=False):
 
 class SettingsGitHub(TypedDict):
     """GitHub settings."""
+    immutable_releases: bool
+    """If releases should be immutable."""
     username: str
     """The GitHub username."""
 
@@ -219,8 +227,8 @@ class Settings(TypedDict):
     """If the project consists of only typing stubs."""
     supported_platforms: str | list[str]
     """
-    Supported platforms for the project, "all", string, or an array of strings. Values: "windows",
-    "linux", "macos", "ios".
+    Supported platforms for the project, 'all', string, or an array of strings. Values: 'windows',
+    'linux', 'macos', 'ios'.
     """
     using_django: bool
     """If the project is using Django."""
