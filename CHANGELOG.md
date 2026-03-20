@@ -22,6 +22,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Pre-commit CI skip list for hooks that should not run in CI.
 - Expanded default Claude permissions (git, grep, formatting, QA, and test commands).
 
+### Fixed
+
+- Circular import between `wiswa.extensions` and `wiswa.utils.templating`.
+- HTTP 403/429 errors now display a user-friendly rate-limit message instead of a traceback.
+
 ### Changed
 
 - `want_claude` now defaults to `true`.

@@ -1,6 +1,7 @@
 """Main script."""
 from __future__ import annotations
 
+from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 import importlib.resources
@@ -10,6 +11,7 @@ import re
 
 from bascom import setup_logging
 import click
+import requests
 
 from .utils import (
     copy_static_files,
@@ -53,6 +55,26 @@ def _has_legacy_poetry_deps(settings: Settings) -> bool:
     return False
 
 
+def _handle_http_error(e: requests.HTTPError) -> None:
+    response = e.response
+    if (response is not None
+            and response.status_code in {HTTPStatus.FORBIDDEN, HTTPStatus.TOO_MANY_REQUESTS}):
+        retry_after = response.headers.get('Retry-After', '')
+        rate_limit_remaining = response.headers.get('X-RateLimit-Remaining', '')
+        msg = 'Rate limited by %s.' if rate_limit_remaining == '0' else 'HTTP %d from %s.'
+        url = response.url or 'unknown'
+        host = re.sub(r'^https?://([^/]+).*', r'\1', url)
+        if rate_limit_remaining == '0':
+            click.echo(msg % host, err=True)
+        else:
+            click.echo(msg % (response.status_code, host), err=True)
+        if retry_after:
+            click.echo(f'Retry after {retry_after} seconds.', err=True)
+        else:
+            click.echo('Please wait a few minutes before trying again.', err=True)
+    raise click.Abort
+
+
 @click.command(context_settings={'help_option_names': ('-h', '--help')})
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-J',
@@ -88,25 +110,29 @@ def main(file: Path,
     )
     log.debug('GitHub enabled: %s', not skip_github)
     os.chdir(file.parent)
-    with (importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as
-          lib_path, importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path):
-        jpathdir = [str(lib_path)]
-        merged_settings, loaded = evaluate_merged_settings([*jpath, *jpathdir],
-                                                           lib_path,
-                                                           file.read_text(encoding='utf-8'),
-                                                           user_defaults=user_defaults)
-        if _has_legacy_poetry_deps(loaded):
-            log.warning('pyproject.tool.poetry.*.dependencies is deprecated. '
-                        'Move dependencies to python_deps.main/dev/docs/tests in .wiswa.jsonnet.')
-        if not skip_jsonnet:
-            evaluate_jsonnet_project(lib_path, jpathdir, merged_settings)
-        if not skip_templates:
-            write_templated_files(module_path, loaded)
-        download_yarn(loaded['yarn_version'])
-        download_yarn_plugins()
-        copy_static_files(loaded, module_path)
-        if loaded['project_type'] == 'python' and not loaded['stubs_only']:
-            create_py_typed_files(loaded)
-        post_process_steps(loaded)
-        if not skip_github:
-            setup_github_project(loaded)
+    try:
+        with (importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as lib_path,
+              importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path):
+            jpathdir = [str(lib_path)]
+            merged_settings, loaded = evaluate_merged_settings([*jpath, *jpathdir],
+                                                               lib_path,
+                                                               file.read_text(encoding='utf-8'),
+                                                               user_defaults=user_defaults)
+            if _has_legacy_poetry_deps(loaded):
+                log.warning(
+                    'pyproject.tool.poetry.*.dependencies is deprecated. '
+                    'Move dependencies to python_deps.main/dev/docs/tests in .wiswa.jsonnet.')
+            if not skip_jsonnet:
+                evaluate_jsonnet_project(lib_path, jpathdir, merged_settings)
+            if not skip_templates:
+                write_templated_files(module_path, loaded)
+            download_yarn(loaded['yarn_version'])
+            download_yarn_plugins()
+            copy_static_files(loaded, module_path)
+            if loaded['project_type'] == 'python' and not loaded['stubs_only']:
+                create_py_typed_files(loaded)
+            post_process_steps(loaded)
+            if not skip_github:
+                setup_github_project(loaded)
+    except requests.HTTPError as e:
+        _handle_http_error(e)
