@@ -12,6 +12,7 @@ grade: 'stable'
 name: 'wiswa'
 parts:
   wiswa:
+    build-packages: []
     plugin: 'python'
     python-packages:
       - '.'
