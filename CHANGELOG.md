@@ -26,6 +26,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Circular import between `wiswa.extensions` and `wiswa.utils.templating`.
 - HTTP 403/429 errors now display a user-friendly rate-limit message instead of a traceback.
+- PyInstaller and AppImage build scripts failed with "unexpected end of file" when the project had
+  multiple entry points (or empty `include_only`), because heredoc `EOF` terminators were indented
+  inside the `while` loop body.
 
 ### Changed
 

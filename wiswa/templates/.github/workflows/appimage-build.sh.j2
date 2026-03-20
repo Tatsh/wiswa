@@ -59,6 +59,10 @@ exclusions=(
   {{ settings.appimage.exclusions | join("\n") | indent(2) | trim }}
 )
         {% endif %}
+_build_entry() {
+    local script_name="$1"
+{{ _build_body(settings) }}
+}
 while IFS=$' ' read -r script_name python_path func_name; do
         {% if settings.appimage.include_only | length > 1 %}
     if ! printf '%s\0' "${include_only[@]}" | grep -Fqxz -- "${script_name}"; then
@@ -73,7 +77,7 @@ while IFS=$' ' read -r script_name python_path func_name; do
         {% endif %}
     func_name="${func_name#"${func_name%%[![:space:]]*}"}"
     func_name="${func_name%"${func_name##*[![:space:]]}"}"
-    {{ _build_body(settings) | indent(4) | trim }}
+    _build_entry "${script_name}"
 done < <(tomlq -r '.project.scripts|to_entries[]|"\(.key) \(.value|split(":")|join(" "))"' pyproject.toml)
     {% endif %}
 {% endmacro %}
