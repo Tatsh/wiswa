@@ -29,10 +29,7 @@ function(want_main, want_yapf, stubs_only, project_name, want_coveralls, want_sq
     esbonio: ver('esbonio'),
     numpydoc: ver('numpydoc'),
     'restructuredtext-lint': ver('restructuredtext-lint'),
-    sphinx: [
-      { version: '<9.0.0', python: '>=3.11' },
-      { version: '^7.2.5', python: '<3.11' },
-    ],
+    sphinx: [{ version: ver('sphinx'), python: '>=3.13' }],
     'sphinx-datatables': ver('sphinx-datatables'),
     'sphinx-immaterial': ver('sphinx-immaterial'),
     tomlkit: ver('tomlkit'),
