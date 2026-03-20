@@ -12,7 +12,7 @@ from jinja2.ext import Extension
 if TYPE_CHECKING:
     import jinja2
 
-__all__ = ('GithubAPIExtension', 'ToPythonExtension')
+__all__ = ('GithubAPIExtension', 'ShellExtension', 'ToPythonExtension')
 
 
 def topython(  # noqa: PLR0911
@@ -58,6 +58,34 @@ def topython(  # noqa: PLR0911
             return f'({", ".join(data)})' if len(data) > 1 else f'({data[0]},)'
         return f'[{", ".join(data)}]'
     return obj
+
+
+_HEREDOC_START = re.compile(r'<<-?\s*\\?[\'"]?(\w+)[\'"]?\s*$')
+
+
+def _shell_indent(text: str, width: int = 4) -> str:
+    prefix = ' ' * width
+    lines = text.split('\n')
+    result: list[str] = []
+    heredoc_end: str | None = None
+    for line in lines:
+        if heredoc_end is not None:
+            result.append(line)
+            if line.strip() == heredoc_end:
+                heredoc_end = None
+        else:
+            result.append(prefix + line if line.strip() else line)
+            m = _HEREDOC_START.search(line)
+            if m:
+                heredoc_end = m.group(1)
+    return '\n'.join(result)
+
+
+class ShellExtension(Extension):  # pragma: no cover
+    """Extension that exports the ``shell_indent`` :py:class:`~jinja2.Environment` filter."""
+    def __init__(self, environment: jinja2.Environment) -> None:
+        super().__init__(environment)
+        environment.filters['shell_indent'] = _shell_indent
 
 
 class ToPythonExtension(Extension):  # pragma: no cover

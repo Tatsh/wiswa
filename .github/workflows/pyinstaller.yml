@@ -19,7 +19,7 @@ jobs:
       - name: 'Build with PyInstaller'
         run: |
           project_name=$(tomlq -r '.project.urls.repository|split("/")[-1]' pyproject.toml)
-          vers=$(echo "$(tomlq -r '.project.version|split(".")|map(tonumber)|@csv' pyproject.toml),0")
+          vers="$(tomlq -r '.project.version|split(".")|map(tonumber)|@csv' pyproject.toml),0"
           version=$(tomlq -r .project.version pyproject.toml)
           while IFS=$' ' read -r script_name python_path func_name; do
               func_name="${func_name#"${func_name%%[![:space:]]*}"}"
