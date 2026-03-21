@@ -7,6 +7,7 @@ local qa_other = import 'github/workflows/qa-other.libjsonnet';
 local release = import 'github/workflows/release.libjsonnet';
 local qa_python = import 'github/workflows/qa-python.libjsonnet';
 local qa_typescript = import 'github/workflows/qa-typescript.libjsonnet';
+local flatpak_python = import 'github/workflows/flatpak-python.libjsonnet';
 local snap_python = import 'github/workflows/snap-python.libjsonnet';
 local tests_typescript = import 'github/workflows/tests-typescript.libjsonnet';
 local tests = import 'github/workflows/tests.libjsonnet';
@@ -51,6 +52,10 @@ local utils = import 'utils.libjsonnet';
   ) + (
     if (settings.project_type == 'c++' || settings.project_type == 'c') && settings.want_winget then {
       '.github/workflows/publish-winget.yml': utils.manifestYaml(winget_publish(settings)),
+    } else {}
+  ) + (
+    if settings.want_flatpak && settings.project_type == 'python' then {
+      '.github/workflows/flatpak.yml': utils.manifestYaml(flatpak_python(settings)),
     } else {}
   ) + (
     if settings.want_snap && settings.project_type == 'python' then {

@@ -8,6 +8,7 @@ function(settings)
        (if settings.supported_platforms == 'all' || std.member(settings.supported_platforms, 'linux') then ['AppImage'] else []) +
        (if settings.supported_platforms == 'all' || std.member(settings.supported_platforms, 'windows') || std.member(settings.supported_platforms, 'macos') then ['PyInstaller'] else [])
      else []) +
+    (if settings.want_flatpak then ['Flatpak'] else []) +
     (if settings.want_snap then ['Snap'] else [])
   );
   {

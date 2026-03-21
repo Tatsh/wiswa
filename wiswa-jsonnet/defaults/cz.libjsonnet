@@ -19,6 +19,7 @@
     ] else [],
     local man = if settings.want_man then ['man/%s.1' % settings.project_name] else [],
     local snap = if settings.want_snap then ['snapcraft.yaml'] else [],
+    local flatpak = if settings.want_flatpak then ['%s.yml' % settings.publishing.flathub] else [],
     commitizen: {
       name: 'cz_path',
       remove_path_prefixes: ['include', 'src'],
@@ -28,7 +29,7 @@
         'CITATION.cff',
         'README.md',
         'package.json',
-      ] + cpp_files + man + snap),
+      ] + cpp_files + flatpak + man + snap),
       version_provider: 'npm',
       version_scheme: 'semver',
     },

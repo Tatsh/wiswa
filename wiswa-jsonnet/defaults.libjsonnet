@@ -367,6 +367,11 @@ local utils = import 'utils.libjsonnet';
    */
   want_snap: self.project_type != 'xcode' && self.want_main && !self.private,
   /**
+   * @brief If the project will have a Flatpak configuration.
+   * @var boolean
+   */
+  want_flatpak: self.project_type != 'xcode' && self.want_main && !self.private && self.publishing.flathub != '',
+  /**
    * @brief If the project will have tests.
    * @var boolean
    */
@@ -859,6 +864,9 @@ local utils = import 'utils.libjsonnet';
                                        ] else []) +
                                       (if settings.want_snap then [
                                          'snapcraft.yaml',
+                                       ] else []) +
+                                      (if settings.want_flatpak then [
+                                         '%s.yml' % settings.publishing.flathub,
                                        ] else [])),
              },
              coverage+: {
@@ -1156,4 +1164,34 @@ local utils = import 'utils.libjsonnet';
   } + (if settings.social.buymeacoffee != '' then {
     donation: 'https://buymeacoffee.com/%s' % settings.social.buymeacoffee,
   } else {}) else {}),
+
+  /** @brief Flatpak manifest configuration. */
+  flatpak: {
+    'app-id': settings.publishing.flathub,
+    command: settings.project_name,
+    'finish-args': [
+      '--share=ipc',
+      '--share=network',
+      '--socket=fallback-x11',
+      '--socket=wayland',
+    ],
+    modules: [
+      {
+        name: settings.project_name,
+        buildsystem: 'simple',
+        'build-commands': [
+          'pip3 install --no-index --find-links=. --prefix=/app .',
+        ],
+        sources: [
+          {
+            type: 'dir',
+            path: '.',
+          },
+        ],
+      },
+    ],
+    runtime: 'org.freedesktop.Platform',
+    'runtime-version': '24.08',
+    sdk: 'org.freedesktop.Sdk',
+  },
 }

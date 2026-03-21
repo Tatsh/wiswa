@@ -52,6 +52,9 @@ function(settings)
   local snap_items = if settings.want_snap then {
     'snapcraft.yaml': utils.manifestYaml(settings.snapcraft),
   } else {};
+  local flatpak_items = if settings.want_flatpak then {
+    ['%s.yml' % settings.publishing.flathub]: utils.manifestYaml(settings.flatpak),
+  } else {};
   {
     '.gitattributes': utils.manifestLines(settings.gitattributes),
     '.gitignore': utils.manifestLines(settings.gitignore),
@@ -66,6 +69,7 @@ function(settings)
   cff +
   c_cpp_items +
   cz_json +
+  flatpak_items +
   github_items +
   gitlab_items +
   lua_items +
