@@ -34,11 +34,7 @@ fi
 cp generic.svg "recipe/${script_name}.svg"
 echo "Building AppImage for '${script_name}'..."
 {{ 'uv run' if settings.package_manager == 'uv' else 'poetry run' }} python -m python_appimage -v build app -l "manylinux2014_${{ '{{' }} matrix.system.arch }}" -p {{ settings.appimage.python_version }} recipe
-{% if settings.has_multiple_entry_points %}
-mv "${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage" "dist/${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage"
-{% else %}
-mv "${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage" "dist/${script_name}-${version}-${{ '{{' }} matrix.system.arch }}.AppImage"
-{% endif %}
+mv "${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage" "dist/${script_name}-v${version}-${{ '{{' }} matrix.system.arch }}.AppImage"
 {% endmacro %}
 {% macro build(settings) %}
     {% set single = settings.appimage.include_only | length == 1 %}
