@@ -1,5 +1,4 @@
 """Copying static files into the project."""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -87,7 +86,7 @@ def _sync_file_pairs(
         root = dir_path
         while root.parent not in {stop_at, root}:
             root = root.parent
-        if root.exists() and root.is_dir() and not any(root.iterdir()):
+        if root.exists() and root.is_dir() and not any(root.iterdir()):  # pragma: no cover
             root.rmdir()
 
 

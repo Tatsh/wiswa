@@ -81,25 +81,26 @@ def _shell_indent(text: str, width: int = 4) -> str:
     return '\n'.join(result)
 
 
-class ShellExtension(Extension):  # pragma: no cover
+class ShellExtension(Extension):
     """Extension that exports the ``shell_indent`` :py:class:`~jinja2.Environment` filter."""
     def __init__(self, environment: jinja2.Environment) -> None:
         super().__init__(environment)
         environment.filters['shell_indent'] = _shell_indent
 
 
-class ToPythonExtension(Extension):  # pragma: no cover
+class ToPythonExtension(Extension):
     """Extension that exports the ``topython`` :py:class:`~jinja2.Environment` filter."""
     def __init__(self, environment: jinja2.Environment) -> None:
         super().__init__(environment)
         environment.filters['topython'] = topython
 
 
-class GithubAPIExtension(Extension):  # pragma: no cover
+class GithubAPIExtension(Extension):
     """Extension for GitHub API calls."""
     def __init__(self, environment: jinja2.Environment) -> None:
-        super().__init__(environment)
         from .utils.versions import get_github_release_latest_tag  # noqa: PLC0415
+
+        super().__init__(environment)
         environment.globals['github_latest_action_tag'] = partial(get_github_release_latest_tag,
                                                                   actions=True,
                                                                   skip_releases=True,

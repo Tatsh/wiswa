@@ -1,9 +1,12 @@
+"""Tests for Jinja2 extensions."""
+
 from __future__ import annotations
 
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from wiswa.extensions import ToPythonExtension, topython
+from wiswa.extensions import ShellExtension, ToPythonExtension, topython
+import jinja2
 import pytest
 
 if TYPE_CHECKING:
@@ -133,3 +136,73 @@ def test_topython_extension_registers_filter(mocker: MockerFixture) -> None:
     ToPythonExtension(env)
     assert 'topython' in env.filters
     assert env.filters['topython'] is topython
+
+
+def test_topython_iterable_list_to_tuple_empty() -> None:
+    class CustomIterable:
+        def __iter__(self) -> Iterator[int]:
+            return iter([])
+
+    result = topython(CustomIterable(), list_to_tuple=True)
+    assert result == '()'
+
+
+def test_topython_iterable_list_to_tuple_single() -> None:
+    class CustomIterable:
+        def __iter__(self) -> Iterator[int]:
+            yield 1
+
+    result = topython(CustomIterable(), list_to_tuple=True)
+    assert result == '(1,)'
+
+
+def test_topython_iterable_list_to_tuple_multi() -> None:
+    class CustomIterable:
+        def __iter__(self) -> Iterator[int]:
+            yield 1
+            yield 2
+
+    result = topython(CustomIterable(), list_to_tuple=True)
+    assert result == '(1, 2)'
+
+
+def test_shell_indent_basic() -> None:
+    env = jinja2.Environment(extensions=[ShellExtension], autoescape=True)
+    indent = env.filters['shell_indent']
+    result = indent('echo hello\necho world')
+    assert result == '    echo hello\n    echo world'
+
+
+def test_shell_indent_preserves_empty_lines() -> None:
+    env = jinja2.Environment(extensions=[ShellExtension], autoescape=True)
+    indent = env.filters['shell_indent']
+    result = indent('echo hello\n\necho world')
+    assert result == '    echo hello\n\n    echo world'
+
+
+def test_shell_indent_heredoc_not_indented() -> None:
+    env = jinja2.Environment(extensions=[ShellExtension], autoescape=True)
+    indent = env.filters['shell_indent']
+    result = indent('cat <<EOF\nhello\nworld\nEOF\necho done')
+    assert result == '    cat <<EOF\nhello\nworld\nEOF\n    echo done'
+
+
+def test_shell_indent_custom_width() -> None:
+    env = jinja2.Environment(extensions=[ShellExtension], autoescape=True)
+    indent = env.filters['shell_indent']
+    result = indent('echo hello', 2)
+    assert result == '  echo hello'
+
+
+def test_shell_indent_heredoc_with_quotes() -> None:
+    env = jinja2.Environment(extensions=[ShellExtension], autoescape=True)
+    indent = env.filters['shell_indent']
+    result = indent("cat <<'EOF'\nhello\nEOF\necho done")
+    assert result == "    cat <<'EOF'\nhello\nEOF\n    echo done"
+
+
+def test_github_api_extension_registers_global(mocker: MockerFixture) -> None:
+    from wiswa.extensions import GithubAPIExtension
+
+    env = jinja2.Environment(extensions=[GithubAPIExtension], autoescape=True)
+    assert 'github_latest_action_tag' in env.globals

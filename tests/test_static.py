@@ -1,3 +1,5 @@
+"""Tests for static file copying."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
@@ -184,10 +186,13 @@ def test_copy_static_files_python_copies_main_files(tmp_path: Path,
     (static_dir / 'main.py').write_text('# main')
     settings = cast(
         'Any',
-        _make_settings(want_main=True,
-                       has_multiple_entry_points=False,
-                       stubs_only=False,
-                       primary_module='mymod'))
+        _make_settings(
+            want_main=True,
+            has_multiple_entry_points=False,
+            stubs_only=False,
+            primary_module='mymod',
+        ),
+    )
     copy_static_files_python(settings, tmp_path / 'pkg')
     assert (tmp_path / 'mymod/__main__.py').exists()
     assert (tmp_path / 'mymod/main.py').exists()
@@ -204,9 +209,56 @@ def test_copy_static_files_python_skips_existing_non_empty(tmp_path: Path,
     (tmp_path / 'mymod/__main__.py').write_text('existing content')
     settings = cast(
         'Any',
-        _make_settings(want_main=True,
-                       has_multiple_entry_points=False,
-                       stubs_only=False,
-                       primary_module='mymod'))
+        _make_settings(
+            want_main=True,
+            has_multiple_entry_points=False,
+            stubs_only=False,
+            primary_module='mymod',
+        ),
+    )
     copy_static_files_python(settings, tmp_path / 'pkg')
     assert (tmp_path / 'mymod/__main__.py').read_text() == 'existing content'
+
+
+def test_copy_static_files_not_wanted_cursor_removes_all_and_cleans_root(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    module_path = _setup_module_path(tmp_path)
+    cursor_dir = tmp_path / '.cursor/rules'
+    cursor_dir.mkdir(parents=True)
+    for name in ('json-yaml', 'markdown', 'toml-ini'):
+        (cursor_dir / f'{name}.mdc').write_text(f'{name} cursor content')
+    settings = cast('Any', _make_settings(want_cursor=False, project_type='generic'))
+    copy_static_files(settings, module_path)
+    assert not (tmp_path / '.cursor').exists()
+
+
+def test_copy_static_files_claude_not_wanted_removes_matching_json(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    module_path = _setup_module_path(tmp_path)
+    import json
+
+    claude_dir = tmp_path / '.claude'
+    claude_dir.mkdir(parents=True)
+    content = {'key': 'val'}
+    (claude_dir / 'settings.local.json').write_text(f'{json.dumps(content, indent=2)}\n',
+                                                    encoding='utf-8')
+    (claude_dir / 'settings.local.json.dist').write_text(f'{json.dumps(content, indent=2)}\n',
+                                                         encoding='utf-8')
+    settings = cast('Any', _make_settings(want_claude=False, claude_settings_local={'key': 'val'}))
+    copy_static_files(settings, module_path)
+    assert not (claude_dir / 'settings.local.json').exists()
+    assert not (claude_dir / 'settings.local.json.dist').exists()
+
+
+def test_copy_static_files_claude_not_wanted_keeps_different_json(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    module_path = _setup_module_path(tmp_path)
+    claude_dir = tmp_path / '.claude'
+    claude_dir.mkdir(parents=True)
+    (claude_dir / 'settings.local.json').write_text('{"custom": "content"}\n', encoding='utf-8')
+    settings = cast('Any', _make_settings(want_claude=False, claude_settings_local={'key': 'val'}))
+    copy_static_files(settings, module_path)
+    assert (claude_dir / 'settings.local.json').exists()
