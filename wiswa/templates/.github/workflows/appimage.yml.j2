@@ -57,6 +57,9 @@ jobs:
   {% if not settings.private %}
       - name: 'Generate SBOM'
         uses: 'anchore/sbom-action@{{ github_latest_action_tag('anchore', 'sbom-action') }}'
+        env:
+          SYFT_SOURCE_NAME: '{{ settings.github_project_name }}'
+          SYFT_SOURCE_VERSION: ${{ '{{' }} github.ref_name }}
         with:
           path: 'dist/'
           output-file: 'sbom.spdx.json'
