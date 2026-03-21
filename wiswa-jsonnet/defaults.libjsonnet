@@ -801,6 +801,7 @@ local utils = import 'utils.libjsonnet';
         { [k]: poetry_deps_obj[k] for k in std.objectFields(poetry_deps_obj) if is_optional_dep(poetry_deps_obj[k]) }
       else {},
     local poetry_extras = if has_poetry && std.objectHas(poetry_obj, 'extras') then poetry_obj.extras else {},
+    local poetry_plugins = if has_poetry && std.objectHas(poetry_obj, 'plugins') then poetry_obj.plugins else {},
     local legacy_poetry_group_deps(name) =
       if is_uv then poetry_group_deps(name) else {},
     project+: {
@@ -822,7 +823,9 @@ local utils = import 'utils.libjsonnet';
       dependencies: std.set(to_pep508(py_deps.main) + to_pep508(legacy_poetry_deps)),
       'requires-python': python_req,
       dynamic:: super.dynamic,
-    } + (if std.length(std.objectFields(poetry_extras)) > 0 then {
+    } + (if is_uv && std.length(std.objectFields(poetry_plugins)) > 0 then {
+      'entry-points': poetry_plugins,
+    } else {}) + (if std.length(std.objectFields(poetry_extras)) > 0 then {
       'optional-dependencies': {
         [extra]: std.set(std.flatMap(
           function(dep_name)
