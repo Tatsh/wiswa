@@ -133,9 +133,9 @@ lxml
 mainpage
 makecert
 manylinux
-mktemp
 maxwidth
 mdfile
+mktemp
 modindex
 monkeypatch
 msys
@@ -212,8 +212,6 @@ tamasfe
 tatsh
 templater
 testpaths
-testrepo
-testuser
 timezone
 timonwong
 tojson

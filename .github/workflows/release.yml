@@ -32,9 +32,9 @@ jobs:
           echo "All workflows succeeded for ${tag}."
           echo "tag=${tag}" >> "$GITHUB_ENV"
           echo "ready=true" >> "$GITHUB_OUTPUT"
-      - if: "steps.check.outputs.ready == 'true'"
-        env:
+      - env:
           GH_TOKEN: '${{ github.token }}'
+        if: "steps.check.outputs.ready == 'true'"
         name: 'Publish release'
         run: 'gh release edit "$tag" --draft=false'
 name: 'Release'

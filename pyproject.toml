@@ -87,9 +87,11 @@ version_files = [
   ".wiswa.jsonnet",
   "CITATION.cff",
   "README.md",
+  "docs/badges.rst",
   "docs/index.rst",
   "man/wiswa.1",
   "package.json",
+  "snapcraft.yaml",
   "wiswa/__init__.py",
 ]
 version_provider = "pep621"

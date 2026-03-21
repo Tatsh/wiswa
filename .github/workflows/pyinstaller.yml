@@ -25,42 +25,42 @@ jobs:
               func_name="${func_name#"${func_name%%[![:space:]]*}"}"
               func_name="${func_name%"${func_name##*[![:space:]]}"}"
               cat > temp_script.py <<EOF
-              from ${python_path} import ${func_name}
-              if __name__ == '__main__':
-                  ${func_name}()
-              EOF
+          from ${python_path} import ${func_name}
+          if __name__ == '__main__':
+              ${func_name}()
+          EOF
               if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
                   cat temp_script.py
               fi
               cat > version-info.txt <<EOF
-              VSVersionInfo(
-                  ffi=FixedFileInfo(date=(0, 0),
-                                    filevers=(${vers}),
-                                    fileType=0x1,
-                                    flags=0x0,
-                                    mask=0x3f,
-                                    OS=0x4,
-                                    prodvers=(${vers}),
-                                    subtype=0x0),
-                  kids=[
-                      StringFileInfo([
-                          StringTable('040904B0', [
-                              StringStruct('CompanyName', 'Tatsh'),
-                              StringStruct(
-                                  'FileDescription',
-                                  '${script_name} from ${project_name}. - ${{ github.server_url }}/${{ github.repository }}'
-                              ),
-                              StringStruct('FileVersion', '${version}'),
-                              StringStruct('InternalName', '${script_name}.exe'),
-                              StringStruct('LegalCopyright', 'Copyright (c) ${project_name} authors.'),
-                              StringStruct('OriginalFilename', '${script_name}.exe'),
-                              StringStruct('ProductName', '${project_name}'),
-                              StringStruct('ProductVersion', '${version}')
-                          ])
-                      ]),
-                      VarFileInfo([VarStruct('Translation', [0x409, 1200, 0x809, 1252])])
-                  ])
-              EOF
+          VSVersionInfo(
+              ffi=FixedFileInfo(date=(0, 0),
+                                filevers=(${vers}),
+                                fileType=0x1,
+                                flags=0x0,
+                                mask=0x3f,
+                                OS=0x4,
+                                prodvers=(${vers}),
+                                subtype=0x0),
+              kids=[
+                  StringFileInfo([
+                      StringTable('040904B0', [
+                          StringStruct('CompanyName', 'Tatsh'),
+                          StringStruct(
+                              'FileDescription',
+                              '${script_name} from ${project_name}. - ${{ github.server_url }}/${{ github.repository }}'
+                          ),
+                          StringStruct('FileVersion', '${version}'),
+                          StringStruct('InternalName', '${script_name}.exe'),
+                          StringStruct('LegalCopyright', 'Copyright (c) ${project_name} authors.'),
+                          StringStruct('OriginalFilename', '${script_name}.exe'),
+                          StringStruct('ProductName', '${project_name}'),
+                          StringStruct('ProductVersion', '${version}')
+                      ])
+                  ]),
+                  VarFileInfo([VarStruct('Translation', [0x409, 1200, 0x809, 1252])])
+              ])
+          EOF
               if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
                   cat version-info.txt
               fi
@@ -107,6 +107,20 @@ jobs:
         uses: 'actions/attest@v4'
         with:
           subject-path: '${{ matrix.dist_path }}'
+      - name: 'Generate SBOM'
+        uses: 'anchore/sbom-action@v0'
+        env:
+          SYFT_SOURCE_NAME: 'wiswa'
+          SYFT_SOURCE_VERSION: ${{ github.ref_name }}
+        with:
+          path: 'dist/'
+          output-file: 'sbom.spdx.json'
+          upload-artifact: false
+      - name: 'Attest SBOM'
+        uses: 'actions/attest@v4'
+        with:
+          subject-path: '${{ matrix.dist_path }}'
+          sbom-path: 'sbom.spdx.json'
       - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'
         name: 'Zip files'
         run: |
@@ -125,6 +139,12 @@ jobs:
         uses: 'actions/attest@v4'
         with:
           subject-path: '_out/*.zip'
+      - if: github.ref_type == 'tag'
+        name: 'Attest SBOM'
+        uses: 'actions/attest@v4'
+        with:
+          subject-path: '_out/*.zip'
+          sbom-path: 'sbom.spdx.json'
       - if: github.ref_type == 'tag'
         name: Upload package
         uses: softprops/action-gh-release@v2
