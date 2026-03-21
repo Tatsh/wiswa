@@ -205,6 +205,7 @@ startswith
 staticfiles
 strequal
 strongified
+syft
 tagfile
 tagfiles
 tamasfe
