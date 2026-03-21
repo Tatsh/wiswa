@@ -1132,16 +1132,28 @@ local utils = import 'utils.libjsonnet';
         'build-on': 'arm64',
       },
     },
+    /** @brief Source code URL. */
+    'source-code': settings.repository_uri,
     /**
      * @brief A short description of the project. Maximum length 78 characters. Should not end in a
        full stop.
      * @var string
      */
     summary: settings.description,
+    /** @brief Title displayed in the Snap Store. */
+    title: settings.project_name,
     /**
      * @brief Package version.
      * @var string
      */
     version: settings.version,
-  },
+    /** @brief Project website. */
+    website: settings.homepage,
+  } + (if settings.using_github then {
+    contact: '%s/issues' % settings.repository_uri,
+    issues: '%s/issues' % settings.repository_uri,
+    license: settings.license,
+  } + (if settings.social.buymeacoffee != '' then {
+    donation: 'https://buymeacoffee.com/%s' % settings.social.buymeacoffee,
+  } else {}) else {}),
 }
