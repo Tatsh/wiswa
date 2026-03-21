@@ -791,10 +791,16 @@ local utils = import 'utils.libjsonnet';
          && std.objectHas(poetry_group[name], 'dependencies')
       then poetry_group[name].dependencies
       else {},
+    local is_optional_dep(v) = std.isObject(v) && std.objectHas(v, 'optional') && v.optional,
     local legacy_poetry_deps =
       if is_uv then
-        { [k]: poetry_deps_obj[k] for k in std.objectFields(poetry_deps_obj) if k != 'python' }
+        { [k]: poetry_deps_obj[k] for k in std.objectFields(poetry_deps_obj) if k != 'python' && !is_optional_dep(poetry_deps_obj[k]) }
       else {},
+    local legacy_poetry_optional_deps =
+      if is_uv then
+        { [k]: poetry_deps_obj[k] for k in std.objectFields(poetry_deps_obj) if is_optional_dep(poetry_deps_obj[k]) }
+      else {},
+    local poetry_extras = if has_poetry && std.objectHas(poetry_obj, 'extras') then poetry_obj.extras else {},
     local legacy_poetry_group_deps(name) =
       if is_uv then poetry_group_deps(name) else {},
     project+: {
@@ -816,7 +822,19 @@ local utils = import 'utils.libjsonnet';
       dependencies: std.set(to_pep508(py_deps.main) + to_pep508(legacy_poetry_deps)),
       'requires-python': python_req,
       dynamic:: super.dynamic,
-    } else {},
+    } + (if std.length(std.objectFields(poetry_extras)) > 0 then {
+      'optional-dependencies': {
+        [extra]: std.set(std.flatMap(
+          function(dep_name)
+            if std.objectHas(legacy_poetry_optional_deps, dep_name) then
+              utils.formatPep508Deps(dep_name, legacy_poetry_optional_deps[dep_name])
+            else
+              [dep_name],
+          poetry_extras[extra]
+        ))
+        for extra in std.objectFields(poetry_extras)
+      },
+    } else {}) else {},
     [if is_uv then 'dependency-groups']: {
                                            dev: std.set(to_pep508(py_deps.dev) + to_pep508(legacy_poetry_group_deps('dev'))),
                                          } + (if settings.want_docs then {
