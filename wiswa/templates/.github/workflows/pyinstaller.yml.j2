@@ -100,7 +100,7 @@ jobs:
             ${{ '{{' }} matrix.dist_path }}
   {% if not settings.private %}
       - name: 'Attest'
-        uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
+        uses: 'actions/attest@{{ github_latest_action_tag('actions', 'attest') }}'
         with:
           subject-path: '${{ '{{' }} matrix.dist_path }}'
       - name: 'Generate SBOM'
@@ -110,7 +110,7 @@ jobs:
           output-file: 'sbom.spdx.json'
           upload-artifact: false
       - name: 'Attest SBOM'
-        uses: 'actions/attest-sbom@{{ github_latest_action_tag('actions', 'attest-sbom') }}'
+        uses: 'actions/attest@{{ github_latest_action_tag('actions', 'attest') }}'
         with:
           subject-path: '${{ '{{' }} matrix.dist_path }}'
           sbom-path: 'sbom.spdx.json'
@@ -135,12 +135,12 @@ jobs:
   {% if not settings.private %}
       - if: github.ref_type == 'tag'
         name: 'Attest'
-        uses: 'actions/attest-build-provenance@{{ github_latest_action_tag('actions', 'attest-build-provenance') }}'
+        uses: 'actions/attest@{{ github_latest_action_tag('actions', 'attest') }}'
         with:
           subject-path: '_out/*.zip'
       - if: github.ref_type == 'tag'
         name: 'Attest SBOM'
-        uses: 'actions/attest-sbom@{{ github_latest_action_tag('actions', 'attest-sbom') }}'
+        uses: 'actions/attest@{{ github_latest_action_tag('actions', 'attest') }}'
         with:
           subject-path: '_out/*.zip'
           sbom-path: 'sbom.spdx.json'

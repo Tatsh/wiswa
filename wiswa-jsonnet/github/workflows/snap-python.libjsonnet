@@ -61,7 +61,7 @@ function(settings)
           },
           {
             name: 'Attest',
-            uses: 'actions/attest-build-provenance@' + utils.githubLatestActionTag('actions', 'attest-build-provenance'),
+            uses: 'actions/attest@' + utils.githubLatestActionTag('actions', 'attest'),
             with: {
               'subject-path': '*.snap',
             },
