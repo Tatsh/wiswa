@@ -895,6 +895,15 @@ local utils = import 'utils.libjsonnet';
                        else {}),
                'target-version': 'py3%s' % settings.supported_python_versions[0][2:],
              },
+             [if settings.stubs_only && is_uv then 'hatch']: {
+               build: {
+                 targets: {
+                   wheel: {
+                     packages: [settings.project_name],
+                   },
+                 },
+               },
+             },
            } + (if settings.want_sqlfluff then { sqlfluff: import 'defaults/sqlfluff.libsonnet' } else {})
            + (if is_uv then { poetry:: super.poetry } else { uv:: super.uv }),
     'build-system': if is_uv then {
