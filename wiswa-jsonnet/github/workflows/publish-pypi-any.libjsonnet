@@ -2,9 +2,57 @@ local utils = import 'utils.libjsonnet';
 
 function(settings)
   local is_uv = settings.package_manager == 'uv';
+  local watched_workflows = std.sort(
+    ['QA', 'Tests'] +
+    (if settings.want_main || settings.has_multiple_entry_points then
+       (if settings.supported_platforms == 'all' || std.member(settings.supported_platforms, 'linux') then ['AppImage'] else []) +
+       (if settings.supported_platforms == 'all' || std.member(settings.supported_platforms, 'windows') || std.member(settings.supported_platforms, 'macos') then ['PyInstaller'] else [])
+     else []) +
+    (if settings.want_snap then ['Snap'] else [])
+  );
   {
     jobs: {
+      check: {
+        'runs-on': 'ubuntu-latest',
+        steps: [
+          {
+            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
+          },
+          {
+            id: 'check',
+            name: 'Wait for workflows',
+            env: {
+              GH_TOKEN: '${{ github.token }}',
+            },
+            run: |||
+              sha="${{ github.sha }}"
+              for i in $(seq 1 30); do
+                all_done=true
+                for workflow in %(workflows)s; do
+                  status=$(gh run list -w "$workflow" --commit "$sha" --json conclusion -q '.[0].conclusion')
+                  if [[ "$status" == 'failure' || "$status" == 'cancelled' ]]; then
+                    echo "::error::Workflow '$workflow' ${status}."
+                    exit 1
+                  elif [[ "$status" != 'success' ]]; then
+                    echo "Workflow '$workflow' still pending."
+                    all_done=false
+                  fi
+                done
+                if [[ "$all_done" == 'true' ]]; then
+                  echo 'All workflows succeeded.'
+                  exit 0
+                fi
+                echo "Waiting 60s for workflows to complete (attempt ${i}/30)..."
+                sleep 60
+              done
+              echo '::error::Timed out waiting for workflows.'
+              exit 1
+            ||| % { workflows: std.join(' ', watched_workflows) },
+          },
+        ],
+      },
       publish: {
+        needs: ['check'],
         'runs-on': settings.github.workflows.publish_pypi_any.runs_on,
         steps: [
           {
