@@ -61,34 +61,6 @@ jobs:
           path: 'dist/'
           output-file: 'sbom.spdx.json'
           upload-artifact: false
-  {% endif %}
-{% if settings.has_multiple_entry_points %}
-      - name: 'Zip files'
-        run: |
-          rm -fR _out
-          mkdir _out
-          zip -j _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}.zip dist/*
-  {% if not settings.private %}
-      - name: 'Attest'
-        uses: 'actions/attest@{{ github_latest_action_tag('actions', 'attest') }}'
-        with:
-          subject-path: '_out/*.zip'
-      - name: 'Attest SBOM'
-        uses: 'actions/attest@{{ github_latest_action_tag('actions', 'attest') }}'
-        with:
-          subject-path: '_out/*.zip'
-          sbom-path: 'sbom.spdx.json'
-  {% endif %}
-      - if: github.ref_type == 'tag'
-        name: Upload package
-        uses: softprops/action-gh-release@{{ github_latest_action_tag('softprops', 'action-gh-release') }}
-        with:
-          draft: true
-          fail_on_unmatched_files: true
-          files: |
-            _out/*.zip
-{% else %}
-  {% if not settings.private %}
       - name: 'Attest'
         uses: 'actions/attest@{{ github_latest_action_tag('actions', 'attest') }}'
         with:
@@ -107,7 +79,6 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             dist/*.AppImage
-{% endif %}
     strategy:
       matrix:
         system:
