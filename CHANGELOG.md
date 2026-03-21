@@ -33,6 +33,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - PyInstaller and AppImage build scripts failed with "unexpected end of file" when the project had
   multiple entry points (or empty `include_only`), because heredoc `EOF` terminators were indented
   inside the `while` loop body.
+- Stubs-only projects using hatchling now include `tool.hatch.build.targets.wheel.packages` in
+  `pyproject.toml`, fixing wheel build failures where hatchling could not find the stubs package
+  directory.
 
 ### Changed
 
@@ -46,6 +49,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `.claude/settings.local.json.dist` is now generated dynamically from `claude_settings_local`
   instead of being copied from a static file. It is written alongside `.claude/settings.local.json`
   when `want_claude` is true.
+- HTTP response cache now expires after 10 minutes instead of 30 minutes and ignores upstream
+  `Cache-Control` headers, preventing rate-limiting on immediate subsequent runs.
 
 ### Removed
 
