@@ -835,6 +835,9 @@ local utils = import 'utils.libjsonnet';
                                       (if !settings.stubs_only then [
                                          'docs/badges.rst',
                                          'docs/index.rst',
+                                       ] else []) +
+                                      (if settings.want_snap then [
+                                         'snapcraft.yaml',
                                        ] else [])),
              },
              coverage+: {

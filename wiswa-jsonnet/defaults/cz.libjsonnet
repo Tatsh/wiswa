@@ -18,6 +18,7 @@
       'vcpkg.json',
     ] else [],
     local man = if settings.want_man then ['man/%s.1' % settings.project_name] else [],
+    local snap = if settings.want_snap then ['snapcraft.yaml'] else [],
     commitizen: {
       name: 'cz_path',
       remove_path_prefixes: ['include', 'src'],
@@ -27,7 +28,7 @@
         'CITATION.cff',
         'README.md',
         'package.json',
-      ] + cpp_files + man),
+      ] + cpp_files + man + snap),
       version_provider: 'npm',
       version_scheme: 'semver',
     },
