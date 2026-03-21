@@ -813,17 +813,17 @@ local utils = import 'utils.libjsonnet';
         repository: settings.repository_uri,
       },
     } + if is_uv then {
-      dependencies: std.sort(to_pep508(py_deps.main) + to_pep508(legacy_poetry_deps)),
+      dependencies: std.set(to_pep508(py_deps.main) + to_pep508(legacy_poetry_deps)),
       'requires-python': python_req,
       dynamic:: super.dynamic,
     } else {},
     [if is_uv then 'dependency-groups']: {
-                                           dev: std.sort(to_pep508(py_deps.dev) + to_pep508(legacy_poetry_group_deps('dev'))),
+                                           dev: std.set(to_pep508(py_deps.dev) + to_pep508(legacy_poetry_group_deps('dev'))),
                                          } + (if settings.want_docs then {
-                                                docs: std.sort(to_pep508(py_deps.docs) + to_pep508(legacy_poetry_group_deps('docs'))),
+                                                docs: std.set(to_pep508(py_deps.docs) + to_pep508(legacy_poetry_group_deps('docs'))),
                                               } else {})
                                          + (if settings.want_tests then {
-                                              tests: std.sort(to_pep508(py_deps.tests) + to_pep508(legacy_poetry_group_deps('tests'))),
+                                              tests: std.set(to_pep508(py_deps.tests) + to_pep508(legacy_poetry_group_deps('tests'))),
                                             } else {}),
     tool+: {
              commitizen+: {
