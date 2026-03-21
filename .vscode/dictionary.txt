@@ -148,6 +148,7 @@ naumovs
 netrc
 nextdotjs
 nhoizey
+nonexistent
 noqa
 norecursedirs
 notarytool
