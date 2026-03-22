@@ -54,6 +54,7 @@ djlint
 docstrings
 doctrees
 donjayamanne
+dorny
 dotjoshjohnson
 doxyfile
 doxysonnet
