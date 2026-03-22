@@ -10,8 +10,9 @@ import os
 import re
 
 from bascom import setup_logging
+import aiohttp
+import anyio
 import click
-import requests
 
 from .utils import (
     copy_static_files,
@@ -26,6 +27,8 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from .typing import Settings
 
 __all__ = ('main',)
@@ -55,24 +58,73 @@ def _has_legacy_poetry_deps(settings: Settings) -> bool:
     return False
 
 
-def _handle_http_error(e: requests.HTTPError) -> None:
-    response = e.response
-    if (response is not None
-            and response.status_code in {HTTPStatus.FORBIDDEN, HTTPStatus.TOO_MANY_REQUESTS}):
-        retry_after = response.headers.get('Retry-After', '')
-        rate_limit_remaining = response.headers.get('X-RateLimit-Remaining', '')
+def _handle_http_error(e: aiohttp.ClientResponseError) -> None:
+    if e.status in {HTTPStatus.FORBIDDEN, HTTPStatus.TOO_MANY_REQUESTS}:
+        headers: Mapping[str, str] = e.headers or {}
+        retry_after = headers.get('Retry-After', '')
+        rate_limit_remaining = headers.get('X-RateLimit-Remaining', '')
         msg = 'Rate limited by %s.' if rate_limit_remaining == '0' else 'HTTP %d from %s.'
-        url = response.url or 'unknown'
+        url = str(e.request_info.url) if e.request_info else 'unknown'
         host = re.sub(r'^https?://([^/]+).*', r'\1', url)
         if rate_limit_remaining == '0':
             click.echo(msg % host, err=True)
         else:
-            click.echo(msg % (response.status_code, host), err=True)
+            click.echo(msg % (e.status, host), err=True)
         if retry_after:
             click.echo(f'Retry after {retry_after} seconds.', err=True)
         else:
             click.echo('Please wait a few minutes before trying again.', err=True)
     raise click.Abort
+
+
+async def _main_async(file: Path,
+                      jpath: tuple[str, ...] = (),
+                      *,
+                      debug: bool = False,
+                      skip_github: bool = False,
+                      skip_jsonnet: bool = False,
+                      skip_templates: bool = False,
+                      user_defaults: bool = False) -> None:
+    setup_logging(
+        debug=debug,
+        loggers={'wiswa': {}},
+    )
+    logging.getLogger('aiohttp_client_cache').setLevel(logging.WARNING)
+    logging.getLogger('aiosqlite').setLevel(logging.WARNING)
+    log.debug('GitHub enabled: %s', not skip_github)
+    os.chdir(file.parent)
+    try:
+        from .session import cached_session  # noqa: PLC0415
+
+        async with cached_session() as session:
+            with (importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as
+                  lib_path, importlib.resources.as_file(importlib.resources.files('wiswa')) as
+                  module_path):
+                jpathdir = [str(lib_path)]
+                merged_settings, loaded = await evaluate_merged_settings(
+                    [*jpath, *jpathdir],
+                    lib_path,
+                    await anyio.Path(file).read_text(encoding='utf-8'),
+                    session,
+                    user_defaults=user_defaults)
+                if _has_legacy_poetry_deps(loaded):
+                    log.warning(
+                        'pyproject.tool.poetry.*.dependencies is deprecated. '
+                        'Move dependencies to python_deps.main/dev/docs/tests in .wiswa.jsonnet.')
+                if not skip_jsonnet:
+                    await evaluate_jsonnet_project(lib_path, jpathdir, merged_settings, session)
+                if not skip_templates:
+                    await write_templated_files(module_path, loaded, session)
+                await download_yarn(session, loaded['yarn_version'])
+                await download_yarn_plugins(session)
+                await copy_static_files(loaded, module_path)
+                if loaded['project_type'] == 'python' and not loaded['stubs_only']:
+                    await create_py_typed_files(loaded)
+                await post_process_steps(loaded)
+                if not skip_github:
+                    await setup_github_project(session, loaded)
+    except aiohttp.ClientResponseError as e:
+        _handle_http_error(e)
 
 
 @click.command(context_settings={'help_option_names': ('-h', '--help')})
@@ -101,38 +153,13 @@ def main(file: Path,
          skip_templates: bool = False,
          user_defaults: bool = False) -> None:
     """Entry point for the Wiswa CLI."""
-    setup_logging(
-        debug=debug,
-        loggers={
-            'urllib3': {},
-            'wiswa': {}
-        },
-    )
-    log.debug('GitHub enabled: %s', not skip_github)
-    os.chdir(file.parent)
-    try:
-        with (importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as lib_path,
-              importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path):
-            jpathdir = [str(lib_path)]
-            merged_settings, loaded = evaluate_merged_settings([*jpath, *jpathdir],
-                                                               lib_path,
-                                                               file.read_text(encoding='utf-8'),
-                                                               user_defaults=user_defaults)
-            if _has_legacy_poetry_deps(loaded):
-                log.warning(
-                    'pyproject.tool.poetry.*.dependencies is deprecated. '
-                    'Move dependencies to python_deps.main/dev/docs/tests in .wiswa.jsonnet.')
-            if not skip_jsonnet:
-                evaluate_jsonnet_project(lib_path, jpathdir, merged_settings)
-            if not skip_templates:
-                write_templated_files(module_path, loaded)
-            download_yarn(loaded['yarn_version'])
-            download_yarn_plugins()
-            copy_static_files(loaded, module_path)
-            if loaded['project_type'] == 'python' and not loaded['stubs_only']:
-                create_py_typed_files(loaded)
-            post_process_steps(loaded)
-            if not skip_github:
-                setup_github_project(loaded)
-    except requests.HTTPError as e:
-        _handle_http_error(e)
+    async def _run() -> None:
+        await _main_async(file,
+                          jpath,
+                          debug=debug,
+                          skip_github=skip_github,
+                          skip_jsonnet=skip_jsonnet,
+                          skip_templates=skip_templates,
+                          user_defaults=user_defaults)
+
+    anyio.run(_run)

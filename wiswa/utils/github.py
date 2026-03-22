@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING, Any
 import getpass
 import logging
 
-from wiswa.session import cached_session
+import aiohttp
+import anyio
 import keyring
-import requests
 
 if TYPE_CHECKING:
+    from aiohttp import ClientSession
     from wiswa.typing import Settings
-    import requests_cache
 
 __all__ = ('setup_github_project',)
 
@@ -67,13 +67,12 @@ def _get_repo_config(settings: Settings) -> dict[str, Any]:
     }
 
 
-def _setup_github_session() -> tuple[requests_cache.CachedSession, str] | None:
-    token = keyring.get_password('tmu-github-api', getpass.getuser())
+async def _setup_github_session(session: ClientSession) -> tuple[ClientSession, str] | None:
+    token = await anyio.to_thread.run_sync(
+        lambda: keyring.get_password('tmu-github-api', getpass.getuser()))
     if not token:
         log.warning('No GitHub token.')
         return None
-
-    session = cached_session()
     session.headers.update({
         'Accept': 'application/vnd.github+json',
         'Authorization': f'Bearer {token}',
@@ -82,29 +81,32 @@ def _setup_github_session() -> tuple[requests_cache.CachedSession, str] | None:
     return session, 'https://api.github.com'
 
 
-def _configure_github_repo(session: requests_cache.CachedSession, host: str, repo_name: str,
-                           settings: Settings) -> None:
-    session.patch(f'{host}/repos/{repo_name}', json=_get_repo_config(settings)).raise_for_status()
-    session.put(f'{host}/repos/{repo_name}/topics',
-                json={
-                    'names': [x.replace(' ', '-') for x in settings['keywords']]
-                }).raise_for_status()
-
-    # Enable security features
+async def _configure_github_repo(session: ClientSession, host: str, repo_name: str,
+                                 settings: Settings) -> None:
+    async with session.patch(f'{host}/repos/{repo_name}', json=_get_repo_config(settings)) as resp:
+        resp.raise_for_status()
+    async with session.put(
+            f'{host}/repos/{repo_name}/topics',
+            json={'names': [x.replace(' ', '-') for x in settings['keywords']]}) as resp:
+        resp.raise_for_status()
     for endpoint in [
             'automated-security-fixes', 'private-vulnerability-reporting', 'vulnerability-alerts'
     ]:
-        session.put(f'{host}/repos/{repo_name}/{endpoint}').raise_for_status()
+        async with session.put(f'{host}/repos/{repo_name}/{endpoint}') as resp:
+            resp.raise_for_status()
     if settings['github']['immutable_releases']:
-        session.put(f'{host}/repos/{repo_name}/immutable-releases').raise_for_status()
+        async with session.put(f'{host}/repos/{repo_name}/immutable-releases') as resp:
+            resp.raise_for_status()
 
 
-def setup_github_project(settings: Settings) -> None:
+async def setup_github_project(session: ClientSession, settings: Settings) -> None:
     """
     Configure the GitHub repository (topics, rulesets, security, Pages).
 
     Parameters
     ----------
+    session : ClientSession
+        The aiohttp session.
     settings : Settings
         The project settings dictionary.
     """
@@ -112,7 +114,7 @@ def setup_github_project(settings: Settings) -> None:
         log.debug('Not running GitHub setup.')
         return
 
-    session_data = _setup_github_session()
+    session_data = await _setup_github_session(session)
     if not session_data:
         return
 
@@ -121,126 +123,134 @@ def setup_github_project(settings: Settings) -> None:
     repo_name = f"{settings['repository_uri'].split('/')[-2]}/{suffix}"
 
     try:
-        _configure_github_repo(session, host, repo_name, settings)
-        session.put(f'{host}/repos/{repo_name}/topics',
-                    json={
-                        'names': [x.replace(' ', '-') for x in settings['keywords']]
-                    }).raise_for_status()
-        session.put(f'{host}/repos/{repo_name}/automated-security-fixes').raise_for_status()
-        session.put(f'{host}/repos/{repo_name}/private-vulnerability-reporting').raise_for_status()
-        session.put(f'{host}/repos/{repo_name}/vulnerability-alerts').raise_for_status()
-        r = session.get(f'{host}/repos/{repo_name}/rulesets')
-        r.raise_for_status()
-        rulesets = r.json()
+        await _configure_github_repo(session, host, repo_name, settings)
+        async with session.put(
+                f'{host}/repos/{repo_name}/topics',
+                json={'names': [x.replace(' ', '-') for x in settings['keywords']]}) as resp:
+            resp.raise_for_status()
+        async with session.put(f'{host}/repos/{repo_name}/automated-security-fixes') as resp:
+            resp.raise_for_status()
+        async with session.put(f'{host}/repos/{repo_name}/private-vulnerability-reporting') as resp:
+            resp.raise_for_status()
+        async with session.put(f'{host}/repos/{repo_name}/vulnerability-alerts') as resp:
+            resp.raise_for_status()
+        async with session.get(f'{host}/repos/{repo_name}/rulesets') as r:
+            r.raise_for_status()
+            rulesets = await r.json()
         names = [x['name'] for x in rulesets]
         if 'Protect version tags' not in names:
-            session.post(f'{host}/repos/{repo_name}/rulesets',
-                         json={
-                             'name':
-                                 'Protect version tags',
-                             'target':
-                                 'tag',
-                             'bypass_actors': [{
-                                 'actor_id': 5,
-                                 'actor_type': 'RepositoryRole',
-                                 'bypass_mode': 'always'
-                             }],
-                             'conditions': {
-                                 'ref_name': {
-                                     'exclude': [],
-                                     'include': ['refs/tags/v*']
-                                 }
-                             },
-                             'enforcement':
-                                 'active',
-                             'rules': [{
-                                 'type': 'deletion'
-                             }, {
-                                 'type': 'non_fast_forward'
-                             }, {
-                                 'type': 'required_linear_history'
-                             }, {
-                                 'type': 'creation'
-                             }, {
-                                 'type': 'update'
-                             }, {
-                                 'type': 'required_signatures'
-                             }],
-                         }).raise_for_status()
+            async with session.post(f'{host}/repos/{repo_name}/rulesets',
+                                    json={
+                                        'name':
+                                            'Protect version tags',
+                                        'target':
+                                            'tag',
+                                        'bypass_actors': [{
+                                            'actor_id': 5,
+                                            'actor_type': 'RepositoryRole',
+                                            'bypass_mode': 'always'
+                                        }],
+                                        'conditions': {
+                                            'ref_name': {
+                                                'exclude': [],
+                                                'include': ['refs/tags/v*']
+                                            }
+                                        },
+                                        'enforcement':
+                                            'active',
+                                        'rules': [{
+                                            'type': 'deletion'
+                                        }, {
+                                            'type': 'non_fast_forward'
+                                        }, {
+                                            'type': 'required_linear_history'
+                                        }, {
+                                            'type': 'creation'
+                                        }, {
+                                            'type': 'update'
+                                        }, {
+                                            'type': 'required_signatures'
+                                        }],
+                                    }) as resp:
+                resp.raise_for_status()
         if 'Protect default branch' not in names:
-            session.post(f'{host}/repos/{repo_name}/rulesets',
-                         json={
-                             'name':
-                                 'Protect default branch',
-                             'target':
-                                 'branch',
-                             'bypass_actors': [{
-                                 'actor_id': 5,
-                                 'actor_type': 'RepositoryRole',
-                                 'bypass_mode': 'always'
-                             }],
-                             'conditions': {
-                                 'ref_name': {
-                                     'exclude': [],
-                                     'include': ['~DEFAULT_BRANCH']
-                                 }
-                             },
-                             'enforcement':
-                                 'active',
-                             'rules': [{
-                                 'type': 'deletion'
-                             }, {
-                                 'type': 'non_fast_forward'
-                             }, {
-                                 'parameters': {
-                                     'allowed_merge_methods': ['squash', 'rebase'],
-                                     'automatic_copilot_code_review_enabled': False,
-                                     'dismiss_stale_reviews_on_push': True,
-                                     'require_code_owner_review': True,
-                                     'require_last_push_approval': True,
-                                     'required_approving_review_count': 1,
-                                     'required_review_thread_resolution': True
-                                 },
-                                 'type': 'pull_request'
-                             }],
-                         }).raise_for_status()
+            async with session.post(f'{host}/repos/{repo_name}/rulesets',
+                                    json={
+                                        'name':
+                                            'Protect default branch',
+                                        'target':
+                                            'branch',
+                                        'bypass_actors': [{
+                                            'actor_id': 5,
+                                            'actor_type': 'RepositoryRole',
+                                            'bypass_mode': 'always'
+                                        }],
+                                        'conditions': {
+                                            'ref_name': {
+                                                'exclude': [],
+                                                'include': ['~DEFAULT_BRANCH']
+                                            }
+                                        },
+                                        'enforcement':
+                                            'active',
+                                        'rules': [{
+                                            'type': 'deletion'
+                                        }, {
+                                            'type': 'non_fast_forward'
+                                        }, {
+                                            'parameters': {
+                                                'allowed_merge_methods': ['squash', 'rebase'],
+                                                'automatic_copilot_code_review_enabled': False,
+                                                'dismiss_stale_reviews_on_push': True,
+                                                'require_code_owner_review': True,
+                                                'require_last_push_approval': True,
+                                                'required_approving_review_count': 1,
+                                                'required_review_thread_resolution': True
+                                            },
+                                            'type': 'pull_request'
+                                        }],
+                                    }) as resp:
+                resp.raise_for_status()
         if 'Copilot review for default branch' not in names:
-            session.post(f'{host}/repos/{repo_name}/rulesets',
-                         json={
-                             'name':
-                                 'Copilot review for default branch',
-                             'target':
-                                 'branch',
-                             'enforcement':
-                                 'active',
-                             'conditions': {
-                                 'ref_name': {
-                                     'exclude': [],
-                                     'include': ['~DEFAULT_BRANCH']
-                                 }
-                             },
-                             'rules': [{
-                                 'type': 'deletion'
-                             }, {
-                                 'type': 'copilot_code_review',
-                                 'parameters': {
-                                     'review_on_push': True,
-                                     'review_draft_pull_requests': True
-                                 }
-                             }],
-                             'bypass_actors': [{
-                                 'actor_id': 5,
-                                 'actor_type': 'RepositoryRole',
-                                 'bypass_mode': 'always'
-                             }],
-                         }).raise_for_status()
-        if session.get(f'{host}/repos/{repo_name}/pages').status_code != HTTPStatus.OK:
-            session.post(f'{host}/repos/{repo_name}/pages',
-                         json={
-                             'source': {
-                                 'branch': settings['default_branch'],
-                                 'path': '/'
-                             }
-                         }).raise_for_status()
-    except requests.HTTPError as e:
-        log.warning('Caught error updating repo: %s.', e.response.text)
+            async with session.post(f'{host}/repos/{repo_name}/rulesets',
+                                    json={
+                                        'name':
+                                            'Copilot review for default branch',
+                                        'target':
+                                            'branch',
+                                        'enforcement':
+                                            'active',
+                                        'conditions': {
+                                            'ref_name': {
+                                                'exclude': [],
+                                                'include': ['~DEFAULT_BRANCH']
+                                            }
+                                        },
+                                        'rules': [{
+                                            'type': 'deletion'
+                                        }, {
+                                            'type': 'copilot_code_review',
+                                            'parameters': {
+                                                'review_on_push': True,
+                                                'review_draft_pull_requests': True
+                                            }
+                                        }],
+                                        'bypass_actors': [{
+                                            'actor_id': 5,
+                                            'actor_type': 'RepositoryRole',
+                                            'bypass_mode': 'always'
+                                        }],
+                                    }) as resp:
+                resp.raise_for_status()
+        async with session.get(f'{host}/repos/{repo_name}/pages') as resp:
+            pages_status = resp.status
+        if pages_status != HTTPStatus.OK:
+            async with session.post(
+                    f'{host}/repos/{repo_name}/pages',
+                    json={'source': {
+                        'branch': settings['default_branch'],
+                        'path': '/'
+                    }}) as resp:
+                resp.raise_for_status()
+    except aiohttp.ClientResponseError as e:
+        log.warning('Caught error updating repo: %s.', e.message)

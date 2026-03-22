@@ -42,6 +42,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Converted the entire project from synchronous to async. `requests`/`requests-cache` replaced with
+  `aiohttp`/`aiohttp-client-cache`, `subprocess.run` replaced with `asyncio.create_subprocess_exec`,
+  and synchronous file I/O replaced with `anyio.Path`. All utility functions are now async. The Click
+  CLI entry point bridges to async via `anyio.run()`. Jinja2 templates use async mode.
 - Generated workflow templates now include path-based filtering to skip unnecessary CI runs. Tests,
   QA, Flatpak, Snap, AppImage, and PyInstaller workflows only trigger when relevant source files
   change. QA workflows use `dorny/paths-filter` to conditionally skip language-specific checks

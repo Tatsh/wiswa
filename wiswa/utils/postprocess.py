@@ -5,13 +5,13 @@ from collections.abc import Iterable, Iterator, Sequence
 from functools import cache
 from pathlib import Path
 from shlex import quote
-from shutil import rmtree
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote as urllib_quote, urlencode
+import asyncio
 import json
 import logging
-import subprocess as sp
 
+import anyio
 import tomlkit
 
 if TYPE_CHECKING:
@@ -22,40 +22,54 @@ __all__ = ('post_process_steps',)
 log = logging.getLogger(__name__)
 
 
-def _subprocess_log_run(*args: Any, **kwargs: Any) -> sp.CompletedProcess[Any]:
+async def _subprocess_log_run(*args: Any, **kwargs: Any) -> asyncio.subprocess.Process:
     assert isinstance(args[0], Iterable)
-    log.debug('Running command: %s', ' '.join(quote(x) for x in args[0]))
-    return sp.run(*args, check=kwargs.pop('check', True), **kwargs)
+    cmd = list(args[0])
+    log.debug('Running command: %s', ' '.join(quote(x) for x in cmd))
+    check = kwargs.pop('check', True)
+    proc = await asyncio.create_subprocess_exec(*cmd,
+                                                stdout=asyncio.subprocess.PIPE,
+                                                stderr=asyncio.subprocess.PIPE,
+                                                **kwargs)
+    stdout, stderr = await proc.communicate()
+    if check and proc.returncode != 0:
+        msg = (f'Command {cmd!r} returned non-zero exit status {proc.returncode}.\n'
+               f'stdout: {stdout.decode()}\nstderr: {stderr.decode()}')
+        raise RuntimeError(msg)
+    return proc
 
 
-def _post_process_steps_python(settings: Settings) -> None:
+async def _post_process_steps_python(settings: Settings) -> None:
     is_uv = settings['package_manager'] == 'uv'
     if is_uv:
-        Path('poetry.lock').unlink(missing_ok=True)
+        await anyio.Path('poetry.lock').unlink(missing_ok=True)
     if not settings['want_tests']:
-        rmtree('tests', ignore_errors=True)
-        Path('.github/workflows/tests.yml').unlink(missing_ok=True)
+        await anyio.to_thread.run_sync(
+            lambda: __import__('shutil').rmtree('tests', ignore_errors=True))
+        await anyio.Path('.github/workflows/tests.yml').unlink(missing_ok=True)
         if (not settings['vscode']['launch']
                 or (len(settings['vscode']['launch']['configurations']) == 1
                     and settings['vscode']['launch']['configurations'][0]['name'] == 'Run tests')):
-            Path('.vscode/launch.json').unlink(missing_ok=True)
-    pyproject_content = tomlkit.loads(Path('pyproject.toml').read_text(encoding='utf-8')).unwrap()
+            await anyio.Path('.vscode/launch.json').unlink(missing_ok=True)
+    pyproject_content = tomlkit.loads(
+        await anyio.Path('pyproject.toml').read_text(encoding='utf-8')).unwrap()
     if not settings['want_docs']:
-        rmtree('docs', ignore_errors=True)
-        Path('.readthedocs.yaml').unlink(missing_ok=True)
+        await anyio.to_thread.run_sync(
+            lambda: __import__('shutil').rmtree('docs', ignore_errors=True))
+        await anyio.Path('.readthedocs.yaml').unlink(missing_ok=True)
         if is_uv:
             pyproject_content.get('dependency-groups', {}).pop('docs', None)
         else:
             del pyproject_content['tool']['poetry']['group']['docs']
     if not settings['want_codeql']:
-        Path('.github/workflows/codeql.yml').unlink(missing_ok=True)
+        await anyio.Path('.github/workflows/codeql.yml').unlink(missing_ok=True)
     if settings['want_man']:
         log.debug('Adding man pages to Commitizen version_files.')
-        if (man := Path('man')).exists():
-            pyproject_content['tool']['commitizen']['version_files'] = sorted({
-                *pyproject_content['tool']['commitizen']['version_files'],
-                *(str(x) for x in man.glob('*.1'))
-            })
+        man = anyio.Path('man')
+        if await man.exists():
+            man_pages = [str(x) async for x in man.glob('*.1')]
+            pyproject_content['tool']['commitizen']['version_files'] = sorted(
+                {*pyproject_content['tool']['commitizen']['version_files'], *man_pages})
         else:
             module = settings['primary_module']
             pyproject_content['tool']['commitizen']['version_files'] = sorted(
@@ -67,9 +81,10 @@ def _post_process_steps_python(settings: Settings) -> None:
         else:
             del pyproject_content['tool']['poetry']['group']['tests']
         del pyproject_content['tool']['pytest']
-        rmtree('tests', ignore_errors=True)
+        await anyio.to_thread.run_sync(
+            lambda: __import__('shutil').rmtree('tests', ignore_errors=True))
     run_cmd = 'uv run' if is_uv else 'poetry run'
-    package_json_content = json.loads(Path('package.json').read_text(encoding='utf-8'))
+    package_json_content = json.loads(await anyio.Path('package.json').read_text(encoding='utf-8'))
     if not settings['want_yapf']:
         del pyproject_content['tool']['yapf']
         del pyproject_content['tool']['yapfignore']
@@ -79,25 +94,29 @@ def _post_process_steps_python(settings: Settings) -> None:
             f'prettier -c . && {run_cmd} ruff format --check . && markdownlint-cli2')
         package_json_content['scripts']['format'] = (
             f'prettier -w . && {run_cmd} ruff format . && markdownlint-cli2')
-    Path('package.json').write_text(json.dumps(package_json_content, indent=2, sort_keys=True),
-                                    encoding='utf-8')
-    Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8')
+    await anyio.Path('package.json').write_text(json.dumps(package_json_content,
+                                                           indent=2,
+                                                           sort_keys=True),
+                                                encoding='utf-8')
+    await anyio.Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content),
+                                                  encoding='utf-8')
     if is_uv:
-        _subprocess_log_run(('uv', 'lock'))
+        await _subprocess_log_run(('uv', 'lock'))
         groups = [
             g for g in ('docs' if settings['want_docs'] else '',
                         'tests' if settings['want_tests'] else '', 'dev') if g
         ]
         group_args = tuple(f'--group={g}' for g in groups)
-        _subprocess_log_run(('uv', 'sync', *group_args))
-        _subprocess_log_run(('uv', 'run', 'ruff', 'check', '--fix'), check=False)
+        await _subprocess_log_run(('uv', 'sync', *group_args))
+        await _subprocess_log_run(('uv', 'run', 'ruff', 'check', '--fix'), check=False)
     else:
-        _subprocess_log_run(('poetry', 'lock'))
+        await _subprocess_log_run(('poetry', 'lock'))
         with_arg = ','.join(x for x in ('docs' if settings['want_docs'] else '',
                                         'tests' if settings['want_tests'] else '', 'dev') if x)
-        _subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg else ())))
-        _subprocess_log_run(('poetry', 'install', '--all-groups', '--all-extras'))
-        _subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
+        await _subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg else
+                                                         ())))
+        await _subprocess_log_run(('poetry', 'install', '--all-groups', '--all-extras'))
+        await _subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
 
 
 @cache
@@ -309,8 +328,8 @@ def _custom_project_badges(settings: Settings, *, negative: bool = False) -> Ite
             yield f"{b['anchor']}({b['href']})"
 
 
-def _replace_badge_section(readme: Path, lines: Sequence[str], expected: Sequence[str],
-                           social_expected: Sequence[str]) -> None:
+async def _replace_badge_section(readme: anyio.Path, lines: Sequence[str], expected: Sequence[str],
+                                 social_expected: Sequence[str]) -> None:
     start_idx = next((i for i, line in enumerate(lines) if line.startswith('#')), 0) + 1
     while start_idx < len(lines) and not lines[start_idx].strip():
         start_idx += 1
@@ -318,23 +337,22 @@ def _replace_badge_section(readme: Path, lines: Sequence[str], expected: Sequenc
     while end_idx < len(lines) and (lines[end_idx].startswith('[![') or
                                     lines[end_idx].startswith('![') or not lines[end_idx].strip()):
         end_idx += 1
-    readme.write_text('\n'.join(
+    await readme.write_text('\n'.join(
         (*lines[:start_idx], '', *expected, '', *social_expected, '', *lines[end_idx:])),
-                      encoding='utf-8')
+                            encoding='utf-8')
 
 
-def _check_readme_badges(settings: Settings) -> None:
+async def _check_readme_badges(settings: Settings) -> None:
     log.debug('Checking README.md badges.')
     if not settings['_readme_existed']:
         log.debug('README.md did not exist before templating; skipping badge check.')
         return
-    readme = Path('README.md')
-    if not readme.exists():
+    readme = anyio.Path('README.md')
+    if not await readme.exists():
         log.debug('README.md was removed; skipping badge check.')
         return
-    _replace_badge_section(
-        readme,
-        readme.read_text(encoding='utf-8').split('\n'),
+    await _replace_badge_section(
+        readme, (await readme.read_text(encoding='utf-8')).split('\n'),
         (*_custom_project_badges(settings, negative=True), *_project_type_badges(settings),
          *_github_badges(settings), *_docs_badges(settings), *_python_tool_badges(settings),
          *_misc_badges(settings), *_typescript_badges(settings), *_custom_project_badges(settings)),
@@ -342,7 +360,7 @@ def _check_readme_badges(settings: Settings) -> None:
     log.debug('Updated README.md badges.')
 
 
-def post_process_steps(settings: Settings) -> None:
+async def post_process_steps(settings: Settings) -> None:
     """
     Run post-processing steps after project generation.
 
@@ -352,17 +370,18 @@ def post_process_steps(settings: Settings) -> None:
         Project settings.
     """
     if settings['private']:
-        Path('.github/workflows/publish.yml').unlink(missing_ok=True)
+        await anyio.Path('.github/workflows/publish.yml').unlink(missing_ok=True)
     match settings['project_type']:
         case 'python':
-            _post_process_steps_python(settings)
+            await _post_process_steps_python(settings)
         case _:
             log.warning('No post-processing steps for project type `%s`.', settings['project_type'])
-    _check_readme_badges(settings)
-    package_json = Path('package.json')
-    package_json.write_text(json.dumps(json.loads(package_json.read_text(encoding='utf-8')),
-                                       indent=2,
-                                       sort_keys=True),
-                            encoding='utf-8')
-    _subprocess_log_run(('yarn',))
-    _subprocess_log_run(('yarn', 'format'), check=False)
+    await _check_readme_badges(settings)
+    package_json = anyio.Path('package.json')
+    await package_json.write_text(json.dumps(json.loads(await
+                                                        package_json.read_text(encoding='utf-8')),
+                                             indent=2,
+                                             sort_keys=True),
+                                  encoding='utf-8')
+    await _subprocess_log_run(('yarn',))
+    await _subprocess_log_run(('yarn', 'format'), check=False)

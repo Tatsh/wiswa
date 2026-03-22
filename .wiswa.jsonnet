@@ -26,21 +26,36 @@ local utils = import 'utils.libjsonnet';
         report+: { omit+: extra_omit },
         run+: { omit+: extra_omit },
       },
+      pytest+: {
+        ini_options+: {
+          asyncio_mode: 'auto',
+        },
+      },
       poetry+: {
         dependencies+: {
+          aiofiles: utils.latestPypiPackageVersionCaret('aiofiles'),
+          aiohttp: utils.latestPypiPackageVersionCaret('aiohttp'),
+          'aiohttp-client-cache': {
+            version: utils.latestPypiPackageVersionCaret('aiohttp-client-cache'),
+            extras: ['filesystem'],
+          },
+          anyio: utils.latestPypiPackageVersionCaret('anyio'),
+          beautifulsoup4: utils.latestPypiPackageVersionCaret('beautifulsoup4'),
           fastmcp: utils.latestPypiPackageVersionCaret('fastmcp'),
-          'requests-cache': utils.latestPypiPackageVersionCaret('requests-cache'),
           jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
           jsonnet: utils.latestPypiPackageVersionCaret('jsonnet'),
           keyring: utils.latestPypiPackageVersionCaret('keyring'),
           lxml: utils.latestPypiPackageVersionCaret('lxml'),
-          requests: utils.latestPypiPackageVersionCaret('requests'),
         },
         group+: {
           dev+: {
             dependencies+: {
               'types-jsonnet': utils.latestPypiPackageVersionCaret('types-jsonnet'),
-              'types-requests': utils.latestPypiPackageVersionCaret('types-requests'),
+            },
+          },
+          tests+: {
+            dependencies+: {
+              'pytest-asyncio': utils.latestPypiPackageVersionCaret('pytest-asyncio'),
             },
           },
         },

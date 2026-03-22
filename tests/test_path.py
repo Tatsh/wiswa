@@ -11,41 +11,42 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def test_remove_empty_dirs_single(tmp_path: Path) -> None:
+async def test_remove_empty_dirs_single(tmp_path: Path) -> None:
     d = tmp_path / 'a/b/c'
     d.mkdir(parents=True)
-    remove_empty_dirs(d, stop_at=tmp_path)
+    await remove_empty_dirs(d, stop_at=tmp_path)
     assert not (tmp_path / 'a').exists()
 
 
-def test_remove_empty_dirs_stops_at_boundary(tmp_path: Path) -> None:
+async def test_remove_empty_dirs_stops_at_boundary(tmp_path: Path) -> None:
     d = tmp_path / 'a/b/c'
     d.mkdir(parents=True)
-    remove_empty_dirs(d, stop_at=tmp_path / 'a')
+    await remove_empty_dirs(d, stop_at=tmp_path / 'a')
     assert (tmp_path / 'a').exists()
     assert not (tmp_path / 'a/b').exists()
 
 
-def test_remove_empty_dirs_stops_at_non_empty(tmp_path: Path) -> None:
+async def test_remove_empty_dirs_stops_at_non_empty(tmp_path: Path) -> None:
     d = tmp_path / 'a/b/c'
     d.mkdir(parents=True)
     (tmp_path / 'a/file.txt').write_text('content')
-    remove_empty_dirs(d, stop_at=tmp_path)
+    await remove_empty_dirs(d, stop_at=tmp_path)
     assert (tmp_path / 'a').exists()
     assert not (tmp_path / 'a/b').exists()
 
 
-def test_remove_empty_dirs_default_stop_at(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_remove_empty_dirs_default_stop_at(tmp_path: Path,
+                                                 monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     d = tmp_path / 'x/y'
     d.mkdir(parents=True)
-    remove_empty_dirs(d)
+    await remove_empty_dirs(d)
     assert not (tmp_path / 'x').exists()
 
 
-def test_remove_empty_dirs_nonexistent(tmp_path: Path) -> None:
+async def test_remove_empty_dirs_nonexistent(tmp_path: Path) -> None:
     d = tmp_path / 'nonexistent'
-    remove_empty_dirs(d, stop_at=tmp_path)
+    await remove_empty_dirs(d, stop_at=tmp_path)
 
 
 def test_primary_module_to_path_simple() -> None:
@@ -66,24 +67,24 @@ def test_primary_module_to_path_empty_segment_raises() -> None:
         primary_module_to_path('a..b')
 
 
-def test_non_empty_file_exists_true(tmp_path: Path) -> None:
+async def test_non_empty_file_exists_true(tmp_path: Path) -> None:
     f = tmp_path / 'file.txt'
     f.write_text('content')
-    assert non_empty_file_exists(f) is True
+    assert await non_empty_file_exists(f) is True
 
 
-def test_non_empty_file_exists_empty(tmp_path: Path) -> None:
+async def test_non_empty_file_exists_empty(tmp_path: Path) -> None:
     f = tmp_path / 'file.txt'
     f.write_text('')
-    assert non_empty_file_exists(f) is False
+    assert await non_empty_file_exists(f) is False
 
 
-def test_non_empty_file_exists_whitespace_only(tmp_path: Path) -> None:
+async def test_non_empty_file_exists_whitespace_only(tmp_path: Path) -> None:
     f = tmp_path / 'file.txt'
     f.write_text('   \n  ')
-    assert non_empty_file_exists(f) is False
+    assert await non_empty_file_exists(f) is False
 
 
-def test_non_empty_file_exists_missing(tmp_path: Path) -> None:
+async def test_non_empty_file_exists_missing(tmp_path: Path) -> None:
     f = tmp_path / 'missing.txt'
-    assert non_empty_file_exists(f) is False
+    assert await non_empty_file_exists(f) is False

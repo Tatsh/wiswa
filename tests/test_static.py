@@ -47,30 +47,30 @@ def _setup_module_path(tmp_path: Path) -> Path:
     return module_path
 
 
-def test_copy_static_files_creates_cursor_and_instruction_files(
+async def test_copy_static_files_creates_cursor_and_instruction_files(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     module_path = _setup_module_path(tmp_path)
     settings = cast('Any', _make_settings())
-    copy_static_files(settings, module_path)
+    await copy_static_files(settings, module_path)
     assert (tmp_path / '.cursor/rules/json-yaml.mdc').exists()
     assert (tmp_path / '.cursor/rules/python.mdc').exists()
     assert (tmp_path / '.github/instructions/json-yaml.instructions.md').exists()
     assert (tmp_path / '.github/instructions/python.instructions.md').exists()
 
 
-def test_copy_static_files_stubs_only_skips_python_rules(tmp_path: Path,
-                                                         monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_copy_static_files_stubs_only_skips_python_rules(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     module_path = _setup_module_path(tmp_path)
     settings = cast('Any', _make_settings(stubs_only=True))
-    copy_static_files(settings, module_path)
+    await copy_static_files(settings, module_path)
     assert (tmp_path / '.cursor/rules/json-yaml.mdc').exists()
     assert not (tmp_path / '.cursor/rules/python.mdc').exists()
     assert not (tmp_path / '.cursor/rules/python-tests.mdc').exists()
 
 
-def test_copy_static_files_not_wanted_cursor_removes_matching(
+async def test_copy_static_files_not_wanted_cursor_removes_matching(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     module_path = _setup_module_path(tmp_path)
@@ -78,11 +78,11 @@ def test_copy_static_files_not_wanted_cursor_removes_matching(
     cursor_dir.mkdir(parents=True)
     (cursor_dir / 'json-yaml.mdc').write_text('json-yaml cursor content')
     settings = cast('Any', _make_settings(want_cursor=False))
-    copy_static_files(settings, module_path)
+    await copy_static_files(settings, module_path)
     assert not (cursor_dir / 'json-yaml.mdc').exists()
 
 
-def test_copy_static_files_not_wanted_cursor_keeps_different(
+async def test_copy_static_files_not_wanted_cursor_keeps_different(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     module_path = _setup_module_path(tmp_path)
@@ -90,24 +90,24 @@ def test_copy_static_files_not_wanted_cursor_keeps_different(
     cursor_dir.mkdir(parents=True)
     (cursor_dir / 'json-yaml.mdc').write_text('custom user content')
     settings = cast('Any', _make_settings(want_cursor=False))
-    copy_static_files(settings, module_path)
+    await copy_static_files(settings, module_path)
     assert (cursor_dir / 'json-yaml.mdc').read_text() == 'custom user content'
 
 
-def test_copy_static_files_claude_json_written_when_wanted(tmp_path: Path,
-                                                           monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_copy_static_files_claude_json_written_when_wanted(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     module_path = _setup_module_path(tmp_path)
     settings = cast('Any', _make_settings(want_claude=True, claude_settings_local={'key': 'val'}))
-    copy_static_files(settings, module_path)
+    await copy_static_files(settings, module_path)
     assert (tmp_path / '.claude/settings.local.json').exists()
     assert '"key": "val"' in (tmp_path / '.claude/settings.local.json').read_text()
     assert (tmp_path / '.claude/settings.local.json.dist').exists()
     assert '"key": "val"' in (tmp_path / '.claude/settings.local.json.dist').read_text()
 
 
-def test_copy_static_files_cpp_project_type(tmp_path: Path,
-                                            monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_copy_static_files_cpp_project_type(tmp_path: Path,
+                                                  monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     module_path = _setup_module_path(tmp_path)
     cpp_cursor = module_path / 'static/.cursor/rules/cpp.mdc'
@@ -115,29 +115,29 @@ def test_copy_static_files_cpp_project_type(tmp_path: Path,
     cpp_inst = module_path / 'static/.github/instructions/cpp.instructions.md'
     cpp_inst.write_text('cpp instruction')
     settings = cast('Any', _make_settings(project_type='c++'))
-    copy_static_files(settings, module_path)
+    await copy_static_files(settings, module_path)
     assert (tmp_path / '.cursor/rules/cpp.mdc').exists()
     assert (tmp_path / '.github/instructions/cpp.instructions.md').exists()
 
 
-def test_copy_static_files_unknown_project_type_warns(tmp_path: Path,
-                                                      monkeypatch: pytest.MonkeyPatch,
-                                                      mocker: MockerFixture) -> None:
+async def test_copy_static_files_unknown_project_type_warns(tmp_path: Path,
+                                                            monkeypatch: pytest.MonkeyPatch,
+                                                            mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     module_path = _setup_module_path(tmp_path)
     mock_log = mocker.patch('wiswa.utils.static.log')
     settings = cast('Any', _make_settings(project_type='generic'))
-    copy_static_files(settings, module_path)
+    await copy_static_files(settings, module_path)
     mock_log.warning.assert_called_once()
 
 
-def test_copy_static_files_python_stubs_only(tmp_path: Path) -> None:
+async def test_copy_static_files_python_stubs_only(tmp_path: Path) -> None:
     settings = cast('Any', _make_settings(stubs_only=True))
-    copy_static_files_python(settings, tmp_path)
+    await copy_static_files_python(settings, tmp_path)
 
 
-def test_copy_static_files_python_copies_main_files(tmp_path: Path,
-                                                    monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_copy_static_files_python_copies_main_files(tmp_path: Path,
+                                                          monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     static_dir = tmp_path / 'pkg/static'
     static_dir.mkdir(parents=True)
@@ -152,13 +152,13 @@ def test_copy_static_files_python_copies_main_files(tmp_path: Path,
             primary_module='mymod',
         ),
     )
-    copy_static_files_python(settings, tmp_path / 'pkg')
+    await copy_static_files_python(settings, tmp_path / 'pkg')
     assert (tmp_path / 'mymod/__main__.py').exists()
     assert (tmp_path / 'mymod/main.py').exists()
 
 
-def test_copy_static_files_python_skips_existing_non_empty(tmp_path: Path,
-                                                           monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_copy_static_files_python_skips_existing_non_empty(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     static_dir = tmp_path / 'pkg/static'
     static_dir.mkdir(parents=True)
@@ -175,11 +175,11 @@ def test_copy_static_files_python_skips_existing_non_empty(tmp_path: Path,
             primary_module='mymod',
         ),
     )
-    copy_static_files_python(settings, tmp_path / 'pkg')
+    await copy_static_files_python(settings, tmp_path / 'pkg')
     assert (tmp_path / 'mymod/__main__.py').read_text() == 'existing content'
 
 
-def test_copy_static_files_not_wanted_cursor_removes_all_and_cleans_root(
+async def test_copy_static_files_not_wanted_cursor_removes_all_and_cleans_root(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     module_path = _setup_module_path(tmp_path)
@@ -188,11 +188,11 @@ def test_copy_static_files_not_wanted_cursor_removes_all_and_cleans_root(
     for name in ('json-yaml', 'markdown', 'toml-ini'):
         (cursor_dir / f'{name}.mdc').write_text(f'{name} cursor content')
     settings = cast('Any', _make_settings(want_cursor=False, project_type='generic'))
-    copy_static_files(settings, module_path)
+    await copy_static_files(settings, module_path)
     assert not (tmp_path / '.cursor').exists()
 
 
-def test_copy_static_files_claude_not_wanted_removes_matching_json(
+async def test_copy_static_files_claude_not_wanted_removes_matching_json(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     module_path = _setup_module_path(tmp_path)
@@ -206,12 +206,12 @@ def test_copy_static_files_claude_not_wanted_removes_matching_json(
     (claude_dir / 'settings.local.json.dist').write_text(f'{json.dumps(content, indent=2)}\n',
                                                          encoding='utf-8')
     settings = cast('Any', _make_settings(want_claude=False, claude_settings_local={'key': 'val'}))
-    copy_static_files(settings, module_path)
+    await copy_static_files(settings, module_path)
     assert not (claude_dir / 'settings.local.json').exists()
     assert not (claude_dir / 'settings.local.json.dist').exists()
 
 
-def test_copy_static_files_claude_not_wanted_keeps_different_json(
+async def test_copy_static_files_claude_not_wanted_keeps_different_json(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     module_path = _setup_module_path(tmp_path)
@@ -219,5 +219,5 @@ def test_copy_static_files_claude_not_wanted_keeps_different_json(
     claude_dir.mkdir(parents=True)
     (claude_dir / 'settings.local.json').write_text('{"custom": "content"}\n', encoding='utf-8')
     settings = cast('Any', _make_settings(want_claude=False, claude_settings_local={'key': 'val'}))
-    copy_static_files(settings, module_path)
+    await copy_static_files(settings, module_path)
     assert (claude_dir / 'settings.local.json').exists()

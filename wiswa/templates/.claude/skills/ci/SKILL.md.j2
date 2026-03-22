@@ -116,14 +116,17 @@ If `CHANGELOG.md` is the only file being committed, use the `changelog:` prefix.
 When all changes are from re-running Wiswa (the project generator) and
 no hand-written code changed, this is a **cruft update**. Indicators:
 
-- Only Wiswa-managed files changed (workflows, `package.json`,
+- Only Wiswa-managed files changed (workflows,
+  `package.json`,
 {%- if settings.project_type == 'python' %} `pyproject.toml`,
 {%- elif settings.project_type == 'c' or settings.project_type == 'c++' %} `CMakeLists.txt`,
 {%- elif settings.project_type == 'typescript' %} `tsconfig.json`,
 {%- endif %}
-  `.pre-commit-config.yaml`, `.claude/agents/`, `.cursor/rules/`, `.github/instructions/`,
+  `.pre-commit-config.yaml`, `.claude/agents/`,
+  `.cursor/rules/`, `.github/instructions/`,
   `CITATION.cff`, `.vscode/dictionary.txt`,
-{%- if settings.project_type == 'python' %} `uv.lock`,{% endif %} `.wiswa.jsonnet`, etc.).
+{%- if settings.project_type == 'python' %} `uv.lock`,{% endif %}
+  `.wiswa.jsonnet`, etc.).
 - No files under the primary module or
 {%- if settings.project_type == 'python' %} `tests/`
 {%- elif settings.project_type == 'c' or settings.project_type == 'c++' %} `src/`

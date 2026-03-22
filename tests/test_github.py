@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from wiswa.utils.github import setup_github_project
 
@@ -29,11 +29,31 @@ def _make_settings(**overrides: Any) -> Settings:
     return cast('Settings', base)
 
 
+def _make_async_cm(mock_resp: MagicMock) -> MagicMock:
+    cm = MagicMock()
+    cm.__aenter__ = AsyncMock(return_value=mock_resp)
+    cm.__aexit__ = AsyncMock(return_value=False)
+    return cm
+
+
+def _make_resp(status: int = 200, json_data: Any = None) -> MagicMock:
+    resp = MagicMock()
+    resp.status = status
+    resp.raise_for_status = MagicMock()
+    resp.json = AsyncMock(return_value=json_data if json_data is not None else [])
+    return resp
+
+
 def _mock_github_session(mocker: MockerFixture) -> MagicMock:
+    mocker.patch('wiswa.utils.github.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
     mocker.patch('wiswa.utils.github.keyring.get_password', return_value='ghp_test')
     session = MagicMock()
-    session.get.return_value = MagicMock(status_code=200, json=MagicMock(return_value=[]))
-    mocker.patch('wiswa.utils.github.cached_session', return_value=session)
+    default_resp = _make_resp()
+    session.headers = MagicMock()
+    session.patch.return_value = _make_async_cm(default_resp)
+    session.get.return_value = _make_async_cm(default_resp)
+    session.put.return_value = _make_async_cm(default_resp)
+    session.post.return_value = _make_async_cm(default_resp)
     return session
 
 
@@ -41,37 +61,38 @@ def _put_urls(session: MagicMock) -> list[str]:
     return [c.args[0] for c in session.put.call_args_list]
 
 
-def test_setup_github_project_enables_immutable_releases(mocker: MockerFixture) -> None:
+async def test_setup_github_project_enables_immutable_releases(mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
-    setup_github_project(_make_settings())
+    await setup_github_project(session, _make_settings())
     assert 'https://api.github.com/repos/testuser/testrepo/immutable-releases' in _put_urls(session)
 
 
-def test_setup_github_project_skips_immutable_releases_when_disabled(mocker: MockerFixture) -> None:
+async def test_setup_github_project_skips_immutable_releases_when_disabled(
+        mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
     settings = _make_settings(github={'immutable_releases': False, 'username': 'testuser'})
-    setup_github_project(settings)
+    await setup_github_project(session, settings)
     assert 'https://api.github.com/repos/testuser/testrepo/immutable-releases' not in _put_urls(
         session)
 
 
-def test_setup_github_project_skips_when_not_using_github(mocker: MockerFixture) -> None:
+async def test_setup_github_project_skips_when_not_using_github(mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
-    setup_github_project(_make_settings(using_github=False))
+    await setup_github_project(session, _make_settings(using_github=False))
     session.patch.assert_not_called()
 
 
-def test_setup_github_project_skips_when_no_token(mocker: MockerFixture) -> None:
+async def test_setup_github_project_skips_when_no_token(mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.utils.github.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
     mocker.patch('wiswa.utils.github.keyring.get_password', return_value=None)
     session = MagicMock()
-    mocker.patch('wiswa.utils.github.cached_session', return_value=session)
-    setup_github_project(_make_settings())
+    await setup_github_project(session, _make_settings())
     session.patch.assert_not_called()
 
 
-def test_setup_github_project_enables_security_features(mocker: MockerFixture) -> None:
+async def test_setup_github_project_enables_security_features(mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
-    setup_github_project(_make_settings())
+    await setup_github_project(session, _make_settings())
     urls = _put_urls(session)
     host = 'https://api.github.com/repos/testuser/testrepo'
     assert f'{host}/automated-security-fixes' in urls
@@ -79,19 +100,19 @@ def test_setup_github_project_enables_security_features(mocker: MockerFixture) -
     assert f'{host}/vulnerability-alerts' in urls
 
 
-def test_setup_github_project_sets_topics(mocker: MockerFixture) -> None:
+async def test_setup_github_project_sets_topics(mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
-    setup_github_project(_make_settings(keywords=['test', 'multi word']))
+    await setup_github_project(session, _make_settings(keywords=['test', 'multi word']))
     session.put.assert_any_call(
         'https://api.github.com/repos/testuser/testrepo/topics',
         json={'names': ['test', 'multi-word']},
     )
 
 
-def test_setup_github_project_creates_protect_version_tags_ruleset(mocker: MockerFixture) -> None:
+async def test_setup_github_project_creates_protect_version_tags_ruleset(
+        mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
-    session.get.return_value = MagicMock(status_code=200, json=MagicMock(return_value=[]))
-    setup_github_project(_make_settings())
+    await setup_github_project(session, _make_settings())
     post_calls = list(session.post.call_args_list)
     ruleset_names = [
         c.kwargs.get('json', {}).get('name', '') for c in post_calls if 'rulesets' in c.args[0]
@@ -101,69 +122,69 @@ def test_setup_github_project_creates_protect_version_tags_ruleset(mocker: Mocke
     assert 'Copilot review for default branch' in ruleset_names
 
 
-def test_setup_github_project_skips_existing_rulesets(mocker: MockerFixture) -> None:
+async def test_setup_github_project_skips_existing_rulesets(mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
-    session.get.return_value = MagicMock(
-        status_code=200,
-        json=MagicMock(return_value=[
-            {
-                'name': 'Protect version tags'
-            },
-            {
-                'name': 'Protect default branch'
-            },
-            {
-                'name': 'Copilot review for default branch'
-            },
-        ]),
-    )
-    setup_github_project(_make_settings())
+    rulesets_resp = _make_resp(200, [
+        {
+            'name': 'Protect version tags'
+        },
+        {
+            'name': 'Protect default branch'
+        },
+        {
+            'name': 'Copilot review for default branch'
+        },
+    ])
+    session.get.return_value = _make_async_cm(rulesets_resp)
+    await setup_github_project(session, _make_settings())
     post_calls = [
         c for c in session.post.call_args_list if 'rulesets' in str(c.args[0] if c.args else '')
     ]
     assert len(post_calls) == 0
 
 
-def test_setup_github_project_creates_pages_when_not_existing(mocker: MockerFixture) -> None:
+async def test_setup_github_project_creates_pages_when_not_existing(mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
-    get_responses = [
-        MagicMock(status_code=200, json=MagicMock(return_value=[])),
-        MagicMock(status_code=404),
-    ]
+    default_resp = _make_resp(200)
+    pages_resp = _make_resp(404)
 
     def side_effect(url: str, **kwargs: object) -> MagicMock:
         if 'pages' in url:
-            return get_responses[1]
-        return get_responses[0]
+            return _make_async_cm(pages_resp)
+        return _make_async_cm(default_resp)
 
     session.get.side_effect = side_effect
-    setup_github_project(_make_settings())
+    await setup_github_project(session, _make_settings())
     pages_post = [c for c in session.post.call_args_list if 'pages' in str(c.args[0])]
     assert len(pages_post) == 1
 
 
-def test_setup_github_project_skips_pages_when_existing(mocker: MockerFixture) -> None:
+async def test_setup_github_project_skips_pages_when_existing(mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
+    default_resp = _make_resp(200)
+    pages_resp = _make_resp(200)
 
     def side_effect(url: str, **kwargs: object) -> MagicMock:
         if 'pages' in url:
-            return MagicMock(status_code=200)
-        return MagicMock(status_code=200, json=MagicMock(return_value=[]))
+            return _make_async_cm(pages_resp)
+        return _make_async_cm(default_resp)
 
     session.get.side_effect = side_effect
-    setup_github_project(_make_settings())
+    await setup_github_project(session, _make_settings())
     pages_post = [c for c in session.post.call_args_list if 'pages' in str(c.args[0])]
     assert len(pages_post) == 0
 
 
-def test_setup_github_project_handles_http_error(mocker: MockerFixture) -> None:
-    import requests
+async def test_setup_github_project_handles_http_error(mocker: MockerFixture) -> None:
+    import aiohttp
 
     session = _mock_github_session(mocker)
-    error_response = MagicMock()
-    error_response.text = 'Bad Request'
-    session.patch.return_value.raise_for_status.side_effect = requests.HTTPError(
-        response=error_response)
+    error_resp = _make_resp(200)
+    error_resp.raise_for_status.side_effect = aiohttp.ClientResponseError(request_info=MagicMock(),
+                                                                          history=(),
+                                                                          status=400,
+                                                                          message='Bad Request')
+    session.patch.return_value = _make_async_cm(error_resp)
     mock_log = mocker.patch('wiswa.utils.github.log')
-    setup_github_project(_make_settings())
+    await setup_github_project(session, _make_settings())
     mock_log.warning.assert_called_once()

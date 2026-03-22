@@ -3,13 +3,13 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from decimal import Decimal
-from functools import partial
 from typing import TYPE_CHECKING, Any
 import re
 
 from jinja2.ext import Extension
 
 if TYPE_CHECKING:
+    from aiohttp import ClientSession
     import jinja2
 
 __all__ = ('GithubAPIExtension', 'ParseMarkdownBadgeExtension', 'ShellExtension',
@@ -116,7 +116,18 @@ class GithubAPIExtension(Extension):
         from .utils.versions import get_github_release_latest_tag  # noqa: PLC0415
 
         super().__init__(environment)
-        environment.globals['github_latest_action_tag'] = partial(get_github_release_latest_tag,
-                                                                  actions=True,
-                                                                  skip_releases=True,
-                                                                  allow_suffixes=False)
+
+        async def _github_latest_action_tag(owner: str, repo: str) -> str:
+            session: ClientSession | None = environment.globals.get(
+                '_aiohttp_session')  # type: ignore[assignment]
+            if session is None:
+                msg = 'No aiohttp session available for GitHub API calls'
+                raise RuntimeError(msg)
+            return await get_github_release_latest_tag(session,
+                                                       owner,
+                                                       repo,
+                                                       actions=True,
+                                                       skip_releases=True,
+                                                       allow_suffixes=False)
+
+        environment.globals['github_latest_action_tag'] = _github_latest_action_tag

@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from unittest.mock import AsyncMock, MagicMock
 
 from click.testing import CliRunner
+from multidict import CIMultiDict
 from wiswa.main import main
+import aiohttp
 import pytest
-import requests
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -30,6 +32,7 @@ def test_main_basic_invocation(args: list[str], mocker: MockerFixture, tmp_path:
     mocker.patch('wiswa.main.setup_logging')
     mocker.patch(
         'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
         return_value=(
             {
                 'project_type': 'python',
@@ -43,14 +46,14 @@ def test_main_basic_invocation(args: list[str], mocker: MockerFixture, tmp_path:
             },
         ),
     )
-    mocker.patch('wiswa.main.evaluate_jsonnet_project')
-    mocker.patch('wiswa.main.write_templated_files')
-    mocker.patch('wiswa.main.download_yarn')
-    mocker.patch('wiswa.main.download_yarn_plugins')
-    mocker.patch('wiswa.main.copy_static_files')
-    mocker.patch('wiswa.main.create_py_typed_files')
-    mocker.patch('wiswa.main.post_process_steps')
-    mocker.patch('wiswa.main.setup_github_project')
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
 
     class DummyContextManager:
         def __init__(self, value: object) -> None:
@@ -92,6 +95,7 @@ def test_main_skip_github(
     mocker.patch('wiswa.main.setup_logging')
     mocker.patch(
         'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
         return_value=(
             {
                 'project_type': 'python',
@@ -105,14 +109,14 @@ def test_main_skip_github(
             },
         ),
     )
-    mocker.patch('wiswa.main.evaluate_jsonnet_project')
-    mocker.patch('wiswa.main.write_templated_files')
-    mocker.patch('wiswa.main.download_yarn')
-    mocker.patch('wiswa.main.download_yarn_plugins')
-    mocker.patch('wiswa.main.copy_static_files')
-    mocker.patch('wiswa.main.create_py_typed_files')
-    mocker.patch('wiswa.main.post_process_steps')
-    setup_github = mocker.patch('wiswa.main.setup_github_project')
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    setup_github = mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
     mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
 
     class DummyContextManager:
@@ -154,6 +158,7 @@ def test_main_skip_flags(skip_flag: str, func_name: str, mocker: MockerFixture,
     mocker.patch('wiswa.main.setup_logging')
     mocker.patch(
         'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
         return_value=(
             {
                 'project_type': 'python',
@@ -167,14 +172,14 @@ def test_main_skip_flags(skip_flag: str, func_name: str, mocker: MockerFixture,
             },
         ),
     )
-    eval_jsonnet = mocker.patch('wiswa.main.evaluate_jsonnet_project')
-    write_templates = mocker.patch('wiswa.main.write_templated_files')
-    mocker.patch('wiswa.main.download_yarn')
-    mocker.patch('wiswa.main.download_yarn_plugins')
-    mocker.patch('wiswa.main.copy_static_files')
-    mocker.patch('wiswa.main.create_py_typed_files')
-    mocker.patch('wiswa.main.post_process_steps')
-    mocker.patch('wiswa.main.setup_github_project')
+    eval_jsonnet = mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    write_templates = mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
 
     class DummyContextManager:
         def __init__(self, value: object) -> None:
@@ -210,6 +215,7 @@ def test_main_stubs_only_skips_create_py_typed_files(mocker: MockerFixture, tmp_
     mocker.patch('wiswa.main.setup_logging')
     mocker.patch(
         'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
         return_value=(
             {
                 'project_type': 'python',
@@ -223,14 +229,14 @@ def test_main_stubs_only_skips_create_py_typed_files(mocker: MockerFixture, tmp_
             },
         ),
     )
-    mocker.patch('wiswa.main.evaluate_jsonnet_project')
-    mocker.patch('wiswa.main.write_templated_files')
-    mocker.patch('wiswa.main.download_yarn')
-    mocker.patch('wiswa.main.download_yarn_plugins')
-    mocker.patch('wiswa.main.copy_static_files')
-    create_py_typed = mocker.patch('wiswa.main.create_py_typed_files')
-    mocker.patch('wiswa.main.post_process_steps')
-    mocker.patch('wiswa.main.setup_github_project')
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    create_py_typed = mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
 
     class DummyContextManager:
         def __init__(self, value: object) -> None:
@@ -261,6 +267,7 @@ def test_main_jpath_option_passed(mocker: MockerFixture, tmp_path: Path) -> None
     mocker.patch('wiswa.main.setup_logging')
     eval_merged = mocker.patch(
         'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
         return_value=(
             {
                 'project_type': 'python',
@@ -274,14 +281,14 @@ def test_main_jpath_option_passed(mocker: MockerFixture, tmp_path: Path) -> None
             },
         ),
     )
-    mocker.patch('wiswa.main.evaluate_jsonnet_project')
-    mocker.patch('wiswa.main.write_templated_files')
-    mocker.patch('wiswa.main.download_yarn')
-    mocker.patch('wiswa.main.download_yarn_plugins')
-    mocker.patch('wiswa.main.copy_static_files')
-    mocker.patch('wiswa.main.create_py_typed_files')
-    mocker.patch('wiswa.main.post_process_steps')
-    mocker.patch('wiswa.main.setup_github_project')
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
 
     class DummyContextManager:
         def __init__(self, value: object) -> None:
@@ -317,13 +324,16 @@ def _make_http_error(
     status_code: int,
     headers: dict[str, str] | None = None,
     url: str = 'https://api.github.com/repos/test',
-) -> requests.HTTPError:
-    response = requests.Response()
-    response.status_code = status_code
-    response.url = url
-    if headers:
-        response.headers.update(headers)
-    return requests.HTTPError(response=response)
+) -> aiohttp.ClientResponseError:
+    request_info = MagicMock()
+    request_info.url = url
+    return aiohttp.ClientResponseError(
+        request_info=request_info,
+        history=(),
+        status=status_code,
+        headers=CIMultiDict(headers) if headers else None,
+        message='Error',
+    )
 
 
 def _setup_main_mocks(mocker: MockerFixture, tmp_path: Path,
@@ -333,6 +343,7 @@ def _setup_main_mocks(mocker: MockerFixture, tmp_path: Path,
     mocker.patch('wiswa.main.setup_logging')
     mocker.patch(
         'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
         return_value=(
             {
                 'project_type': 'python',
@@ -346,14 +357,14 @@ def _setup_main_mocks(mocker: MockerFixture, tmp_path: Path,
             },
         ),
     )
-    mocker.patch('wiswa.main.evaluate_jsonnet_project')
-    mocker.patch('wiswa.main.write_templated_files')
-    mocker.patch('wiswa.main.download_yarn')
-    mocker.patch('wiswa.main.download_yarn_plugins')
-    mocker.patch('wiswa.main.copy_static_files')
-    mocker.patch('wiswa.main.create_py_typed_files')
-    mocker.patch('wiswa.main.post_process_steps')
-    mocker.patch('wiswa.main.setup_github_project', side_effect=side_effect)
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock, side_effect=side_effect)
 
     class DummyContextManager:
         def __init__(self, value: object) -> None:
@@ -425,8 +436,14 @@ def test_main_http_error_non_rate_limit_status(mocker: MockerFixture, tmp_path: 
 
 
 def test_main_http_error_no_response(mocker: MockerFixture, tmp_path: Path) -> None:
-    error = requests.HTTPError()
-    error.response = None
+    request_info = MagicMock()
+    request_info.url = 'https://unknown'
+    error = aiohttp.ClientResponseError(
+        request_info=request_info,
+        history=(),
+        status=0,
+        message='Error',
+    )
     file_path, _ = _setup_main_mocks(mocker, tmp_path, side_effect=error)
     runner = CliRunner()
     result = runner.invoke(main, [str(file_path)])
@@ -441,6 +458,7 @@ def test_main_legacy_poetry_deps_warning(mocker: MockerFixture, tmp_path: Path) 
     mocker.patch('wiswa.main.setup_logging')
     mocker.patch(
         'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
         return_value=(
             '{}',
             {
@@ -462,14 +480,14 @@ def test_main_legacy_poetry_deps_warning(mocker: MockerFixture, tmp_path: Path) 
             },
         ),
     )
-    mocker.patch('wiswa.main.evaluate_jsonnet_project')
-    mocker.patch('wiswa.main.write_templated_files')
-    mocker.patch('wiswa.main.download_yarn')
-    mocker.patch('wiswa.main.download_yarn_plugins')
-    mocker.patch('wiswa.main.copy_static_files')
-    mocker.patch('wiswa.main.create_py_typed_files')
-    mocker.patch('wiswa.main.post_process_steps')
-    mocker.patch('wiswa.main.setup_github_project')
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
     mock_log = mocker.patch('wiswa.main.log')
 
     class DummyContextManager:
@@ -502,6 +520,7 @@ def test_main_no_legacy_deps_no_warning(mocker: MockerFixture, tmp_path: Path) -
     mocker.patch('wiswa.main.setup_logging')
     mocker.patch(
         'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
         return_value=(
             '{}',
             {
@@ -523,14 +542,14 @@ def test_main_no_legacy_deps_no_warning(mocker: MockerFixture, tmp_path: Path) -
             },
         ),
     )
-    mocker.patch('wiswa.main.evaluate_jsonnet_project')
-    mocker.patch('wiswa.main.write_templated_files')
-    mocker.patch('wiswa.main.download_yarn')
-    mocker.patch('wiswa.main.download_yarn_plugins')
-    mocker.patch('wiswa.main.copy_static_files')
-    mocker.patch('wiswa.main.create_py_typed_files')
-    mocker.patch('wiswa.main.post_process_steps')
-    mocker.patch('wiswa.main.setup_github_project')
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
     mock_log = mocker.patch('wiswa.main.log')
 
     class DummyContextManager:
@@ -562,6 +581,7 @@ def test_main_has_legacy_poetry_deps_not_uv(mocker: MockerFixture, tmp_path: Pat
     mocker.patch('wiswa.main.setup_logging')
     mocker.patch(
         'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
         return_value=(
             '{}',
             {
@@ -576,14 +596,14 @@ def test_main_has_legacy_poetry_deps_not_uv(mocker: MockerFixture, tmp_path: Pat
             },
         ),
     )
-    mocker.patch('wiswa.main.evaluate_jsonnet_project')
-    mocker.patch('wiswa.main.write_templated_files')
-    mocker.patch('wiswa.main.download_yarn')
-    mocker.patch('wiswa.main.download_yarn_plugins')
-    mocker.patch('wiswa.main.copy_static_files')
-    mocker.patch('wiswa.main.create_py_typed_files')
-    mocker.patch('wiswa.main.post_process_steps')
-    mocker.patch('wiswa.main.setup_github_project')
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
     mock_log = mocker.patch('wiswa.main.log')
 
     class DummyContextManager:

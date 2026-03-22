@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
+from unittest.mock import AsyncMock
 
 from wiswa.utils.postprocess import post_process_steps
 
@@ -80,40 +81,47 @@ def _setup_python_project(tmp_path: Path) -> None:
     )
 
 
-def test_post_process_steps_python_uv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                      mocker: MockerFixture) -> None:
+def _mock_subprocess(mocker: MockerFixture) -> AsyncMock:
+    mock_proc = AsyncMock()
+    mock_proc.communicate = AsyncMock(return_value=(b'', b''))
+    mock_proc.returncode = 0
+    mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec', return_value=mock_proc)
+    return mock_proc
+
+
+async def test_post_process_steps_python_uv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                            mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     (tmp_path / 'poetry.lock').write_text('lock')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings())
-    post_process_steps(settings)
+    await post_process_steps(settings)
     assert not (tmp_path / 'poetry.lock').exists()
 
 
-def test_post_process_steps_python_no_tests(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                            mocker: MockerFixture) -> None:
+async def test_post_process_steps_python_no_tests(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                  mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     (tmp_path / 'tests').mkdir()
     (tmp_path / 'tests/test_foo.py').write_text('pass')
     (tmp_path / '.github/workflows').mkdir(parents=True)
     (tmp_path / '.github/workflows/tests.yml').write_text('test')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(want_tests=False))
-    post_process_steps(settings)
+    await post_process_steps(settings)
     assert not (tmp_path / 'tests').exists()
     assert not (tmp_path / '.github/workflows/tests.yml').exists()
 
 
-def test_post_process_steps_python_no_tests_removes_launch_json(tmp_path: Path,
-                                                                monkeypatch: pytest.MonkeyPatch,
-                                                                mocker: MockerFixture) -> None:
+async def test_post_process_steps_python_no_tests_removes_launch_json(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     (tmp_path / '.vscode').mkdir()
     (tmp_path / '.vscode/launch.json').write_text('{}')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast(
         'Any',
         _make_settings(
@@ -127,66 +135,66 @@ def test_post_process_steps_python_no_tests_removes_launch_json(tmp_path: Path,
             },
         ),
     )
-    post_process_steps(settings)
+    await post_process_steps(settings)
     assert not (tmp_path / '.vscode/launch.json').exists()
 
 
-def test_post_process_steps_python_no_docs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                           mocker: MockerFixture) -> None:
+async def test_post_process_steps_python_no_docs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                 mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     (tmp_path / 'docs').mkdir()
     (tmp_path / 'docs/conf.py').write_text('pass')
     (tmp_path / '.readthedocs.yaml').write_text('test')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(want_docs=False))
-    post_process_steps(settings)
+    await post_process_steps(settings)
     assert not (tmp_path / 'docs').exists()
     assert not (tmp_path / '.readthedocs.yaml').exists()
 
 
-def test_post_process_steps_python_no_codeql(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                             mocker: MockerFixture) -> None:
+async def test_post_process_steps_python_no_codeql(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                   mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     (tmp_path / '.github/workflows').mkdir(parents=True)
     (tmp_path / '.github/workflows/codeql.yml').write_text('test')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(want_codeql=False))
-    post_process_steps(settings)
+    await post_process_steps(settings)
     assert not (tmp_path / '.github/workflows/codeql.yml').exists()
 
 
-def test_post_process_steps_python_want_man_with_man_dir(tmp_path: Path,
-                                                         monkeypatch: pytest.MonkeyPatch,
-                                                         mocker: MockerFixture) -> None:
+async def test_post_process_steps_python_want_man_with_man_dir(tmp_path: Path,
+                                                               monkeypatch: pytest.MonkeyPatch,
+                                                               mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     man_dir = tmp_path / 'man'
     man_dir.mkdir()
     (man_dir / 'mymod.1').write_text('.TH mymod 1')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(want_man=True))
-    post_process_steps(settings)
+    await post_process_steps(settings)
 
 
-def test_post_process_steps_python_want_man_without_man_dir(tmp_path: Path,
-                                                            monkeypatch: pytest.MonkeyPatch,
-                                                            mocker: MockerFixture) -> None:
+async def test_post_process_steps_python_want_man_without_man_dir(tmp_path: Path,
+                                                                  monkeypatch: pytest.MonkeyPatch,
+                                                                  mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(want_man=True, primary_module='mymod'))
-    post_process_steps(settings)
+    await post_process_steps(settings)
 
 
-def test_post_process_steps_python_no_yapf(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                           mocker: MockerFixture) -> None:
+async def test_post_process_steps_python_no_yapf(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                 mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(want_yapf=False))
-    post_process_steps(settings)
+    await post_process_steps(settings)
     import json
 
     pkg = json.loads((tmp_path / 'package.json').read_text(encoding='utf-8'))
@@ -194,8 +202,8 @@ def test_post_process_steps_python_no_yapf(tmp_path: Path, monkeypatch: pytest.M
     assert 'ruff format' in pkg['scripts']['format']
 
 
-def test_post_process_steps_python_poetry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                          mocker: MockerFixture) -> None:
+async def test_post_process_steps_python_poetry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     pyproject = tmp_path / 'pyproject.toml'
     pyproject.write_text(
@@ -214,14 +222,14 @@ def test_post_process_steps_python_poetry(tmp_path: Path, monkeypatch: pytest.Mo
         '{"scripts": {"check-formatting": "old", "format": "old"}}',
         encoding='utf-8',
     )
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(package_manager='poetry'))
-    post_process_steps(settings)
+    await post_process_steps(settings)
 
 
-def test_post_process_steps_python_poetry_no_docs_no_tests(tmp_path: Path,
-                                                           monkeypatch: pytest.MonkeyPatch,
-                                                           mocker: MockerFixture) -> None:
+async def test_post_process_steps_python_poetry_no_docs_no_tests(tmp_path: Path,
+                                                                 monkeypatch: pytest.MonkeyPatch,
+                                                                 mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     pyproject = tmp_path / 'pyproject.toml'
     pyproject.write_text(
@@ -240,61 +248,64 @@ def test_post_process_steps_python_poetry_no_docs_no_tests(tmp_path: Path,
         '{"scripts": {"check-formatting": "old", "format": "old"}}',
         encoding='utf-8',
     )
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any',
                     _make_settings(package_manager='poetry', want_docs=False, want_tests=False))
-    post_process_steps(settings)
+    await post_process_steps(settings)
 
 
-def test_post_process_steps_unknown_type_warns(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                               mocker: MockerFixture) -> None:
+async def test_post_process_steps_unknown_type_warns(tmp_path: Path,
+                                                     monkeypatch: pytest.MonkeyPatch,
+                                                     mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     mock_log = mocker.patch('wiswa.utils.postprocess.log')
     settings = cast('Any', _make_settings(project_type='generic', _readme_existed=False))
-    post_process_steps(settings)
+    await post_process_steps(settings)
     mock_log.warning.assert_called_once()
 
 
-def test_post_process_steps_checks_readme_badges(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                                 mocker: MockerFixture) -> None:
+async def test_post_process_steps_checks_readme_badges(tmp_path: Path,
+                                                       monkeypatch: pytest.MonkeyPatch,
+                                                       mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
     readme.write_text('# My Project\n\n[![old badge](http://example.com)]\n\nContent here.\n',
                       encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(_readme_existed=True))
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert '# My Project' in content
 
 
-def test_post_process_steps_readme_not_existed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                               mocker: MockerFixture) -> None:
+async def test_post_process_steps_readme_not_existed(tmp_path: Path,
+                                                     monkeypatch: pytest.MonkeyPatch,
+                                                     mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(_readme_existed=False))
-    post_process_steps(settings)
+    await post_process_steps(settings)
 
 
-def test_post_process_steps_readme_removed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                           mocker: MockerFixture) -> None:
+async def test_post_process_steps_readme_removed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                 mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(_readme_existed=True))
-    post_process_steps(settings)
+    await post_process_steps(settings)
 
 
-def test_post_process_steps_python_no_tests_no_launch_vscode(tmp_path: Path,
-                                                             monkeypatch: pytest.MonkeyPatch,
-                                                             mocker: MockerFixture) -> None:
+async def test_post_process_steps_python_no_tests_no_launch_vscode(tmp_path: Path,
+                                                                   monkeypatch: pytest.MonkeyPatch,
+                                                                   mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast(
         'Any',
         _make_settings(
@@ -304,17 +315,16 @@ def test_post_process_steps_python_no_tests_no_launch_vscode(tmp_path: Path,
             },
         ),
     )
-    post_process_steps(settings)
+    await post_process_steps(settings)
 
 
-def test_post_process_steps_python_no_tests_multiple_launch_configs(tmp_path: Path,
-                                                                    monkeypatch: pytest.MonkeyPatch,
-                                                                    mocker: MockerFixture) -> None:
+async def test_post_process_steps_python_no_tests_multiple_launch_configs(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     (tmp_path / '.vscode').mkdir()
     (tmp_path / '.vscode/launch.json').write_text('{}')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast(
         'Any',
         _make_settings(
@@ -330,66 +340,69 @@ def test_post_process_steps_python_no_tests_multiple_launch_configs(tmp_path: Pa
             },
         ),
     )
-    post_process_steps(settings)
+    await post_process_steps(settings)
     assert (tmp_path / '.vscode/launch.json').exists()
 
 
-def test_post_process_steps_badges_c_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                             mocker: MockerFixture) -> None:
+async def test_post_process_steps_badges_c_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                   mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(project_type='c', _readme_existed=True))
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert '# Project' in content
 
 
-def test_post_process_steps_badges_cpp_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                               mocker: MockerFixture) -> None:
+async def test_post_process_steps_badges_cpp_project(tmp_path: Path,
+                                                     monkeypatch: pytest.MonkeyPatch,
+                                                     mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(project_type='c++', _readme_existed=True))
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'C++' in content or '# Project' in content
 
 
-def test_post_process_steps_badges_lua_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                               mocker: MockerFixture) -> None:
+async def test_post_process_steps_badges_lua_project(tmp_path: Path,
+                                                     monkeypatch: pytest.MonkeyPatch,
+                                                     mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(project_type='lua', _readme_existed=True))
-    post_process_steps(settings)
+    await post_process_steps(settings)
 
 
-def test_post_process_steps_badges_xcode_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                                 mocker: MockerFixture) -> None:
+async def test_post_process_steps_badges_xcode_project(tmp_path: Path,
+                                                       monkeypatch: pytest.MonkeyPatch,
+                                                       mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(project_type='xcode', _readme_existed=True))
-    post_process_steps(settings)
+    await post_process_steps(settings)
 
 
-def test_post_process_steps_badges_github_with_tests_codeql(tmp_path: Path,
-                                                            monkeypatch: pytest.MonkeyPatch,
-                                                            mocker: MockerFixture) -> None:
+async def test_post_process_steps_badges_github_with_tests_codeql(tmp_path: Path,
+                                                                  monkeypatch: pytest.MonkeyPatch,
+                                                                  mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast(
         'Any',
         _make_settings(
@@ -399,7 +412,7 @@ def test_post_process_steps_badges_github_with_tests_codeql(tmp_path: Path,
             want_docs=True,
         ),
     )
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'Tests' in content
     assert 'CodeQL' in content
@@ -407,25 +420,26 @@ def test_post_process_steps_badges_github_with_tests_codeql(tmp_path: Path,
     assert 'Documentation' in content
 
 
-def test_post_process_steps_badges_not_using_github(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                                    mocker: MockerFixture) -> None:
+async def test_post_process_steps_badges_not_using_github(tmp_path: Path,
+                                                          monkeypatch: pytest.MonkeyPatch,
+                                                          mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(_readme_existed=True, using_github=False))
-    post_process_steps(settings)
+    await post_process_steps(settings)
 
 
-def test_post_process_steps_badges_docs_github_pages(tmp_path: Path,
-                                                     monkeypatch: pytest.MonkeyPatch,
-                                                     mocker: MockerFixture) -> None:
+async def test_post_process_steps_badges_docs_github_pages(tmp_path: Path,
+                                                           monkeypatch: pytest.MonkeyPatch,
+                                                           mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast(
         'Any',
         _make_settings(
@@ -435,19 +449,19 @@ def test_post_process_steps_badges_docs_github_pages(tmp_path: Path,
             using_github=True,
         ),
     )
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'GitHub Pages' in content
 
 
-def test_post_process_steps_badges_python_poetry_django(tmp_path: Path,
-                                                        monkeypatch: pytest.MonkeyPatch,
-                                                        mocker: MockerFixture) -> None:
+async def test_post_process_steps_badges_python_poetry_django(tmp_path: Path,
+                                                              monkeypatch: pytest.MonkeyPatch,
+                                                              mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast(
         'Any',
         _make_settings(
@@ -459,34 +473,35 @@ def test_post_process_steps_badges_python_poetry_django(tmp_path: Path,
             }},
         ),
     )
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'Django' in content
     assert 'Poetry' in content
     assert 'numpy' in content
 
 
-def test_post_process_steps_badges_private_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                                   mocker: MockerFixture) -> None:
+async def test_post_process_steps_badges_private_project(tmp_path: Path,
+                                                         monkeypatch: pytest.MonkeyPatch,
+                                                         mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(_readme_existed=True, private=True))
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'pypi' not in content.lower() or 'Downloads' not in content
 
 
-def test_post_process_steps_badges_typescript_project(tmp_path: Path,
-                                                      monkeypatch: pytest.MonkeyPatch,
-                                                      mocker: MockerFixture) -> None:
+async def test_post_process_steps_badges_typescript_project(tmp_path: Path,
+                                                            monkeypatch: pytest.MonkeyPatch,
+                                                            mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast(
         'Any',
         _make_settings(
@@ -504,47 +519,47 @@ def test_post_process_steps_badges_typescript_project(tmp_path: Path,
             },
         ),
     )
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'TypeScript' in content
 
 
-def test_post_process_steps_badges_dockerfile_exists(tmp_path: Path,
-                                                     monkeypatch: pytest.MonkeyPatch,
-                                                     mocker: MockerFixture) -> None:
+async def test_post_process_steps_badges_dockerfile_exists(tmp_path: Path,
+                                                           monkeypatch: pytest.MonkeyPatch,
+                                                           mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     (tmp_path / 'Dockerfile').write_text('FROM python:3.13')
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(_readme_existed=True))
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'Docker' in content
 
 
-def test_post_process_steps_badges_cmake_c(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                           mocker: MockerFixture) -> None:
+async def test_post_process_steps_badges_cmake_c(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                 mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / 'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.20)')
     (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(project_type='c', _readme_existed=True))
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'CMake' in content
 
 
-def test_post_process_steps_social_badges(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                          mocker: MockerFixture) -> None:
+async def test_post_process_steps_social_badges(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast(
         'Any',
         _make_settings(
@@ -573,30 +588,32 @@ def test_post_process_steps_social_badges(tmp_path: Path, monkeypatch: pytest.Mo
             },
         ),
     )
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert '@testuser' in content
     assert 'Buy Me' in content or 'buymeacoffee' in content
 
 
-def test_post_process_steps_social_badges_empty(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                                mocker: MockerFixture) -> None:
+async def test_post_process_steps_social_badges_empty(tmp_path: Path,
+                                                      monkeypatch: pytest.MonkeyPatch,
+                                                      mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(_readme_existed=True, social={}, keywords=[]))
-    post_process_steps(settings)
+    await post_process_steps(settings)
 
 
-def test_post_process_steps_python_uv_with_deps(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                                mocker: MockerFixture) -> None:
+async def test_post_process_steps_python_uv_with_deps(tmp_path: Path,
+                                                      monkeypatch: pytest.MonkeyPatch,
+                                                      mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast(
         'Any',
         _make_settings(
@@ -615,33 +632,33 @@ def test_post_process_steps_python_uv_with_deps(tmp_path: Path, monkeypatch: pyt
             },
         ),
     )
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'Jinja' in content or 'jinja' in content
 
 
-def test_post_process_steps_stubs_only_no_pydocstyle(tmp_path: Path,
-                                                     monkeypatch: pytest.MonkeyPatch,
-                                                     mocker: MockerFixture) -> None:
+async def test_post_process_steps_stubs_only_no_pydocstyle(tmp_path: Path,
+                                                           monkeypatch: pytest.MonkeyPatch,
+                                                           mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(_readme_existed=True, stubs_only=True, want_tests=True))
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'pydocstyle' not in content
 
 
-def test_post_process_steps_no_docs_badges(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                           mocker: MockerFixture) -> None:
+async def test_post_process_steps_no_docs_badges(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                 mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.postprocess.sp.run')
+    _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(_readme_existed=True, want_docs=False))
-    post_process_steps(settings)
+    await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'readthedocs' not in content

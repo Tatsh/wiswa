@@ -3,12 +3,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import anyio
+
 __all__ = ('non_empty_file_exists', 'primary_module_to_path', 'remove_empty_dirs')
 
 
-def non_empty_file_exists(output_file: Path) -> bool:
+async def non_empty_file_exists(output_file: Path) -> bool:
     """Check if a file exists and is not empty."""
-    return output_file.exists() and len(output_file.read_text(encoding='utf-8').strip()) != 0
+    aio_path = anyio.Path(output_file)
+    return await aio_path.exists() and len(
+        (await aio_path.read_text(encoding='utf-8')).strip()) != 0
 
 
 def primary_module_to_path(primary_module: str) -> str:
@@ -28,11 +32,13 @@ def primary_module_to_path(primary_module: str) -> str:
     return path_str
 
 
-def remove_empty_dirs(path: Path, stop_at: Path | None = None) -> None:
+async def remove_empty_dirs(path: Path, stop_at: Path | None = None) -> None:
     """Remove directory and parents while empty, until ``stop_at``."""
     stop_at = stop_at or Path()
-    while path.exists() and path.is_dir() and path != stop_at:
-        if any(path.iterdir()):
+    aio_path = anyio.Path(path)
+    aio_stop = anyio.Path(stop_at)
+    while await aio_path.exists() and await aio_path.is_dir() and aio_path != aio_stop:
+        if [p async for p in aio_path.iterdir()]:
             break
-        path.rmdir()
-        path = path.parent
+        await aio_path.rmdir()
+        aio_path = aio_path.parent

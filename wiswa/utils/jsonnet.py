@@ -2,24 +2,20 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 import json
 import logging
 
 import _jsonnet  # noqa: PLC2701
+import anyio
 import platformdirs
-
-from .versions import (
-    get_github_release_latest_tag,
-    get_latest_yarn_version,
-    get_npm_latest_package_version,
-    get_pypi_latest_package_version,
-)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+    from aiohttp import ClientSession
     from wiswa.typing import Settings
 
 __all__ = ('evaluate_jsonnet_file', 'evaluate_jsonnet_project', 'evaluate_merged_settings',
@@ -27,22 +23,57 @@ __all__ = ('evaluate_jsonnet_file', 'evaluate_jsonnet_project', 'evaluate_merged
 
 log = logging.getLogger(__name__)
 
-NATIVE_CALLBACKS: dict[str, tuple[tuple[str, ...], Callable[..., Any]]] = {
-    'githubLatestActionTag': (('owner', 'repo'), lambda owner, repo: get_github_release_latest_tag(
-        owner, repo, actions=True, skip_releases=True, allow_suffixes=False)),
-    'githubLatestReleaseTag': (('owner', 'repo'), get_github_release_latest_tag),
-    'githubLatestTag': (
-        ('owner', 'repo'),
-        lambda owner, repo: get_github_release_latest_tag(owner, repo, skip_releases=True)),
-    'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
-    'latestNpmPackageVersion': (('package',), get_npm_latest_package_version),
-    'latestPypiPackageVersion': (('package',), get_pypi_latest_package_version),
-    'latestYarnVersion': ((), get_latest_yarn_version),
-    'year': ((), lambda: datetime.now(tz=timezone.utc).year),
-}
+
+def _make_native_callbacks(
+        session: ClientSession | None = None
+) -> dict[str, tuple[tuple[str, ...], Callable[..., Any]]]:
+    from .versions import (  # noqa: PLC0415, I001
+        get_github_release_latest_tag, get_latest_yarn_version, get_npm_latest_package_version,
+        get_pypi_latest_package_version,
+    )
+
+    if session is None:
+        return {
+            'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
+            'year': ((), lambda: datetime.now(tz=timezone.utc).year),
+        }
+    # Jsonnet native callbacks are sync, but our HTTP functions are async. These callbacks run
+    # inside anyio.to_thread.run_sync, so we use anyio.from_thread.run to schedule the async
+    # call back on the event loop.
+
+    def _sync_wrap(async_fn: Callable[..., Any], *args: Any) -> Any:
+        return anyio.from_thread.run(async_fn, *args)
+
+    gh_action = partial(get_github_release_latest_tag,
+                        session,
+                        actions=True,
+                        skip_releases=True,
+                        allow_suffixes=False)
+    gh_tag = partial(get_github_release_latest_tag, session, skip_releases=True)
+
+    return {
+        'githubLatestActionTag': (
+            ('owner', 'repo'), lambda owner, repo: _sync_wrap(gh_action, owner, repo)),
+        'githubLatestReleaseTag': (
+            ('owner', 'repo'),
+            lambda owner, repo: _sync_wrap(get_github_release_latest_tag, session, owner, repo)),
+        'githubLatestTag': (('owner', 'repo'), lambda owner, repo: _sync_wrap(gh_tag, owner, repo)),
+        'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
+        'latestNpmPackageVersion': (
+            ('package',),
+            lambda package: _sync_wrap(get_npm_latest_package_version, session, package)),
+        'latestPypiPackageVersion': (
+            ('package',),
+            lambda package: _sync_wrap(get_pypi_latest_package_version, session, package)),
+        'latestYarnVersion': ((), lambda: _sync_wrap(get_latest_yarn_version, session)),
+        'year': ((), lambda: datetime.now(tz=timezone.utc).year),
+    }
 
 
-def evaluate_jsonnet_file(jpathdir: Sequence[str], file: Path, merged_settings: str) -> str:
+async def evaluate_jsonnet_file(jpathdir: Sequence[str],
+                                file: Path,
+                                merged_settings: str,
+                                session: ClientSession | None = None) -> str:
     """
     Evaluate a Jsonnet file with the given settings.
 
@@ -54,23 +85,28 @@ def evaluate_jsonnet_file(jpathdir: Sequence[str], file: Path, merged_settings: 
         The path to the Jsonnet file to evaluate.
     merged_settings : str
         The merged settings as a JSON string.
+    session : ClientSession | None
+        Optional aiohttp session for HTTP callbacks.
 
     Returns
     -------
     str
         The evaluated Jsonnet output as a string.
     """
-    return _jsonnet.evaluate_file(str(file),
-                                  jpathdir=list(jpathdir),
-                                  native_callbacks=NATIVE_CALLBACKS,
-                                  tla_codes={'settings': merged_settings})
+    native_callbacks = _make_native_callbacks(session)
+    return await anyio.to_thread.run_sync(
+        lambda: _jsonnet.evaluate_file(str(file),
+                                       jpathdir=list(jpathdir),
+                                       native_callbacks=native_callbacks,
+                                       tla_codes={'settings': merged_settings}))
 
 
-def evaluate_jsonnet_project(lib_path: Path,
-                             jpathdir: Sequence[str],
-                             merged_settings: str,
-                             file: Path | None = None,
-                             output_dir: Path | None = None) -> None:
+async def evaluate_jsonnet_project(lib_path: Path,
+                                   jpathdir: Sequence[str],
+                                   merged_settings: str,
+                                   session: ClientSession | None = None,
+                                   file: Path | None = None,
+                                   output_dir: Path | None = None) -> None:
     """
     Evaluate ``project.jsonnet`` to output generated files.
 
@@ -82,29 +118,31 @@ def evaluate_jsonnet_project(lib_path: Path,
         The Jsonnet library search path.
     merged_settings : str
         The merged settings as a JSON string.
+    session : ClientSession | None
+        Optional aiohttp session for HTTP callbacks.
     file : Path | None
         The path to the Jsonnet file to evaluate (defaults to ``project.jsonnet`` in the library).
     output_dir : Path | None
         The directory to output generated files to (defaults to the current directory).
     """
     if output_dir:
-        output_dir.mkdir(parents=True, exist_ok=True)
+        await anyio.Path(output_dir).mkdir(parents=True, exist_ok=True)
     output_dir = output_dir or Path()
     filename: str
-    for filename, content in json.loads(
-            evaluate_jsonnet_file(jpathdir, file or (lib_path / 'project.jsonnet'),
-                                  merged_settings)).items():
-        output_file = output_dir / filename
-        output_file.parent.mkdir(parents=True, exist_ok=True)
-        output_file.write_text(f'{content.strip()}\n')
+    for filename, content in json.loads(await evaluate_jsonnet_file(
+            jpathdir, file or (lib_path / 'project.jsonnet'), merged_settings, session)).items():
+        output_file = anyio.Path(output_dir / filename)
+        await output_file.parent.mkdir(parents=True, exist_ok=True)
+        await output_file.write_text(f'{content.strip()}\n')
         log.debug('Wrote `%s`.', output_file)
 
 
-def evaluate_merged_settings(jpathdir: Sequence[str],
-                             lib_path: Path,
-                             settings: str,
-                             *,
-                             user_defaults: bool = False) -> tuple[str, Settings]:
+async def evaluate_merged_settings(jpathdir: Sequence[str],
+                                   lib_path: Path,
+                                   settings: str,
+                                   session: ClientSession | None = None,
+                                   *,
+                                   user_defaults: bool = False) -> tuple[str, Settings]:
     """
     Evaluate the merged settings using Jsonnet.
 
@@ -116,6 +154,8 @@ def evaluate_merged_settings(jpathdir: Sequence[str],
         The path to the Jsonnet library.
     settings : str
         The settings to merge with defaults and user defaults.
+    session : ClientSession | None
+        Optional aiohttp session for HTTP callbacks.
     user_defaults : bool
         Whether to include user defaults from the user preferences directory.
 
@@ -134,20 +174,28 @@ def evaluate_merged_settings(jpathdir: Sequence[str],
         msg = ('The user_defaults=True option was given, but no defaults.jsonnet file exists in'
                f' the user preferences directory (path: {user_defaults_jsonnet}).')
         raise FileNotFoundError(msg)
-    s = _jsonnet.evaluate_snippet(
+    native_callbacks = _make_native_callbacks(session)
+    defaults_path = anyio.Path(
+        lib_path.resolve(strict=True) / 'defaults.libjsonnet')  # noqa: ASYNC240
+    defaults_text = await defaults_path.read_text()
+    user_defaults_text = (await anyio.Path(user_defaults_jsonnet).read_text()
+                          if user_defaults else '{}')
+    s = await anyio.to_thread.run_sync(lambda: _jsonnet.evaluate_snippet(
         '',
         'function(defaults, user_defaults, settings) defaults + user_defaults + settings',
         jpathdir=list(jpathdir),
-        native_callbacks=NATIVE_CALLBACKS,
+        native_callbacks=native_callbacks,
         tla_codes={
-            'defaults': (lib_path.resolve(strict=True) / 'defaults.libjsonnet').read_text(),
+            'defaults': defaults_text,
             'settings': settings,
-            'user_defaults': user_defaults_jsonnet.read_text() if user_defaults else '{}',
-        })
-    return s, (json.loads(s) | {'_readme_existed': Path('README.md').exists()})
+            'user_defaults': user_defaults_text,
+        }))
+    return s, (json.loads(s) | {'_readme_existed': await anyio.Path('README.md').exists()})
 
 
-def resolve_defaults_only(jpathdir: Sequence[str], lib_path: Path) -> dict[str, Any]:
+async def resolve_defaults_only(jpathdir: Sequence[str],
+                                lib_path: Path,
+                                session: ClientSession | None = None) -> dict[str, Any]:
     """Resolve the default settings without any project or user overrides.
 
     Parameters
@@ -156,21 +204,27 @@ def resolve_defaults_only(jpathdir: Sequence[str], lib_path: Path) -> dict[str, 
         The Jsonnet library search path.
     lib_path : Path
         The path to the Jsonnet library.
+    session : ClientSession | None
+        Optional aiohttp session for HTTP callbacks.
 
     Returns
     -------
     dict[str, Any]
         The resolved default settings.
     """
-    s = _jsonnet.evaluate_snippet(
+    native_callbacks = _make_native_callbacks(session)
+    defaults_path = anyio.Path(
+        lib_path.resolve(strict=True) / 'defaults.libjsonnet')  # noqa: ASYNC240
+    defaults_text = await defaults_path.read_text()
+    s = await anyio.to_thread.run_sync(lambda: _jsonnet.evaluate_snippet(
         '',
         'function(defaults, user_defaults, settings) defaults + user_defaults + settings',
         jpathdir=list(jpathdir),
-        native_callbacks=NATIVE_CALLBACKS,
+        native_callbacks=native_callbacks,
         tla_codes={
-            'defaults': (lib_path.resolve(strict=True) / 'defaults.libjsonnet').read_text(),
+            'defaults': defaults_text,
             'settings': '{}',
             'user_defaults': '{}',
-        })
+        }))
     result: dict[str, Any] = json.loads(s)
     return result
