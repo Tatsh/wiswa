@@ -72,6 +72,15 @@
       :target: https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/stargazers
       :alt: Stargazers
 
+{% for badge in settings.custom_project_badges | sort(attribute='priority') %}
+{% set parsed = badge.anchor | parse_md_badge %}
+{% if parsed.image %}
+   .. image:: {{ parsed.image }}
+      :target: {{ badge.href }}
+      :alt: {{ parsed.alt }}
+
+{% endif %}
+{% endfor %}
    .. image:: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fpublic.api.bsky.app%2Fxrpc%2Fapp.bsky.actor.getProfile%2F%3Factor%3Ddid%3Aplc%3Auq42idtvuccnmtl57nsucz72%26query%3D%24.followersCount%26style%3Dsocial%26logo%3Dbluesky%26label%3DFollow%2520%40{{ settings.github.username }}&query=%24.followersCount&style=social&logo=bluesky&label=Follow%20%40{{ settings.github.username }}
       :target: https://bsky.app/profile/{{ settings.github.username }}.bsky.social
       :alt: Follow @{{ settings.github.username }}

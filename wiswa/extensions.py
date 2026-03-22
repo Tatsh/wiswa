@@ -12,7 +12,8 @@ from jinja2.ext import Extension
 if TYPE_CHECKING:
     import jinja2
 
-__all__ = ('GithubAPIExtension', 'ShellExtension', 'ToPythonExtension')
+__all__ = ('GithubAPIExtension', 'ParseMarkdownBadgeExtension', 'ShellExtension',
+           'ToPythonExtension')
 
 
 def topython(  # noqa: PLR0911
@@ -60,6 +61,7 @@ def topython(  # noqa: PLR0911
     return obj
 
 
+_MD_BADGE_RE = re.compile(r'^\[!\[(.+?)]\((.+?)\)]$')
 _HEREDOC_START = re.compile(r'<<-?\s*\\?[\'"]?(\w+)[\'"]?\s*$')
 
 
@@ -79,6 +81,19 @@ def _shell_indent(text: str, width: int = 4) -> str:
             if m:
                 heredoc_end = m.group(1)
     return '\n'.join(result)
+
+
+def _parse_md_badge(anchor: str) -> dict[str, str]:
+    """Parse a Markdown badge anchor ``[![alt](image_url)]`` into ``{alt, image}``."""
+    m = _MD_BADGE_RE.match(anchor)
+    return {'alt': m.group(1), 'image': m.group(2)} if m else {'alt': '', 'image': ''}
+
+
+class ParseMarkdownBadgeExtension(Extension):
+    """Extension that exports the ``parse_md_badge`` :py:class:`~jinja2.Environment` filter."""
+    def __init__(self, environment: jinja2.Environment) -> None:
+        super().__init__(environment)
+        environment.filters['parse_md_badge'] = _parse_md_badge
 
 
 class ShellExtension(Extension):

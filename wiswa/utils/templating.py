@@ -5,7 +5,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple
 import logging
 
-from wiswa.extensions import GithubAPIExtension, ShellExtension, ToPythonExtension
+from wiswa.extensions import (
+    GithubAPIExtension,
+    ParseMarkdownBadgeExtension,
+    ShellExtension,
+    ToPythonExtension,
+)
 import jinja2
 
 from .path import non_empty_file_exists, primary_module_to_path
@@ -29,7 +34,8 @@ class _TemplateEnvTuple(NamedTuple):
 
 def _template_env(module_path: Path, settings: Settings) -> _TemplateEnvTuple:
     env = jinja2.Environment(autoescape=jinja2.select_autoescape(),
-                             extensions=(GithubAPIExtension, ShellExtension, ToPythonExtension),
+                             extensions=(GithubAPIExtension, ParseMarkdownBadgeExtension,
+                                         ShellExtension, ToPythonExtension),
                              loader=jinja2.PackageLoader('wiswa'),
                              lstrip_blocks=True,
                              trim_blocks=True,

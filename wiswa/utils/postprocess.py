@@ -302,6 +302,13 @@ def _social_badges(settings: Settings) -> Iterator[str]:
     yield from social.get('custom_badges', [])
 
 
+def _custom_project_badges(settings: Settings, *, negative: bool = False) -> Iterator[str]:
+    for b in sorted(settings.get('custom_project_badges', []), key=lambda b: b.get('priority', 0)):
+        priority = b.get('priority', 0)
+        if (negative and priority < 0) or (not negative and priority >= 0):
+            yield f"{b['anchor']}({b['href']})"
+
+
 def _replace_badge_section(readme: Path, lines: Sequence[str], expected: Sequence[str],
                            social_expected: Sequence[str]) -> None:
     start_idx = next((i for i, line in enumerate(lines) if line.startswith('#')), 0) + 1
@@ -328,8 +335,9 @@ def _check_readme_badges(settings: Settings) -> None:
     _replace_badge_section(
         readme,
         readme.read_text(encoding='utf-8').split('\n'),
-        (*_project_type_badges(settings), *_github_badges(settings), *_docs_badges(settings),
-         *_python_tool_badges(settings), *_misc_badges(settings), *_typescript_badges(settings)),
+        (*_custom_project_badges(settings, negative=True), *_project_type_badges(settings),
+         *_github_badges(settings), *_docs_badges(settings), *_python_tool_badges(settings),
+         *_misc_badges(settings), *_typescript_badges(settings), *_custom_project_badges(settings)),
         list(_social_badges(settings)))
     log.debug('Updated README.md badges.')
 

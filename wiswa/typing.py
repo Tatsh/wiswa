@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
-__all__ = ('PackageJSON', 'PackageManager', 'ProjectType', 'PyProject', 'PyProjectBuildSystem',
-           'PyProjectProject', 'PyProjectTool', 'PyProjectToolCommitizen', 'PyProjectToolPoetry',
-           'PyProjectToolPoetryPackage', 'PythonDeps', 'Settings', 'SettingsGitHub',
-           'SettingsSocial', 'SettingsSocialMastodon', 'SettingsSocialTextAndURI', 'VSCode',
-           'VSCodeLaunch', 'VSCodeLaunchConfiguration')
+__all__ = ('CustomProjectBadge', 'PackageJSON', 'PackageManager', 'ProjectType', 'PyProject',
+           'PyProjectBuildSystem', 'PyProjectProject', 'PyProjectTool', 'PyProjectToolCommitizen',
+           'PyProjectToolPoetry', 'PyProjectToolPoetryPackage', 'PythonDeps', 'Settings',
+           'SettingsGitHub', 'SettingsSocial', 'SettingsSocialMastodon', 'SettingsSocialTextAndURI',
+           'VSCode', 'VSCodeLaunch', 'VSCodeLaunchConfiguration')
 
 PackageManager: TypeAlias = Literal['poetry', 'uv']
 ProjectType: TypeAlias = Literal['c', 'c++', 'generic', 'lua', 'python', 'typescript', 'xcode']
@@ -137,6 +137,16 @@ class SettingsGitHub(TypedDict):
     """The GitHub username."""
 
 
+class CustomProjectBadge(TypedDict, total=False):
+    """A custom project badge displayed before the social section in the README."""
+    anchor: str
+    """Markdown anchor text, e.g. ``[![alt](image_url)]``."""
+    href: str
+    """Link target URL."""
+    priority: int
+    """Sort key (default 0). Lower values appear first."""
+
+
 class SettingsSocialMastodon(TypedDict):
     """Mastodon settings."""
     id: str
@@ -248,6 +258,8 @@ class Settings(TypedDict):
     """If the project should include ``.cursor`` dir and files."""
     claude_settings_local: dict[str, Any]
     """JSON object written to ``.claude/settings.local.json`` when ``want_claude`` is true."""
+    custom_project_badges: Sequence[CustomProjectBadge]
+    """Custom project badges displayed before the social section in the README."""
     want_docs: bool
     """If the project will generate documentation."""
     want_main: bool

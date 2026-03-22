@@ -262,6 +262,17 @@ local utils = import 'utils.libjsonnet';
      */
     custom_badges: [],
   },
+  /**
+   * @brief Array of custom project badges displayed before the social section.
+   *
+   * Each entry is an object with the following keys:
+   * - `anchor` (string): Markdown anchor text, e.g. `[![alt](image_url)]`.
+   * - `href` (string): Link target URL.
+   * - `priority` (int): Sort key (default 0). Lower values appear first.
+   *
+   * @var { anchor: string, href: string, priority: int }[]
+   */
+  custom_project_badges: [],
 
   // General settings
   /**
