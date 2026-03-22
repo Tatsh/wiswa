@@ -185,8 +185,6 @@ def _python_tool_badges(settings: Settings) -> Iterator[str]:
         yield _simple_icons_badge('Django', 'django', 'Django', '092E20',
                                   'https://djangoproject.com')
     yield '[![mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)'
-    yield _simple_icons_badge('pre-commit', 'pre-commit', 'pre--commit-enabled', 'brightgreen',
-                              'https://pre-commit.com/')
     if settings['package_manager'] == 'uv':
         yield _simple_icons_badge('uv', 'astral', 'uv', '261230', 'https://docs.astral.sh/uv/')
     else:
@@ -238,6 +236,8 @@ def _misc_badges(settings: Settings) -> Iterator[str]:
         name = settings['project_name']
         yield (f'[![Stargazers](https://img.shields.io/github/stars/{gh}/{name}'
                f'?logo=github&style=flat)](https://github.com/{gh}/{name}/stargazers)')
+    yield _simple_icons_badge('pre-commit', 'pre-commit', 'pre--commit-enabled', 'brightgreen',
+                              'https://pre-commit.com/')
     if (settings['project_type'] in {'c', 'c++'} and Path('CMakeLists.txt').exists()):
         yield _simple_icons_badge('CMake', 'cmake', 'CMake', '6E6E6E', 'https://cmake.org/')
     yield _simple_icons_badge('Prettier', 'prettier', 'Prettier-enabled', 'black',
