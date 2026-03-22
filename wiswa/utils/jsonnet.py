@@ -22,7 +22,8 @@ if TYPE_CHECKING:
 
     from wiswa.typing import Settings
 
-__all__ = ('evaluate_jsonnet_file', 'evaluate_jsonnet_project', 'evaluate_merged_settings')
+__all__ = ('evaluate_jsonnet_file', 'evaluate_jsonnet_project', 'evaluate_merged_settings',
+           'resolve_defaults_only')
 
 log = logging.getLogger(__name__)
 
@@ -39,11 +40,26 @@ NATIVE_CALLBACKS: dict[str, tuple[tuple[str, ...], Callable[..., Any]]] = {
     'latestYarnVersion': ((), get_latest_yarn_version),
     'year': ((), lambda: datetime.now(tz=timezone.utc).year),
 }
-"""Native callbacks for Jsonnet evaluation."""
 
 
 def evaluate_jsonnet_file(jpathdir: Sequence[str], file: Path, merged_settings: str) -> str:
-    """Evaluate a Jsonnet file with the given settings."""
+    """
+    Evaluate a Jsonnet file with the given settings.
+
+    Parameters
+    ----------
+    jpathdir : Sequence[str]
+        The Jsonnet library search path.
+    file : Path
+        The path to the Jsonnet file to evaluate.
+    merged_settings : str
+        The merged settings as a JSON string.
+
+    Returns
+    -------
+    str
+        The evaluated Jsonnet output as a string.
+    """
     return _jsonnet.evaluate_file(str(file),
                                   jpathdir=list(jpathdir),
                                   native_callbacks=NATIVE_CALLBACKS,
@@ -129,3 +145,32 @@ def evaluate_merged_settings(jpathdir: Sequence[str],
             'user_defaults': user_defaults_jsonnet.read_text() if user_defaults else '{}',
         })
     return s, (json.loads(s) | {'_readme_existed': Path('README.md').exists()})
+
+
+def resolve_defaults_only(jpathdir: Sequence[str], lib_path: Path) -> dict[str, Any]:
+    """Resolve the default settings without any project or user overrides.
+
+    Parameters
+    ----------
+    jpathdir : Sequence[str]
+        The Jsonnet library search path.
+    lib_path : Path
+        The path to the Jsonnet library.
+
+    Returns
+    -------
+    dict[str, Any]
+        The resolved default settings.
+    """
+    s = _jsonnet.evaluate_snippet(
+        '',
+        'function(defaults, user_defaults, settings) defaults + user_defaults + settings',
+        jpathdir=list(jpathdir),
+        native_callbacks=NATIVE_CALLBACKS,
+        tla_codes={
+            'defaults': (lib_path.resolve(strict=True) / 'defaults.libjsonnet').read_text(),
+            'settings': '{}',
+            'user_defaults': '{}',
+        })
+    result: dict[str, Any] = json.loads(s)
+    return result

@@ -55,6 +55,7 @@ dependencies = [
   "lxml>=6.0.2",
   "requests-cache>=1.3.1",
   "requests>=2.32.5",
+  "fastmcp>=2.0.0",
   "typing-extensions>=4.15.0",
 ]
 description = "Generate a Python project."
@@ -72,6 +73,7 @@ name = "Andrew Udvare"
 [project.scripts]
 _wiswa-gen-docs = "wiswa.main:gen_docs_main"
 wiswa = "wiswa.main:main"
+wiswa-mcp = "wiswa.mcp:main"
 
 [project.urls]
 Issues = "https://github.com/Tatsh/wiswa/issues"

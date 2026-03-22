@@ -9,6 +9,7 @@ from wiswa.utils.jsonnet import (
     evaluate_jsonnet_file,
     evaluate_jsonnet_project,
     evaluate_merged_settings,
+    resolve_defaults_only,
 )
 import pytest
 
@@ -119,3 +120,26 @@ def test_evaluate_merged_settings_user_defaults_missing_raises(tmp_path: Path,
     mocker.patch('wiswa.utils.jsonnet.platformdirs.user_config_path', return_value=config_path)
     with pytest.raises(FileNotFoundError, match='user_defaults=True'):
         evaluate_merged_settings([str(lib_path)], lib_path, '{}', user_defaults=True)
+
+
+def test_resolve_defaults_only(tmp_path: Path, mocker: MockerFixture) -> None:
+    lib_path = tmp_path / 'lib'
+    lib_path.mkdir()
+    (lib_path / 'defaults.libjsonnet').write_text('{ project_type: "python" }')
+    mocker.patch('wiswa.utils.jsonnet._jsonnet.evaluate_snippet',
+                 return_value='{"project_type": "python"}')
+    result = resolve_defaults_only([str(lib_path)], lib_path)
+    assert result == {'project_type': 'python'}
+
+
+def test_resolve_defaults_only_passes_empty_overrides(tmp_path: Path,
+                                                      mocker: MockerFixture) -> None:
+    lib_path = tmp_path / 'lib'
+    lib_path.mkdir()
+    (lib_path / 'defaults.libjsonnet').write_text('{ a: 1 }')
+    mock_eval = mocker.patch('wiswa.utils.jsonnet._jsonnet.evaluate_snippet',
+                             return_value='{"a": 1}')
+    resolve_defaults_only([str(lib_path)], lib_path)
+    call_kwargs = mock_eval.call_args[1]
+    assert call_kwargs['tla_codes']['settings'] == '{}'
+    assert call_kwargs['tla_codes']['user_defaults'] == '{}'

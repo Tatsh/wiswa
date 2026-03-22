@@ -25,6 +25,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   GitHub repository, preventing release assets from being modified after publication.
 - SBOM attestation in PyInstaller and AppImage workflows using `anchore/sbom-action` and
   `actions/attest-sbom`.
+- FastMCP server for Wiswa settings discovery and override guidance. New `wiswa-mcp` entry point
+  exposes four MCP tools (`get_defaults`, `lookup_setting`, `list_settings`, `search_settings`) that
+  resolve Wiswa's Jsonnet defaults and help AI assistants set settings in `.wiswa.jsonnet`.
 
 ### Fixed
 

@@ -15,7 +15,10 @@ local utils = import 'utils.libjsonnet';
   prettierignore+: ['Doxyfile'],
   pyproject+: {
     project+: {
-      scripts+: { '_wiswa-gen-docs': 'wiswa.main:gen_docs_main' },
+      scripts+: {
+        '_wiswa-gen-docs': 'wiswa.main:gen_docs_main',
+        'wiswa-mcp': 'wiswa.mcp:main',
+      },
     },
     tool+: {
       local extra_omit = ['typing.py'],
@@ -25,6 +28,7 @@ local utils = import 'utils.libjsonnet';
       },
       poetry+: {
         dependencies+: {
+          fastmcp: utils.latestPypiPackageVersionCaret('fastmcp'),
           'requests-cache': utils.latestPypiPackageVersionCaret('requests-cache'),
           jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
           jsonnet: utils.latestPypiPackageVersionCaret('jsonnet'),
