@@ -77,8 +77,8 @@ filevers
 flathub
 fontawesome
 foxundermoon
-fromdateiso
 fqxz
+fromdateiso
 funcattributes
 functools
 gcov
