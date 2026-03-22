@@ -2,13 +2,59 @@ local utils = import 'utils.libjsonnet';
 
 function(settings)
   local is_uv = settings.package_manager == 'uv';
+  local watched_workflows = ['QA'] + (if settings.want_tests then ['Tests'] else []);
+  local check_run = std.join(' &&\n', [
+    '[ "${{ steps.%s.outcome }}" = "success" ]' % std.asciiLower(std.strReplace(w, ' ', '-'))
+    for w in watched_workflows
+  ]);
   {
     jobs: {
+      check: {
+        'if': "github.event.workflow_run.conclusion == 'success'",
+        'runs-on': 'ubuntu-latest',
+        outputs: {
+          ready: "${{ steps.result.outputs.ready }}",
+        },
+        steps: [
+          {
+            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
+          },
+        ] + [
+          {
+            'continue-on-error': true,
+            env: {
+              GH_TOKEN: '${{ github.token }}',
+            },
+            id: std.asciiLower(std.strReplace(w, ' ', '-')),
+            name: "Check '%s' workflow" % w,
+            run: |||
+              status=$(gh run list -w '%(workflow)s' --commit '${{ github.event.workflow_run.head_sha }}' --json conclusion -q '.[0].conclusion')
+              [[ "$status" == 'success' ]]
+            ||| % { workflow: w },
+          }
+          for w in watched_workflows
+        ] + [
+          {
+            id: 'result',
+            'if': 'always()',
+            name: 'Check results',
+            run: |||
+              %(checks)s
+              echo 'ready=true' >> "$GITHUB_OUTPUT"
+            ||| % { checks: check_run },
+          },
+        ],
+      },
       build: {
+        'if': "needs.check.outputs.ready == 'true'",
+        needs: ['check'],
         'runs-on': '${{ matrix.system.image }}',
         steps: [
           {
             uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
+            with: {
+              ref: '${{ github.event.workflow_run.head_sha }}',
+            },
           },
         ] + (if settings.private then [{
                env: {
@@ -103,15 +149,11 @@ function(settings)
     },
     name: 'Snap',
     on: {
-      push: {
-        branches: [
-          'master',
-        ],
-        tags: [
-          'v*.*.*',
-        ],
-      },
       workflow_dispatch: null,
+      workflow_run: {
+        types: ['completed'],
+        workflows: watched_workflows,
+      },
     },
     permissions: (if settings.private then { actions: 'write' } else {}) + {
       attestations: 'write',

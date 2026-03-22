@@ -1,11 +1,42 @@
 {% from '.github/workflows/pyinstaller-build.sh.j2' import build %}
 {% from '.github/workflows/pyinstaller-test.ps1.j2' import test_powershell %}
 {% from '.github/workflows/pyinstaller-test.sh.j2' import test_bash %}
+{% set watched_workflows = ['QA'] + (['Tests'] if settings.want_tests else []) %}
 jobs:
+  check:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: 'ubuntu-latest'
+    outputs:
+      ready: ${{ '{{' }} steps.result.outputs.ready }}
+    steps:
+      - uses: 'actions/checkout@{{ github_latest_action_tag('actions', 'checkout') }}'
+{% for w in watched_workflows %}
+      - continue-on-error: true
+        env:
+          GH_TOKEN: ${{ '{{' }} github.token }}
+        id: '{{ w | lower | replace(" ", "-") }}'
+        name: "Check '{{ w }}' workflow"
+        run: |
+          status=$(gh run list -w '{{ w }}' --commit '${{ '{{' }} github.event.workflow_run.head_sha }}' --json conclusion -q '.[0].conclusion')
+          [[ "$status" == 'success' ]]
+{% endfor %}
+      - id: 'result'
+        if: 'always()'
+        name: 'Check results'
+        run: |
+{% for w in watched_workflows %}
+          [ "${{ '{{' }} steps.{{ w | lower | replace(" ", "-") }}.outcome }}" = "success" ] {{ '&&' if not loop.last else '' }}
+{% endfor %}
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
   build:
+    if: needs.check.outputs.ready == 'true'
+    needs:
+      - 'check'
     runs-on: ${{ '{{' }} matrix.os }}
     steps:
       - uses: 'actions/checkout@{{ github_latest_action_tag('actions', 'checkout') }}'
+        with:
+          ref: ${{ '{{' }} github.event.workflow_run.head_sha }}
 {% if settings.private %}
       - name: 'Delete old caches'
         env:
@@ -186,11 +217,14 @@ jobs:
 {% endif %}
 name: 'PyInstaller'
 'on':
-  push:
-    branches:
-      - 'master'
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch: null
+  workflow_run:
+    types:
+      - 'completed'
+    workflows:
+{% for w in watched_workflows %}
+      - '{{ w }}'
+{% endfor %}
 permissions:
 {% if settings.private %}
   actions: 'write'
