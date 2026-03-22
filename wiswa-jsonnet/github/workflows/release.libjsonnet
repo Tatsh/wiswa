@@ -9,6 +9,8 @@ function(settings)
                        (settings.supported_platforms == 'all' ||
                         std.member(settings.supported_platforms, 'linux'));
   local watched_workflows = std.sort(
+    ['QA'] +
+    (if settings.want_tests then ['Tests'] else []) +
     (if !settings.private then ['Publish'] else []) +
     (if has_appimage then ['AppImage'] else []) +
     (if settings.want_flatpak then ['Flatpak'] else []) +

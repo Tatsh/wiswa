@@ -2,58 +2,13 @@ local utils = import 'utils.libjsonnet';
 
 function(settings)
   local is_uv = settings.package_manager == 'uv';
-  local watched_workflows = ['QA'] + (if settings.want_tests then ['Tests'] else []);
   {
     jobs: {
-      check: {
-        'if': "github.event.workflow_run.conclusion == 'success'",
-        'runs-on': 'ubuntu-latest',
-        outputs: {
-          ready: "${{ steps.check.outputs.ready }}",
-        },
-        steps: [
-          {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
-          {
-            env: {
-              GH_TOKEN: '${{ github.token }}',
-            },
-            id: 'check',
-            name: 'Check all workflows succeeded',
-            run: |||
-              sha="${{ github.event.workflow_run.head_sha }}"
-              all_success=true
-              for workflow in %(workflows)s; do
-                status=$(gh run list -w "$workflow" --commit "$sha" --json conclusion -q '.[0].conclusion')
-                if [[ "$status" == 'failure' || "$status" == 'cancelled' ]]; then
-                  echo "::error::Workflow '$workflow' ${status}."
-                  exit 1
-                elif [[ "$status" != 'success' ]]; then
-                  echo "Workflow '$workflow' still pending, skipping."
-                  all_success=false
-                fi
-              done
-              if [[ "$all_success" != 'true' ]]; then
-                echo 'Not all workflows have completed yet.'
-                exit 0
-              fi
-              echo 'All workflows succeeded.'
-              echo 'ready=true' >> "$GITHUB_OUTPUT"
-            ||| % { workflows: std.join(' ', watched_workflows) },
-          },
-        ],
-      },
       build: {
-        'if': "needs.check.outputs.ready == 'true'",
-        needs: ['check'],
         'runs-on': '${{ matrix.system.image }}',
         steps: [
           {
             uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-            with: {
-              ref: '${{ github.event.workflow_run.head_sha }}',
-            },
           },
         ] + (if settings.private then [{
                env: {
@@ -61,7 +16,7 @@ function(settings)
                },
                name: 'Delete old caches',
                run: |||
-                 gh cache list --json id,createdAt -q '.[] | select((now - (.createdAt | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .key' | xargs -r -L1 gh cache delete
+                 gh cache list --json id,createdAt -q '.[] | select((now - (.createdAt | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .id' | xargs -r -L1 gh cache delete
                |||,
              }] else []) + (if !is_uv then [{
                name: 'Fix pyproject.toml for older Poetry',
@@ -148,11 +103,15 @@ function(settings)
     },
     name: 'Snap',
     on: {
-      workflow_dispatch: null,
-      workflow_run: {
-        types: ['completed'],
-        workflows: watched_workflows,
+      push: {
+        branches: [
+          'master',
+        ],
+        tags: [
+          'v*.*.*',
+        ],
       },
+      workflow_dispatch: null,
     },
     permissions: (if settings.private then { actions: 'write' } else {}) + {
       attestations: 'write',

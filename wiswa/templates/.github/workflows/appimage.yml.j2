@@ -1,52 +1,16 @@
 {% from '.github/workflows/appimage-build.sh.j2' import build %}
 {% from '.github/workflows/pyinstaller-test.sh.j2' import test_bash %}
-{% set watched_workflows = ['QA'] + (['Tests'] if settings.want_tests else []) %}
 jobs:
-  check:
-    if: github.event.workflow_run.conclusion == 'success'
-    runs-on: 'ubuntu-latest'
-    outputs:
-      ready: ${{ '{{' }} steps.check.outputs.ready }}
-    steps:
-      - uses: 'actions/checkout@{{ github_latest_action_tag('actions', 'checkout') }}'
-      - env:
-          GH_TOKEN: ${{ '{{' }} github.token }}
-        id: 'check'
-        name: 'Check all workflows succeeded'
-        run: |
-          sha="${{ '{{' }} github.event.workflow_run.head_sha }}"
-          all_success=true
-          for workflow in {{ watched_workflows | join(' ') }}; do
-            status=$(gh run list -w "$workflow" --commit "$sha" --json conclusion -q '.[0].conclusion')
-            if [[ "$status" == 'failure' || "$status" == 'cancelled' ]]; then
-              echo "::error::Workflow '$workflow' ${status}."
-              exit 1
-            elif [[ "$status" != 'success' ]]; then
-              echo "Workflow '$workflow' still pending, skipping."
-              all_success=false
-            fi
-          done
-          if [[ "$all_success" != 'true' ]]; then
-            echo 'Not all workflows have completed yet.'
-            exit 0
-          fi
-          echo 'All workflows succeeded.'
-          echo 'ready=true' >> "$GITHUB_OUTPUT"
   build:
-    if: needs.check.outputs.ready == 'true'
-    needs:
-      - 'check'
     runs-on: ${{ '{{' }} matrix.system.image }}
     steps:
       - uses: 'actions/checkout@{{ github_latest_action_tag('actions', 'checkout') }}'
-        with:
-          ref: ${{ '{{' }} github.event.workflow_run.head_sha }}
 {% if settings.private %}
       - name: 'Delete old caches'
         env:
           GH_TOKEN: ${{ '{{' }} secrets.GITHUB_TOKEN }}
         run: |
-          gh cache list --json id,createdAt -q '.[] | select((now - (.createdAt | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .key' | xargs -r -L1 gh cache delete
+          gh cache list --json id,createdAt -q '.[] | select((now - (.createdAt | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .id' | xargs -r -L1 gh cache delete
 {% endif %}
 {% if settings.package_manager == 'uv' %}
       - name: 'Install yq'
@@ -134,14 +98,11 @@ jobs:
           - { arch: x86_64, image: ubuntu-latest }
 name: 'AppImage'
 'on':
-  workflow_dispatch: null
-  workflow_run:
-    types:
-      - 'completed'
-    workflows:
-{% for w in watched_workflows %}
-      - '{{ w }}'
-{% endfor %}
+  push:
+    branches:
+      - 'master'
+    tags:
+      - 'v*.*.*'
 permissions:
 {% if settings.private %}
   actions: 'write'
