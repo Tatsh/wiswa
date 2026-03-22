@@ -3,6 +3,13 @@ local utils = import 'utils.libjsonnet';
 
 function(settings)
   local is_uv = settings.package_manager == 'uv';
+  local run_cmd = if is_uv then 'uv run' else 'poetry run';
+  local fmt_check_id = if settings.want_yapf then 'yapf' else 'ruff-format';
+  local fmt_check_cmd = if settings.want_yapf then '%s yapf -prd .' % run_cmd
+                        else '%s ruff format --check .' % run_cmd;
+  local eslint_ids = if settings.force_eslint then ['eslint'] else [];
+  local check_ids = ['ruff', 'mypy'] + eslint_ids + ['prettier', fmt_check_id, 'markdownlint', 'spelling'];
+  local check_lines = std.join(' &&\n', ['[ "${{ steps.%s.outcome }}" = "success" ]' % id for id in check_ids]);
   {
     jobs: {
       qa: {
@@ -41,26 +48,55 @@ function(settings)
             run: 'yarn',
           },
           {
+            'continue-on-error': true,
+            id: 'ruff',
+            name: 'Lint with Ruff',
+            uses: 'astral-sh/ruff-action@' + utils.githubLatestActionTag('astral-sh', 'ruff-action'),
+          },
+          {
+            'continue-on-error': true,
+            id: 'mypy',
             name: 'Lint with mypy',
             run: 'yarn mypy .',
           },
-          {
-            name: 'Lint with Ruff',
-            run: 'yarn ruff .',
-          },
         ] + (if settings.force_eslint then [
                {
+                 'continue-on-error': true,
+                 id: 'eslint',
                  name: 'Lint with ESLint',
                  run: 'yarn eslint',
                },
              ] else []) + [
           {
-            name: 'Check formatting',
-            run: 'yarn check-formatting',
+            'continue-on-error': true,
+            id: 'prettier',
+            name: 'Check formatting (Prettier)',
+            run: 'prettier -c .',
           },
           {
+            'continue-on-error': true,
+            id: fmt_check_id,
+            name: if settings.want_yapf then 'Check formatting (YAPF)' else 'Check formatting (Ruff)',
+            run: fmt_check_cmd,
+          },
+          {
+            'continue-on-error': true,
+            id: 'markdownlint',
+            name: 'Check formatting (markdownlint)',
+            run: 'markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
+          },
+          {
+            'continue-on-error': true,
+            id: 'spelling',
             name: 'Check spelling',
             run: 'yarn check-spelling',
+          },
+          {
+            'if': 'always()',
+            name: 'Check results',
+            run: |||
+              %(checks)s
+            ||| % { checks: check_lines },
           },
         ],
         strategy: {

@@ -1,48 +1,76 @@
 local cache_yarn = import 'github/workflows/_cache-yarn.libsonnet';
 local utils = import 'utils.libjsonnet';
 
-function(settings) {
-  jobs: {
-    qa: {
-      'runs-on': settings.qa_runs_on,
-      steps: [
-        {
-          uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-        },
-      ] + (if std.length(settings.github.workflows.qa.apt_packages) > 0 then [{
-             name: 'Install dependencies',
-             run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
-           }] else []) + [
-        cache_yarn,
-        {
-          name: 'Install dependencies (Yarn)',
-          run: 'yarn',
-        },
-        {
-          name: 'Check formatting',
-          run: 'yarn check-formatting',
-        },
-        {
-          name: 'Check spelling',
-          run: 'yarn check-spelling',
-        },
-      ],
+function(settings)
+  local is_c_cpp = settings.project_type == 'c' || settings.project_type == 'c++';
+  local clang_format_ids = if is_c_cpp then ['clang-format'] else [];
+  local check_ids = clang_format_ids + ['prettier', 'markdownlint', 'spelling'];
+  local check_lines = std.join(' &&\n', ['[ "${{ steps.%s.outcome }}" = "success" ]' % id for id in check_ids]);
+  {
+    jobs: {
+      qa: {
+        'runs-on': settings.qa_runs_on,
+        steps: [
+          {
+            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
+          },
+        ] + (if std.length(settings.github.workflows.qa.apt_packages) > 0 then [{
+               name: 'Install dependencies',
+               run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
+             }] else []) + [
+          cache_yarn,
+          {
+            name: 'Install dependencies (Yarn)',
+            run: 'yarn',
+          },
+        ] + (if is_c_cpp then [{
+            'continue-on-error': true,
+            id: 'clang-format',
+            name: 'Check formatting (clang-format)',
+            run: 'clang-format -n src/*.cpp src/*.h',
+          }] else []) + [
+          {
+            'continue-on-error': true,
+            id: 'prettier',
+            name: 'Check formatting (Prettier)',
+            run: 'prettier -c .',
+          },
+          {
+            'continue-on-error': true,
+            id: 'markdownlint',
+            name: 'Check formatting (markdownlint)',
+            run: 'markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
+          },
+          {
+            'continue-on-error': true,
+            id: 'spelling',
+            name: 'Check spelling',
+            run: 'yarn check-spelling',
+          },
+          {
+            'if': 'always()',
+            name: 'Check results',
+            run: |||
+              %(checks)s
+            ||| % { checks: check_lines },
+          },
+        ],
+      },
     },
-  },
-  name: 'QA',
-  on: {
-    pull_request: {
-      branches: [
-        settings.default_branch,
-      ],
+    name: 'QA',
+    on: {
+      pull_request: {
+        branches: [
+          settings.default_branch,
+        ],
+      },
+      push: {
+        branches: [
+          settings.default_branch,
+        ],
+      },
     },
-    push: {
-      branches: [
-        settings.default_branch,
-      ],
+    permissions: {
+      contents: 'read',
     },
-  },
-  permissions: {
-    contents: 'read',
-  },
-}
+  }
