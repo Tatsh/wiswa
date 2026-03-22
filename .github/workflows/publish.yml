@@ -31,7 +31,8 @@ jobs:
           echo '::error::Timed out waiting for workflows.'
           exit 1
   publish:
-    needs: ['check']
+    needs:
+      - 'check'
     runs-on: 'ubuntu-latest'
     steps:
       - uses: 'actions/checkout@v6'

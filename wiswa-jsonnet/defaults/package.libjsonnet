@@ -36,13 +36,13 @@ local utils = import 'utils.libjsonnet';
   local python_scripts(settings) = {
     local run_cmd = if settings.package_manager == 'uv' then 'uv run' else 'poetry run',
     local fmt_check = if settings.want_yapf then '%s yapf -prd .' % run_cmd
-                      else '%s ruff format --check .' % run_cmd,
+    else '%s ruff format --check .' % run_cmd,
     local fmt_apply = if settings.want_yapf then '%s yapf -ri .' % run_cmd
-                      else '%s ruff format .' % run_cmd,
-    'check-formatting': 'prettier -c . && %s && markdownlint-cli2' % fmt_check,
+    else '%s ruff format .' % run_cmd,
+    'check-formatting': 'prettier -c . && %s && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % fmt_check,
     'check-spelling': "cspell --no-progress './**/*'  './**/.*'",
     'dict:update': dictionary_update,
-    format: 'prettier -w . && %s && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2  --fix' % fmt_apply,
+    format: 'prettier -w . && %s && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix' % fmt_apply,
     mypy: '%s mypy' % run_cmd,
     qa: 'yarn mypy . && yarn ruff . && yarn check-spelling && yarn check-formatting',
     regen: '%s wiswa' % run_cmd,
@@ -53,7 +53,7 @@ local utils = import 'utils.libjsonnet';
   ) else {},
   local c_cpp_scripts = {
     build: 'cmake --preset=default -DBUILD_DOCS=ON && cmake --build build',
-    'check-formatting': 'clang-format -n src/*.cpp src/*.h && prettier -c . && markdownlint-cli2',
+    'check-formatting': 'clang-format -n src/*.cpp src/*.h && prettier -c . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
     'check-spelling': 'cspell --no-progress .',
     'dict:update': dictionary_update,
     format: 'clang-format -i src/*.cpp src/*.h && prettier -w .',
@@ -73,7 +73,7 @@ local utils = import 'utils.libjsonnet';
     'ts-jest': utils.latestNpmPackageVersionCaret('ts-jest'),
   } else {},
   typescript_scripts(settings):: {
-    'check-formatting': 'prettier -c . && markdownlint-cli2',
+    'check-formatting': 'prettier -c . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
     'check-spelling': "cspell --no-progress './**/*'  './**/.*'",
     'dict:update': dictionary_update,
     format: 'prettier -w . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix',
