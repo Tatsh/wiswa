@@ -76,10 +76,28 @@ function(settings)
         branches: [
           settings.default_branch,
         ],
+        paths: [
+          '**/*.py',
+          '**/*.pyi',
+          '.github/workflows/tests.yml',
+          'pyproject.toml',
+          'uv.lock',
+          'poetry.lock',
+          'tests/**',
+        ],
       },
       push: {
         branches: [
           settings.default_branch,
+        ],
+        paths: [
+          '**/*.py',
+          '**/*.pyi',
+          '.github/workflows/tests.yml',
+          'pyproject.toml',
+          'uv.lock',
+          'poetry.lock',
+          'tests/**',
         ],
       },
     },

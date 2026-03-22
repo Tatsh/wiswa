@@ -108,6 +108,15 @@ function(settings)
         branches: [
           'master',
         ],
+        paths: [
+          '**/*.py',
+          '**/*.pyi',
+          '.github/workflows/snap.yml',
+          'pyproject.toml',
+          'snapcraft.yaml',
+          'uv.lock',
+          'poetry.lock',
+        ],
         tags: [
           'v*.*.*',
         ],

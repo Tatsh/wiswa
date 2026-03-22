@@ -83,6 +83,14 @@ function(settings)
         branches: [
           'master',
         ],
+        paths: [
+          '**/*.py',
+          '**/*.pyi',
+          '.github/workflows/flatpak.yml',
+          'pyproject.toml',
+          'uv.lock',
+          'poetry.lock',
+        ],
         tags: [
           'v*.*.*',
         ],

@@ -39,6 +39,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Generated workflow templates now include path-based filtering to skip unnecessary CI runs. Tests,
+  QA, Flatpak, Snap, AppImage, and PyInstaller workflows only trigger when relevant source files
+  change. QA workflows use `dorny/paths-filter` to conditionally skip language-specific checks
+  (Ruff/mypy for Python, ESLint for TypeScript, clang-format for C/C++).
 - Badges in `docs/index.rst.j2` extracted into a separate `docs/badges.rst.j2` template included
   via `.. include:: badges.rst`, allowing the badge-sync agent to update badges independently.
 - `want_claude` now defaults to `true`.

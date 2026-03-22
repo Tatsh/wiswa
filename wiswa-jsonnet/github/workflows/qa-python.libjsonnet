@@ -8,27 +8,63 @@ function(settings)
   local fmt_check_cmd = if settings.want_yapf then '%s yapf -prd .' % run_cmd
                         else '%s ruff format --check .' % run_cmd;
   local eslint_ids = if settings.force_eslint then ['eslint'] else [];
-  local check_ids = ['ruff', 'mypy'] + eslint_ids + ['prettier', fmt_check_id, 'markdownlint', 'spelling'];
-  local check_lines = std.join(' &&\n', ['[ "${{ steps.%s.outcome }}" = "success" ]' % id for id in check_ids]);
+  local python_check_ids = ['ruff', 'mypy', fmt_check_id];
+  local always_check_ids = eslint_ids + ['prettier', 'markdownlint', 'spelling'];
+  local check_ids = python_check_ids + always_check_ids;
+  local check_lines = std.join(' &&\n', [
+    if std.member(python_check_ids, id) then
+      '([ "${{ needs.changes.outputs.python }}" != "true" ] || [ "${{ steps.%s.outcome }}" = "success" ])' % id
+    else
+      '[ "${{ steps.%s.outcome }}" = "success" ]' % id
+    for id in check_ids
+  ]);
   {
     jobs: {
+      changes: {
+        'runs-on': settings.qa_runs_on,
+        outputs: {
+          python: '${{ steps.filter.outputs.python }}',
+        },
+        steps: [
+          {
+            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
+          },
+          {
+            id: 'filter',
+            uses: 'dorny/paths-filter@' + utils.githubLatestActionTag('dorny', 'paths-filter'),
+            with: {
+              filters: |||
+                python:
+                  - '**/*.py'
+                  - '**/*.pyi'
+                  - 'pyproject.toml'
+              |||,
+            },
+          },
+        ],
+      },
       qa: {
+        needs: 'changes',
         'runs-on': settings.qa_runs_on,
         steps: [
           {
             uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
         ] + (if is_uv then [{
+               'if': "needs.changes.outputs.python == 'true'",
                name: 'Install uv',
                uses: 'astral-sh/setup-uv@' + utils.githubLatestActionTag('astral-sh', 'setup-uv'),
              }] else [{
+               'if': "needs.changes.outputs.python == 'true'",
                name: 'Install Poetry',
                run: 'pipx install poetry',
              }]) + (if std.length(settings.github.workflows.qa.apt_packages) > 0 then [{
+               'if': "needs.changes.outputs.python == 'true'",
                name: 'Install dependencies',
                run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
              }] else []) + [
           {
+            'if': "needs.changes.outputs.python == 'true'",
             name: 'Set up Python ${{ matrix.python-version }}',
             uses: 'actions/setup-python@' + utils.githubLatestActionTag('actions', 'setup-python'),
             with: {
@@ -36,6 +72,7 @@ function(settings)
             } + if !is_uv then { cache: 'poetry' } else {},
           },
           {
+            'if': "needs.changes.outputs.python == 'true'",
             name: if is_uv then 'Install dependencies (uv)' else 'Install dependencies (Poetry)',
             run: if is_uv then (if settings.want_tests then 'uv sync --group dev --group tests --all-extras'
                                 else 'uv sync --group dev --all-extras')
@@ -49,12 +86,14 @@ function(settings)
           },
           {
             'continue-on-error': true,
+            'if': "needs.changes.outputs.python == 'true'",
             id: 'ruff',
             name: 'Lint with Ruff',
             uses: 'astral-sh/ruff-action@' + utils.githubLatestActionTag('astral-sh', 'ruff-action'),
           },
           {
             'continue-on-error': true,
+            'if': "needs.changes.outputs.python == 'true'",
             id: 'mypy',
             name: 'Lint with mypy',
             run: 'yarn mypy .',
@@ -75,6 +114,7 @@ function(settings)
           },
           {
             'continue-on-error': true,
+            'if': "needs.changes.outputs.python == 'true'",
             id: fmt_check_id,
             name: if settings.want_yapf then 'Check formatting (YAPF)' else 'Check formatting (Ruff)',
             run: fmt_check_cmd,
