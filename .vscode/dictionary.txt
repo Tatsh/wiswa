@@ -1,5 +1,8 @@
+aiofiles
+aiohttp
 altool
 anchore
+anyio
 appdir
 appimage
 appinfo
@@ -14,6 +17,7 @@ autosubmit
 autouic
 autouse
 bascom
+beautifulsoup
 behavior
 bierner
 brightgreen
@@ -75,6 +79,7 @@ excinfo
 exponentcase
 fastmcp
 fdroid
+filebackend
 fileprivate
 filevers
 flathub
@@ -170,6 +175,7 @@ pathlib
 pavelzw
 pipx
 plistlib
+proc
 prodvers
 pycache
 pydantic
@@ -186,6 +192,7 @@ qtcore
 ramda
 reflow
 regen
+resp
 rockspec
 rstcheck
 ruiquelhas
