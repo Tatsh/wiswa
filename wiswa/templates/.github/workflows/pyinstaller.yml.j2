@@ -7,26 +7,31 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success'
     runs-on: 'ubuntu-latest'
     outputs:
-      ready: ${{ '{{' }} steps.result.outputs.ready }}
+      ready: ${{ '{{' }} steps.check.outputs.ready }}
     steps:
       - uses: 'actions/checkout@{{ github_latest_action_tag('actions', 'checkout') }}'
-{% for w in watched_workflows %}
-      - continue-on-error: true
-        env:
+      - env:
           GH_TOKEN: ${{ '{{' }} github.token }}
-        id: '{{ w | lower | replace(" ", "-") }}'
-        name: "Check '{{ w }}' workflow"
+        id: 'check'
+        name: 'Check all workflows succeeded'
         run: |
-          status=$(gh run list -w '{{ w }}' --commit '${{ '{{' }} github.event.workflow_run.head_sha }}' --json conclusion -q '.[0].conclusion')
-          [[ "$status" == 'success' ]]
-{% endfor %}
-      - id: 'result'
-        if: 'always()'
-        name: 'Check results'
-        run: |
-{% for w in watched_workflows %}
-          [ "${{ '{{' }} steps.{{ w | lower | replace(" ", "-") }}.outcome }}" = "success" ]{{ ' &&' if not loop.last else '' }}
-{% endfor %}
+          sha="${{ '{{' }} github.event.workflow_run.head_sha }}"
+          all_success=true
+          for workflow in {{ watched_workflows | join(' ') }}; do
+            status=$(gh run list -w "$workflow" --commit "$sha" --json conclusion -q '.[0].conclusion')
+            if [[ "$status" == 'failure' || "$status" == 'cancelled' ]]; then
+              echo "::error::Workflow '$workflow' ${status}."
+              exit 1
+            elif [[ "$status" != 'success' ]]; then
+              echo "Workflow '$workflow' still pending, skipping."
+              all_success=false
+            fi
+          done
+          if [[ "$all_success" != 'true' ]]; then
+            echo 'Not all workflows have completed yet.'
+            exit 0
+          fi
+          echo 'All workflows succeeded.'
           echo 'ready=true' >> "$GITHUB_OUTPUT"
   build:
     if: needs.check.outputs.ready == 'true'
