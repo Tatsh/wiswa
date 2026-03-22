@@ -94,47 +94,6 @@ def test_copy_static_files_not_wanted_cursor_keeps_different(
     assert (cursor_dir / 'json-yaml.mdc').read_text() == 'custom user content'
 
 
-def test_copy_static_files_claude_agents_wanted(tmp_path: Path,
-                                                monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.chdir(tmp_path)
-    module_path = _setup_module_path(tmp_path)
-    agents_dir = module_path / 'static/.claude/agents'
-    agents_dir.mkdir(parents=True)
-    (agents_dir / 'qa-fixer.md').write_text('qa agent')
-    (agents_dir / 'copy-editor.md').write_text('copy agent')
-    settings = cast('Any', _make_settings(want_claude_agents=True))
-    copy_static_files(settings, module_path)
-    assert (tmp_path / '.claude/agents/qa-fixer.md').read_text() == 'qa agent'
-    assert (tmp_path / '.claude/agents/copy-editor.md').read_text() == 'copy agent'
-
-
-def test_copy_static_files_claude_agents_not_wanted(tmp_path: Path,
-                                                    monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.chdir(tmp_path)
-    module_path = _setup_module_path(tmp_path)
-    agents_dir = module_path / 'static/.claude/agents'
-    agents_dir.mkdir(parents=True)
-    (agents_dir / 'qa-fixer.md').write_text('qa agent')
-    settings = cast('Any', _make_settings(want_claude_agents=False))
-    copy_static_files(settings, module_path)
-    assert not (tmp_path / '.claude/agents/qa-fixer.md').exists()
-
-
-def test_copy_static_files_claude_agents_not_wanted_removes_matching(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.chdir(tmp_path)
-    module_path = _setup_module_path(tmp_path)
-    agents_dir = module_path / 'static/.claude/agents'
-    agents_dir.mkdir(parents=True)
-    (agents_dir / 'qa-fixer.md').write_text('qa agent')
-    out_agents = tmp_path / '.claude/agents'
-    out_agents.mkdir(parents=True)
-    (out_agents / 'qa-fixer.md').write_text('qa agent')
-    settings = cast('Any', _make_settings(want_claude_agents=False))
-    copy_static_files(settings, module_path)
-    assert not (out_agents / 'qa-fixer.md').exists()
-
-
 def test_copy_static_files_claude_json_written_when_wanted(tmp_path: Path,
                                                            monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)

@@ -124,15 +124,31 @@ def _write_templated_files_typescript(settings: Settings, templates_dir: Path,
                overwrite=True)
 
 
-def _write_templated_files_claude(templates_dir: Path, resolve_template: Callable[[Path],
-                                                                                  jinja2.Template],
+_PYTHON_ONLY_AGENTS = frozenset({
+    'click-auditor',
+    'coverage-improver',
+    'docstring-fixer',
+    'mypy-fixer',
+    'python-expert',
+    'python-moderniser',
+    'test-writer',
+})
+
+
+def _write_templated_files_claude(settings: Settings, templates_dir: Path,
+                                  resolve_template: Callable[[Path], jinja2.Template],
                                   write_file: Callable[..., Any]) -> None:
     agents_dir = templates_dir / '.claude/agents'
     if agents_dir.is_dir():
         for file_path in sorted(agents_dir.iterdir()):
-            if file_path.suffix == '.j2':
-                output = Path('.claude/agents') / file_path.stem
-                write_file(resolve_template(file_path), output, overwrite=True)
+            if file_path.suffix != '.j2':
+                continue
+            agent_name = file_path.stem.removesuffix('.md')
+            output = Path('.claude/agents') / file_path.stem
+            if (agent_name in _PYTHON_ONLY_AGENTS and settings['project_type'] != 'python'):
+                output.unlink(missing_ok=True)
+                continue
+            write_file(resolve_template(file_path), output, overwrite=True)
     skills_dir = templates_dir / '.claude/skills'
     if skills_dir.is_dir():
         for skill_subdir in sorted(skills_dir.iterdir()):
@@ -141,8 +157,8 @@ def _write_templated_files_claude(templates_dir: Path, resolve_template: Callabl
                     if file_path.suffix == '.j2':
                         output = Path('.claude/skills') / skill_subdir.name / file_path.stem
                         write_file(resolve_template(file_path), output, overwrite=True)
-    write_file(resolve_template(templates_dir / 'CLAUDE.md.j2'), 'CLAUDE.md')
-    write_file(resolve_template(templates_dir / 'AGENTS.md.j2'), 'AGENTS.md')
+    write_file(resolve_template(templates_dir / 'CLAUDE.md.j2'), 'CLAUDE.md', overwrite=True)
+    write_file(resolve_template(templates_dir / 'AGENTS.md.j2'), 'AGENTS.md', overwrite=True)
 
 
 def _should_overwrite_contributing(settings: Settings) -> bool:
@@ -172,7 +188,9 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
     general_instructions_template = (templates_dir /
                                      '.github/instructions/general.instructions.md.j2')
     if settings['want_copilot']:
-        write_file(resolve_template(general_instructions_template), general_instructions)
+        write_file(resolve_template(general_instructions_template),
+                   general_instructions,
+                   overwrite=True)
     else:
         template = resolve_template(general_instructions_template)
         expected = f'{template.render({"settings": settings}).strip()}\n'
@@ -181,7 +199,7 @@ def write_templated_files(module_path: Path, settings: Settings) -> None:
             general_instructions.unlink()
             log.debug('Removed `%s` (matched would-be content).', general_instructions)
     if settings.get('want_claude_agents', False):
-        _write_templated_files_claude(templates_dir, resolve_template, write_file)
+        _write_templated_files_claude(settings, templates_dir, resolve_template, write_file)
     contributing_overwrite = _should_overwrite_contributing(settings)
     common_templates = (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', contributing_overwrite),
                         ('LICENSE.txt.j2', not settings['private']), ('SECURITY.md.j2', True),

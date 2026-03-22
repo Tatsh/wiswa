@@ -18,6 +18,7 @@ After gathering context but before committing, determine which agents to run bas
 files. Launch each agent sequentially using the Agent tool with subagent_type `general-purpose`,
 telling it to follow the corresponding `.claude/agents/<name>.md` file. Scope each agent to only the
 changed files, not the entire project.
+{% if settings.project_type == 'python' %}
 
 ### When Python code is being committed
 
@@ -31,13 +32,46 @@ If any changed files are under `{{ settings.primary_module }}/` or `tests/`, run
 1. **test-writer** - generate/update tests for new/changed code. **Skip if the only changes are in
    `tests/`.**
 1. **qa-fixer** - format and fix lint/spelling issues.
+{% elif settings.project_type == 'c' or settings.project_type == 'c++' %}
+
+### When C/C++ code is being committed
+
+If any changed files are under `src/` or `include/`, run the following agents **in order**:
+
+1. **copy-editor** - fix prose in comments and strings.
+1. **qa-fixer** - format and fix lint/spelling issues.
+{% elif settings.project_type == 'typescript' %}
+
+### When TypeScript code is being committed
+
+If any changed files are under `src/`, run the following agents **in order**:
+
+1. **copy-editor** - fix prose in comments, JSDoc, and strings.
+1. **qa-fixer** - format and fix lint/spelling issues.
+{% elif settings.project_type == 'lua' %}
+
+### When Lua code is being committed
+
+If any changed source files are being committed, run the following agents **in order**:
+
+1. **copy-editor** - fix prose in comments and strings.
+1. **qa-fixer** - format and fix lint/spelling issues.
+{% endif %}
 
 ### When user-facing changes are being committed
 
 - **changelog** - update `CHANGELOG.md` with entries for the changes. After it completes, check if
   `CHANGELOG.md` was modified (`git diff CHANGELOG.md`). If it was, it will be staged together with
-  the relevant commit. **Only run when changes affect users**: files under `{{ settings.primary_module }}/`, `tests/`,
-  or dependency/version changes in `pyproject.toml`. **Skip for**: workflows, CI config, `.claude/`,
+  the relevant commit. **Only run when changes affect users**: files under `{{ settings.primary_module }}/`,
+{%- if settings.project_type == 'python' %} `tests/`,
+  or dependency/version changes in `pyproject.toml`.
+{%- elif settings.project_type == 'c' or settings.project_type == 'c++' %} `src/`, `include/`,
+  or dependency/version changes in `CMakeLists.txt` or `vcpkg.json`.
+{%- elif settings.project_type == 'typescript' %} `src/`,
+  or dependency/version changes in `package.json`.
+{%- else %}
+  or dependency/version changes.
+{%- endif %} **Skip for**: workflows, CI config, `.claude/`,
   `.cursor/`, `.github/instructions/`, documentation-only changes, and other non-user-facing files.
 
 ## Analysing changes
@@ -52,17 +86,21 @@ file in a commit:
 - `CHANGELOG.md`
 - `.vscode/dictionary.txt`
 
-For example, if a commit contains `{{ settings.primary_module }}/commands/main.py`,
-`tests/test_main_command.py`, and `CHANGELOG.md`, the component is determined by
-`{{ settings.primary_module }}/commands/main.py` and `tests/test_main_command.py` only.
-`CHANGELOG.md` is simply staged alongside them.
+For example, if a commit contains `{{ settings.primary_module }}/
+{%- if settings.project_type == 'python' %}commands/main.py`,
+`tests/test_main_command.py`
+{%- elif settings.project_type == 'c' or settings.project_type == 'c++' %}src/main.cpp`
+{%- elif settings.project_type == 'typescript' %}src/index.ts`
+{%- else %}main`
+{%- endif %}, and `CHANGELOG.md`, the component is determined by
+the source files only. `CHANGELOG.md` is simply staged alongside them.
 
 If `CHANGELOG.md` is the only file being committed, use the `changelog:` prefix. If
 `.vscode/dictionary.txt` is the only file, use `dictionary:` prefix.
 
 ### When to split into multiple commits
 
-- Changes span unrelated components (e.g. `{{ settings.primary_module }}/media.py` and `.claude/agents/release.md`).
+- Changes span unrelated components.
 - A refactor and a bug fix in the same file should be separate commits.
 - New tests for existing code should be separate from the code changes they test only if the code
   changes are themselves separate.
@@ -74,10 +112,20 @@ If `CHANGELOG.md` is the only file being committed, use the `changelog:` prefix.
 When all changes are from re-running Wiswa (the project generator) and no hand-written code changed,
 this is a **cruft update**. Indicators:
 
-- Only Wiswa-managed files changed (workflows, `package.json`, `pyproject.toml`,
+- Only Wiswa-managed files changed (workflows, `package.json`,
+{%- if settings.project_type == 'python' %} `pyproject.toml`,
+{%- elif settings.project_type == 'c' or settings.project_type == 'c++' %} `CMakeLists.txt`,
+{%- elif settings.project_type == 'typescript' %} `tsconfig.json`,
+{%- endif %}
   `.pre-commit-config.yaml`, `.claude/agents/`, `.cursor/rules/`, `.github/instructions/`,
-  `CITATION.cff`, `.vscode/dictionary.txt`, `uv.lock`, `.wiswa.jsonnet`, etc.).
-- No files under the primary module or `tests/` changed.
+  `CITATION.cff`, `.vscode/dictionary.txt`,
+{%- if settings.project_type == 'python' %} `uv.lock`,{% endif %} `.wiswa.jsonnet`, etc.).
+- No files under the primary module or
+{%- if settings.project_type == 'python' %} `tests/`
+{%- elif settings.project_type == 'c' or settings.project_type == 'c++' %} `src/`
+{%- elif settings.project_type == 'typescript' %} `src/`
+{%- else %} source directories
+{%- endif %} changed.
 
 Commit everything in a single commit with the subject `cruft: update`. Include a body summarising
 what changed (e.g. new/updated workflows, updated agent files, dependency version bumps, new managed
@@ -111,19 +159,40 @@ Closes: #123
 - Use imperative mood: 'add', 'fix', 'update', 'remove', not 'added', 'fixes', 'updated'.
 
 ### Component prefix rules
-
+{% if settings.project_type == 'python' %}
 For Python files, strip the `{{ settings.primary_module }}/` prefix and replace `/` with `.` (like module imports).
 
 - Python file `{{ settings.primary_module }}/media.py` → `media:`.
 - Multiple files under `{{ settings.primary_module }}/commands/` → `commands:`.
 - Single command file `{{ settings.primary_module }}/commands/admin.py` → `commands.admin:`.
+{% elif settings.project_type == 'c' or settings.project_type == 'c++' %}
+For source files, strip the `src/` prefix and use the file name (without extension) as the
+component.
+
+- Source file `src/main.cpp` → `main:`.
+- Header file `include/{{ settings.primary_module }}/util.h` → `util:`.
+- Multiple files under `src/` → `src:`.
+{% elif settings.project_type == 'typescript' %}
+For TypeScript files, strip the `src/` prefix and use the file name (without extension) as the
+component.
+
+- Source file `src/index.ts` → `index:`.
+- Multiple files under `src/` → `src:`.
+{% endif %}
 - Workflow file `.github/workflows/qa.yml` → `workflows/qa:`.
 - Multiple workflows → `workflows/*:`.
 - Agent files `.claude/agents/*.md` → `.claude:` or specific agent name.
 - Instruction files across all 3 locations → `project:` (since they span Copilot/Cursor/Claude).
+{% if settings.project_type == 'python' %}
 - Test files `tests/test_media.py` → `tests/test_media:` (or `tests:` for multiple).
+{% endif %}
 - Dictionary `.vscode/dictionary.txt` → `dictionary:` (only when committed alone).
-- Top-level config (`pyproject.toml`, `package.json`) → `project:`.
+- Top-level config (
+{%- if settings.project_type == 'python' %}`pyproject.toml`
+{%- elif settings.project_type == 'c' or settings.project_type == 'c++' %}`CMakeLists.txt`
+{%- elif settings.project_type == 'typescript' %}`tsconfig.json`
+{%- else %}`package.json`
+{%- endif %}, `package.json`) → `project:`.
 - If changes span many unrelated areas → `project:`.
 - CHANGELOG.md → `changelog:` (only when committed alone).
 - CONTRIBUTING.md → `contributing:`.

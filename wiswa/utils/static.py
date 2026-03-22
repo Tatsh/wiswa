@@ -128,15 +128,6 @@ def copy_static_files_python(settings: Settings, module_path: Path) -> None:
         copy_file('main.py')
 
 
-def _claude_agent_pairs(module_path: Path) -> list[tuple[Path, Path]]:
-    static_dir = module_path / 'static/.claude/agents'
-    pairs: list[tuple[Path, Path]] = []
-    if static_dir.is_dir():
-        pairs.extend((Path(f'.claude/agents/{src.name}'), src)
-                     for src in sorted(static_dir.iterdir()) if src.is_file())
-    return pairs
-
-
 def copy_static_files(settings: Settings, module_path: Path) -> None:
     """
     Copy static files to the current directory.
@@ -164,11 +155,6 @@ def copy_static_files(settings: Settings, module_path: Path) -> None:
     _sync_json_file(Path('.claude/settings.local.json.dist'),
                     settings['claude_settings_local'],
                     wanted=settings['want_claude'])
-    claude_agent_pairs = _claude_agent_pairs(module_path)
-    _sync_file_pairs(claude_agent_pairs,
-                     Path('.claude/agents'),
-                     Path('.claude'),
-                     wanted=settings.get('want_claude_agents', False))
     match settings['project_type']:
         case 'python':
             copy_static_files_python(settings, module_path)
