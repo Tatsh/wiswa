@@ -38,15 +38,15 @@ local utils = import 'utils.libjsonnet';
       ),
     } else {}
   ) + (
-    if settings.project_type == 'typescript' then {
+    if settings.project_type == 'typescript' && !settings.private then {
       '.github/workflows/publish.yml': utils.manifestYaml(npm_publish_any(settings)),
     } else {}
   ) + (
-    if settings.project_type == 'python' then {
+    if settings.project_type == 'python' && !settings.private then {
       '.github/workflows/publish.yml': utils.manifestYaml(pypi_publish_any(settings)),
     } else {}
   ) + (
-    if settings.project_type == 'lua' then {
+    if settings.project_type == 'lua' && !settings.private then {
       '.github/workflows/publish.yml': utils.manifestYaml(lua_publish),
     } else {}
   ) + (

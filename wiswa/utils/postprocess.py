@@ -343,6 +343,8 @@ def post_process_steps(settings: Settings) -> None:
     settings : Settings
         Project settings.
     """
+    if settings['private']:
+        Path('.github/workflows/publish.yml').unlink(missing_ok=True)
     match settings['project_type']:
         case 'python':
             _post_process_steps_python(settings)

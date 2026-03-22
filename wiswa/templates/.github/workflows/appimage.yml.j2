@@ -24,7 +24,7 @@ jobs:
         name: 'Check results'
         run: |
 {% for w in watched_workflows %}
-          [ "${{ '{{' }} steps.{{ w | lower | replace(" ", "-") }}.outcome }}" = "success" ] {{ '&&' if not loop.last else '' }}
+          [ "${{ '{{' }} steps.{{ w | lower | replace(" ", "-") }}.outcome }}" = "success" ]{{ ' &&' if not loop.last else '' }}
 {% endfor %}
           echo 'ready=true' >> "$GITHUB_OUTPUT"
   build:
