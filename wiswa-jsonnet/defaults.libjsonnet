@@ -743,6 +743,8 @@ local utils = import 'utils.libjsonnet';
   vcpkg_root: '/home/tatsh/dev/vcpkg',
   /** @brief Clang format configuration. */
   clang_format: clang_format.get(self.line_width, self.c_cpp_tab_size),
+  /** @brief Arguments (file globs) passed to clang-format. */
+  clang_format_args: 'src/*.cpp src/*.h',
   /** @brief CMake presets. */
   cmake_presets: import 'defaults/cmake-presets.libjsonnet',
   /** @brief CMake user presets. */

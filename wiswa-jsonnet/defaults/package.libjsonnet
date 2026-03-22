@@ -51,12 +51,12 @@ local utils = import 'utils.libjsonnet';
   } + if settings.want_tests then python_test_scripts(
     if settings.package_manager == 'uv' then 'uv run' else 'poetry run'
   ) else {},
-  local c_cpp_scripts = {
+  local c_cpp_scripts(settings) = {
     build: 'cmake --preset=default -DBUILD_DOCS=ON && cmake --build build',
-    'check-formatting': 'clang-format -n src/*.cpp src/*.h && prettier -c . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
+    'check-formatting': 'clang-format -n %s && prettier -c . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % settings.clang_format_args,
     'check-spelling': 'cspell --no-progress .',
     'dict:update': dictionary_update,
-    format: 'clang-format -i src/*.cpp src/*.h && prettier -w .',
+    format: 'clang-format -i %s && prettier -w .' % settings.clang_format_args,
     qa: 'yarn check-spelling && yarn check-formatting',
   },
   typescript_dev_deps(settings):: {
@@ -202,7 +202,7 @@ local utils = import 'utils.libjsonnet';
       singleQuote: true,
     },
     scripts: if settings.project_type == 'python' then python_scripts(settings)
-    else if settings.project_type == 'c++' || settings.project_type == 'c' then c_cpp_scripts
+    else if settings.project_type == 'c++' || settings.project_type == 'c' then c_cpp_scripts(settings)
     else if settings.project_type == 'typescript' then top.typescript_scripts(settings)
     else {},
   } + (if settings.private then { private: true } else {}),

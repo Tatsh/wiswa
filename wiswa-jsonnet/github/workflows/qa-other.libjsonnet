@@ -27,7 +27,7 @@ function(settings)
             'continue-on-error': true,
             id: 'clang-format',
             name: 'Check formatting (clang-format)',
-            run: 'clang-format -n src/*.cpp src/*.h',
+            run: 'clang-format -n %s' % settings.clang_format_args,
           }] else []) + [
           {
             'continue-on-error': true,
