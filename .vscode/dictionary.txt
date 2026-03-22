@@ -12,6 +12,7 @@ automodule
 autorcc
 autosubmit
 autouic
+autouse
 bascom
 behavior
 bierner
@@ -72,6 +73,7 @@ esbenp
 esbonio
 excinfo
 exponentcase
+fastmcp
 fdroid
 fileprivate
 filevers
