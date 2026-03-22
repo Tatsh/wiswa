@@ -210,7 +210,7 @@ local utils = import 'utils.libjsonnet';
    * @brief If the project should upload coverage to Coveralls.
    * @var boolean
    */
-  want_coveralls: self.using_github && !self.stubs_only,
+  want_coveralls: self.using_github && !self.stubs_only && !self.private,
   /** @brief If the project will use SQLFluff. */
   want_sqlfluff: false,
   /** @brief If the project will publish to WinGet using GitHub Actions (C/C++ only). */

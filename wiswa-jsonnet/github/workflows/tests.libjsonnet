@@ -56,14 +56,13 @@ function(settings)
               verbose: true,
             },
           },
-          {
-            name: 'Coverage',
-            uses: 'coverallsapp/github-action@' + utils.githubLatestActionTag('coverallsapp', 'github-action'),
-            with: {
-              file: 'coverage.xml',
-            },
+        ] + (if settings.want_coveralls then [{
+          name: 'Coverage',
+          uses: 'coverallsapp/github-action@' + utils.githubLatestActionTag('coverallsapp', 'github-action'),
+          with: {
+            file: 'coverage.xml',
           },
-        ],
+        }] else []),
         strategy: {
           matrix: {
             'python-version': settings.supported_python_versions,
