@@ -14,6 +14,15 @@ function(settings)
           {
             uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
+        ] + (if settings.private then [{
+               env: {
+                 GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}',
+               },
+               name: 'Delete old caches',
+               run: |||
+                 gh cache list --json id,createdAt -q '.[] | select((now - (.createdAt | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .id' | xargs -r -L1 gh cache delete
+               |||,
+             }] else []) + [
           {
             name: 'Build Flatpak',
             uses: 'flathub-infra/flatpak-github-actions/flatpak-builder@' +
@@ -79,7 +88,7 @@ function(settings)
       },
       workflow_dispatch: null,
     },
-    permissions: {
+    permissions: (if settings.private then { actions: 'write' } else {}) + {
       attestations: 'write',
       contents: 'write',
       'id-token': 'write',

@@ -5,6 +5,13 @@ jobs:
     runs-on: ${{ '{{' }} matrix.system.image }}
     steps:
       - uses: 'actions/checkout@{{ github_latest_action_tag('actions', 'checkout') }}'
+{% if settings.private %}
+      - name: 'Delete old caches'
+        env:
+          GH_TOKEN: ${{ '{{' }} secrets.GITHUB_TOKEN }}
+        run: |
+          gh cache list --json id,createdAt -q '.[] | select((now - (.createdAt | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .id' | xargs -r -L1 gh cache delete
+{% endif %}
 {% if settings.package_manager == 'uv' %}
       - name: 'Install yq'
         run: 'pipx install yq'
@@ -97,6 +104,9 @@ name: 'AppImage'
     tags:
       - 'v*.*.*'
 permissions:
+{% if settings.private %}
+  actions: 'write'
+{% endif %}
   attestations: 'write'
   contents: 'write'
   id-token: 'write'
