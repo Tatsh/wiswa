@@ -71,7 +71,7 @@ function(settings)
             'continue-on-error': true,
             id: 'prettier',
             name: 'Check formatting (Prettier)',
-            run: 'prettier -c .',
+            run: 'yarn prettier -c .',
           },
           {
             'continue-on-error': true,
@@ -83,7 +83,7 @@ function(settings)
             'continue-on-error': true,
             id: 'markdownlint',
             name: 'Check formatting (markdownlint)',
-            run: 'markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
+            run: 'yarn markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
           },
           {
             'continue-on-error': true,

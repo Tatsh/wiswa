@@ -11,7 +11,7 @@ jobs:
         env:
           GH_TOKEN: ${{ '{{' }} secrets.GITHUB_TOKEN }}
         run: |
-          gh cache list --json id,createdAt -q '.[] | select((now - (.createdAt | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .id' | xargs -r -L1 gh cache delete
+          gh cache list --json id,createdAt -q '.[] | select((now - (.createdAt | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .key' | xargs -r -L1 gh cache delete
 {% endif %}
 {% if settings.package_manager == 'uv' %}
       - name: 'Install yq'
