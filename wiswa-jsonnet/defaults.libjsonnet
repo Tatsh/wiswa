@@ -548,6 +548,7 @@ local utils = import 'utils.libjsonnet';
      */
     repos: [(import 'defaults/pre-commit-config/main.libjsonnet').get(settings)] +
            precommit_python_repos + precommit_c_cpp_repos + github + cff + [local_hooks.get(settings)],
+  } + (if !settings.private then {
     ci: {
       skip: [
         'check-jsonschema',
@@ -559,7 +560,7 @@ local utils = import 'utils.libjsonnet';
         'yarn-check-lock',
       ],
     },
-  },
+  } else {}),
   /** @brief Visual Studio Code configuration. */
   vscode: {
     /** @brief C/C++ configuration for Visual Studio Code. */
@@ -1026,7 +1027,7 @@ local utils = import 'utils.libjsonnet';
     contributors: ['%s <%s>' % [x.name, x.email] for x in settings.authors],
     homepage: settings.homepage,
     keywords: settings.keywords,
-    license: settings.license,
+    [if !settings.private then 'license']: settings.license,
     name: std.asciiLower(settings.project_name),
     packageManager: 'yarn@%s' % settings.yarn_version,
     repository: {
