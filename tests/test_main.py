@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
+import asyncio
 
 from click.testing import CliRunner
 from multidict import CIMultiDict
-from wiswa.main import main
+from wiswa.main import _Spinner, main  # noqa: PLC2701
 import aiohttp
 import pytest
 
@@ -15,6 +16,40 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from pytest_mock import MockerFixture
+
+
+async def test_spinner_disabled() -> None:
+    spin = _Spinner(enabled=False)
+    spin.update('test')
+    assert spin._task is None  # noqa: SLF001
+    await spin.stop()
+
+
+async def test_spinner_enabled_starts_task(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv('WISWA_PROGRESS', '1')
+    spin = _Spinner(enabled=True)
+    spin.update('working')
+    assert spin._task is not None  # noqa: SLF001
+    await asyncio.sleep(0.15)
+    await spin.stop()
+    assert spin._task is None  # noqa: SLF001
+
+
+async def test_spinner_update_does_not_create_duplicate_tasks(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv('WISWA_PROGRESS', '1')
+    spin = _Spinner(enabled=True)
+    spin.update('first')
+    task1 = spin._task  # noqa: SLF001
+    spin.update('second')
+    task2 = spin._task  # noqa: SLF001
+    assert task1 is task2
+    await spin.stop()
+
+
+async def test_spinner_stop_when_not_started() -> None:
+    spin = _Spinner(enabled=False)
+    await spin.stop()  # Should not raise
 
 
 @pytest.mark.parametrize(
@@ -572,6 +607,33 @@ def test_main_no_legacy_deps_no_warning(mocker: MockerFixture, tmp_path: Path) -
     result = runner.invoke(main, [str(file_path)], catch_exceptions=False)
     assert result.exit_code == 0
     mock_log.warning.assert_not_called()
+
+
+def test_main_runtime_error(mocker: MockerFixture, tmp_path: Path) -> None:
+    error = RuntimeError('RUNTIME ERROR: Something went wrong')
+    file_path, _ = _setup_main_mocks(mocker, tmp_path, side_effect=error)
+    runner = CliRunner()
+    result = runner.invoke(main, [str(file_path)])
+    assert result.exit_code != 0
+    assert 'Something went wrong' in result.output
+
+
+def test_main_runtime_error_could_not_get_latest_tag(mocker: MockerFixture, tmp_path: Path) -> None:
+    error = RuntimeError('Could not get latest tag for owner/repo.')
+    file_path, _ = _setup_main_mocks(mocker, tmp_path, side_effect=error)
+    runner = CliRunner()
+    result = runner.invoke(main, [str(file_path)])
+    assert result.exit_code != 0
+    assert 'rate limiting' in result.output.lower() or 'GitHub API' in result.output
+
+
+def test_main_generic_exception(mocker: MockerFixture, tmp_path: Path) -> None:
+    error = TypeError('unexpected error')
+    file_path, _ = _setup_main_mocks(mocker, tmp_path, side_effect=error)
+    runner = CliRunner()
+    result = runner.invoke(main, [str(file_path)])
+    assert result.exit_code != 0
+    assert 'Aborted!' in result.output
 
 
 def test_main_has_legacy_poetry_deps_not_uv(mocker: MockerFixture, tmp_path: Path) -> None:

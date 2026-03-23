@@ -33,6 +33,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (e.g. Jsonnet evaluation failures, GitHub API rate limiting).
 - `on_command` callback parameter on `post_process_steps` and `_subprocess_log_run`, allowing
   callers to be notified of each subprocess command line before it runs.
+- `package_sources` setting for custom package index sources (PyPI alternatives) in generated
+  `pyproject.toml`.
 
 ### Fixed
 
@@ -52,6 +54,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `primary_module` differs from the normalised `project_name`, not only stubs-only projects. This
   fixes wheel builds for projects like `chocolatey-choco` whose module name (`choco`) does not match
   the PyPI name. Non-stubs projects use `settings.modules` for the packages list.
+- C/C++ `format` script now includes `markdownlint-cli2 --fix` invocation.
+- `poetryVerToPep508` now prefixes bare version numbers with `==` instead of leaving them unqualified.
+- GitHub Pages badge URL now lowercases the username for correct `.github.io` domain resolution.
 
 ### Changed
 
@@ -75,6 +80,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   when `want_claude` is true.
 - HTTP response cache now expires after 10 minutes instead of 30 minutes and ignores upstream
   `Cache-Control` headers, preventing rate-limiting on immediate subsequent runs.
+- Simplified unreachable `elif` branch to `else` in `list_settings` MCP tool.
+- Added `# pragma: no cover` to genuinely untestable code paths (MCP entry point, async-to-sync
+  thread bridge, defensive `KeyError` handler, aiohttp trace callback).
+- Tests now use public APIs instead of importing private functions (`_parse_md_badge`,
+  `_make_native_callbacks`, `_on_request_end`).
+- Achieved 100% branch coverage with new tests for MCP defaults caching, `list_settings` depth edge
+  cases, subprocess failure handling, `on_command` callback, custom project badges, badge generation
+  branches, session pass-through, agent skipping for non-Python projects, Jsonnet session callbacks,
+  and GitHub tag cache hits.
 
 ### Removed
 

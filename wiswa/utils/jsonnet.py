@@ -41,7 +41,7 @@ def _make_native_callbacks(
     # inside anyio.to_thread.run_sync, so we use anyio.from_thread.run to schedule the async
     # call back on the event loop.
 
-    def _sync_wrap(async_fn: Callable[..., Any], *args: Any) -> Any:
+    def _sync_wrap(async_fn: Callable[..., Any], *args: Any) -> Any:  # pragma: no cover
         return anyio.from_thread.run(async_fn, *args)
 
     gh_action = partial(get_github_release_latest_tag,

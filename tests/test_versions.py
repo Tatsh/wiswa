@@ -145,3 +145,12 @@ async def test_get_github_release_latest_tag_both_fail() -> None:
     mock_session.get.side_effect = [release_ctx, tags_ctx]
     with pytest.raises(ValueError, match='Could not get latest tag'):
         await get_github_release_latest_tag(mock_session, 'owner', 'repo6')
+
+
+async def test_get_github_release_latest_tag_cache_hit() -> None:
+    mock_session = MagicMock()
+    mock_session.get.return_value = _make_async_response(ok=True, json_data={'tag_name': 'v1.0.0'})
+    result1 = await get_github_release_latest_tag(mock_session, 'owner', 'cached_repo')
+    result2 = await get_github_release_latest_tag(mock_session, 'owner', 'cached_repo')
+    assert result1 == result2 == 'v1.0.0'
+    assert mock_session.get.call_count == 1

@@ -53,6 +53,26 @@ def _mock_defaults(mocker: MockerFixture) -> None:
     mocker.patch('wiswa.mcp._get_defaults', new_callable=AsyncMock, return_value=MOCK_DEFAULTS)
 
 
+class TestGetDefaultsReal:
+    @staticmethod
+    async def test_resolves_and_caches(mocker: MockerFixture) -> None:
+        import wiswa.mcp
+        mocker.stopall()
+        wiswa.mcp._resolved_defaults = None  # noqa: SLF001
+        mock_resolve = mocker.patch('wiswa.mcp.resolve_defaults_only',
+                                    new_callable=AsyncMock,
+                                    return_value={'a': 1})
+        try:
+            result = await wiswa.mcp._get_defaults()  # noqa: SLF001
+            assert result == {'a': 1}
+            mock_resolve.assert_called_once()
+            result2 = await wiswa.mcp._get_defaults()  # noqa: SLF001
+            assert result2 == {'a': 1}
+            assert mock_resolve.call_count == 1
+        finally:
+            wiswa.mcp._resolved_defaults = None  # noqa: SLF001
+
+
 class TestNavigate:
     @staticmethod
     def test_simple_key() -> None:
@@ -373,9 +393,29 @@ class TestLookupSettingExtended:
         assert result['notes'] == []
 
 
+class TestListSettingsExtended:
+    @staticmethod
+    async def test_depth_zero() -> None:
+        result = json.loads(await list_settings(depth=0))
+        assert result == []
+
+    @staticmethod
+    async def test_depth_three_recurses_deep() -> None:
+        result = json.loads(await list_settings('pyproject', depth=3))
+        keys = [e['key'] for e in result]
+        assert 'tool.ruff.line-length' in keys
+
+
 class TestGenerateOverrideSnippetExtended:
     @staticmethod
     async def test_non_dict_intermediate() -> None:
         result = await generate_override_snippet('keywords.item', 'val')
         assert 'keywords:' in result
         assert 'item:' in result
+
+    @staticmethod
+    async def test_non_dict_deep_path() -> None:
+        result = await generate_override_snippet('keywords.item.deep', 'val')
+        assert 'keywords:' in result
+        assert 'item:' in result
+        assert 'deep:' in result

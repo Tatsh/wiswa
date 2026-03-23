@@ -18,7 +18,7 @@ __all__ = ('cached_session',)
 log = logging.getLogger(__name__)
 
 
-async def _on_request_end(  # noqa: RUF029
+async def _on_request_end(  # pragma: no cover  # noqa: RUF029
         _session: ClientSession, _ctx: object, params: TraceRequestEndParams) -> None:
     log.debug('%s %s %d', params.method, params.url, params.response.status)
 

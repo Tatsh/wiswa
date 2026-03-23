@@ -206,3 +206,49 @@ def test_github_api_extension_registers_global(mocker: MockerFixture) -> None:
 
     env = jinja2.Environment(extensions=[GithubAPIExtension], autoescape=True)
     assert 'github_latest_action_tag' in env.globals
+
+
+def test_parse_md_badge_valid() -> None:
+    from wiswa.extensions import ParseMarkdownBadgeExtension
+
+    env = jinja2.Environment(extensions=[ParseMarkdownBadgeExtension], autoescape=True)
+    parse_badge = env.filters['parse_md_badge']
+    result = parse_badge('[![alt text](https://img.shields.io/badge.svg)]')
+    assert result == {'alt': 'alt text', 'image': 'https://img.shields.io/badge.svg'}
+
+
+def test_parse_md_badge_no_match() -> None:
+    from wiswa.extensions import ParseMarkdownBadgeExtension
+
+    env = jinja2.Environment(extensions=[ParseMarkdownBadgeExtension], autoescape=True)
+    parse_badge = env.filters['parse_md_badge']
+    result = parse_badge('not a badge')
+    assert result == {'alt': '', 'image': ''}
+
+
+async def test_github_latest_action_tag_no_session() -> None:
+    from typing import Any, cast
+
+    from wiswa.extensions import GithubAPIExtension
+
+    env = jinja2.Environment(extensions=[GithubAPIExtension], autoescape=True)
+    func = cast('Any', env.globals['github_latest_action_tag'])
+    with pytest.raises(RuntimeError, match='No aiohttp session'):
+        await func('owner', 'repo')
+
+
+async def test_github_latest_action_tag_with_session(mocker: MockerFixture) -> None:
+    from typing import Any, cast
+    from unittest.mock import AsyncMock
+
+    from wiswa.extensions import GithubAPIExtension
+
+    mocker.patch('wiswa.utils.versions.get_github_release_latest_tag',
+                 new_callable=AsyncMock,
+                 return_value='v4')
+    env = jinja2.Environment(extensions=[GithubAPIExtension], autoescape=True)
+    mock_session = mocker.MagicMock()
+    env.globals['_aiohttp_session'] = mock_session
+    func = cast('Any', env.globals['github_latest_action_tag'])
+    result = await func('owner', 'repo')
+    assert result == 'v4'

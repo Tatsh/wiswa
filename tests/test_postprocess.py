@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock
 
 from wiswa.utils.postprocess import post_process_steps
+import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from pytest_mock import MockerFixture
-    import pytest
 
 
 def _make_settings(**overrides: Any) -> dict[str, Any]:
@@ -649,6 +649,107 @@ async def test_post_process_steps_stubs_only_no_pydocstyle(tmp_path: Path,
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'pydocstyle' not in content
+
+
+async def test_post_process_steps_on_command_callback(tmp_path: Path,
+                                                      monkeypatch: pytest.MonkeyPatch,
+                                                      mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any', _make_settings())
+    await post_process_steps(settings, on_command=commands.append)
+    assert len(commands) > 0
+    assert any('uv' in c for c in commands)
+
+
+async def test_post_process_steps_subprocess_failure(tmp_path: Path,
+                                                     monkeypatch: pytest.MonkeyPatch,
+                                                     mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    mock_proc = AsyncMock()
+    mock_proc.communicate = AsyncMock(return_value=(b'', b''))
+    mock_proc.returncode = 1
+    mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec', return_value=mock_proc)
+    settings = cast('Any', _make_settings())
+    with pytest.raises(RuntimeError, match='non-zero exit status'):
+        await post_process_steps(settings)
+
+
+async def test_post_process_steps_custom_project_badges(tmp_path: Path,
+                                                        monkeypatch: pytest.MonkeyPatch,
+                                                        mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(
+            _readme_existed=True,
+            custom_project_badges=[
+                {
+                    'anchor': '[![High Priority](http://example.com/high.svg)',
+                    'href': 'http://example.com/high',
+                    'priority': -1,
+                },
+                {
+                    'anchor': '[![Low Priority](http://example.com/low.svg)',
+                    'href': 'http://example.com/low',
+                    'priority': 1,
+                },
+            ],
+        ),
+    )
+    await post_process_steps(settings)
+    content = readme.read_text(encoding='utf-8')
+    assert 'High Priority' in content
+    assert 'Low Priority' in content
+
+
+async def test_post_process_steps_badges_no_codeql_no_tests(tmp_path: Path,
+                                                            monkeypatch: pytest.MonkeyPatch,
+                                                            mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(_readme_existed=True, want_codeql=False, want_tests=False),
+    )
+    await post_process_steps(settings)
+    content = readme.read_text(encoding='utf-8')
+    assert 'CodeQL' not in content
+    assert 'Tests' not in content
+    assert 'QA' in content
+
+
+async def test_post_process_steps_badges_docs_non_python_non_github(tmp_path: Path,
+                                                                    monkeypatch: pytest.MonkeyPatch,
+                                                                    mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(
+            project_type='c',
+            _readme_existed=True,
+            want_docs=True,
+            using_github=False,
+        ),
+    )
+    await post_process_steps(settings)
+    content = readme.read_text(encoding='utf-8')
+    assert 'readthedocs' not in content
+    assert 'GitHub Pages' not in content
 
 
 async def test_post_process_steps_no_docs_badges(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,

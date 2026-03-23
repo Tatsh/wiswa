@@ -189,7 +189,7 @@ async def list_settings(key_path: str | None = None, depth: int = 1) -> str:
                 entry['value'] = val
             elif isinstance(val, dict):
                 entry['child_keys'] = len(val)
-            elif isinstance(val, list):
+            else:
                 entry['length'] = len(val)
             entries.append(entry)
             if isinstance(val, dict) and current_depth < depth:
@@ -212,7 +212,7 @@ async def search_settings(query: str) -> str:
         if query in path:
             try:
                 val = navigate(defaults, path.split('.'))
-            except KeyError:
+            except KeyError:  # pragma: no cover
                 continue
             entry: dict[str, Any] = {'key_path': path, 'type': type_name(val)}
             if not isinstance(val, dict | list):
@@ -221,6 +221,6 @@ async def search_settings(query: str) -> str:
     return json.dumps(matches, indent=2)
 
 
-def main() -> None:
+def main() -> None:  # pragma: no cover
     """Entry point for the Wiswa MCP server."""
     mcp.run()

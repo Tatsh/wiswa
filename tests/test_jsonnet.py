@@ -143,6 +143,25 @@ async def test_resolve_defaults_only(tmp_path: Path, mocker: MockerFixture) -> N
     assert result == {'project_type': 'python'}
 
 
+async def test_evaluate_jsonnet_file_with_session(mocker: MockerFixture) -> None:
+    _patch_to_thread(mocker)
+    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet.evaluate_file.return_value = '{"key": "value"}'
+    mock_session = MagicMock()
+    result = await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}', session=mock_session)
+    assert result == '{"key": "value"}'
+    call_kwargs = mock_jsonnet.evaluate_file.call_args[1]
+    native_callbacks = call_kwargs['native_callbacks']
+    assert 'githubLatestActionTag' in native_callbacks
+    assert 'githubLatestReleaseTag' in native_callbacks
+    assert 'githubLatestTag' in native_callbacks
+    assert 'latestNpmPackageVersion' in native_callbacks
+    assert 'latestPypiPackageVersion' in native_callbacks
+    assert 'latestYarnVersion' in native_callbacks
+    assert 'isodate' in native_callbacks
+    assert 'year' in native_callbacks
+
+
 async def test_resolve_defaults_only_passes_empty_overrides(tmp_path: Path,
                                                             mocker: MockerFixture) -> None:
     _patch_to_thread(mocker)

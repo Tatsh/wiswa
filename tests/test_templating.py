@@ -72,9 +72,11 @@ async def test_write_templated_files_claude_agents_wanted(tmp_path: Path,
     (tmp_path / 'CLAUDE.md.j2').write_text('claude')
     (tmp_path / 'AGENTS.md.j2').write_text('agents')
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
     settings = cast('Any', _make_settings(want_claude_agents=True, want_copilot=False))
     await write_templated_files(tmp_path, settings)
@@ -87,12 +89,39 @@ async def test_write_templated_files_claude_agents_wanted(tmp_path: Path,
     assert not any('notes.txt' in f for f in written_files)
 
 
+async def test_write_templated_files_claude_skills_non_dir_entry(tmp_path: Path,
+                                                                 mocker: MockerFixture) -> None:
+    agents_dir = tmp_path / '.claude/agents'
+    agents_dir.mkdir(parents=True)
+    skills_dir = tmp_path / '.claude/skills'
+    skills_dir.mkdir(parents=True)
+    (skills_dir / 'stray-file.txt').write_text('not a directory')
+    skill_subdir = skills_dir / 'ci'
+    skill_subdir.mkdir()
+    (skill_subdir / 'skill.md.j2').write_text('skill content')
+    (tmp_path / 'CLAUDE.md.j2').write_text('claude')
+    (tmp_path / 'AGENTS.md.j2').write_text('agents')
+    _, _, written_files = _mock_template_env(mocker, tmp_path)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
+    mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
+    settings = cast('Any', _make_settings(want_claude_agents=True, want_copilot=False))
+    await write_templated_files(tmp_path, settings)
+    assert '.claude/skills/ci/skill.md' in written_files
+    assert not any('stray-file' in f for f in written_files)
+
+
 async def test_write_templated_files_claude_agents_not_wanted(tmp_path: Path,
                                                               mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
     settings = cast('Any', _make_settings(want_claude_agents=False, want_copilot=False))
     await write_templated_files(tmp_path, settings)
@@ -106,9 +135,11 @@ async def test_write_templated_files_claude_no_agents_dir(tmp_path: Path,
     (tmp_path / 'CLAUDE.md.j2').write_text('claude')
     (tmp_path / 'AGENTS.md.j2').write_text('agents')
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
     settings = cast('Any', _make_settings(want_claude_agents=True, want_copilot=False))
     await write_templated_files(tmp_path, settings)
@@ -120,9 +151,11 @@ async def test_write_templated_files_claude_no_agents_dir(tmp_path: Path,
 
 async def test_write_templated_files_copilot_wanted(tmp_path: Path, mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
     settings = cast('Any', _make_settings(want_copilot=True, want_claude_agents=False))
     await write_templated_files(tmp_path, settings)
@@ -144,9 +177,11 @@ async def test_write_templated_files_copilot_not_wanted_removes_matching(
         'wiswa.utils.templating._template_env',
         return_value=(MagicMock(), tmp_path, mock_resolve, mock_write_file),
     )
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
     settings = cast('Any', _make_settings(want_copilot=False, want_claude_agents=False))
     await write_templated_files(tmp_path, settings)
@@ -157,9 +192,11 @@ async def test_write_templated_files_copilot_not_wanted_removes_matching(
 async def test_write_templated_files_dispatches_project_types(project_type: str, tmp_path: Path,
                                                               mocker: MockerFixture) -> None:
     _, _, _ = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     mock_c_cpp = mocker.patch('wiswa.utils.templating._write_templated_files_c_cpp',
                               new_callable=AsyncMock)
     mock_cpp = mocker.patch('wiswa.utils.templating._write_templated_files_cpp',
@@ -190,9 +227,11 @@ async def test_write_templated_files_dispatches_project_types(project_type: str,
 async def test_write_templated_files_unknown_type_warns(tmp_path: Path,
                                                         mocker: MockerFixture) -> None:
     _, _, _ = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     mock_log = mocker.patch('wiswa.utils.templating.log')
     settings = cast(
         'Any', _make_settings(project_type='generic', want_copilot=False, want_claude_agents=False))
@@ -229,9 +268,11 @@ async def test_write_templated_files_contributing_no_overwrite_matching(
 async def test_write_templated_files_python_want_docs(tmp_path: Path,
                                                       mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any',
         _make_settings(want_docs=True,
@@ -247,9 +288,11 @@ async def test_write_templated_files_python_want_docs(tmp_path: Path,
 
 async def test_write_templated_files_python_no_docs(tmp_path: Path, mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any',
         _make_settings(want_docs=False,
@@ -264,9 +307,11 @@ async def test_write_templated_files_python_no_docs(tmp_path: Path, mocker: Mock
 async def test_write_templated_files_python_want_tests_and_main(tmp_path: Path,
                                                                 mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any',
         _make_settings(
@@ -288,9 +333,11 @@ async def test_write_templated_files_python_want_tests_and_main(tmp_path: Path,
 async def test_write_templated_files_python_stubs_only(tmp_path: Path,
                                                        mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any',
         _make_settings(stubs_only=True,
@@ -305,9 +352,11 @@ async def test_write_templated_files_python_stubs_only(tmp_path: Path,
 async def test_write_templated_files_python_windows_only(tmp_path: Path,
                                                          mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any',
         _make_settings(
@@ -326,9 +375,11 @@ async def test_write_templated_files_python_windows_only(tmp_path: Path,
 async def test_write_templated_files_python_linux_only(tmp_path: Path,
                                                        mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any',
         _make_settings(
@@ -347,9 +398,11 @@ async def test_write_templated_files_python_linux_only(tmp_path: Path,
 async def test_write_templated_files_python_multiple_entry_points(tmp_path: Path,
                                                                   mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any',
         _make_settings(
@@ -369,9 +422,11 @@ async def test_write_templated_files_python_multiple_entry_points(tmp_path: Path
 async def test_write_templated_files_cpp_want_main_writes_files(tmp_path: Path,
                                                                 mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any',
         _make_settings(project_type='c++',
@@ -387,9 +442,11 @@ async def test_write_templated_files_cpp_want_main_writes_files(tmp_path: Path,
 
 async def test_write_templated_files_cpp_no_main(tmp_path: Path, mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any',
         _make_settings(project_type='c++',
@@ -405,9 +462,11 @@ async def test_write_templated_files_cpp_no_main(tmp_path: Path, mocker: MockerF
 async def test_write_templated_files_c_want_main_writes_files(tmp_path: Path,
                                                               mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any',
         _make_settings(project_type='c',
@@ -423,9 +482,11 @@ async def test_write_templated_files_c_want_main_writes_files(tmp_path: Path,
 
 async def test_write_templated_files_c_no_main(tmp_path: Path, mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any',
         _make_settings(project_type='c',
@@ -440,9 +501,11 @@ async def test_write_templated_files_c_no_main(tmp_path: Path, mocker: MockerFix
 async def test_write_templated_files_lua_writes_files(tmp_path: Path,
                                                       mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any', _make_settings(project_type='lua', want_copilot=False, want_claude_agents=False))
     await write_templated_files(tmp_path, settings)
@@ -452,9 +515,11 @@ async def test_write_templated_files_lua_writes_files(tmp_path: Path,
 
 async def test_write_templated_files_ts_stubs_only(tmp_path: Path, mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any',
         _make_settings(
@@ -471,9 +536,11 @@ async def test_write_templated_files_ts_stubs_only(tmp_path: Path, mocker: Mocke
 
 async def test_write_templated_files_ts_with_tests(tmp_path: Path, mocker: MockerFixture) -> None:
     _, _, written_files = _mock_template_env(mocker, tmp_path)
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     settings = cast(
         'Any',
         _make_settings(
@@ -527,9 +594,11 @@ async def test_write_templated_files_copilot_not_wanted_no_matching_file(
         'wiswa.utils.templating._template_env',
         return_value=(MagicMock(), tmp_path, mock_resolve, mock_write_file),
     )
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
     settings = cast('Any', _make_settings(want_copilot=False, want_claude_agents=False))
     await write_templated_files(tmp_path, settings)
@@ -668,6 +737,116 @@ async def test_write_templated_files_real_env_skips_existing(tmp_path: Path, moc
     assert (tmp_path / 'CHANGELOG.md').read_text() == 'existing changelog\n'
 
 
+async def test_write_templated_files_real_env_with_session(tmp_path: Path, mocker: MockerFixture,
+                                                           monkeypatch: Any) -> None:
+    monkeypatch.chdir(tmp_path)
+    import importlib.resources
+
+    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+        settings = cast(
+            'Any',
+            _make_settings(
+                project_type='generic',
+                want_copilot=False,
+                want_claude_agents=False,
+                copilot={'intro': 'A test project.'},
+                codeowners={},
+                directory_name='testdir',
+                full_name='Test Author',
+                email='test@example.com',
+                repository_uri='https://github.com/test/testproject',
+                default_branch='master',
+                version='0.0.1',
+                year='2024',
+                license='MIT',
+                license_name='MIT',
+                project_name='testproject',
+                pypi_project_name='testproject',
+                description='A test project.',
+                homepage='https://example.com',
+                documentation_uri='https://example.com/docs',
+                keywords=[],
+                github={
+                    'username': 'test',
+                    'immutable_releases': True
+                },
+                social={
+                    'custom_badges': [],
+                    'mastodon': None
+                },
+                using_github=False,
+                using_readthedocs=False,
+                security_addendum='',
+                security_policy_supported_versions={},
+                want_docs=False,
+                want_codeql=False,
+                want_tests=False,
+                want_main=False,
+                want_man=False,
+                want_yapf=False,
+                _readme_existed=False,
+                private=False,
+                vscode={'launch': None},
+                python_deps={'main': {}},
+                pyproject={'project': {
+                    'dependencies': []
+                }},
+                package_json={
+                    'dependencies': {},
+                    'devDependencies': {}
+                },
+            ),
+        )
+        mock_session = MagicMock()
+        await write_templated_files(module_path, settings, session=mock_session)
+
+
+async def test_write_templated_files_claude_agents_skip_python_only_for_non_python(
+        tmp_path: Path, mocker: MockerFixture) -> None:
+    agents_dir = tmp_path / '.claude/agents'
+    agents_dir.mkdir(parents=True)
+    (agents_dir / 'python-expert.md.j2').write_text('python agent')
+    (agents_dir / 'qa-fixer.md.j2').write_text('qa agent')
+    (tmp_path / 'CLAUDE.md.j2').write_text('claude')
+    (tmp_path / 'AGENTS.md.j2').write_text('agents')
+    _, _, written_files = _mock_template_env(mocker, tmp_path)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
+    mocker.patch('pathlib.Path.unlink')
+    settings = cast(
+        'Any',
+        _make_settings(project_type='c++', want_claude_agents=True, want_copilot=False),
+    )
+    await write_templated_files(tmp_path, settings)
+    assert not any('python-expert' in f for f in written_files)
+    assert '.claude/agents/qa-fixer.md' in written_files
+
+
+async def test_write_templated_files_python_want_tests_no_main(tmp_path: Path,
+                                                               mocker: MockerFixture) -> None:
+    _, _, written_files = _mock_template_env(mocker, tmp_path)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
+    settings = cast(
+        'Any',
+        _make_settings(
+            want_tests=True,
+            want_main=False,
+            want_copilot=False,
+            want_claude_agents=False,
+        ),
+    )
+    await write_templated_files(tmp_path, settings)
+    assert 'tests/conftest.py' in written_files
+    assert 'tests/test_main.py' not in written_files
+
+
 async def test_write_templated_files_copilot_not_wanted_content_differs(
         tmp_path: Path, mocker: MockerFixture, monkeypatch: Any) -> None:
     monkeypatch.chdir(tmp_path)
@@ -683,9 +862,11 @@ async def test_write_templated_files_copilot_not_wanted_content_differs(
         'wiswa.utils.templating._template_env',
         return_value=(MagicMock(), tmp_path, mock_resolve, mock_write_file),
     )
-    mocker.patch('wiswa.utils.templating._should_overwrite_contributing',
-                 new_callable=AsyncMock,
-                 return_value=False)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
     settings = cast('Any', _make_settings(want_copilot=False, want_claude_agents=False))
     await write_templated_files(tmp_path, settings)
