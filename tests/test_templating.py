@@ -847,6 +847,40 @@ async def test_write_templated_files_python_want_tests_no_main(tmp_path: Path,
     assert 'tests/test_main.py' not in written_files
 
 
+async def test_write_templated_files_non_mit_skips_license(tmp_path: Path,
+                                                           mocker: MockerFixture) -> None:
+    _, _, written_files = _mock_template_env(mocker, tmp_path)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
+    mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
+    settings = cast(
+        'Any',
+        _make_settings(license='GPL-3.0', want_copilot=False, want_claude_agents=False),
+    )
+    await write_templated_files(tmp_path, settings)
+    assert not any('LICENSE' in f for f in written_files)
+
+
+async def test_write_templated_files_mit_writes_license(tmp_path: Path,
+                                                        mocker: MockerFixture) -> None:
+    _, _, written_files = _mock_template_env(mocker, tmp_path)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
+    mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
+    settings = cast(
+        'Any',
+        _make_settings(license='MIT', want_copilot=False, want_claude_agents=False),
+    )
+    await write_templated_files(tmp_path, settings)
+    assert 'LICENSE.txt' in written_files
+
+
 async def test_write_templated_files_copilot_not_wanted_content_differs(
         tmp_path: Path, mocker: MockerFixture, monkeypatch: Any) -> None:
     monkeypatch.chdir(tmp_path)

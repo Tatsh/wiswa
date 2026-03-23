@@ -222,9 +222,9 @@ async def write_templated_files(module_path: Path,
     if settings.get('want_claude_agents', False):
         await _write_templated_files_claude(settings, templates_dir, resolve_template, write_file)
     contributing_overwrite = await _should_overwrite_contributing(settings)
-    common_templates = (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', contributing_overwrite),
-                        ('LICENSE.txt.j2', not settings['private']), ('SECURITY.md.j2', True),
-                        ('CHANGELOG.md.j2', False), ('README.md.j2', False))
+    common_templates = (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', contributing_overwrite), *(
+        (('LICENSE.txt.j2', not settings['private']),) if settings.get('license') == 'MIT' else
+        ()), ('SECURITY.md.j2', True), ('CHANGELOG.md.j2', False), ('README.md.j2', False))
     for template_name, overwrite in common_templates:
         template_path = templates_dir / template_name
         output_path = Path(template_name).with_suffix('')
