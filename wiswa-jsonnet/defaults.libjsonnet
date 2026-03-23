@@ -940,11 +940,11 @@ local utils = import 'utils.libjsonnet';
                        else {}),
                'target-version': 'py3%s' % settings.supported_python_versions[0][2:],
              },
-             [if settings.stubs_only && is_uv then 'hatch']: {
+             [if is_uv && (settings.stubs_only || std.strReplace(settings.project_name, '-', '_') != settings.primary_module) then 'hatch']: {
                build: {
                  targets: {
                    wheel: {
-                     packages: [settings.project_name],
+                     packages: if settings.stubs_only then [settings.project_name] else settings.modules,
                    },
                  },
                },

@@ -48,6 +48,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Stubs-only projects using hatchling now include `tool.hatch.build.targets.wheel.packages` in
   `pyproject.toml`, fixing wheel build failures where hatchling could not find the stubs package
   directory.
+- Hatchling `[tool.hatch.build.targets.wheel] packages` is now generated for all projects where the
+  `primary_module` differs from the normalised `project_name`, not only stubs-only projects. This
+  fixes wheel builds for projects like `chocolatey-choco` whose module name (`choco`) does not match
+  the PyPI name. Non-stubs projects use `settings.modules` for the packages list.
 
 ### Changed
 
