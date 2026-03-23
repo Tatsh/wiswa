@@ -37,7 +37,7 @@ function(settings)
                 python:
                   - '**/*.py'
                   - '**/*.pyi'
-                  - 'pyproject.toml'
+                  - '**/*.toml'
               |||,
             },
           },
