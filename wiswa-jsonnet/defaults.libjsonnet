@@ -30,6 +30,16 @@ local utils = import 'utils.libjsonnet';
 
   /** @brief Package manager. Valid values: poetry, uv. */
   package_manager: 'uv',
+  /**
+   * @brief Custom package index sources.
+   *
+   * Each entry is an object with ``name``, ``url``, and optional ``priority`` fields.
+   * Translated to ``[[tool.poetry.source]]`` for Poetry or ``[[tool.uv.index]]`` for uv.
+   * Entries without a ``url`` (e.g. ``{name: 'PyPI', priority: 'primary'}``) are kept for
+   * Poetry but omitted for uv.
+   * @var object[]
+   */
+  package_sources: [],
   /** @brief Project type. Valid values: python, typescript, xcode, c, c++, generic. */
   project_type: 'python',
   /**
@@ -950,7 +960,21 @@ local utils = import 'utils.libjsonnet';
                },
              },
            } + (if settings.want_sqlfluff then { sqlfluff: import 'defaults/sqlfluff.libsonnet' } else {})
-           + (if is_uv then { poetry:: super.poetry } else { uv:: super.uv }),
+           + (if is_uv then { poetry:: super.poetry }
+              + (if std.length(settings.package_sources) > 0 then {
+                   uv+: {
+                     index: [
+                       { name: s.name, url: s.url }
+                       + (if std.objectHas(s, 'priority') && s.priority == 'default' then { default: true } else {})
+                       for s in settings.package_sources
+                       if std.objectHas(s, 'url')
+                     ],
+                   },
+                 } else {})
+              else { uv:: super.uv }
+              + (if !is_uv && std.length(settings.package_sources) > 0 then {
+                   poetry+: { source: settings.package_sources },
+                 } else {})),
     'build-system': if is_uv then {
       requires: ['hatchling'],
       'build-backend': 'hatchling.build',

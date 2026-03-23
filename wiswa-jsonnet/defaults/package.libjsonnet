@@ -56,7 +56,7 @@ local utils = import 'utils.libjsonnet';
     'check-formatting': 'clang-format -n %s && prettier -c . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % settings.clang_format_args,
     'check-spelling': 'cspell --no-progress .',
     'dict:update': dictionary_update,
-    format: 'clang-format -i %s && prettier -w .' % settings.clang_format_args,
+    format: 'clang-format -i %s && prettier -w . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix' % settings.clang_format_args,
     qa: 'yarn check-spelling && yarn check-formatting',
   },
   typescript_dev_deps(settings):: {
