@@ -198,7 +198,7 @@ def _docs_badges(settings: Settings) -> Iterator[str]:
         gh = settings['github']['username']
         name = settings['project_name']
         yield (f'[![GitHub Pages](https://github.com/{gh}/{name}/actions/workflows/'
-               f'pages.yml/badge.svg)](https://{gh}.github.io/{name}/)')
+               f'pages.yml/badge.svg)](https://{gh.lower()}.github.io/{name}/)')
 
 
 def _get_main_dependency_names(settings: Settings) -> set[str]:
