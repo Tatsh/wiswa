@@ -256,6 +256,7 @@ werror
 wextra
 winget
 wiswa
+wiswa's
 wmaurer
 wordwrap
 wraparguments
