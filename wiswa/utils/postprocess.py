@@ -15,6 +15,8 @@ import anyio
 import tomlkit
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from wiswa.typing import Settings
 
 __all__ = ('post_process_steps',)
@@ -22,24 +24,27 @@ __all__ = ('post_process_steps',)
 log = logging.getLogger(__name__)
 
 
-async def _subprocess_log_run(*args: Any, **kwargs: Any) -> asyncio.subprocess.Process:
+async def _subprocess_log_run(*args: Any,
+                              on_command: Callable[[str], None] | None = None,
+                              **kwargs: Any) -> asyncio.subprocess.Process:
     assert isinstance(args[0], Iterable)
     cmd = list(args[0])
-    log.debug('Running command: %s', ' '.join(quote(x) for x in cmd))
+    cmd_str = ' '.join(quote(x) for x in cmd)
+    log.debug('Running command: %s', cmd_str)
+    if on_command is not None:
+        on_command(cmd_str)
     check = kwargs.pop('check', True)
-    proc = await asyncio.create_subprocess_exec(*cmd,
-                                                stdout=asyncio.subprocess.PIPE,
-                                                stderr=asyncio.subprocess.PIPE,
-                                                **kwargs)
-    stdout, stderr = await proc.communicate()
+    proc = await asyncio.create_subprocess_exec(*cmd, **kwargs)
+    await proc.communicate()
     if check and proc.returncode != 0:
-        msg = (f'Command {cmd!r} returned non-zero exit status {proc.returncode}.\n'
-               f'stdout: {stdout.decode()}\nstderr: {stderr.decode()}')
+        msg = f'Command {cmd!r} returned non-zero exit status {proc.returncode}.'
         raise RuntimeError(msg)
     return proc
 
 
-async def _post_process_steps_python(settings: Settings) -> None:
+async def _post_process_steps_python(settings: Settings,
+                                     *,
+                                     on_command: Callable[[str], None] | None = None) -> None:
     is_uv = settings['package_manager'] == 'uv'
     if is_uv:
         await anyio.Path('poetry.lock').unlink(missing_ok=True)
@@ -91,32 +96,41 @@ async def _post_process_steps_python(settings: Settings) -> None:
         pyproject_content['tool']['ruff']['lint']['ignore'] = sorted(
             pyproject_content['tool']['ruff']['lint']['ignore'] + ['Q000', 'Q003'])
         package_json_content['scripts']['check-formatting'] = (
-            f'prettier -c . && {run_cmd} ruff format --check . && markdownlint-cli2')
+            f'prettier -c . && {run_cmd} ruff format --check .'
+            ' && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2')
         package_json_content['scripts']['format'] = (
-            f'prettier -w . && {run_cmd} ruff format . && markdownlint-cli2')
+            f'prettier -w . && {run_cmd} ruff format .'
+            ' && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix')
     await anyio.Path('package.json').write_text(json.dumps(package_json_content,
                                                            indent=2,
                                                            sort_keys=True),
                                                 encoding='utf-8')
     await anyio.Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content),
                                                   encoding='utf-8')
+    oc = on_command
     if is_uv:
-        await _subprocess_log_run(('uv', 'lock'))
+        await _subprocess_log_run(('uv', 'lock'), on_command=oc)
         groups = [
             g for g in ('docs' if settings['want_docs'] else '',
                         'tests' if settings['want_tests'] else '', 'dev') if g
         ]
         group_args = tuple(f'--group={g}' for g in groups)
-        await _subprocess_log_run(('uv', 'sync', *group_args))
-        await _subprocess_log_run(('uv', 'run', 'ruff', 'check', '--fix'), check=False)
+        await _subprocess_log_run(('uv', 'sync', *group_args), on_command=oc)
+        await _subprocess_log_run(('uv', 'run', 'ruff', 'check', '--fix'),
+                                  on_command=oc,
+                                  check=False)
     else:
-        await _subprocess_log_run(('poetry', 'lock'))
+        await _subprocess_log_run(('poetry', 'lock'), on_command=oc)
         with_arg = ','.join(x for x in ('docs' if settings['want_docs'] else '',
                                         'tests' if settings['want_tests'] else '', 'dev') if x)
         await _subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg else
-                                                         ())))
-        await _subprocess_log_run(('poetry', 'install', '--all-groups', '--all-extras'))
-        await _subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'), check=False)
+                                                         ())),
+                                  on_command=oc)
+        await _subprocess_log_run(('poetry', 'install', '--all-groups', '--all-extras'),
+                                  on_command=oc)
+        await _subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'),
+                                  on_command=oc,
+                                  check=False)
 
 
 @cache
@@ -360,7 +374,9 @@ async def _check_readme_badges(settings: Settings) -> None:
     log.debug('Updated README.md badges.')
 
 
-async def post_process_steps(settings: Settings) -> None:
+async def post_process_steps(settings: Settings,
+                             *,
+                             on_command: Callable[[str], None] | None = None) -> None:
     """
     Run post-processing steps after project generation.
 
@@ -368,12 +384,15 @@ async def post_process_steps(settings: Settings) -> None:
     ----------
     settings : Settings
         Project settings.
+    on_command : Callable[[str], None] | None
+        Called with the command string before each subprocess runs.
     """
+    oc = on_command
     if settings['private']:
         await anyio.Path('.github/workflows/publish.yml').unlink(missing_ok=True)
     match settings['project_type']:
         case 'python':
-            await _post_process_steps_python(settings)
+            await _post_process_steps_python(settings, on_command=oc)
         case _:
             log.warning('No post-processing steps for project type `%s`.', settings['project_type'])
     await _check_readme_badges(settings)
@@ -383,5 +402,5 @@ async def post_process_steps(settings: Settings) -> None:
                                              indent=2,
                                              sort_keys=True),
                                   encoding='utf-8')
-    await _subprocess_log_run(('yarn',))
-    await _subprocess_log_run(('yarn', 'format'), check=False)
+    await _subprocess_log_run(('yarn',), on_command=oc)
+    await _subprocess_log_run(('yarn', 'format'), on_command=oc, check=False)

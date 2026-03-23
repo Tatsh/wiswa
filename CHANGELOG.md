@@ -28,11 +28,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - FastMCP server for Wiswa settings discovery and override guidance. New `wiswa-mcp` entry point
   exposes four MCP tools (`get_defaults`, `lookup_setting`, `list_settings`, `search_settings`) that
   resolve Wiswa's Jsonnet defaults and help AI assistants set settings in `.wiswa.jsonnet`.
+- Animated spinner progress indicator in non-debug mode showing the current operation. Prints
+  `Done.` on success and red `Failed.` on error. Friendly error messages for `RuntimeError`
+  (e.g. Jsonnet evaluation failures, GitHub API rate limiting).
+- `on_command` callback parameter on `post_process_steps` and `_subprocess_log_run`, allowing
+  callers to be notified of each subprocess command line before it runs.
 
 ### Fixed
 
 - Circular import between `wiswa.extensions` and `wiswa.utils.templating`.
 - HTTP 403/429 errors now display a user-friendly rate-limit message instead of a traceback.
+- `markdownlint-cli2` invocations in the non-yapf code path of `post_process_steps` were missing
+  `--config package.json --configPointer /markdownlint-cli2` flags, causing the linter to ignore
+  project configuration.
+- Duplicate `--configPointer` flag in generated `package.json` scripts (in `package.libjsonnet`).
 - PyInstaller and AppImage build scripts failed with "unexpected end of file" when the project had
   multiple entry points (or empty `include_only`), because heredoc `EOF` terminators were indented
   inside the `while` loop body.
