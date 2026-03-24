@@ -67,6 +67,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - C/C++ `format` script now includes `markdownlint-cli2 --fix` invocation.
 - `poetryVerToPep508` now prefixes bare version numbers with `==` instead of leaving them unqualified.
 - GitHub Pages badge URL now lowercases the username for correct `.github.io` domain resolution.
+- MCP server's `_get_defaults()` did not pass an `aiohttp.ClientSession` to `resolve_defaults_only()`,
+  so native Jsonnet callbacks for version lookups (e.g. `latestNpmPackageVersion`) were never
+  registered, causing a "only functions can be called, got null" runtime error when any MCP tool
+  tried to resolve defaults.
 
 ### Changed
 

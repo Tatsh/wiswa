@@ -7,6 +7,7 @@ import json
 import re
 
 from fastmcp import FastMCP
+import aiohttp
 
 from .utils.jsonnet import resolve_defaults_only
 
@@ -22,7 +23,8 @@ async def _get_defaults() -> dict[str, Any]:
     global _resolved_defaults  # noqa: PLW0603
     if _resolved_defaults is None:
         with importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as lib_path:
-            _resolved_defaults = await resolve_defaults_only([str(lib_path)], lib_path)
+            async with aiohttp.ClientSession() as session:
+                _resolved_defaults = await resolve_defaults_only([str(lib_path)], lib_path, session)
     return _resolved_defaults
 
 
@@ -43,28 +45,29 @@ def format_key(key: str, *, merge: bool = False) -> str:
 def json_value_to_jsonnet(value: Any, indent: int = 0) -> str:
     prefix = '  ' * indent
     inner = '  ' * (indent + 1)
-    if value is None:
-        return 'null'
-    if isinstance(value, bool):
-        return 'true' if value else 'false'
-    if isinstance(value, int | float):
-        return str(value)
-    if isinstance(value, str):
-        return json.dumps(value)
-    if isinstance(value, list):
-        if not value:
-            return '[]'
-        items = [f'{inner}{json_value_to_jsonnet(v, indent + 1)}' for v in value]
-        return '[\n' + ',\n'.join(items) + ',\n' + prefix + ']'
-    if isinstance(value, dict):
-        if not value:
-            return '{}'
-        lines = []
-        for k, v in value.items():
-            formatted_key = format_key(k)
-            formatted_val = json_value_to_jsonnet(v, indent + 1)
-            lines.append(f'{inner}{formatted_key}: {formatted_val}')
-        return '{\n' + ',\n'.join(lines) + ',\n' + prefix + '}'
+    match value:
+        case None:
+            return 'null'
+        case bool():
+            return 'true' if value else 'false'
+        case int() | float():
+            return str(value)
+        case str():
+            return json.dumps(value)
+        case list():
+            if not value:
+                return '[]'
+            items = [f'{inner}{json_value_to_jsonnet(v, indent + 1)}' for v in value]
+            return '[\n' + ',\n'.join(items) + ',\n' + prefix + ']'
+        case dict():
+            if not value:
+                return '{}'
+            lines = []
+            for k, v in value.items():
+                formatted_key = format_key(k)
+                formatted_val = json_value_to_jsonnet(v, indent + 1)
+                lines.append(f'{inner}{formatted_key}: {formatted_val}')
+            return '{\n' + ',\n'.join(lines) + ',\n' + prefix + '}'
     return repr(value)
 
 
@@ -92,17 +95,19 @@ async def generate_override_snippet(key_path: str, value: Any) -> str:
 
 
 def type_name(value: Any) -> str:
-    if isinstance(value, bool):
-        return 'boolean'
-    if isinstance(value, int | float):
-        return 'number'
-    if isinstance(value, str):
-        return 'string'
-    if isinstance(value, list):
-        return 'array'
-    if isinstance(value, dict):
-        return 'object'
-    return type(value).__name__
+    match value:
+        case bool():
+            return 'boolean'
+        case int() | float():
+            return 'number'
+        case str():
+            return 'string'
+        case list():
+            return 'array'
+        case dict():
+            return 'object'
+        case _:
+            return type(value).__name__
 
 
 def collect_paths(data: Any, prefix: str = '') -> list[str]:
@@ -146,11 +151,13 @@ async def lookup_setting(key_path: str) -> str:
     value_type = type_name(value)
     snippet = await generate_override_snippet(key_path, '<YOUR_VALUE>')
     notes: list[str] = []
-    if value_type == 'object':
-        notes.extend(('Use +: (merge operator) at each nesting level to deep-merge with defaults.',
-                      'Use : (without +) to replace the entire object.'))
-    elif value_type == 'array':
-        notes.append('Use +: to append to the default array, or : to replace it entirely.')
+    match value_type:
+        case 'object':
+            notes.extend(
+                ('Use +: (merge operator) at each nesting level to deep-merge with defaults.',
+                 'Use : (without +) to replace the entire object.'))
+        case 'array':
+            notes.append('Use +: to append to the default array, or : to replace it entirely.')
     return json.dumps(
         {
             'key_path': key_path,

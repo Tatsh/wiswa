@@ -59,16 +59,25 @@ class TestGetDefaultsReal:
         import wiswa.mcp
         mocker.stopall()
         wiswa.mcp._resolved_defaults = None  # noqa: SLF001
+        mock_session = AsyncMock()
+        mock_session_cls = mocker.patch('wiswa.mcp.aiohttp.ClientSession',
+                                        return_value=mock_session)
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=False)
         mock_resolve = mocker.patch('wiswa.mcp.resolve_defaults_only',
                                     new_callable=AsyncMock,
                                     return_value={'a': 1})
         try:
             result = await wiswa.mcp._get_defaults()  # noqa: SLF001
             assert result == {'a': 1}
+            mock_session_cls.assert_called_once()
             mock_resolve.assert_called_once()
+            call_kwargs = mock_resolve.call_args
+            assert call_kwargs[1].get('session', call_kwargs[0][2]) is mock_session
             result2 = await wiswa.mcp._get_defaults()  # noqa: SLF001
             assert result2 == {'a': 1}
             assert mock_resolve.call_count == 1
+            assert mock_session_cls.call_count == 1
         finally:
             wiswa.mcp._resolved_defaults = None  # noqa: SLF001
 
