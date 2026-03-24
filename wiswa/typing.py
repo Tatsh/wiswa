@@ -244,6 +244,8 @@ class Settings(TypedDict):
     """If the project is using Django."""
     using_github: bool
     """If the project is hosted on GitHub primarily."""
+    using_gitlab: bool
+    """If the project is hosted on GitLab primarily."""
     vscode: VSCode
     """Visual Studio Code settings."""
     want_claude: bool

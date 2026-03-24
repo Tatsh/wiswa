@@ -151,6 +151,10 @@ _PYTHON_ONLY_AGENTS = frozenset({
     'test-writer',
 })
 
+_CI_PLATFORM_AGENTS = frozenset({
+    'workflow-shellcheck',
+})
+
 
 async def _write_templated_files_claude(settings: Settings, templates_dir: Path,
                                         resolve_template: Callable[[Path], jinja2.Template],
@@ -163,6 +167,10 @@ async def _write_templated_files_claude(settings: Settings, templates_dir: Path,
             agent_name = file_path.stem.removesuffix('.md')
             output = Path('.claude/agents') / file_path.stem
             if (agent_name in _PYTHON_ONLY_AGENTS and settings['project_type'] != 'python'):
+                output.unlink(missing_ok=True)
+                continue
+            if (agent_name in _CI_PLATFORM_AGENTS and not settings['using_github']
+                    and not settings['using_gitlab']):
                 output.unlink(missing_ok=True)
                 continue
             await write_file(resolve_template(file_path), output, overwrite=True)

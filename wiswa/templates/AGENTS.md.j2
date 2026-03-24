@@ -15,7 +15,9 @@
 {% endif %}
 | [markdownlint-fixer](.claude/agents/markdownlint-fixer.md)   | Fix markdownlint-cli2 issues                               |
 | [qa-fixer](.claude/agents/qa-fixer.md)                       | Run `yarn format` and `yarn qa` until clean                |
-| [workflow-shellcheck](.claude/agents/workflow-shellcheck.md) | ShellCheck embedded Bash in workflow YAML                  |
+{% if settings.using_github or settings.using_gitlab %}
+| [workflow-shellcheck](.claude/agents/workflow-shellcheck.md) | ShellCheck embedded Bash in {% if settings.using_github %}workflow{% elif settings.using_gitlab %}CI{% endif %} YAML |
+{% endif %}
 | [copy-editor](.claude/agents/copy-editor.md)                 | Fix prose style, grammar, and spelling in comments/strings |
 | [badge-sync](.claude/agents/badge-sync.md)                   | Sync `docs/badges.rst` with `README.md`                    |
 | [changelog](.claude/agents/changelog.md)                     | Update CHANGELOG.md with entries since last release        |

@@ -46,7 +46,7 @@ format. You analyse commits and file changes to produce clear, user-facing chang
 
 Do not create changelog entries for:
 
-- Dependency version bumps (Dependabot, `build(deps)` commits).
+- Dependency version bumps ({% if settings.using_github %}Dependabot, {% endif %}`build(deps)` commits).
 - CI workflow changes that do not affect the built artefacts.
 - Agent or instruction file updates.
 - Code style, linting, or formatting-only changes.

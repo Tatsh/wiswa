@@ -26,6 +26,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'private': False,
         'stubs_only': False,
         'using_github': True,
+        'using_gitlab': False,
         'using_django': False,
         'project_name': 'myproject',
         'pypi_project_name': 'myproject',

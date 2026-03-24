@@ -9,7 +9,8 @@ Run these in parallel:
 1. `git diff` - unstaged changes.
 2. `git diff --cached` - staged changes.
 3. `git status` - untracked files and overall state.
-4. `git log --no-merges --format='%s%n%b---' -20 | grep -v '^bump:' | grep -iv dependabot` -
+4. `git log --no-merges --format='%s%n%b---' -20 | grep -v '^bump:'
+{%- if settings.using_github %} | grep -iv dependabot{% endif %}` -
    recent commit message style examples.
 
 ## Running agents
@@ -74,7 +75,7 @@ If any changed source files are being committed, run the following agents **in o
   dependency/version changes in `package.json`.
 {%- else %} or dependency/version changes.
 {%- endif %} **Skip for**: workflows, CI config, `.claude/`,
-  `.cursor/`, `.github/instructions/`, documentation-only changes,
+  `.cursor/`,{% if settings.want_copilot %} `.github/instructions/`,{% endif %} documentation-only changes,
   and other non-user-facing files.
 
 ## Analysing changes
@@ -123,7 +124,7 @@ no hand-written code changed, this is a **cruft update**. Indicators:
 {%- elif settings.project_type == 'typescript' %} `tsconfig.json`,
 {%- endif %}
   `.pre-commit-config.yaml`, `.claude/agents/`,
-  `.cursor/rules/`, `.github/instructions/`,
+  `.cursor/rules/`,{% if settings.want_copilot %} `.github/instructions/`,{% endif %}
   `CITATION.cff`, `.vscode/dictionary.txt`,
 {%- if settings.project_type == 'python' %} `uv.lock`,{% endif %}
   `.wiswa.jsonnet`, etc.).
@@ -186,8 +187,12 @@ component.
 - Source file `src/index.ts` → `index:`.
 - Multiple files under `src/` → `src:`.
 {% endif %}
+{% if settings.using_github %}
 - Workflow file `.github/workflows/qa.yml` → `workflows/qa:`.
 - Multiple workflows → `workflows/*:`.
+{% elif settings.using_gitlab %}
+- CI config `.gitlab-ci.yml` → `gitlab-ci:`.
+{% endif %}
 - Agent files `.claude/agents/*.md` → `.claude:` or specific agent name.
 - Instruction files across all 3 locations → `project:` (since they span Copilot/Cursor/Claude).
 {% if settings.project_type == 'python' %}
@@ -206,7 +211,7 @@ component.
 
 ### Trailers
 
-- `Closes: #N` - when a commit closes a GitHub issue. If it is another project, use the full URI.
+- `Closes: #N` - when a commit closes an issue. If it is another project, use the full URI.
 - `Fixes: #N` - when a commit fixes a bug reported in an issue. If it is another project, use the
   full URI.
 - `Related: #N` - when a commit is related to an issue but does not fully close or fix it. If it is

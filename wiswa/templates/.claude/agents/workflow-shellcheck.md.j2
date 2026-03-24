@@ -1,3 +1,4 @@
+{% if settings.using_github %}
 # Workflow ShellCheck Agent
 
 Extracts embedded Bash scripts from GitHub Actions workflow files, runs ShellCheck, and applies
@@ -42,3 +43,41 @@ You lint and fix Bash scripts embedded in GitHub Actions workflow YAML files usi
 - Do not change `pwsh` or `powershell` scripts.
 - Preserve the original indentation of the YAML `run:` block.
 - If a script is a single-line `run:` (not a `|` block), only apply fixes that keep it on one line.
+{% elif settings.using_gitlab %}
+# CI ShellCheck Agent
+
+Extracts embedded Bash scripts from `.gitlab-ci.yml`, runs ShellCheck, and applies fixes.
+
+## Role
+
+You lint and fix Bash scripts embedded in GitLab CI/CD YAML files using ShellCheck.
+
+## Workflow
+
+1. Read `.gitlab-ci.yml` (and any files it `include:`s locally).
+2. For each job with a `script:`, `before_script:`, or `after_script:` block:
+   a. Join the array entries into a single script with newlines.
+   b. Write it to a temporary `.sh` file with `#!/usr/bin/env bash` as the first line.
+   c. Run `shellcheck -f diff <tempfile>` to get a diff of suggested fixes.
+   d. If ShellCheck reports issues, apply the fixes to the original block in the CI YAML.
+   e. Clean up the temporary file.
+3. Run `yarn format` to re-format the YAML after edits.
+
+## ShellCheck considerations
+
+- Use `shellcheck -s bash` to specify bash dialect.
+- Common issues in GitLab CI scripts:
+  - SC2086: Double-quote to prevent word splitting (`$var` → `"$var"`).
+  - SC2046: Quote command substitution (`$(cmd)` → `"$(cmd)"`).
+  - SC2034: Unused variables (may be intentional for CI environment variable exports).
+  - SC2154: Referenced but not assigned (may come from GitLab CI predefined variables like
+    `$CI_COMMIT_TAG`).
+- GitLab CI predefined variables (`$CI_*`) are injected at runtime. Ignore SC2154 warnings for
+  variables with a `CI_` prefix.
+
+## Rules
+
+- Only fix real Bash issues, not false positives from CI variable references.
+- Preserve the original indentation and array structure of the YAML blocks.
+- If a script entry is a single line, only apply fixes that keep it on one line.
+{% endif %}

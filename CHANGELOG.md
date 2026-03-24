@@ -35,6 +35,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   callers to be notified of each subprocess command line before it runs.
 - `package_sources` setting for custom package index sources (PyPI alternatives) in generated
   `pyproject.toml`.
+- `using_gitlab` setting in the `Settings` TypedDict, enabling GitLab-aware template rendering.
+- GitLab equivalents in agent and skill templates: GitHub-specific content (Dependabot references,
+  `.github/instructions/` paths, workflow prefix examples, issue trailer text) is now conditional
+  with GitLab alternatives emitted where appropriate.
+- GitLab CI support in the `workflow-shellcheck` agent template (`.gitlab-ci.yml` with `script:`,
+  `before_script:`, and `after_script:` blocks) alongside existing GitHub Actions workflow support.
+- `_CI_PLATFORM_AGENTS` set to skip CI-platform-specific agents when neither GitHub nor GitLab is
+  used.
+- GitLab-specific managed files (`.gitlab-ci.yml`) documented in the `wiswa-sync` agent alongside
+  the existing GitHub section.
 
 ### Fixed
 

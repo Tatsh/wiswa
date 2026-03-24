@@ -29,6 +29,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'want_tests': False,
         'want_docs': False,
         'using_github': False,
+        'using_gitlab': False,
         'supported_platforms': 'all',
         'package_manager': 'uv',
         'private': False,
@@ -822,6 +823,35 @@ async def test_write_templated_files_claude_agents_skip_python_only_for_non_pyth
     )
     await write_templated_files(tmp_path, settings)
     assert not any('python-expert' in f for f in written_files)
+    assert '.claude/agents/qa-fixer.md' in written_files
+
+
+async def test_write_templated_files_claude_agents_skip_ci_agent_no_platform(
+        tmp_path: Path, mocker: MockerFixture) -> None:
+    agents_dir = tmp_path / '.claude/agents'
+    agents_dir.mkdir(parents=True)
+    (agents_dir / 'workflow-shellcheck.md.j2').write_text('shellcheck agent')
+    (agents_dir / 'qa-fixer.md.j2').write_text('qa agent')
+    (tmp_path / 'CLAUDE.md.j2').write_text('claude')
+    (tmp_path / 'AGENTS.md.j2').write_text('agents')
+    _, _, written_files = _mock_template_env(mocker, tmp_path)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
+    mocker.patch('pathlib.Path.unlink')
+    settings = cast(
+        'Any',
+        _make_settings(
+            want_claude_agents=True,
+            want_copilot=False,
+            using_github=False,
+            using_gitlab=False,
+        ),
+    )
+    await write_templated_files(tmp_path, settings)
+    assert not any('workflow-shellcheck' in f for f in written_files)
     assert '.claude/agents/qa-fixer.md' in written_files
 
 
