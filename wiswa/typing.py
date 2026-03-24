@@ -258,6 +258,8 @@ class Settings(TypedDict):
     """If the project should include ``.github/instructions`` dir and files."""
     want_cursor: bool
     """If the project should include ``.cursor`` dir and files."""
+    want_gpg: bool
+    """If Git commits and tags should be GPG-signed."""
     claude_settings_local: dict[str, Any]
     """JSON object written to ``.claude/settings.local.json`` when ``want_claude`` is true."""
     custom_project_badges: Sequence[CustomProjectBadge]

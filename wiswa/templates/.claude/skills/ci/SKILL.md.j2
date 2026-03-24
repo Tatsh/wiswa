@@ -227,7 +227,7 @@ component.
 1. Stage files for each logical commit using `git add` with specific file paths.
 2. If `CHANGELOG.md` was updated by the changelog agent, stage it with the relevant commit.
 3. Create a unique temp file with `mktemp /tmp/commit-msg-XXXXXXXX`, write the commit message there
-   using the **Write** tool (not Bash `cat`), then commit with `git commit -S -s -F <tempfile>`.
+   using the **Write** tool (not Bash `cat`), then commit with `git commit {{ '-S ' if settings.want_gpg }}-s -F <tempfile>`.
    Multiple Claude instances may run concurrently, so never use a fixed path.
 4. If a pre-commit hook fails, fix the issue, re-stage (use appropriate agent if there is one), and
    try to commit again.
@@ -235,10 +235,10 @@ component.
 
 ## Rules
 
-- Never use `--no-verify` or `--no-gpg-sign`.
+- Never use `--no-verify`{{ ' or `--no-gpg-sign`' if settings.want_gpg }}.
 - Amend the previous commit when the new change is logically part of it (e.g. same file, same
   topic, fixing something just committed). Create a new commit when the change is distinct.
 - Never push unless explicitly asked.
-- Always use `-S` for GPG signing and `-s` for sign-off.
+- Always use {{ '`-S` for GPG signing and ' if settings.want_gpg }}`-s` for sign-off.
 - If there are no changes, do nothing.
 - Stage specific files, never use `git add -A` or `git add .`.

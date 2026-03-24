@@ -371,6 +371,8 @@ local utils = import 'utils.libjsonnet';
   want_copilot: true,
   /** @brief If the project should include `.cursor` dir and files. */
   want_cursor: true,
+  /** @brief If Git commits and tags should be GPG-signed. */
+  want_gpg: true,
   /** @brief If the project should will generate documentation. */
   want_docs: true,
   /** @brief If the project should have a main module (for CLI). */
