@@ -12,7 +12,12 @@ local utils = import 'utils.libjsonnet';
     intro: 'Wiswa is a tool to generate and manage Python projects.',
   },
   shared_ignore+: ['/docs/_build*/'],
-  prettierignore+: ['Doxyfile'],
+  prettierignore+: ['*.adoc', 'Doxyfile'],
+  package_json+: {
+    cspell+: {
+      ignorePaths+: ['*.html'],
+    },
+  },
   pyproject+: {
     project+: {
       scripts+: {
