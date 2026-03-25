@@ -174,3 +174,20 @@ async def test_resolve_defaults_only_passes_empty_overrides(tmp_path: Path,
     call_kwargs = mock_eval.call_args[1]
     assert call_kwargs['tla_codes']['settings'] == '{}'
     assert call_kwargs['tla_codes']['user_defaults'] == '{}'
+
+
+async def test_native_callback_params_use_short_names(mocker: MockerFixture) -> None:
+    _patch_to_thread(mocker)
+    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet.evaluate_file.return_value = '{}'
+    mock_session = MagicMock()
+    await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}', session=mock_session)
+    native_callbacks = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']
+    assert native_callbacks['githubLatestActionTag'][0] == ('o', 'r')
+    assert native_callbacks['githubLatestReleaseTag'][0] == ('o', 'r')
+    assert native_callbacks['githubLatestTag'][0] == ('o', 'r')
+    assert native_callbacks['latestNpmPackageVersion'][0] == ('p',)
+    assert native_callbacks['latestPypiPackageVersion'][0] == ('p',)
+    assert native_callbacks['isodate'][0] == ()
+    assert native_callbacks['latestYarnVersion'][0] == ()
+    assert native_callbacks['year'][0] == ()

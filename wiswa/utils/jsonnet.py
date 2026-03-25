@@ -52,19 +52,17 @@ def _make_native_callbacks(
     gh_tag = partial(get_github_release_latest_tag, session, skip_releases=True)
 
     return {
-        'githubLatestActionTag': (
-            ('owner', 'repo'), lambda owner, repo: _sync_wrap(gh_action, owner, repo)),
+        # The argument names here cannot conflict with a wrapping function.
+        # f(arg):: std.native('f', arg) will fail if it's defined here as 'f': (('arg',), ...).
+        'githubLatestActionTag': (('o', 'r'), lambda o, r: _sync_wrap(gh_action, o, r)),
         'githubLatestReleaseTag': (
-            ('owner', 'repo'),
-            lambda owner, repo: _sync_wrap(get_github_release_latest_tag, session, owner, repo)),
-        'githubLatestTag': (('owner', 'repo'), lambda owner, repo: _sync_wrap(gh_tag, owner, repo)),
+            ('o', 'r'), lambda o, r: _sync_wrap(get_github_release_latest_tag, session, o, r)),
+        'githubLatestTag': (('o', 'r'), lambda o, r: _sync_wrap(gh_tag, o, r)),
         'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
         'latestNpmPackageVersion': (
-            ('package',),
-            lambda package: _sync_wrap(get_npm_latest_package_version, session, package)),
+            ('p',), lambda p: _sync_wrap(get_npm_latest_package_version, session, p)),
         'latestPypiPackageVersion': (
-            ('package',),
-            lambda package: _sync_wrap(get_pypi_latest_package_version, session, package)),
+            ('p',), lambda p: _sync_wrap(get_pypi_latest_package_version, session, p)),
         'latestYarnVersion': ((), lambda: _sync_wrap(get_latest_yarn_version, session)),
         'year': ((), lambda: datetime.now(tz=timezone.utc).year),
     }
@@ -196,7 +194,8 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
 async def resolve_defaults_only(jpathdir: Sequence[str],
                                 lib_path: Path,
                                 session: ClientSession | None = None) -> dict[str, Any]:
-    """Resolve the default settings without any project or user overrides.
+    """
+    Resolve the default settings without any project or user overrides.
 
     Parameters
     ----------
