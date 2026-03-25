@@ -31,12 +31,6 @@ A highly opinionated way to generate projects with Jsonnet.
 
 ## Installation
 
-### Poetry
-
-```shell
-poetry add wiswa
-```
-
 ### Pip
 
 ```shell
