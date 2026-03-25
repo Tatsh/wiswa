@@ -57,3 +57,41 @@ Options:
   --skip-templates     Skip Jinja2 template evaluation.
   -h, --help           Show this message and exit.
 ```
+
+## MCP Server
+
+Wiswa includes an MCP server (`wiswa-mcp`) that exposes settings discovery tools for AI assistants.
+
+### Claude Code
+
+```shell
+claude mcp add wiswa-mcp -- wiswa-mcp
+```
+
+### Cursor
+
+Add to `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "wiswa-mcp": {
+      "command": "wiswa-mcp"
+    }
+  }
+}
+```
+
+### GitHub Copilot CLI
+
+Add to `.github/copilot/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "wiswa-mcp": {
+      "command": "wiswa-mcp"
+    }
+  }
+}
+```
