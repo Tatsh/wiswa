@@ -68,7 +68,7 @@ license = "MIT"
 name = "wiswa"
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
-version = "0.0.0"
+version = "0.0.1"
 
 [[project.authors]]
 email = "audvare@gmail.com"

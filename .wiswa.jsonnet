@@ -5,7 +5,7 @@ local utils = import 'utils.libjsonnet';
   want_djlint: true,
   want_main: true,
   project_name: 'wiswa',
-  version: '0.0.0',
+  version: '0.0.1',
   description: 'A highly opinionated way to generate and maintain projects with Jsonnet.',
   keywords: ['command line', 'python'],
   copilot: {

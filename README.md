@@ -4,7 +4,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/wiswa)](https://pypi.org/project/wiswa/)
 [![GitHub tag (with filter)](https://img.shields.io/github/v/tag/Tatsh/wiswa)](https://github.com/Tatsh/wiswa/tags)
 [![License](https://img.shields.io/github/license/Tatsh/wiswa)](https://github.com/Tatsh/wiswa/blob/master/LICENSE.txt)
-[![GitHub commits since latest release (by SemVer including pre-releases)](https://img.shields.io/github/commits-since/Tatsh/wiswa/v0.0.0/master)](https://github.com/Tatsh/wiswa/compare/v0.0.0...master)
+[![GitHub commits since latest release (by SemVer including pre-releases)](https://img.shields.io/github/commits-since/Tatsh/wiswa/v0.0.1/master)](https://github.com/Tatsh/wiswa/compare/v0.0.1...master)
 [![CodeQL](https://github.com/Tatsh/wiswa/actions/workflows/codeql.yml/badge.svg)](https://github.com/Tatsh/wiswa/actions/workflows/codeql.yml)
 [![QA](https://github.com/Tatsh/wiswa/actions/workflows/qa.yml/badge.svg)](https://github.com/Tatsh/wiswa/actions/workflows/qa.yml)
 [![Tests](https://github.com/Tatsh/wiswa/actions/workflows/tests.yml/badge.svg)](https://github.com/Tatsh/wiswa/actions/workflows/tests.yml)
