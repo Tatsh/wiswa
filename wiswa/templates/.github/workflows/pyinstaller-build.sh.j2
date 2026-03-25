@@ -31,6 +31,9 @@ fi
 {% for pkg in settings.pyinstaller.collect_data %}
   --collect-data {{ pkg }} \
 {% endfor %}
+{% for pkg in settings.pyinstaller.copy_metadata %}
+  --copy-metadata {{ pkg }} \
+{% endfor %}
   -y --version-file version-info.txt \
 {% if settings.pyinstaller.extra_args %}
   {{ settings.pyinstaller.extra_args | join(" ") }} \

@@ -146,6 +146,11 @@ local utils = import 'utils.libjsonnet';
      */
     collect_submodules: [],
     /**
+     * @brief Packages to pass as `--copy-metadata` arguments.
+     * @var string[]
+     */
+    copy_metadata: [],
+    /**
      * @brief Modules to pass as `--hidden-import` arguments.
      * @var string[]
      */
@@ -551,18 +556,18 @@ local utils = import 'utils.libjsonnet';
     repos: [(import 'defaults/pre-commit-config/main.libjsonnet').get(settings)] +
            precommit_python_repos + precommit_c_cpp_repos + github + cff + [local_hooks.get(settings)],
   } + (if !settings.private then {
-    ci: {
-      skip: [
-        'check-jsonschema',
-        'cspell',
-        'detect-aws-credentials',
-        'fix-formatting-markdown',
-        'fix-formatting-prettier',
-      ] + (if settings.project_type == 'python' then ['fix-ruff'] else []) + [
-        'yarn-check-lock',
-      ],
-    },
-  } else {}),
+         ci: {
+           skip: [
+             'check-jsonschema',
+             'cspell',
+             'detect-aws-credentials',
+             'fix-formatting-markdown',
+             'fix-formatting-prettier',
+           ] + (if settings.project_type == 'python' then ['fix-ruff'] else []) + [
+             'yarn-check-lock',
+           ],
+         },
+       } else {}),
   /** @brief Visual Studio Code configuration. */
   vscode: {
     /** @brief C/C++ configuration for Visual Studio Code. */
@@ -855,20 +860,20 @@ local utils = import 'utils.libjsonnet';
       'requires-python': python_req,
       dynamic:: super.dynamic,
     } + (if is_uv && std.length(std.objectFields(poetry_plugins)) > 0 then {
-      'entry-points': poetry_plugins,
-    } else {}) + (if std.length(std.objectFields(poetry_extras)) > 0 then {
-      'optional-dependencies': {
-        [extra]: std.set(std.flatMap(
-          function(dep_name)
-            if std.objectHas(legacy_poetry_optional_deps, dep_name) then
-              utils.formatPep508Deps(dep_name, legacy_poetry_optional_deps[dep_name])
-            else
-              [dep_name],
-          poetry_extras[extra]
-        ))
-        for extra in std.objectFields(poetry_extras)
-      },
-    } else {}) else {},
+           'entry-points': poetry_plugins,
+         } else {}) + (if std.length(std.objectFields(poetry_extras)) > 0 then {
+                         'optional-dependencies': {
+                           [extra]: std.set(std.flatMap(
+                             function(dep_name)
+                               if std.objectHas(legacy_poetry_optional_deps, dep_name) then
+                                 utils.formatPep508Deps(dep_name, legacy_poetry_optional_deps[dep_name])
+                               else
+                                 [dep_name],
+                             poetry_extras[extra]
+                           ))
+                           for extra in std.objectFields(poetry_extras)
+                         },
+                       } else {}) else {},
     [if is_uv then 'dependency-groups']: {
                                            dev: std.set(to_pep508(py_deps.dev) + to_pep508(legacy_poetry_group_deps('dev'))),
                                          } + (if settings.want_docs then {
@@ -964,20 +969,20 @@ local utils = import 'utils.libjsonnet';
              },
            } + (if settings.want_sqlfluff then { sqlfluff: import 'defaults/sqlfluff.libsonnet' } else {})
            + (if is_uv then { poetry:: super.poetry }
-              + (if std.length(settings.package_sources) > 0 then {
-                   uv+: {
-                     index: [
-                       { name: s.name, url: s.url }
-                       + (if std.objectHas(s, 'priority') && s.priority == 'default' then { default: true } else {})
-                       for s in settings.package_sources
-                       if std.objectHas(s, 'url')
-                     ],
-                   },
-                 } else {})
+                            + (if std.length(settings.package_sources) > 0 then {
+                                 uv+: {
+                                   index: [
+                                     { name: s.name, url: s.url }
+                                     + (if std.objectHas(s, 'priority') && s.priority == 'default' then { default: true } else {})
+                                     for s in settings.package_sources
+                                     if std.objectHas(s, 'url')
+                                   ],
+                                 },
+                               } else {})
               else { uv:: super.uv }
-              + (if !is_uv && std.length(settings.package_sources) > 0 then {
-                   poetry+: { source: settings.package_sources },
-                 } else {})),
+                   + (if !is_uv && std.length(settings.package_sources) > 0 then {
+                        poetry+: { source: settings.package_sources },
+                      } else {})),
     'build-system': if is_uv then {
       requires: ['hatchling'],
       'build-backend': 'hatchling.build',
@@ -1198,12 +1203,12 @@ local utils = import 'utils.libjsonnet';
     /** @brief Project website. */
     website: settings.homepage,
   } + (if settings.using_github then {
-    contact: '%s/issues' % settings.repository_uri,
-    issues: '%s/issues' % settings.repository_uri,
-    license: settings.license,
-  } + (if settings.social.buymeacoffee != '' then {
-    donation: 'https://buymeacoffee.com/%s' % settings.social.buymeacoffee,
-  } else {}) else {}),
+         contact: '%s/issues' % settings.repository_uri,
+         issues: '%s/issues' % settings.repository_uri,
+         license: settings.license,
+       } + (if settings.social.buymeacoffee != '' then {
+              donation: 'https://buymeacoffee.com/%s' % settings.social.buymeacoffee,
+            } else {}) else {}),
 
   /** @brief Flatpak manifest configuration. */
   flatpak: {
