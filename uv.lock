@@ -3974,6 +3974,7 @@ dependencies = [
     { name = "jsonnet" },
     { name = "keyring" },
     { name = "lxml" },
+    { name = "tomlkit" },
     { name = "typing-extensions" },
 ]
 
@@ -4023,6 +4024,7 @@ requires-dist = [
     { name = "jsonnet", specifier = ">=0.22.0" },
     { name = "keyring", specifier = ">=25.7.0" },
     { name = "lxml", specifier = ">=6.0.2" },
+    { name = "tomlkit", specifier = ">=0.14.0" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
 ]
 

@@ -53,6 +53,7 @@ local utils = import 'utils.libjsonnet';
           jsonnet: utils.latestPypiPackageVersionCaret('jsonnet'),
           keyring: utils.latestPypiPackageVersionCaret('keyring'),
           lxml: utils.latestPypiPackageVersionCaret('lxml'),
+          tomlkit: utils.latestPypiPackageVersionCaret('tomlkit'),
         },
         group+: {
           dev+: {

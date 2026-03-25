@@ -59,6 +59,7 @@ dependencies = [
   "jsonnet>=0.22.0",
   "keyring>=25.7.0",
   "lxml>=6.0.2",
+  "tomlkit>=0.14.0",
   "typing-extensions>=4.15.0",
 ]
 description = "A highly opinionated way to generate and maintain projects with Jsonnet."
