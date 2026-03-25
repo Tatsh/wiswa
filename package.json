@@ -18,6 +18,7 @@
     "ignorePaths": [
       "*.1",
       "*.har",
+      "*.html",
       "*.lock",
       ".git/**",
       ".yarn/**/*.cjs",

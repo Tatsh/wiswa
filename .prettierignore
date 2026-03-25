@@ -1,4 +1,5 @@
 *.1
+*.adoc
 *.j2
 *.jsonnet
 *.kate-swp

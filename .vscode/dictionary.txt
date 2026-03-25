@@ -1,3 +1,4 @@
+adoc
 aiofiles
 aiohttp
 altool

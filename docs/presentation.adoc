@@ -1,0 +1,443 @@
+// cspell:words revealjsdir revealjs myuser
+= Wiswa: Declarative Project Generation
+:revealjsdir: https://cdn.jsdelivr.net/npm/reveal.js@5.1.0
+:revealjs_theme: black
+:revealjs_hash: true
+:revealjs_width: 1920
+:revealjs_height: 1080
+:icons: font
+:source-highlighter: highlight.js
+
+== The Problem
+
+[%step]
+* Starting a new project means recreating the same boilerplate every time
+* CI/CD workflows, linter configs, packaging, documentation scaffolding...
+* Keeping all of this *in sync across projects* is even harder
+* Manual updates are tedious, error-prone, and easy to forget
+
+== Existing Solutions
+
+=== Cookiecutter
+
+[%step]
+* Popular project templating tool
+* *One-shot generation* -- no mechanism for pulling template updates
+* Once generated, the project drifts from the template permanently
+* Mostly used for Python projects
+
+=== Cruft
+
+[%step]
+* Built on top of Cookiecutter to add updates via patching
+* Patch-based updates lead to *merge conflicts* with local changes
+* The Cruft PyPI project is *no longer maintained*
+* Still inherits Cookiecutter's Python-centric limitations
+
+=== Common Weaknesses
+
+[%step]
+* Templates are static -- no programmable logic
+* No automatic dependency version resolution
+* No integration with GitHub/GitLab APIs
+* Limited to a single language ecosystem
+
+== Introducing Wiswa
+
+A *declarative, regeneration-based* project generator
+
+[%step]
+* Multi-language: Python, TypeScript, C, C++, Lua, and more
+* Programmable configuration with *Jsonnet*
+* Automatic *latest version resolution* from PyPI, npm, GitHub
+* Deep *GitHub and GitLab integration*
+
+=== How It Works: Configuration
+
+Create a `.wiswa.jsonnet` in your project with only the differences from defaults:
+
+[source,jsonnet]
+----
+{
+  project_name: 'my-app',
+  project_type: 'python',
+  want_docs: true,
+  // ...only what you want to change
+}
+----
+
+=== How It Works: Jsonnet Basics
+
+Jsonnet is a superset of JSON with programmable features:
+
+[cols="1,1"]
+|===
+| Local variables | Conditionals
+
+a|
+[source,jsonnet]
+----
+local is_lib = self.project_type
+               == 'python';
+----
+
+a|
+[source,jsonnet]
+----
+want_docs: if is_lib then true
+           else false,
+----
+
+| Deep merge with `+:` | Imports and library functions
+
+a|
+[source,jsonnet]
+----
+pyproject+: {
+  tool+: {
+    ruff+: {
+      'line-length': 120,
+    },
+  },
+},
+----
+
+a|
+[source,jsonnet]
+----
+local utils =
+  import 'utils.libjsonnet';
+
+python_deps+: {
+  main+: {
+    click: utils.latestPypiPackageVersionCaret('click'),
+  },
+},
+----
+|===
+
+=== How It Works: Merge Defaults
+
+Merge with 400+ built-in defaults from `defaults.libjsonnet` (and your own footnote:[Controlled by the `-u` flag -- shared personal preferences across all your projects.]).
+
+[.big]
+`defaults.libjsonnet` + `user defaults.jsonnet` + `.wiswa.jsonnet`
+
+=== How It Works: Jsonnet Evaluation
+
+Evaluate the merged configuration with native functions -- version resolution, date helpers, URI generation, and more.
+
+=== How It Works: File Generation
+
+Settings map directly to output files. For example, `package.json`:
+
+[cols="1,1"]
+|===
+| `.wiswa.jsonnet` | `package.json` (generated)
+
+a|
+[source,jsonnet]
+----
+{
+  package_json+: {
+    description: 'My app',
+    prettier+: {
+      printWidth: 120,
+    },
+    scripts+: {
+      deploy: 'rsync -a dist/ srv:/',
+    },
+  },
+}
+----
+
+a|
+[source,json]
+----
+{
+  "description": "My app",
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    ...
+  },
+  "prettier": {
+    "printWidth": 120,
+    "singleQuote": true,
+    ...
+  },
+  "scripts": {
+    "deploy": "rsync -a dist/ srv:/",
+    "format": "prettier -w . && ...",
+    ...
+  }
+}
+----
+|===
+
+=== How It Works: Post-Processing
+
+Lock dependencies, run formatters (Ruff, Prettier), and lint.
+
+=== How It Works: Repository Setup
+
+Configure your GitHub or GitLab repository via API -- merge settings, branch protection, security scanning, and more.
+
+== Configuration: `.wiswa.jsonnet`
+
+Only specify what differs from defaults:
+
+[cols="1,1"]
+|===
+a|
+[source,jsonnet]
+----
+local utils = import 'utils.libjsonnet';
+{
+  project_name: 'my-app',
+  project_type: 'python',
+  github_username: 'myuser',
+  package_manager: 'uv',
+
+  want_docs: true,
+  want_tests: true,
+  want_codeql: true,
+----
+
+a|
+[source,jsonnet]
+----
+  pyproject+: {
+    tool+: {
+      ruff+: {
+        'line-length': 100,
+      },
+    },
+  },
+
+  python_deps+: {
+    main+: {
+      click: utils
+        .latestPypiPackageVersionCaret(
+          'click'),
+    },
+  },
+}
+----
+|===
+
+=== The `utils.libjsonnet` Library
+
+Import it in any `.wiswa.jsonnet` to access built-in helper functions:
+
+[source,jsonnet]
+----
+local utils = import 'utils.libjsonnet';
+----
+
+* `utils.year()`, `utils.isodate()` -- current year and ISO date
+* `utils.manifestYaml(obj)`, `utils.manifestToml(obj)` -- serialisation helpers
+* `utils.gitHubRepositoryUri(user, project)` -- generate common URIs
+* `utils.pyprojectAuthors(authors)` -- transform author metadata
+* `utils.pyprojectClassifiers(settings)` -- generate sorted PyPI classifiers
+* `utils.formatPep508Deps(name, val)` -- convert dependency specs to PEP 508
+* `utils.poetryVerToPep508(ver)` -- translate `^`/`~` version syntax
+
+=== Smart Version Resolution
+
+The utils library also provides functions that fetch the *latest versions* at generation time:
+
+[source,jsonnet]
+----
+local utils = import 'utils.libjsonnet';
+
+// PyPI (caret, tilde, >= prefixed, or bare)
+utils.latestPypiPackageVersionCaret('click')   // "^8.1.8"
+utils.latestPypiPackageVersionTilde('django')  // "~5.2.1"
+utils.latestPypiPackageVersionGe('requests')   // ">=2.32.3"
+
+// npm
+utils.latestNpmPackageVersion('typescript')    // "5.7.3"
+utils.latestNpmPackageVersionCaret('eslint')   // "^9.20.0"
+
+// GitHub releases and tags
+utils.githubLatestReleaseTag('owner', 'repo')  // "v2.4.1"
+utils.githubLatestActionTag('actions', 'checkout') // "v4"
+utils.githubLatestTag('owner', 'repo')         // "v3.1.0"
+
+// Yarn
+utils.latestYarnVersion()                      // "4.6.0"
+----
+
+== The Update Workflow
+
+[%step]
+. Make changes to `.wiswa.jsonnet` (or re-run to pick up new defaults)
+. Run `wiswa` to regenerate all managed files (with `-u` to merge user defaults)
+. Post-processing locks dependencies and formats code
+. Review the `git diff`
+. Commit
+
+[%step]
+--
+*Key insight*: regeneration, not patching.
+
+No merge conflicts. Managed files are always overwritten. +
+Your source code, tests, and docs content are *never touched*.
+--
+
+== Bidirectional Sync
+
+What if you change a managed file directly?
+
+[%step]
+* Example: `uv add requests` modifies `pyproject.toml`
+* The *wiswa-sync* agent reflects the change back into `.wiswa.jsonnet`
+* Next regeneration preserves your addition
+* Configuration and files stay in sync in both directions
+
+== What Gets Generated?
+
+[cols="1,3"]
+|===
+| Category | Examples
+
+| *Build & packaging*
+| `pyproject.toml`, `package.json`, `CMakeLists.txt`, `vcpkg.json`
+
+| *CI/CD*
+| GitHub Actions workflows, GitLab CI, Dependabot config
+
+| *Code quality*
+| Ruff, ESLint, clang-format, pre-commit hooks, mypy
+
+| *Documentation*
+| Sphinx + ReadTheDocs, GitHub Pages, CONTRIBUTING, SECURITY
+
+| *IDE*
+| VS Code settings, launch configs, extensions, Cursor rules
+
+| *AI tooling*
+| Claude Code agents, Copilot instructions
+
+| *Distribution*
+| AppImage, PyInstaller, Snap, Flatpak, winget
+
+| *Badges*
+| Auto-generated based on tools, platforms, and social media
+|===
+
+== Multi-Language Support
+
+[cols="1,4"]
+|===
+| Language | Highlights
+
+| *Python*
+| pyproject.toml, uv/Poetry, Ruff, mypy, pytest, Sphinx, PyPI publishing
+
+| *TypeScript*
+| package.json, Jest, ESLint, Prettier, npm publishing
+
+| *C / C++*
+| CMake, CMakePresets, vcpkg, clang-format
+
+| *Lua*
+| luacheck, Busted tests, LuaRocks publishing
+
+| *Swift*
+| clang-format, Xcode project configuration
+
+| *Generic*
+| package.json, Prettier, basic CI
+|===
+
+== GitHub / GitLab Integration
+
+Wiswa configures your repository via API:
+
+[%step]
+* Merge settings (squash, rebase, delete branch on merge)
+* Branch protection and commit signature requirements
+* Secret scanning and push protection
+* Pages deployment (GitHub Pages / GitLab Pages)
+* Dependabot security updates (GitHub only)
+* CodeQL security analysis (GitHub only)
+
+=== The MCP Server
+
+Wiswa exposes its configuration system as an *MCP server* for AI integration.
+
+[source,shell]
+----
+claude mcp add wiswa-mcp -- wiswa-mcp
+----
+
+=== MCP Server: Tools
+
+Four tools available:
+
+* `get_defaults(key_path)` -- retrieve resolved default settings
+* `lookup_setting(key_path)` -- get a value with its Jsonnet override snippet
+* `list_settings(key_path, depth)` -- browse the settings hierarchy
+* `search_settings(query)` -- full-text search across all settings
+
+=== MCP Server: Example
+
+[source,text]
+----
+> lookup_setting("pyproject.tool.ruff.line-length")
+
+{
+  "value": 100,
+  "type": "number",
+  "override_snippet": "pyproject+: { tool+: { ruff+: { 'line-length': <value> } } }"
+}
+----
+
+AI assistants can explore and modify Wiswa configuration *programmatically*.
+
+== Customisability
+
+[%step]
+* *Jsonnet merge operators* (`+:`) for deep, surgical overrides
+* *User-level defaults* (`~/.config/wiswa/defaults.jsonnet`) shared across all projects
+* *Feature flags* (`want_docs`, `want_tests`, `want_main`, `want_codeql`, ...)
+* *`-J` flag* to add directories to the Jsonnet search path for custom libraries
+
+== Architecture Overview
+
+[.text-left]
+--
+[source,text]
+----
+wiswa/
+  main.py              -- async orchestrator
+  mcp.py               -- FastMCP server
+  session.py           -- cached aiohttp client
+  utils/
+    jsonnet.py         -- Jsonnet eval + native callbacks
+    versions.py        -- package version fetching
+    postprocess.py     -- formatting, locking, cleanup
+
+wiswa-jsonnet/
+  defaults.libjsonnet  -- base defaults (400+ fields)
+  project.jsonnet      -- generates all config files
+  utils.libjsonnet     -- helper functions
+----
+--
+
+== Summary
+
+[%step]
+* *Declarative*: one `.wiswa.jsonnet` file describes your entire project setup
+* *Regeneration-based*: no merge conflicts, always up to date
+* *Multi-language*: Python, TypeScript, C/C++, Lua, Xcode
+* *Smart*: automatic version resolution, GitHub/GitLab API integration
+* *Extensible*: Jsonnet configuration, user defaults, MCP server
+* *AI-native*: MCP server, Claude Code agents, Copilot/Cursor instructions
+
+[.text-center]
+--
+https://github.com/Tatsh/wiswa[github.com/Tatsh/wiswa] +
+https://pypi.org/project/wiswa/[pypi.org/project/wiswa]
+--
