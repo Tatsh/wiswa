@@ -66,7 +66,15 @@ local utils = import 'utils.libjsonnet';
             },
           },
         },
-        include: ['%s-jsonnet' % top.primary_module],
+      },
+      hatch+: {
+        build+: {
+          targets+: {
+            wheel+: {
+              packages+: ['%s-jsonnet' % top.primary_module],
+            },
+          },
+        },
       },
       ruff+: {
         'namespace-packages'+: ['wiswa/static'],

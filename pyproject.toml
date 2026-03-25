@@ -126,6 +126,9 @@ omit = [
 [tool.doc8]
 max-line-length = 100
 
+[tool.hatch.build.targets.wheel]
+packages = ["wiswa", "wiswa-jsonnet"]
+
 [tool.mypy]
 cache_dir = "~/.cache/mypy"
 explicit_package_bases = true
