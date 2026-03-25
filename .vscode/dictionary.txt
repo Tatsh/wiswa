@@ -216,8 +216,8 @@ sphinxcontrib
 sqlfluff
 srcs
 startswith
-stopall
 staticfiles
+stopall
 strequal
 strongified
 syft

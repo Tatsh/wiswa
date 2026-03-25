@@ -3,20 +3,12 @@
 - [x] use <https://github.com/actions/attest-build-provenance> for all assets
 - [ ] Badges for settings.publishing section
 
-## annotations and reports for each job
+## annotations for each job
 
 - [ ] mypy
 - [ ] ruff
 - [ ] ruff formatting when Python support >= 3.12
 - [ ] yapf (equivalent to yapf-gitlab)
-
-## Custom action things
-
-- [x] custom pyinstaller action
-- [x] custom publish action?
-- [x] custom appImage action
-- [x] custom snap action?
-- [ ] custom flatpak action?
 
 ## Code signing
 

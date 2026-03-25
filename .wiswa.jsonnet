@@ -6,10 +6,10 @@ local utils = import 'utils.libjsonnet';
   want_main: true,
   project_name: 'wiswa',
   version: '0.0.0',
-  description: 'Generate a Python project.',
+  description: 'A highly opinionated way to generate and maintain projects with Jsonnet.',
   keywords: ['command line', 'python'],
   copilot: {
-    intro: 'Wiswa is a tool to generate and manage Python projects.',
+    intro: 'Wiswa is a tool to generate and manage projects.',
   },
   shared_ignore+: ['/docs/_build*/'],
   prettierignore+: ['*.adoc', 'Doxyfile'],
@@ -21,7 +21,6 @@ local utils = import 'utils.libjsonnet';
   pyproject+: {
     project+: {
       scripts+: {
-        '_wiswa-gen-docs': 'wiswa.main:gen_docs_main',
         'wiswa-mcp': 'wiswa.mcp:main',
       },
     },

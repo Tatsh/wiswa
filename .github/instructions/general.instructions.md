@@ -1,6 +1,6 @@
 # Copilot Instructions
 
-Wiswa is a tool to generate and manage Python projects.
+Wiswa is a tool to generate and manage projects.
 
 ## General
 

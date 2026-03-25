@@ -27,7 +27,7 @@
 [![Mastodon Follow](https://img.shields.io/mastodon/follow/109370961877277568?domain=hostux.social&style=social)](https://hostux.social/@Tatsh)
 [![Patreon](https://img.shields.io/badge/Patreon-Tatsh2-F96854?logo=patreon)](https://www.patreon.com/Tatsh2)
 
-Generate a Python project.
+A highly opinionated way to generate projects with Jsonnet.
 
 ## Installation
 

@@ -18,13 +18,13 @@
     "ignorePaths": [
       "*.1",
       "*.har",
-      "*.html",
       "*.lock",
       ".git/**",
       ".yarn/**/*.cjs",
       ".vscode/extensions.json",
       "dist/**",
-      "man/**"
+      "man/**",
+      "*.html"
     ],
     "language": "en-GB",
     "languageSettings": [
@@ -35,7 +35,7 @@
     ],
     "useGitignore": true
   },
-  "description": "Generate a Python project.",
+  "description": "A highly opinionated way to generate and maintain projects with Jsonnet.",
   "devDependencies": {
     "@prettier/plugin-xml": "^3.4.2",
     "cspell": "^9.7.0",

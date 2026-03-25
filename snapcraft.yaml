@@ -8,7 +8,7 @@ apps:
 base: 'core24'
 confinement: 'strict'
 contact: 'https://github.com/Tatsh/wiswa/issues'
-description: 'Generate a Python project.'
+description: 'A highly opinionated way to generate and maintain projects with Jsonnet.'
 donation: 'https://buymeacoffee.com/Tatsh'
 grade: 'stable'
 issues: 'https://github.com/Tatsh/wiswa/issues'
@@ -28,7 +28,7 @@ platforms:
   arm64:
     build-on: 'arm64'
 source-code: 'https://github.com/Tatsh/wiswa'
-summary: 'Generate a Python project.'
+summary: 'A highly opinionated way to generate and maintain projects with Jsonnet.'
 title: 'wiswa'
 version: '0.0.0'
 website: 'https://tatsh.github.io/wiswa/'
