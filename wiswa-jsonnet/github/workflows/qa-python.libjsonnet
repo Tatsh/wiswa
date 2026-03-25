@@ -6,7 +6,7 @@ function(settings)
   local run_cmd = if is_uv then 'uv run' else 'poetry run';
   local fmt_check_id = if settings.want_yapf then 'yapf' else 'ruff-format';
   local fmt_check_cmd = if settings.want_yapf then '%s yapf -prd .' % run_cmd
-                        else '%s ruff format --check .' % run_cmd;
+  else '%s ruff format --check .' % run_cmd;
   local eslint_ids = if settings.force_eslint then ['eslint'] else [];
   local python_check_ids = ['ruff', 'mypy', fmt_check_id];
   local always_check_ids = eslint_ids + ['prettier', 'markdownlint', 'spelling'];
@@ -59,10 +59,10 @@ function(settings)
                name: 'Install Poetry',
                run: 'pipx install poetry',
              }]) + (if std.length(settings.github.workflows.qa.apt_packages) > 0 then [{
-               'if': "needs.changes.outputs.python == 'true'",
-               name: 'Install dependencies',
-               run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
-             }] else []) + [
+                      'if': "needs.changes.outputs.python == 'true'",
+                      name: 'Install dependencies',
+                      run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
+                    }] else []) + [
           {
             'if': "needs.changes.outputs.python == 'true'",
             name: 'Set up Python ${{ matrix.python-version }}',
@@ -76,8 +76,8 @@ function(settings)
             name: if is_uv then 'Install dependencies (uv)' else 'Install dependencies (Poetry)',
             run: if is_uv then (if settings.want_tests then 'uv sync --group dev --group tests --all-extras'
                                 else 'uv sync --group dev --all-extras')
-                 else (if settings.want_tests then 'poetry install --with=dev,tests --all-extras'
-                       else 'poetry install --with=dev --all-extras'),
+            else (if settings.want_tests then 'poetry install --with=dev,tests --all-extras'
+                  else 'poetry install --with=dev --all-extras'),
           },
           cache_yarn,
           {

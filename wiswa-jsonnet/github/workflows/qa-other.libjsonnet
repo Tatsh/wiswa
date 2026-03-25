@@ -25,19 +25,19 @@ function(settings)
       changes: {
         'runs-on': settings.qa_runs_on,
         outputs: (if is_c_cpp then {
-          cpp: '${{ steps.filter.outputs.cpp }}',
-        } else {}),
+                    cpp: '${{ steps.filter.outputs.cpp }}',
+                  } else {}),
         steps: [
           {
             uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
         ] + (if is_c_cpp then [{
-          id: 'filter',
-          uses: 'dorny/paths-filter@' + utils.githubLatestActionTag('dorny', 'paths-filter'),
-          with: {
-            filters: changes_filters,
-          },
-        }] else []),
+               id: 'filter',
+               uses: 'dorny/paths-filter@' + utils.githubLatestActionTag('dorny', 'paths-filter'),
+               with: {
+                 filters: changes_filters,
+               },
+             }] else []),
       },
       qa: {
         needs: 'changes',
@@ -56,12 +56,12 @@ function(settings)
             run: 'yarn',
           },
         ] + (if is_c_cpp then [{
-            'continue-on-error': true,
-            'if': "needs.changes.outputs.cpp == 'true'",
-            id: 'clang-format',
-            name: 'Check formatting (clang-format)',
-            run: 'clang-format -n %s' % settings.clang_format_args,
-          }] else []) + [
+               'continue-on-error': true,
+               'if': "needs.changes.outputs.cpp == 'true'",
+               id: 'clang-format',
+               name: 'Check formatting (clang-format)',
+               run: 'clang-format -n %s' % settings.clang_format_args,
+             }] else []) + [
           {
             'continue-on-error': true,
             id: 'prettier',

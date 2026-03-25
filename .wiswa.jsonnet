@@ -20,6 +20,7 @@ local utils = import 'utils.libjsonnet';
   },
   pyinstaller+: {
     collect_data+: ['fastmcp'],
+    copy_metadata+: ['fastmcp'],
   },
   pyproject+: {
     project+: {

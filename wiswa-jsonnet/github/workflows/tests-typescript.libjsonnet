@@ -24,9 +24,9 @@ function(settings)
             run: 'yarn jest --coverage',
           },
         ] + (if settings.want_coveralls then [{
-          name: 'Coveralls',
-          uses: 'coverallsapp/github-action@' + utils.githubLatestActionTag('coverallsapp', 'github-action'),
-        }] else []),
+               name: 'Coveralls',
+               uses: 'coverallsapp/github-action@' + utils.githubLatestActionTag('coverallsapp', 'github-action'),
+             }] else []),
       },
     },
     name: 'Tests',

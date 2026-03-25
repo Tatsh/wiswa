@@ -20,9 +20,9 @@ function(settings)
                name: 'Install Poetry',
                run: 'pipx install poetry',
              }]) + (if std.length(settings.github.workflows.tests.apt_packages) > 0 then [{
-               name: 'Install dependencies',
-               run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.tests.apt_packages),
-             }] else []) + [
+                      name: 'Install dependencies',
+                      run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.tests.apt_packages),
+                    }] else []) + [
           {
             name: 'Set up Python ${{ matrix.python-version }}',
             uses: 'actions/setup-python@' + utils.githubLatestActionTag('actions', 'setup-python'),
@@ -37,7 +37,7 @@ function(settings)
           {
             name: 'Install pytest-action dependencies',
             run: if is_uv then 'uv pip install pytest-md pytest-emoji'
-                 else 'poetry run pip install pytest-md pytest-emoji',
+            else 'poetry run pip install pytest-md pytest-emoji',
           },
           {
             name: 'Install dependencies (Yarn)',
@@ -57,12 +57,12 @@ function(settings)
             },
           },
         ] + (if settings.want_coveralls then [{
-          name: 'Coverage',
-          uses: 'coverallsapp/github-action@' + utils.githubLatestActionTag('coverallsapp', 'github-action'),
-          with: {
-            file: 'coverage.xml',
-          },
-        }] else []),
+               name: 'Coverage',
+               uses: 'coverallsapp/github-action@' + utils.githubLatestActionTag('coverallsapp', 'github-action'),
+               with: {
+                 file: 'coverage.xml',
+               },
+             }] else []),
         strategy: {
           matrix: {
             'python-version': settings.supported_python_versions,
