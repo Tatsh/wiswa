@@ -18,6 +18,9 @@ local utils = import 'utils.libjsonnet';
       ignorePaths+: ['*.html'],
     },
   },
+  pyinstaller+: {
+    collect_data+: ['fastmcp'],
+  },
   pyproject+: {
     project+: {
       scripts+: {

@@ -1,6 +1,8 @@
 wiswa
 =====
 
+.. include:: badges.rst
+
 Commands
 --------
 
