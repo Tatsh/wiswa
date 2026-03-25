@@ -174,7 +174,7 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
         raise FileNotFoundError(msg)
     native_callbacks = _make_native_callbacks(session)
     defaults_path = anyio.Path(
-        lib_path.resolve(strict=True) / 'defaults.libjsonnet')  # noqa: ASYNC240
+        lib_path.resolve(strict=True) / 'defaults.libsonnet')  # noqa: ASYNC240
     defaults_text = await defaults_path.read_text()
     user_defaults_text = (await anyio.Path(user_defaults_jsonnet).read_text()
                           if user_defaults else '{}')
@@ -213,7 +213,7 @@ async def resolve_defaults_only(jpathdir: Sequence[str],
     """
     native_callbacks = _make_native_callbacks(session)
     defaults_path = anyio.Path(
-        lib_path.resolve(strict=True) / 'defaults.libjsonnet')  # noqa: ASYNC240
+        lib_path.resolve(strict=True) / 'defaults.libsonnet')  # noqa: ASYNC240
     defaults_text = await defaults_path.read_text()
     s = await anyio.to_thread.run_sync(lambda: _jsonnet.evaluate_snippet(
         '',

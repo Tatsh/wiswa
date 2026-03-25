@@ -207,7 +207,7 @@ Add these as **repository** (or **organization**) secrets:
 
 ### 4.3 Optional: wiswa jsonnet settings
 
-In `wiswa-jsonnet` (e.g. `defaults.libjsonnet`), you could add:
+In `wiswa-jsonnet` (e.g. `defaults.libsonnet`), you could add:
 
 - `pyinstaller.sign_windows`: boolean, default `false` - "Whether to sign Windows binaries in CI
   (requires secrets)."

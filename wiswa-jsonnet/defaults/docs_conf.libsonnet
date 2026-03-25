@@ -1,0 +1,181 @@
+/**
+ * @file defaults/docs_conf.libsonnet
+ * @namespace docs_conf
+ * @brief Default configuration for Sphinx documentation.
+ */
+{
+  /** @brief Sphinx configuration (outputs to `docs/conf.py`). */
+  config: {
+    /** @brief CSS class for DataTables. */
+    datatables_class: 'sphinx-datatable',
+    /** @brief Options for DataTables. */
+    datatables_options: {
+      /** @brief If pagination should be enabled. */
+      paging: false,
+    },
+    /** @brief Version of DataTables to use. */
+    datatables_version: '1.13.4',
+    /**
+     * @brief Mapping for intersphinx (object of string to `[url, null | string]`).
+     *
+     * <dl>
+     * <dt>Structure</dt>
+     * <dd>
+     * @code
+     * { [key: string]: [string, null | string]; }
+     * @endcode
+     * </dd>
+     * </dl>
+     */
+    intersphinx_mapping: {
+      python: [
+        'https://docs.python.org/3',
+        null,
+      ],
+    },
+    /** @brief HTML theme to use. */
+    html_theme: 'sphinx_immaterial',
+    /** @brief Options for the HTML theme. */
+    html_theme_options: {
+      /**
+       * @brief Features to enable in the theme.
+       * @var string[]
+       */
+      features: [
+        'announce.dismiss',
+        'content.action.edit',
+        'content.action.view',
+        'content.code.copy',
+        'content.tabs.link',
+        'content.tooltips',
+        'navigation.expand',
+        'navigation.footer',
+        'navigation.sections',
+        'navigation.top',
+        'search.share',
+        'search.suggest',
+        'toc.follow',
+        'toc.sticky',
+      ],
+      /** @brief Whether to use web fonts. */
+      font: false,
+      /** @brief Icons for the theme. */
+      icon: {
+        /** @brief Icon for edit action. */
+        edit: 'material/file-edit-outline',
+        /** @brief Icon for repository. */
+        repo: 'fontawesome/brands/github',
+      },
+      /** @brief Whether to collapse the global table of contents. */
+      globaltoc_collapse: true,
+      /**
+       * @brief Color palette for the theme.
+       * @var object[]
+       *
+       * <dl>
+       * <dt>Structure</dt>
+       * <dd>
+       * @code
+       * {
+       *   media: string;
+       *   scheme?: string;
+       *   primary?: string;
+       *   accent?: string;
+       *   toggle?: {
+       *     icon: string;
+       *     name: string;
+       *   };
+       * }[]
+       * @endcode
+       * </dd>
+       * </dl>
+       */
+      palette: [
+        {
+          media: '(prefers-color-scheme)',
+          toggle: {
+            icon: 'material/brightness-auto',
+            name: 'Switch to light mode',
+          },
+        },
+        {
+          media: '(prefers-color-scheme: light)',
+          scheme: 'default',
+          primary: 'teal',
+          accent: 'light-blue',
+          toggle: {
+            icon: 'material/lightbulb',
+            name: 'Switch to dark mode',
+          },
+        },
+        {
+          media: '(prefers-color-scheme: dark)',
+          scheme: 'slate',
+          primary: 'black',
+          accent: 'blue',
+          toggle: {
+            icon: 'material/lightbulb-outline',
+            name: 'Switch to system preference',
+          },
+        },
+      ],
+      /** @brief Whether the table of contents title should be the page title. */
+      toc_title_is_page_title: true,
+    },
+  },
+  /** @brief Django settings for Sphinx documentation. */
+  django: {
+    /** @brief Whether to monkeypatch Django (needed for type hints). */
+    monkeypatch: true,
+    /** @brief Django settings module to use. */
+    settings_module: 'settings',
+    /** @brief Django settings. */
+    settings: {
+      /** @brief Django databases configuration. */
+      DATABASES: {
+        default: {
+          ENGINE: 'django.db.backends.sqlite3',
+          NAME: ':memory:',
+        },
+      },
+      /** @brief Django installed applications. */
+      INSTALLED_APPS: [
+        'django.contrib.admin',
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.sessions',
+        'django.contrib.messages',
+        'django.contrib.staticfiles',
+      ],
+      /** @brief Django path prefix for static files. */
+      PATH_PREFIX: '',
+    },
+  },
+  /**
+   * @brief Environment variables for Sphinx documentation.
+   * @var object
+   *
+   * <dl>
+   * <dt>Structure</dt>
+   * <dd>
+   * @code
+   * { [key: string]: string; }
+   * @endcode
+   * </dd>
+   * </dl>
+   */
+  environment_variables: {},
+  /**
+   * @brief Sphinx extensions to use.
+   * @var string[]
+   */
+  extensions: [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',
+    'sphinx_datatables',
+    'sphinx_immaterial',
+    'sphinxcontrib.autodoc_pydantic',
+    'sphinxcontrib.jquery',
+  ],
+}

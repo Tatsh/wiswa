@@ -1,0 +1,26 @@
+/**
+ * @file defaults/cmake-user-presets.libsonnet
+ * @namespace cmake_user_presets
+ * @brief CMake user presets.
+ */
+{
+  /**
+   * @brief Get CMake user presets.
+   * @param vcpkg_root Root directory of vcpkg.
+   * @returns An object representing CMake user presets.
+   * @pt string
+   * @rv object
+   */
+  get(vcpkg_root='/home/tatsh/dev/vcpkg'):: {
+    configurePresets: [
+      {
+        environment: {
+          VCPKG_ROOT: '/home/tatsh/dev/vcpkg',
+        },
+        inherits: 'vcpkg',
+        name: 'default',
+      },
+    ],
+    version: 2,
+  },
+}

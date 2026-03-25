@@ -1,0 +1,13 @@
+/**
+ * @file project.libsonnet
+ * @namespace project
+ * @brief Default configuration for project metadata.
+ */
+{
+  /** @brief List of fields that are dynamic and should not be statically defined. */
+  dynamic: ['dependencies', 'requires-python'],
+  /**
+   * @brief The file to use as the README for the project, typically "README.md" or "README.rst".
+   */
+  readme: 'README.md',
+}

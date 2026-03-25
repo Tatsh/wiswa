@@ -18,9 +18,9 @@ again would produce the same result.
 ## Context
 
 - **Wiswa source**: `~/dev/wiswa`
-- **Defaults**: `~/dev/wiswa/wiswa-jsonnet/defaults.libjsonnet` — merged with `.wiswa.jsonnet`
+- **Defaults**: `~/dev/wiswa/wiswa-jsonnet/defaults.libsonnet` — merged with `.wiswa.jsonnet`
 {% if settings.project_type == 'python' %}
-- **Default Python deps**: `~/dev/wiswa/wiswa-jsonnet/defaults/python-deps.libjsonnet`
+- **Default Python deps**: `~/dev/wiswa/wiswa-jsonnet/defaults/python-deps.libsonnet`
 {% endif %}
 - **Config**: `.wiswa.jsonnet` — only contains overrides on top of defaults
 
@@ -165,8 +165,8 @@ For example, if a dependency is added to `vcpkg.json`, the override in `.wiswa.j
 {%- elif settings.project_type == 'c' or settings.project_type == 'c++' %} `CMakeLists.txt`, `vcpkg.json`,
 {%- endif %} `package.json`) to identify what changed.
 
-3. **Read the relevant defaults** (`defaults.libjsonnet`
-{%- if settings.project_type == 'python' %}, `defaults/python-deps.libjsonnet`{% endif %}, etc.)
+3. **Read the relevant defaults** (`defaults.libsonnet`
+{%- if settings.project_type == 'python' %}, `defaults/python-deps.libsonnet`{% endif %}, etc.)
    to determine what is already provided by Wiswa.
 
 4. **Determine the minimal change** to `.wiswa.jsonnet`:
@@ -193,7 +193,7 @@ For example, if a dependency is added to `vcpkg.json`, the override in `.wiswa.j
 
 ## Dependency version patterns
 
-Use these helpers from `utils.libjsonnet` (already imported in `.wiswa.jsonnet`):
+Use these helpers from `utils.libsonnet` (already imported in `.wiswa.jsonnet`):
 
 - `utils.latestPypiPackageVersionCaret('name')` — resolves to `^X.Y.Z` at generation time.
 - For pinned or non-caret versions, use a string literal: `'^1.0'`, `'>=2.0,<3.0'`.
@@ -257,7 +257,7 @@ pyproject+: {
 
 ## Dependency version patterns
 
-Use these helpers from `utils.libjsonnet` (already imported in `.wiswa.jsonnet`):
+Use these helpers from `utils.libsonnet` (already imported in `.wiswa.jsonnet`):
 
 - `utils.latestNpmPackageVersion('name')` — resolves to the latest npm version at generation time.
 - For pinned versions, use a string literal: `'^1.0.0'`, `'~2.0.0'`.
@@ -269,7 +269,7 @@ Use these helpers from `utils.libjsonnet` (already imported in `.wiswa.jsonnet`)
 - Use `+:` (merge) operators, never replace entire sections.
 - Preserve existing structure and style (indentation, comment grouping).
 {% if settings.project_type == 'python' %}
-- If a dependency already exists in the defaults (`python-deps.libjsonnet`), do not add it to
+- If a dependency already exists in the defaults (`python-deps.libsonnet`), do not add it to
   `.wiswa.jsonnet` — it is already provided.
 {% endif %}
 - If unsure whether a change belongs in `.wiswa.jsonnet` or is already a default, read the defaults

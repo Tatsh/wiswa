@@ -1,0 +1,27 @@
+/**
+ * @file vcpkg-config.libsonnet
+ * @namespace vcpkg_config
+ * @brief Default configuration for vcpkg registries.
+ */
+{
+  /** @brief Default vcpkg registry configuration. */
+  'default-registry': {
+    /** @brief Git commit hash for the baseline of the registry. */
+    baseline: '0cf34c184ce990471435b5b9c92edcf7424930b1',
+    /** @brief Type of the registry, e.g., "git". */
+    kind: 'git',
+    /** @brief URL of the vcpkg registry repository. */
+    repository: 'https://github.com/microsoft/vcpkg',
+  },
+  /** @brief Array of vcpkg registries. */
+  registries: [
+    {
+      /** @brief Type of registry, e.g., "artifact". */
+      kind: 'artifact',
+      /** @brief Location URL of the registry. */
+      location: 'https://github.com/microsoft/vcpkg-ce-catalog/archive/refs/heads/main.zip',
+      /** @brief Name of the registry. */
+      name: 'microsoft',
+    },
+  ],
+}

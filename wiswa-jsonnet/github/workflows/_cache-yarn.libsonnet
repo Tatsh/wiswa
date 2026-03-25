@@ -1,4 +1,4 @@
-local utils = import 'utils.libjsonnet';
+local utils = import 'utils.libsonnet';
 {
   name: 'Yarn cache',
   uses: 'actions/cache@' + utils.githubLatestActionTag('actions', 'cache'),

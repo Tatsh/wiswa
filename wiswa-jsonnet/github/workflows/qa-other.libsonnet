@@ -1,0 +1,109 @@
+local cache_yarn = import 'github/workflows/_cache-yarn.libsonnet';
+local utils = import 'utils.libsonnet';
+
+function(settings)
+  local is_c_cpp = settings.project_type == 'c' || settings.project_type == 'c++';
+  local clang_format_ids = if is_c_cpp then ['clang-format'] else [];
+  local always_check_ids = ['prettier', 'markdownlint', 'spelling'];
+  local check_ids = clang_format_ids + always_check_ids;
+  local check_lines = std.join(' &&\n', [
+    if std.member(clang_format_ids, id) then
+      '([ "${{ needs.changes.outputs.cpp }}" != "true" ] || [ "${{ steps.%s.outcome }}" = "success" ])' % id
+    else
+      '[ "${{ steps.%s.outcome }}" = "success" ]' % id
+    for id in check_ids
+  ]);
+  local changes_filters = if is_c_cpp then |||
+    cpp:
+      - '**/*.c'
+      - '**/*.cpp'
+      - '**/*.h'
+      - '**/*.hpp'
+  ||| else '';
+  {
+    jobs: {
+      changes: {
+        'runs-on': settings.qa_runs_on,
+        outputs: (if is_c_cpp then {
+                    cpp: '${{ steps.filter.outputs.cpp }}',
+                  } else {}),
+        steps: [
+          {
+            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
+          },
+        ] + (if is_c_cpp then [{
+               id: 'filter',
+               uses: 'dorny/paths-filter@' + utils.githubLatestActionTag('dorny', 'paths-filter'),
+               with: {
+                 filters: changes_filters,
+               },
+             }] else []),
+      },
+      qa: {
+        needs: 'changes',
+        'runs-on': settings.qa_runs_on,
+        steps: [
+          {
+            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
+          },
+        ] + (if std.length(settings.github.workflows.qa.apt_packages) > 0 then [{
+               name: 'Install dependencies',
+               run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
+             }] else []) + [
+          cache_yarn,
+          {
+            name: 'Install dependencies (Yarn)',
+            run: 'yarn',
+          },
+        ] + (if is_c_cpp then [{
+               'continue-on-error': true,
+               'if': "needs.changes.outputs.cpp == 'true'",
+               id: 'clang-format',
+               name: 'Check formatting (clang-format)',
+               run: 'clang-format -n %s' % settings.clang_format_args,
+             }] else []) + [
+          {
+            'continue-on-error': true,
+            id: 'prettier',
+            name: 'Check formatting (Prettier)',
+            run: 'yarn prettier -c .',
+          },
+          {
+            'continue-on-error': true,
+            id: 'markdownlint',
+            name: 'Check formatting (markdownlint)',
+            run: 'yarn markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
+          },
+          {
+            'continue-on-error': true,
+            id: 'spelling',
+            name: 'Check spelling',
+            run: 'yarn check-spelling',
+          },
+          {
+            'if': 'always()',
+            name: 'Check results',
+            run: |||
+              %(checks)s
+            ||| % { checks: check_lines },
+          },
+        ],
+      },
+    },
+    name: 'QA',
+    on: {
+      pull_request: {
+        branches: [
+          settings.default_branch,
+        ],
+      },
+      push: {
+        branches: [
+          settings.default_branch,
+        ],
+      },
+    },
+    permissions: {
+      contents: 'read',
+    },
+  }

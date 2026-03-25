@@ -1,0 +1,17 @@
+/**
+ * @file defaults/pre-commit-config/eslint.libsonnet
+ * @namespace pre_commit_config::eslint
+ * @brief ESLint hook configuration for `.pre-commit-config.yaml`.
+ */
+{
+  /** @brief Entry point. */
+  entry: 'yarn eslint --fix',
+  /** @brief Identifier. */
+  id: 'fix-eslint',
+  /** @brief Language. */
+  language: 'system',
+  /** @brief Name. */
+  name: 'run ESLint',
+  /** @brief Filter. */
+  types_or: ['javascript'],
+}

@@ -1,0 +1,22 @@
+/**
+ * @file mypy.libsonnet
+ * @brief Default configuration for Mypy static type checker.
+ * @namespace mypy
+ * @sa [Mypy Configuration Reference](https://mypy.readthedocs.io/en/stable/config_file.html)
+ */
+{
+  /** @brief Directory for Mypy cache files. */
+  cache_dir: '~/.cache/mypy',
+  /** @brief Whether to use explicit package bases. */
+  explicit_package_bases: true,
+  /** @brief Target platform for type checking, such as "linux", "darwin", or "win32". */
+  platform: 'linux',
+  /** @brief Whether to show column numbers in error messages. */
+  show_column_numbers: true,
+  /** @brief Enable strict type checking mode. */
+  strict: true,
+  /** @brief Enable strict optional checking. */
+  strict_optional: true,
+  /** @brief Whether to warn about unreachable code. */
+  warn_unreachable: true,
+}

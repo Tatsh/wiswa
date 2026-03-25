@@ -89,7 +89,7 @@ async def test_evaluate_merged_settings(tmp_path: Path, mocker: MockerFixture) -
     _patch_to_thread(mocker)
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
-    (lib_path / 'defaults.libjsonnet').write_text('{ project_type: "python" }')
+    (lib_path / 'defaults.libsonnet').write_text('{ project_type: "python" }')
     mocker.patch('wiswa.utils.jsonnet._jsonnet.evaluate_snippet',
                  return_value='{"project_type": "python"}')
     mocker.patch('wiswa.utils.jsonnet.platformdirs.user_config_path',
@@ -105,7 +105,7 @@ async def test_evaluate_merged_settings_user_defaults(tmp_path: Path,
     _patch_to_thread(mocker)
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
-    (lib_path / 'defaults.libjsonnet').write_text('{ project_type: "python" }')
+    (lib_path / 'defaults.libsonnet').write_text('{ project_type: "python" }')
     config_path = tmp_path / 'config'
     config_path.mkdir()
     (config_path / 'defaults.jsonnet').write_text('{ extra: true }')
@@ -125,7 +125,7 @@ async def test_evaluate_merged_settings_user_defaults_missing_raises(tmp_path: P
                                                                      mocker: MockerFixture) -> None:
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
-    (lib_path / 'defaults.libjsonnet').write_text('{}')
+    (lib_path / 'defaults.libsonnet').write_text('{}')
     config_path = tmp_path / 'config'
     mocker.patch('wiswa.utils.jsonnet.platformdirs.user_config_path', return_value=config_path)
     with pytest.raises(FileNotFoundError, match='user_defaults=True'):
@@ -136,7 +136,7 @@ async def test_resolve_defaults_only(tmp_path: Path, mocker: MockerFixture) -> N
     _patch_to_thread(mocker)
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
-    (lib_path / 'defaults.libjsonnet').write_text('{ project_type: "python" }')
+    (lib_path / 'defaults.libsonnet').write_text('{ project_type: "python" }')
     mocker.patch('wiswa.utils.jsonnet._jsonnet.evaluate_snippet',
                  return_value='{"project_type": "python"}')
     result = await resolve_defaults_only([str(lib_path)], lib_path)
@@ -167,7 +167,7 @@ async def test_resolve_defaults_only_passes_empty_overrides(tmp_path: Path,
     _patch_to_thread(mocker)
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
-    (lib_path / 'defaults.libjsonnet').write_text('{ a: 1 }')
+    (lib_path / 'defaults.libsonnet').write_text('{ a: 1 }')
     mock_eval = mocker.patch('wiswa.utils.jsonnet._jsonnet.evaluate_snippet',
                              return_value='{"a": 1}')
     await resolve_defaults_only([str(lib_path)], lib_path)

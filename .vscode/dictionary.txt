@@ -131,7 +131,7 @@ leafo
 lextudio
 libera
 liberadotchat
-libjsonnet
+libsonnet
 libname
 libsonnet
 linters

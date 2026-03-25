@@ -1,0 +1,42 @@
+/**
+ * @file defaults/dependabot.libsonnet
+ * @namespace dependabot
+ * @brief Default configuration for Dependabot, a tool for keeping dependencies up to date.
+ */
+{
+  local interval = 'weekly',
+  local python_settings(settings) = [{
+    directory: '/',
+    'package-ecosystem': if settings.package_manager == 'uv' then 'uv' else 'pip',
+    schedule: {
+      interval: interval,
+    },
+  }],
+  /**
+   * @brief Get dependabot configuration.
+   * @param settings The project settings.
+   * @returns An object representing the dependabot configuration.
+   * @pt object
+   * @rv object
+   * @sa [Dependabot Configuration Options](https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuring-dependabot-version-updates#configuration-options)
+   */
+  updates(settings):: {
+    updates: [
+      {
+        directory: '/',
+        'package-ecosystem': 'npm',
+        schedule: {
+          interval: interval,
+        },
+      },
+      {
+        directory: '/',
+        'package-ecosystem': 'github-actions',
+        schedule: {
+          interval: interval,
+        },
+      },
+    ] + if settings.project_type == 'python' then python_settings(settings) else [],
+    version: 2,
+  },
+}

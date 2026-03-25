@@ -3,8 +3,8 @@
  * @namespace root
  * @brief Main Jsonnet file that generates the project files based on the provided settings.
  */
-local github = import 'github.libjsonnet';
-local utils = import 'utils.libjsonnet';
+local github = import 'github.libsonnet';
+local utils = import 'utils.libsonnet';
 
 /** @brief The main function called to generate the project files. */
 function(settings)

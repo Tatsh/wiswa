@@ -1,0 +1,17 @@
+/**
+ * @file defaults/pre-commit-config/cff.libsonnet
+ * @namespace pre_commit_config::cff
+ * @brief `CITATION.cff` hook configuration for `.pre-commit-config.yaml`.
+ */
+{
+  /** @brief Hooks. */
+  hooks: [
+    {
+      id: 'validate-cff',
+    },
+  ],
+  /** @brief Repository URI. */
+  repo: 'https://github.com/citation-file-format/cffconvert',
+  /** @brief Revision. */
+  rev: 'b6045d7',
+}

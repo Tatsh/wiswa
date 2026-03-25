@@ -106,7 +106,7 @@ a|
 [source,jsonnet]
 ----
 local utils =
-  import 'utils.libjsonnet';
+  import 'utils.libsonnet';
 
 python_deps+: {
   main+: {
@@ -118,10 +118,10 @@ python_deps+: {
 
 === How It Works: Merge Defaults
 
-Merge with 400+ built-in defaults from `defaults.libjsonnet` (and your own footnote:[Controlled by the `-u` flag -- shared personal preferences across all your projects.]).
+Merge with 400+ built-in defaults from `defaults.libsonnet` (and your own footnote:[Controlled by the `-u` flag -- shared personal preferences across all your projects.]).
 
 [.big]
-`defaults.libjsonnet` + `user defaults.jsonnet` + `.wiswa.jsonnet`
+`defaults.libsonnet` + `user defaults.jsonnet` + `.wiswa.jsonnet`
 
 === How It Works: Jsonnet Evaluation
 
@@ -191,7 +191,7 @@ Only specify what differs from defaults:
 a|
 [source,jsonnet]
 ----
-local utils = import 'utils.libjsonnet';
+local utils = import 'utils.libsonnet';
 {
   project_name: 'my-app',
   project_type: 'python',
@@ -225,13 +225,13 @@ a|
 ----
 |===
 
-=== The `utils.libjsonnet` Library
+=== The `utils.libsonnet` Library
 
 Import it in any `.wiswa.jsonnet` to access built-in helper functions:
 
 [source,jsonnet]
 ----
-local utils = import 'utils.libjsonnet';
+local utils = import 'utils.libsonnet';
 ----
 
 * `utils.year()`, `utils.isodate()` -- current year and ISO date
@@ -248,7 +248,7 @@ The utils library also provides functions that fetch the *latest versions* at ge
 
 [source,jsonnet]
 ----
-local utils = import 'utils.libjsonnet';
+local utils = import 'utils.libsonnet';
 
 // PyPI (caret, tilde, >= prefixed, or bare)
 utils.latestPypiPackageVersionCaret('click')   // "^8.1.8"
@@ -420,9 +420,9 @@ wiswa/
     postprocess.py     -- formatting, locking, cleanup
 
 wiswa-jsonnet/
-  defaults.libjsonnet  -- base defaults (400+ fields)
+  defaults.libsonnet  -- base defaults (400+ fields)
   project.jsonnet      -- generates all config files
-  utils.libjsonnet     -- helper functions
+  utils.libsonnet     -- helper functions
 ----
 --
 

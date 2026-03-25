@@ -1,4 +1,4 @@
-local utils = import 'utils.libjsonnet';
+local utils = import 'utils.libsonnet';
 
 {
   local top = self,
@@ -89,13 +89,6 @@ local utils = import 'utils.libjsonnet';
       },
       ruff+: {
         'namespace-packages'+: ['wiswa/static'],
-      },
-    },
-  },
-  vscode+: {
-    settings+: {
-      'files.associations'+: {
-        '*.libjsonnet': 'jsonnet',
       },
     },
   },
