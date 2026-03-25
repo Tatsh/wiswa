@@ -21,6 +21,15 @@ local utils = import 'utils.libjsonnet';
   pyinstaller+: {
     collect_data+: ['fastmcp'],
     copy_metadata+: ['fastmcp'],
+    vcpkg: {
+      enabled: true,
+      targets: {
+        'windows-11-arm': {
+          triplet: 'arm64-windows',
+          packages: ['openssl'],
+        },
+      },
+    },
   },
   pyproject+: {
     project+: {
@@ -73,7 +82,7 @@ local utils = import 'utils.libjsonnet';
         build+: {
           targets+: {
             wheel+: {
-              packages+: ['%s-jsonnet' % top.primary_module],
+              packages: [top.primary_module, '%s-jsonnet' % top.primary_module],
             },
           },
         },
