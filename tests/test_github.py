@@ -122,17 +122,20 @@ async def test_setup_github_project_creates_protect_version_tags_ruleset(
     assert 'Copilot review for default branch' in ruleset_names
 
 
-async def test_setup_github_project_skips_existing_rulesets(mocker: MockerFixture) -> None:
+async def test_setup_github_project_updates_existing_rulesets(mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
     rulesets_resp = _make_resp(200, [
         {
-            'name': 'Protect version tags'
+            'name': 'Protect version tags',
+            'id': 1
         },
         {
-            'name': 'Protect default branch'
+            'name': 'Protect default branch',
+            'id': 2
         },
         {
-            'name': 'Copilot review for default branch'
+            'name': 'Copilot review for default branch',
+            'id': 3
         },
     ])
     session.get.return_value = _make_async_cm(rulesets_resp)
@@ -141,6 +144,10 @@ async def test_setup_github_project_skips_existing_rulesets(mocker: MockerFixtur
         c for c in session.post.call_args_list if 'rulesets' in str(c.args[0] if c.args else '')
     ]
     assert len(post_calls) == 0
+    put_calls = [
+        c for c in session.put.call_args_list if 'rulesets/' in str(c.args[0] if c.args else '')
+    ]
+    assert len(put_calls) == 3
 
 
 async def test_setup_github_project_creates_pages_when_not_existing(mocker: MockerFixture) -> None:
@@ -173,6 +180,32 @@ async def test_setup_github_project_skips_pages_when_existing(mocker: MockerFixt
     await setup_github_project(session, _make_settings())
     pages_post = [c for c in session.post.call_args_list if 'pages' in str(c.args[0])]
     assert len(pages_post) == 0
+
+
+async def test_setup_github_project_mixed_existing_and_new_rulesets(mocker: MockerFixture) -> None:
+    session = _mock_github_session(mocker)
+    rulesets_resp = _make_resp(200, [{'name': 'Protect version tags', 'id': 10}])
+    session.get.return_value = _make_async_cm(rulesets_resp)
+    await setup_github_project(session, _make_settings())
+    put_ruleset_calls = [
+        c for c in session.put.call_args_list if 'rulesets/' in str(c.args[0] if c.args else '')
+    ]
+    assert len(put_ruleset_calls) == 1
+    assert put_ruleset_calls[0].args[0].endswith('/rulesets/10')
+    post_ruleset_calls = [
+        c for c in session.post.call_args_list if 'rulesets' in str(c.args[0] if c.args else '')
+    ]
+    post_names = [c.kwargs.get('json', {}).get('name', '') for c in post_ruleset_calls]
+    assert 'Protect default branch' in post_names
+    assert 'Copilot review for default branch' in post_names
+
+
+async def test_setup_github_project_rulesets_get_skips_cache(mocker: MockerFixture) -> None:
+    session = _mock_github_session(mocker)
+    await setup_github_project(session, _make_settings())
+    rulesets_get = [c for c in session.get.call_args_list if 'rulesets' in str(c.args[0])]
+    assert len(rulesets_get) == 1
+    assert rulesets_get[0].kwargs.get('expire_after') == 0
 
 
 async def test_setup_github_project_handles_http_error(mocker: MockerFixture) -> None:

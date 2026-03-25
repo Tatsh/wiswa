@@ -11,6 +11,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Copilot code review ruleset for the default branch in GitHub repository setup.
 - `want_claude_agents` setting to generate `.claude/agents/`, skill files, `CLAUDE.md`, and
   `AGENTS.md` in target projects. Enabled by default when `want_claude` is true.
 - PyInstaller settings: `include_only`, `collect_data`, `collect_submodules`, `hidden_imports`,
@@ -48,6 +49,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Jsonnet native callback parameter names renamed to short aliases (`o`, `r`, `p`) to avoid
+  "binding parameter a second time" errors with Jsonnet 0.22.
 - Circular import between `wiswa.extensions` and `wiswa.utils.templating`.
 - HTTP 403/429 errors now display a user-friendly rate-limit message instead of a traceback.
 - `markdownlint-cli2` invocations in the non-yapf code path of `post_process_steps` were missing
@@ -74,6 +77,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- GitHub rulesets now use PUT to update existing rulesets and POST for new ones, instead of only
+  creating. Rulesets data extracted to module-level `_DESIRED_RULESETS` constant.
+- Rulesets GET request bypasses the HTTP cache to always fetch current state.
+- Removed invalid `automatic_copilot_code_review_enabled` parameter from the `pull_request` rule in
+  the default branch ruleset.
 - Converted the entire project from synchronous to async. `requests`/`requests-cache` replaced with
   `aiohttp`/`aiohttp-client-cache`, `subprocess.run` replaced with `asyncio.create_subprocess_exec`,
   and synchronous file I/O replaced with `anyio.Path`. All utility functions are now async. The Click
