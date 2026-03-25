@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
+import asyncio
 import logging
 
 from wiswa.extensions import (
@@ -101,32 +102,40 @@ async def _write_template_files_lua(templates_dir: Path,
 async def _write_templated_files_python(settings: Settings, templates_dir: Path,
                                         resolve_template: Callable[[Path], jinja2.Template],
                                         write_file: Callable[..., Awaitable[None]]) -> None:
+    tasks: list[Awaitable[None]] = []
     if not settings['stubs_only']:
-        await write_file(resolve_template(templates_dir / '_module_/__init__.py.j2'),
-                         f'{primary_module_to_path(settings["primary_module"])}/__init__.py')
+        tasks.append(
+            write_file(resolve_template(templates_dir / '_module_/__init__.py.j2'),
+                       f'{primary_module_to_path(settings["primary_module"])}/__init__.py'))
     if settings['want_tests']:
-        await write_file(resolve_template(templates_dir / 'tests/conftest.py.j2'),
-                         'tests/conftest.py')
+        tasks.append(
+            write_file(resolve_template(templates_dir / 'tests/conftest.py.j2'),
+                       'tests/conftest.py'))
         if settings['want_main'] and not settings['has_multiple_entry_points']:
-            await write_file(resolve_template(templates_dir / 'tests/test_main.py.j2'),
-                             'tests/test_main.py')
+            tasks.append(
+                write_file(resolve_template(templates_dir / 'tests/test_main.py.j2'),
+                           'tests/test_main.py'))
     if settings['want_docs']:
-        for file_path in (templates_dir / 'docs/conf.py.j2', templates_dir / 'docs/index.rst.j2',
-                          templates_dir / 'docs/badges.rst.j2'):
-            await write_file(resolve_template(file_path),
-                             file_path.relative_to(templates_dir).with_suffix(''))
+        tasks.extend(
+            write_file(resolve_template(file_path),
+                       file_path.relative_to(templates_dir).with_suffix(''))
+            for file_path in (templates_dir / 'docs/conf.py.j2',
+                              templates_dir / 'docs/index.rst.j2',
+                              templates_dir / 'docs/badges.rst.j2'))
     if ((settings['want_main'] or settings['has_multiple_entry_points'])
             and settings['using_github']):
         if (settings['supported_platforms'] == 'all' or 'windows' in settings['supported_platforms']
                 or 'macos' in settings['supported_platforms']):
-            await write_file(resolve_template(
-                templates_dir / '.github/workflows/pyinstaller.yml.j2'),
-                             '.github/workflows/pyinstaller.yml',
-                             overwrite=True)
+            tasks.append(
+                write_file(resolve_template(templates_dir / '.github/workflows/pyinstaller.yml.j2'),
+                           '.github/workflows/pyinstaller.yml',
+                           overwrite=True))
         if settings['supported_platforms'] == 'all' or 'linux' in settings['supported_platforms']:
-            await write_file(resolve_template(templates_dir / '.github/workflows/appimage.yml.j2'),
-                             '.github/workflows/appimage.yml',
-                             overwrite=True)
+            tasks.append(
+                write_file(resolve_template(templates_dir / '.github/workflows/appimage.yml.j2'),
+                           '.github/workflows/appimage.yml',
+                           overwrite=True))
+    await asyncio.gather(*tasks)
 
 
 async def _write_templated_files_typescript(settings: Settings, templates_dir: Path,
@@ -159,6 +168,7 @@ _CI_PLATFORM_AGENTS = frozenset({
 async def _write_templated_files_claude(settings: Settings, templates_dir: Path,
                                         resolve_template: Callable[[Path], jinja2.Template],
                                         write_file: Callable[..., Awaitable[None]]) -> None:
+    tasks: list[Awaitable[None]] = []
     agents_dir = templates_dir / '.claude/agents'
     if agents_dir.is_dir():
         for file_path in sorted(agents_dir.iterdir()):
@@ -173,7 +183,7 @@ async def _write_templated_files_claude(settings: Settings, templates_dir: Path,
                     and not settings['using_gitlab']):
                 output.unlink(missing_ok=True)
                 continue
-            await write_file(resolve_template(file_path), output, overwrite=True)
+            tasks.append(write_file(resolve_template(file_path), output, overwrite=True))
     skills_dir = templates_dir / '.claude/skills'
     if skills_dir.is_dir():
         for skill_subdir in sorted(skills_dir.iterdir()):
@@ -181,9 +191,15 @@ async def _write_templated_files_claude(settings: Settings, templates_dir: Path,
                 for file_path in sorted(skill_subdir.iterdir()):
                     if file_path.suffix == '.j2':
                         output = Path('.claude/skills') / skill_subdir.name / file_path.stem
-                        await write_file(resolve_template(file_path), output, overwrite=True)
-    await write_file(resolve_template(templates_dir / 'CLAUDE.md.j2'), 'CLAUDE.md', overwrite=True)
-    await write_file(resolve_template(templates_dir / 'AGENTS.md.j2'), 'AGENTS.md', overwrite=True)
+                        tasks.append(write_file(resolve_template(file_path), output,
+                                                overwrite=True))
+    tasks.extend((write_file(resolve_template(templates_dir / 'CLAUDE.md.j2'),
+                             'CLAUDE.md',
+                             overwrite=True),
+                  write_file(resolve_template(templates_dir / 'AGENTS.md.j2'),
+                             'AGENTS.md',
+                             overwrite=True)))
+    await asyncio.gather(*tasks)
 
 
 async def _should_overwrite_contributing(settings: Settings) -> bool:
@@ -233,10 +249,10 @@ async def write_templated_files(module_path: Path,
     common_templates = (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', contributing_overwrite), *(
         (('LICENSE.txt.j2', not settings['private']),) if settings.get('license') == 'MIT' else
         ()), ('SECURITY.md.j2', True), ('CHANGELOG.md.j2', False), ('README.md.j2', False))
-    for template_name, overwrite in common_templates:
-        template_path = templates_dir / template_name
-        output_path = Path(template_name).with_suffix('')
-        await write_file(resolve_template(template_path), output_path, overwrite=overwrite)
+    await asyncio.gather(*(write_file(resolve_template(templates_dir / template_name),
+                                      Path(template_name).with_suffix(''),
+                                      overwrite=overwrite)
+                           for template_name, overwrite in common_templates))
     match settings['project_type']:
         case 'python':
             await _write_templated_files_python(settings, templates_dir, resolve_template,

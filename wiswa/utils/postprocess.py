@@ -1,7 +1,7 @@
 """Post-processing steps after project generation."""
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Awaitable, Iterable, Iterator, Sequence
 from functools import cache
 from pathlib import Path
 from shlex import quote
@@ -46,28 +46,32 @@ async def _post_process_steps_python(settings: Settings,
                                      *,
                                      on_command: Callable[[str], None] | None = None) -> None:
     is_uv = settings['package_manager'] == 'uv'
+    cleanup_tasks: list[Awaitable[None]] = []
     if is_uv:
-        await anyio.Path('poetry.lock').unlink(missing_ok=True)
+        cleanup_tasks.append(anyio.Path('poetry.lock').unlink(missing_ok=True))
     if not settings['want_tests']:
-        await anyio.to_thread.run_sync(
-            lambda: __import__('shutil').rmtree('tests', ignore_errors=True))
-        await anyio.Path('.github/workflows/tests.yml').unlink(missing_ok=True)
+        cleanup_tasks.extend((anyio.to_thread.run_sync(
+            lambda: __import__('shutil').rmtree('tests', ignore_errors=True)),
+                              anyio.Path('.github/workflows/tests.yml').unlink(missing_ok=True)))
         if (not settings['vscode']['launch']
                 or (len(settings['vscode']['launch']['configurations']) == 1
                     and settings['vscode']['launch']['configurations'][0]['name'] == 'Run tests')):
-            await anyio.Path('.vscode/launch.json').unlink(missing_ok=True)
+            cleanup_tasks.append(anyio.Path('.vscode/launch.json').unlink(missing_ok=True))
+    if not settings['want_docs']:
+        cleanup_tasks.extend((anyio.to_thread.run_sync(
+            lambda: __import__('shutil').rmtree('docs', ignore_errors=True)),
+                              anyio.Path('.readthedocs.yaml').unlink(missing_ok=True)))
+    if not settings['want_codeql']:
+        cleanup_tasks.append(anyio.Path('.github/workflows/codeql.yml').unlink(missing_ok=True))
+    if cleanup_tasks:
+        await asyncio.gather(*cleanup_tasks)
     pyproject_content = tomlkit.loads(
         await anyio.Path('pyproject.toml').read_text(encoding='utf-8')).unwrap()
     if not settings['want_docs']:
-        await anyio.to_thread.run_sync(
-            lambda: __import__('shutil').rmtree('docs', ignore_errors=True))
-        await anyio.Path('.readthedocs.yaml').unlink(missing_ok=True)
         if is_uv:
             pyproject_content.get('dependency-groups', {}).pop('docs', None)
         else:
             del pyproject_content['tool']['poetry']['group']['docs']
-    if not settings['want_codeql']:
-        await anyio.Path('.github/workflows/codeql.yml').unlink(missing_ok=True)
     if settings['want_man']:
         log.debug('Adding man pages to Commitizen version_files.')
         man = anyio.Path('man')
@@ -86,8 +90,6 @@ async def _post_process_steps_python(settings: Settings,
         else:
             del pyproject_content['tool']['poetry']['group']['tests']
         del pyproject_content['tool']['pytest']
-        await anyio.to_thread.run_sync(
-            lambda: __import__('shutil').rmtree('tests', ignore_errors=True))
     run_cmd = 'uv run' if is_uv else 'poetry run'
     package_json_content = json.loads(await anyio.Path('package.json').read_text(encoding='utf-8'))
     if not settings['want_yapf']:
@@ -101,12 +103,12 @@ async def _post_process_steps_python(settings: Settings,
         package_json_content['scripts']['format'] = (
             f'prettier -w . && {run_cmd} ruff format .'
             ' && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix')
-    await anyio.Path('package.json').write_text(json.dumps(package_json_content,
-                                                           indent=2,
-                                                           sort_keys=True),
-                                                encoding='utf-8')
-    await anyio.Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content),
-                                                  encoding='utf-8')
+    await asyncio.gather(
+        anyio.Path('package.json').write_text(json.dumps(package_json_content,
+                                                         indent=2,
+                                                         sort_keys=True),
+                                              encoding='utf-8'),
+        anyio.Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8'))
     oc = on_command
     if is_uv:
         await _subprocess_log_run(('uv', 'lock'), on_command=oc)

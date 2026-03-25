@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
+import asyncio
 import getpass
 import logging
 
@@ -11,6 +12,8 @@ import anyio
 import keyring
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable
+
     from aiohttp import ClientSession
     from wiswa.typing import Settings
 
@@ -85,18 +88,21 @@ async def _configure_github_repo(session: ClientSession, host: str, repo_name: s
                                  settings: Settings) -> None:
     async with session.patch(f'{host}/repos/{repo_name}', json=_get_repo_config(settings)) as resp:
         resp.raise_for_status()
-    async with session.put(
-            f'{host}/repos/{repo_name}/topics',
-            json={'names': [x.replace(' ', '-') for x in settings['keywords']]}) as resp:
-        resp.raise_for_status()
-    for endpoint in [
-            'automated-security-fixes', 'private-vulnerability-reporting', 'vulnerability-alerts'
-    ]:
-        async with session.put(f'{host}/repos/{repo_name}/{endpoint}') as resp:
+
+    async def _put(url: str, **kwargs: Any) -> None:
+        async with session.put(url, **kwargs) as resp:
             resp.raise_for_status()
+
+    put_tasks: list[Awaitable[None]] = [
+        _put(f'{host}/repos/{repo_name}/topics',
+             json={'names': [x.replace(' ', '-') for x in settings['keywords']]}),
+        *(_put(f'{host}/repos/{repo_name}/{ep}')
+          for ep in ('automated-security-fixes', 'private-vulnerability-reporting',
+                     'vulnerability-alerts')),
+    ]
     if settings['github']['immutable_releases']:
-        async with session.put(f'{host}/repos/{repo_name}/immutable-releases') as resp:
-            resp.raise_for_status()
+        put_tasks.append(_put(f'{host}/repos/{repo_name}/immutable-releases'))
+    await asyncio.gather(*put_tasks)
 
 
 _DESIRED_RULESETS: list[dict[str, Any]] = [{
@@ -215,22 +221,13 @@ async def setup_github_project(session: ClientSession, settings: Settings) -> No
 
     try:
         await _configure_github_repo(session, host, repo_name, settings)
-        async with session.put(
-                f'{host}/repos/{repo_name}/topics',
-                json={'names': [x.replace(' ', '-') for x in settings['keywords']]}) as resp:
-            resp.raise_for_status()
-        async with session.put(f'{host}/repos/{repo_name}/automated-security-fixes') as resp:
-            resp.raise_for_status()
-        async with session.put(f'{host}/repos/{repo_name}/private-vulnerability-reporting') as resp:
-            resp.raise_for_status()
-        async with session.put(f'{host}/repos/{repo_name}/vulnerability-alerts') as resp:
-            resp.raise_for_status()
         async with session.get(f'{host}/repos/{repo_name}/rulesets', expire_after=0) as r:
             r.raise_for_status()
             rulesets = await r.json()
         existing: dict[str, int] = {x['name']: x['id'] for x in rulesets}
         rulesets_url = f'{host}/repos/{repo_name}/rulesets'
-        for ruleset in _DESIRED_RULESETS:
+
+        async def _upsert_ruleset(ruleset: dict[str, Any]) -> None:
             name = ruleset['name']
             log.debug('Processing ruleset "%s".', name)
             if name in existing:
@@ -239,6 +236,8 @@ async def setup_github_project(session: ClientSession, settings: Settings) -> No
             else:
                 async with session.post(rulesets_url, json=ruleset) as resp:
                     resp.raise_for_status()
+
+        await asyncio.gather(*(_upsert_ruleset(rs) for rs in _DESIRED_RULESETS))
         async with session.get(f'{host}/repos/{repo_name}/pages') as resp:
             pages_status = resp.status
         if pages_status != HTTPStatus.OK:

@@ -31,7 +31,7 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Awaitable, Mapping
 
     from .typing import Settings
 
@@ -159,12 +159,13 @@ async def _main_async(file: Path,
                     spin.update('Writing templated files.')
                     await write_templated_files(module_path, loaded, session)
                 spin.update('Downloading Yarn.')
-                await download_yarn(session, loaded['yarn_version'])
-                await download_yarn_plugins(session)
+                await asyncio.gather(download_yarn(session, loaded['yarn_version']),
+                                     download_yarn_plugins(session))
                 spin.update('Copying static files.')
-                await copy_static_files(loaded, module_path)
+                copy_tasks: list[Awaitable[None]] = [copy_static_files(loaded, module_path)]
                 if loaded['project_type'] == 'python' and not loaded['stubs_only']:
-                    await create_py_typed_files(loaded)
+                    copy_tasks.append(create_py_typed_files(loaded))
+                await asyncio.gather(*copy_tasks)
                 spin.update('Post-processing.')
                 await post_process_steps(loaded,
                                          on_command=lambda cmd: spin.update(f'Running {cmd}'))
