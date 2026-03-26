@@ -1,3 +1,4 @@
+local cleanup = import 'github/workflows/cleanup.libsonnet';
 local codeql = import 'github/workflows/codeql.libsonnet';
 local flatpak_python = import 'github/workflows/flatpak-python.libsonnet';
 local lua_publish = import 'github/workflows/publish-luarocks.libsonnet';
@@ -64,6 +65,10 @@ local utils = import 'utils.libsonnet';
   ) + (
     if (settings.want_main || settings.has_multiple_entry_points) && settings.project_type == 'python' then {
       '.github/workflows/release.yml': utils.manifestYaml(release(settings)),
+    } else {}
+  ) + (
+    if settings.private then {
+      '.github/workflows/cleanup.yml': utils.manifestYaml(cleanup(settings)),
     } else {}
   ),
 }

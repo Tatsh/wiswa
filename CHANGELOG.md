@@ -14,6 +14,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `dict:update`, `format`, `check-formatting`, and `check-spelling` scripts are now included in
   `package.json` for all project types (previously only Python, C/C++, and TypeScript).
 - QA workflow no longer generates an empty `changes` job for non-C/C++ project types.
+- Cache and artifact cleanup for private projects is now a dedicated `cleanup.yml` workflow running
+  on Linux instead of inline steps in PyInstaller, AppImage, Snap, and Flatpak workflows (fixes
+  failures on Windows runners where `xargs` is unavailable).
 - `python_deps`, `using_django`, and `using_drf` in `defaults.libsonnet` are now guarded by
   `project_type == 'python'`, skipping unnecessary PyPI version lookups for non-Python project types.
 - Coveralls steps in generated tests workflows now skip pull request events.
