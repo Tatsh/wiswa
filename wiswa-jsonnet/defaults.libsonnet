@@ -1039,7 +1039,7 @@ local utils = import 'utils.libsonnet';
     contributors: ['%s <%s>' % [x.name, x.email] for x in settings.authors],
     homepage: settings.homepage,
     keywords: settings.keywords,
-    [if !settings.private then 'license']: settings.license,
+    license: settings.license,
     name: std.asciiLower(settings.project_name),
     packageManager: 'yarn@%s' % settings.yarn_version,
     repository: {
