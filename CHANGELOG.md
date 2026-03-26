@@ -28,6 +28,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Coveralls steps in generated tests workflows now skip pull request events.
 - Post-processing now sets `COREPACK_ENABLE_DOWNLOAD_PROMPT=0` in the environment for yarn
   subprocess calls, preventing Corepack from prompting interactively.
+- `_setup_github_session` now catches `keyring.errors.NoKeyringError` and logs a warning instead of
+  crashing, so environments without a keyring backend no longer produce a traceback.
 
 ### Changed
 

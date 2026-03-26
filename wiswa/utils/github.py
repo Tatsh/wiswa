@@ -71,8 +71,12 @@ def _get_repo_config(settings: Settings) -> dict[str, Any]:
 
 
 async def _setup_github_session(session: ClientSession) -> tuple[ClientSession, str] | None:
-    token = await anyio.to_thread.run_sync(
-        lambda: keyring.get_password('tmu-github-api', getpass.getuser()))
+    try:
+        token = await anyio.to_thread.run_sync(
+            lambda: keyring.get_password('tmu-github-api', getpass.getuser()))
+    except keyring.errors.NoKeyringError:
+        log.warning('No keyring backend available.')
+        return None
     if not token:
         log.warning('No GitHub token.')
         return None

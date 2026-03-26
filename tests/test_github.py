@@ -208,6 +208,17 @@ async def test_setup_github_project_rulesets_get_skips_cache(mocker: MockerFixtu
     assert rulesets_get[0].kwargs.get('expire_after') == 0
 
 
+async def test_setup_github_project_returns_none_on_no_keyring(mocker: MockerFixture) -> None:
+    import keyring.errors
+
+    mocker.patch('wiswa.utils.github.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.github.keyring.get_password',
+                 side_effect=keyring.errors.NoKeyringError)
+    session = MagicMock()
+    await setup_github_project(session, _make_settings())
+    session.patch.assert_not_called()
+
+
 async def test_setup_github_project_handles_http_error(mocker: MockerFixture) -> None:
     import aiohttp
 
