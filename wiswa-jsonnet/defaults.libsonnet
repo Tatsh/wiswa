@@ -307,12 +307,12 @@ local utils = import 'utils.libsonnet';
    * @brief If the project uses Django.
    * @var boolean
    */
-  using_django: 'django' in self.python_deps.main,
+  using_django: self.project_type == 'python' && 'django' in self.python_deps.main,
   /**
    * @brief If the project uses Django REST Framework.
    * @var boolean
    */
-  using_drf: 'djangorestframework' in self.python_deps.main,
+  using_drf: self.project_type == 'python' && 'djangorestframework' in self.python_deps.main,
   /**
    * @brief If the project is hosted on GitHub.
    * @var boolean
@@ -797,7 +797,12 @@ local utils = import 'utils.libsonnet';
    * or arrays of `{ version, python }` objects for marker-conditional deps.
    * Wiswa converts these to the correct format for the chosen package manager.
    */
-  python_deps: default_deps,
+  python_deps: if self.project_type == 'python' then default_deps else {
+    main: {},
+    dev: {},
+    docs: {},
+    tests: {},
+  },
   /** @brief Python project configuration (`pyproject.toml`). */
   pyproject: pyproject {
     local primary_module_path = std.join('/', std.split(settings.primary_module, '.')),

@@ -9,6 +9,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `python_deps`, `using_django`, and `using_drf` in `defaults.libsonnet` are now guarded by
+  `project_type == 'python'`, skipping unnecessary PyPI version lookups for non-Python project types.
+
 ### Changed
 
 - Parallelised independent async operations across the generation pipeline for faster project
