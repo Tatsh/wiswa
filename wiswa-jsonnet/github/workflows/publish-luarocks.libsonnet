@@ -12,8 +12,11 @@ local utils = import 'utils.libsonnet';
           uses: 'leafo/gh-actions-luarocks@' + utils.githubLatestActionTag('actions', 'checkout'),
         },
         {
+          env: {
+            LUAROCKS_API_KEY: '${{ secrets.LUAROCKS_API_KEY }}',
+          },
           name: 'Upload package',
-          run: 'luarocks upload --api-key=${{ secrets.LUAROCKS_API_KEY }} *.rockspec',
+          run: 'luarocks upload --api-key="$LUAROCKS_API_KEY" *.rockspec',
         },
       ],
     },

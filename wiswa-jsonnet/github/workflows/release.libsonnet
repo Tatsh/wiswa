@@ -35,10 +35,12 @@ function(settings)
             name: 'Check all workflows succeeded',
             env: {
               GH_TOKEN: '${{ github.token }}',
+              HEAD_BRANCH: '${{ github.event.workflow_run.head_branch }}',
+              HEAD_SHA: '${{ github.event.workflow_run.head_sha }}',
             },
             run: |||
-              tag="${{ github.event.workflow_run.head_branch }}"
-              sha="${{ github.event.workflow_run.head_sha }}"
+              tag="$HEAD_BRANCH"
+              sha="$HEAD_SHA"
               all_success=true
               for workflow in %(workflows)s; do
                 status=$(gh run list -w "$workflow" --commit "$sha" --json conclusion -q '.[0].conclusion')

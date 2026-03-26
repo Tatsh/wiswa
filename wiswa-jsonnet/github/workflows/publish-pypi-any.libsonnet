@@ -24,9 +24,10 @@ function(settings)
             name: 'Wait for workflows',
             env: {
               GH_TOKEN: '${{ github.token }}',
+              COMMIT_SHA: '${{ github.sha }}',
             },
             run: |||
-              sha="${{ github.sha }}"
+              sha="$COMMIT_SHA"
               for i in $(seq 1 30); do
                 all_done=true
                 for workflow in %(workflows)s; do

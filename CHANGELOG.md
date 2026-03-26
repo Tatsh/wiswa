@@ -11,6 +11,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- GitHub expressions in workflow `run:` blocks moved to `env:` variables to prevent script injection
+  (release, cleanup, publish-pypi, publish-luarocks workflows).
 - `dict:update`, `format`, `check-formatting`, and `check-spelling` scripts are now included in
   `package.json` for all project types (previously only Python, C/C++, and TypeScript).
 - QA workflow no longer generates an empty `changes` job for non-C/C++ project types.

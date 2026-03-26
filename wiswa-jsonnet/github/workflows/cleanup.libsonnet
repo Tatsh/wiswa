@@ -18,10 +18,11 @@ function(settings) {
         {
           env: {
             GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}',
+            REPO: '${{ github.repository }}',
           },
           name: 'Delete old artifacts',
           run: |||
-            gh api repos/${{ github.repository }}/actions/artifacts --paginate -q '.artifacts[] | select((now - (.created_at | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .id' | xargs -r -I{} gh api -X DELETE repos/${{ github.repository }}/actions/artifacts/{}
+            gh api "repos/$REPO/actions/artifacts" --paginate -q '.artifacts[] | select((now - (.created_at | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .id' | xargs -r -I{} gh api -X DELETE "repos/$REPO/actions/artifacts/{}"
           |||,
         },
       ],
