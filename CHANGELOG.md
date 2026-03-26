@@ -19,7 +19,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   failures on Windows runners where `xargs` is unavailable).
 - CodeQL workflow now filters by language-specific file extensions (`.py`/`.pyi` for Python,
   `.ts`/`.tsx`/`.js`/`.jsx` for TypeScript, C/C++ extensions for C/C++ and Xcode/Swift projects),
-  so it only runs when relevant source files change.
+  so it only runs when relevant source files change. When `actions` is in the CodeQL languages
+  array, workflow YAML files are also included in the path filters.
 - `python_deps`, `using_django`, and `using_drf` in `defaults.libsonnet` are now guarded by
   `project_type == 'python'`, skipping unnecessary PyPI version lookups for non-Python project types.
 - Coveralls steps in generated tests workflows now skip pull request events.

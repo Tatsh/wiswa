@@ -1,5 +1,11 @@
 local utils = import 'utils.libsonnet';
 
+local actions_exts = [
+  '.github/workflows/*.yml',
+  '.github/workflows/*.yaml',
+  '**/action.yml',
+  '**/action.yaml',
+];
 local cpp_exts = [
   '**/*.cpp',
   '**/*.c++',
@@ -57,7 +63,7 @@ function(settings)
       },
     },
     name: 'CodeQL',
-    local path_filters = if settings.project_type == 'python' then {
+    local lang_filters = if settings.project_type == 'python' then {
       paths: ['**/*.py', '**/*.pyi'],
     } else if settings.project_type == 'c' then {
       paths: ['**/*.c', '**/*.h'],
@@ -68,6 +74,10 @@ function(settings)
     } else if settings.project_type == 'xcode' then {
       paths: ['**/*.swift'] + cpp_exts,
     } else {},
+    local with_actions = if std.member(settings.github.codeql.languages, 'actions')
+    then { paths+: actions_exts }
+    else {},
+    local path_filters = lang_filters + with_actions,
     on: {
       pull_request: {
         branches: [
