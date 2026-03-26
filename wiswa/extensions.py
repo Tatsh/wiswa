@@ -18,6 +18,24 @@ __all__ = ('GithubAPIExtension', 'ParseMarkdownBadgeExtension', 'ShellExtension'
 
 def topython(  # noqa: PLR0911
         obj: Any, *, convert_strings: bool = True, list_to_tuple: bool = False) -> Any:
+    """
+    Convert a Python object to its string representation as Python source code.
+
+    Parameters
+    ----------
+    obj : Any
+        The object to convert.
+    convert_strings : bool
+        Whether to convert string values that look like booleans or integers.
+    list_to_tuple : bool
+        Whether to convert lists to tuples in the output.
+
+    Returns
+    -------
+    Any
+        A string containing the Python source representation of the object, or the object itself if
+        it cannot be converted.
+    """
     data: Any
     if isinstance(obj, str):
         if convert_strings:
@@ -111,7 +129,7 @@ class ToPythonExtension(Extension):
 
 
 class GithubAPIExtension(Extension):
-    """Extension for GitHub API calls."""
+    """Extension exporting ``github_latest_action_tag`` to :py:class:`~jinja2.Environment`."""
     def __init__(self, environment: jinja2.Environment) -> None:
         from .utils.versions import get_github_release_latest_tag  # noqa: PLC0415
 

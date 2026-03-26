@@ -26,7 +26,19 @@ _cache: dict[str, str] = {}
 
 
 async def get_latest_yarn_version(session: ClientSession) -> str:  # pragma: no cover
-    """Get the latest Yarn version."""
+    """
+    Get the latest Yarn version.
+
+    Parameters
+    ----------
+    session : ClientSession
+        The aiohttp session.
+
+    Returns
+    -------
+    str
+        The latest stable Yarn version string.
+    """
     key = 'yarn_latest'
     if key in _cache:
         return _cache[key]
@@ -40,7 +52,21 @@ async def get_latest_yarn_version(session: ClientSession) -> str:  # pragma: no 
 
 async def get_npm_latest_package_version(session: ClientSession,
                                          package: str) -> str:  # pragma: no cover
-    """Get the latest version of an NPM package."""
+    """
+    Get the latest version of an NPM package.
+
+    Parameters
+    ----------
+    session : ClientSession
+        The aiohttp session.
+    package : str
+        The NPM package name.
+
+    Returns
+    -------
+    str
+        The latest version string.
+    """
     key = f'npm_{package}'
     if key in _cache:
         return _cache[key]
@@ -56,6 +82,18 @@ async def get_pypi_latest_package_version(session: ClientSession,
                                           package: str) -> str:  # pragma: no cover
     """
     Get the latest version of a PyPI package.
+
+    Parameters
+    ----------
+    session : ClientSession
+        The aiohttp session.
+    package : str
+        The PyPI package name.
+
+    Returns
+    -------
+    str
+        The latest non-prerelease, non-dev version string.
 
     Raises
     ------
@@ -89,7 +127,14 @@ async def get_pypi_latest_package_version(session: ClientSession,
 
 
 async def download_yarn_plugins(session: ClientSession) -> None:
-    """Download Yarn plugins."""
+    """
+    Download Yarn plugins.
+
+    Parameters
+    ----------
+    session : ClientSession
+        The aiohttp session.
+    """
     async with session.get(PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI, timeout=15) as resp:
         resp.raise_for_status()
         text = await resp.text()
@@ -100,7 +145,16 @@ async def download_yarn_plugins(session: ClientSession) -> None:
 
 
 async def download_yarn(session: ClientSession, version: str) -> None:
-    """Download the specified version of Yarn and save it to ``.yarn/releases``."""
+    """
+    Download the specified version of Yarn and save it to ``.yarn/releases``.
+
+    Parameters
+    ----------
+    session : ClientSession
+        The aiohttp session.
+    version : str
+        The Yarn version to download.
+    """
     async with session.get(f'https://repo.yarnpkg.com/{version}/packages/yarnpkg-cli/bin/yarn.js',
                            timeout=15) as resp:
         resp.raise_for_status()

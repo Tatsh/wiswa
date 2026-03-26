@@ -17,7 +17,14 @@ log = logging.getLogger(__name__)
 
 
 async def create_py_typed_files(settings: Settings) -> None:
-    """Create ``py.typed`` in the primary module directory (same location as its __init__.py)."""
+    """
+    Create ``py.typed`` in the primary module directory (same location as its ``__init__.py``).
+
+    Parameters
+    ----------
+    settings : Settings
+        Project settings.
+    """
     path = anyio.Path(primary_module_to_path(settings['primary_module']))
     await path.mkdir(parents=True, exist_ok=True)
     target = path / 'py.typed'

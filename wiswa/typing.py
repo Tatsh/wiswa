@@ -13,7 +13,17 @@ __all__ = ('CustomProjectBadge', 'PackageJSON', 'PackageManager', 'ProjectType',
            'VSCode', 'VSCodeLaunch', 'VSCodeLaunchConfiguration')
 
 PackageManager: TypeAlias = Literal['poetry', 'uv']
+"""
+The Python package manager to use.
+
+:meta hide-value:
+"""
 ProjectType: TypeAlias = Literal['c', 'c++', 'generic', 'lua', 'python', 'typescript', 'xcode']
+"""
+The type of project being generated.
+
+:meta hide-value:
+"""
 
 
 class VSCodeLaunchConfiguration(TypedDict):
@@ -59,6 +69,7 @@ class PyProjectToolPoetry(TypedDict, total=False):
     dependencies: Mapping[str, str]
     """A mapping of dependencies and their versions."""
     packages: Iterable[PyProjectToolPoetryPackage]
+    """A list of packages to include in the distribution."""
 
 
 class PyProjectToolCommitizen(TypedDict, total=False):
@@ -156,9 +167,9 @@ class SettingsSocialMastodon(TypedDict):
 
 
 class SettingsSocialTextAndURI(TypedDict):
-    """YouTube settings."""
+    """A social media entry with display text and a URI."""
     text: str
-    """The text shown in badge."""
+    """The text shown in the badge."""
     uri: str
     """URI."""
 

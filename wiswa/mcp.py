@@ -122,7 +122,8 @@ def collect_paths(data: Any, prefix: str = '') -> list[str]:
 
 @mcp.tool()
 async def get_defaults(key_path: str | None = None) -> str:
-    """Get resolved default settings, optionally narrowed to a dot-separated key path.
+    """
+    Get resolved default settings, optionally narrowed to a dot-separated key path.
 
     Examples: ``get_defaults("pyproject.tool.ruff")``, ``get_defaults()`` for all defaults.
     """
@@ -171,7 +172,8 @@ async def lookup_setting(key_path: str) -> str:
 
 @mcp.tool()
 async def list_settings(key_path: str | None = None, depth: int = 1) -> str:
-    """List setting keys at a given path and depth.
+    """
+    List setting keys at a given path and depth.
 
     Examples: ``list_settings()`` for top-level keys, ``list_settings("pyproject.tool", depth=2)``.
     """
@@ -208,7 +210,8 @@ async def list_settings(key_path: str | None = None, depth: int = 1) -> str:
 
 @mcp.tool()
 async def search_settings(query: str) -> str:
-    """Search for settings by substring match on their fully-qualified key path.
+    """
+    Search for settings by substring match on their fully-qualified key path.
 
     Example: ``search_settings("want_")`` to find all boolean feature flags.
     """
