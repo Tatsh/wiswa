@@ -75,8 +75,8 @@ If any changed source files are being committed, run the following agents **in o
   dependency/version changes in `package.json`.
 {%- else %} or dependency/version changes.
 {%- endif %} **Skip for**: workflows, CI config, `.claude/`,
-  `.cursor/`,{% if settings.want_copilot %} `.github/instructions/`,{% endif %} documentation-only changes,
-  and other non-user-facing files.
+  `.cursor/`,{% if settings.want_copilot %} `.github/instructions/`,{% endif %}
+  documentation-only changes, and other non-user-facing files.
 
 ## Analysing changes
 
@@ -126,7 +126,8 @@ no hand-written code changed, this is a **cruft update**. Indicators:
   `.pre-commit-config.yaml`, `.claude/agents/`,
   `.cursor/rules/`,{% if settings.want_copilot %} `.github/instructions/`,{% endif %}
   `CITATION.cff`, `.vscode/dictionary.txt`,
-{%- if settings.project_type == 'python' %} `uv.lock`,{% endif %}
+{%- if settings.project_type == 'python' %} `uv.lock`,
+{% endif %}
   `.wiswa.jsonnet`, etc.).
 - No files under the primary module or
 {%- if settings.project_type == 'python' %} `tests/`

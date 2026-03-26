@@ -40,8 +40,7 @@ If any changed files are under `wiswa/` or `tests/`, run the following agents **
   with the relevant commit. **Only run when changes affect users**:
   files under `wiswa/`, `tests/`, or
   dependency/version changes in `pyproject.toml`. **Skip for**: workflows, CI config, `.claude/`,
-  `.cursor/`, `.github/instructions/`, documentation-only changes,
-  and other non-user-facing files.
+  `.cursor/`, `.github/instructions/`, documentation-only changes, and other non-user-facing files.
 
 ## Analysing changes
 
