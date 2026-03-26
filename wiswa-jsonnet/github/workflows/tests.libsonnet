@@ -58,6 +58,7 @@ function(settings)
           },
         ] + (if settings.want_coveralls then [{
                name: 'Coverage',
+               'if': "github.event_name != 'pull_request'",
                uses: 'coverallsapp/github-action@' + utils.githubLatestActionTag('coverallsapp', 'github-action'),
                with: {
                  file: 'coverage.xml',

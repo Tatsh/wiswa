@@ -25,6 +25,7 @@ function(settings)
           },
         ] + (if settings.want_coveralls then [{
                name: 'Coveralls',
+               'if': "github.event_name != 'pull_request'",
                uses: 'coverallsapp/github-action@' + utils.githubLatestActionTag('coverallsapp', 'github-action'),
              }] else []),
       },
