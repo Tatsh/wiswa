@@ -10,6 +10,7 @@ from urllib.parse import quote as urllib_quote, urlencode
 import asyncio
 import json
 import logging
+import os
 
 import anyio
 import tomlkit
@@ -404,5 +405,6 @@ async def post_process_steps(settings: Settings,
                                              indent=2,
                                              sort_keys=True),
                                   encoding='utf-8')
-    await _subprocess_log_run(('yarn',), on_command=oc)
-    await _subprocess_log_run(('yarn', 'format'), on_command=oc, check=False)
+    yarn_env = os.environ | {'COREPACK_ENABLE_DOWNLOAD_PROMPT': '0'}
+    await _subprocess_log_run(('yarn',), on_command=oc, env=yarn_env)
+    await _subprocess_log_run(('yarn', 'format'), on_command=oc, check=False, env=yarn_env)

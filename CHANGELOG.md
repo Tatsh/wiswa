@@ -26,6 +26,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `python_deps`, `using_django`, and `using_drf` in `defaults.libsonnet` are now guarded by
   `project_type == 'python'`, skipping unnecessary PyPI version lookups for non-Python project types.
 - Coveralls steps in generated tests workflows now skip pull request events.
+- Post-processing now sets `COREPACK_ENABLE_DOWNLOAD_PROMPT=0` in the environment for yarn
+  subprocess calls, preventing Corepack from prompting interactively.
 
 ### Changed
 

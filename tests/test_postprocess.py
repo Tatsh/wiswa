@@ -711,6 +711,25 @@ async def test_post_process_steps_custom_project_badges(tmp_path: Path,
     assert 'Low Priority' in content
 
 
+async def test_post_process_steps_yarn_env_has_corepack_flag(tmp_path: Path,
+                                                             monkeypatch: pytest.MonkeyPatch,
+                                                             mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    mock_proc = AsyncMock()
+    mock_proc.communicate = AsyncMock(return_value=(b'', b''))
+    mock_proc.returncode = 0
+    mock_create = mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec',
+                               return_value=mock_proc)
+    settings = cast('Any', _make_settings())
+    await post_process_steps(settings)
+    yarn_calls = [c for c in mock_create.call_args_list if c.args and c.args[0] == 'yarn']
+    assert len(yarn_calls) == 2
+    for call in yarn_calls:
+        env = call.kwargs.get('env', {})
+        assert env.get('COREPACK_ENABLE_DOWNLOAD_PROMPT') == '0'
+
+
 async def test_post_process_steps_badges_no_codeql_no_tests(tmp_path: Path,
                                                             monkeypatch: pytest.MonkeyPatch,
                                                             mocker: MockerFixture) -> None:
