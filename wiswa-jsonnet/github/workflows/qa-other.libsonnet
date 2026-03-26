@@ -21,26 +21,27 @@ function(settings)
       - '**/*.hpp'
   ||| else '';
   {
-    jobs: {
+    jobs: (if is_c_cpp then {
       changes: {
         'runs-on': settings.qa_runs_on,
-        outputs: (if is_c_cpp then {
-                    cpp: '${{ steps.filter.outputs.cpp }}',
-                  } else {}),
+        outputs: {
+          cpp: '${{ steps.filter.outputs.cpp }}',
+        },
         steps: [
           {
             uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
-        ] + (if is_c_cpp then [{
-               id: 'filter',
-               uses: 'dorny/paths-filter@' + utils.githubLatestActionTag('dorny', 'paths-filter'),
-               with: {
-                 filters: changes_filters,
-               },
-             }] else []),
+          {
+            id: 'filter',
+            uses: 'dorny/paths-filter@' + utils.githubLatestActionTag('dorny', 'paths-filter'),
+            with: {
+              filters: changes_filters,
+            },
+          },
+        ],
       },
-      qa: {
-        needs: 'changes',
+    } else {}) + {
+      qa: (if is_c_cpp then { needs: 'changes' } else {}) + {
         'runs-on': settings.qa_runs_on,
         steps: [
           {
