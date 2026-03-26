@@ -17,6 +17,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Cache and artifact cleanup for private projects is now a dedicated `cleanup.yml` workflow running
   on Linux instead of inline steps in PyInstaller, AppImage, Snap, and Flatpak workflows (fixes
   failures on Windows runners where `xargs` is unavailable).
+- CodeQL workflow now filters by language-specific file extensions (`.py`/`.pyi` for Python,
+  `.ts`/`.tsx`/`.js`/`.jsx` for TypeScript, C/C++ extensions for C/C++ and Xcode/Swift projects),
+  so it only runs when relevant source files change.
 - `python_deps`, `using_django`, and `using_drf` in `defaults.libsonnet` are now guarded by
   `project_type == 'python'`, skipping unnecessary PyPI version lookups for non-Python project types.
 - Coveralls steps in generated tests workflows now skip pull request events.

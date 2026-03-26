@@ -597,12 +597,12 @@ local utils = import 'utils.libsonnet';
     /** @brief CodeQL configuration. */
     codeql: {
       /** @brief Array of languages for CodeQL analysis. */
-      languages: (if settings.project_type == 'python' then ['python']
-                  else if settings.project_type == 'typescript' then ['javascript-typescript']
-                  else if settings.project_type == 'c' || settings.project_type == 'c++' then ['cpp']
-                  else []),
+      languages: (if settings.project_type == 'python' then ['python', 'actions']
+                  else if settings.project_type == 'typescript' then ['javascript-typescript', 'actions']
+                  else if settings.project_type == 'c' || settings.project_type == 'c++' then ['c-cpp', 'actions']
+                  else ['actions']),
       /** @brief Operating system for CodeQL runs on GitHub runners. */
-      runs_on: settings.tests_run_on,
+      runs_on: if settings.project_type != 'xcode' then settings.tests_run_on else 'macos-latest',
     },
     /** @brief Dependabot configuration. */
     dependabot: (import 'defaults/dependabot.libsonnet').updates(settings),
