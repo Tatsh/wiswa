@@ -48,7 +48,7 @@
   },
   "files": ["LICENSE.txt", "README.md", "man/wiswa.1"],
   "homepage": "https://tatsh.github.io/wiswa/",
-  "keywords": ["command line", "python"],
+  "keywords": ["command line", "jsonnet", "project generator", "project management", "scaffolding"],
   "license": "MIT",
   "markdownlint-cli2": {
     "config": {
