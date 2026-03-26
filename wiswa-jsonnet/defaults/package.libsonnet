@@ -202,7 +202,10 @@ local utils = import 'utils.libsonnet';
       singleQuote: true,
     },
     scripts: {
+      'check-formatting': 'prettier -c . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
+      'check-spelling': "cspell --no-progress './**/*'  './**/.*'",
       'dict:update': dictionary_update,
+      format: 'prettier -w . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix',
     } + if settings.project_type == 'python' then python_scripts(settings)
     else if settings.project_type == 'c++' || settings.project_type == 'c' then c_cpp_scripts(settings)
     else if settings.project_type == 'typescript' then top.typescript_scripts(settings)

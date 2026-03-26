@@ -11,8 +11,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- `dict:update` script is now included in `package.json` for all project types (previously only
-  Python, C/C++, and TypeScript).
+- `dict:update`, `format`, `check-formatting`, and `check-spelling` scripts are now included in
+  `package.json` for all project types (previously only Python, C/C++, and TypeScript).
 - `python_deps`, `using_django`, and `using_drf` in `defaults.libsonnet` are now guarded by
   `project_type == 'python'`, skipping unnecessary PyPI version lookups for non-Python project types.
 - Coveralls steps in generated tests workflows now skip pull request events.
