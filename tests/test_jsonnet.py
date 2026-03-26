@@ -19,12 +19,7 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
-def _patch_to_thread(_mocker: MockerFixture) -> None:
-    pass
-
-
 async def test_evaluate_jsonnet_file(mocker: MockerFixture) -> None:
-    _patch_to_thread(mocker)
     mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{"key": "value"}'
     result = await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
@@ -86,7 +81,6 @@ async def test_evaluate_jsonnet_project_default_output_dir(tmp_path: Path,
 
 
 async def test_evaluate_merged_settings(tmp_path: Path, mocker: MockerFixture) -> None:
-    _patch_to_thread(mocker)
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     (lib_path / 'defaults.libsonnet').write_text('{ project_type: "python" }')
@@ -102,7 +96,6 @@ async def test_evaluate_merged_settings(tmp_path: Path, mocker: MockerFixture) -
 
 async def test_evaluate_merged_settings_user_defaults(tmp_path: Path,
                                                       mocker: MockerFixture) -> None:
-    _patch_to_thread(mocker)
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     (lib_path / 'defaults.libsonnet').write_text('{ project_type: "python" }')
@@ -133,7 +126,6 @@ async def test_evaluate_merged_settings_user_defaults_missing_raises(tmp_path: P
 
 
 async def test_resolve_defaults_only(tmp_path: Path, mocker: MockerFixture) -> None:
-    _patch_to_thread(mocker)
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     (lib_path / 'defaults.libsonnet').write_text('{ project_type: "python" }')
@@ -144,7 +136,6 @@ async def test_resolve_defaults_only(tmp_path: Path, mocker: MockerFixture) -> N
 
 
 async def test_evaluate_jsonnet_file_with_session(mocker: MockerFixture) -> None:
-    _patch_to_thread(mocker)
     mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{"key": "value"}'
     mock_session = MagicMock()
@@ -164,7 +155,6 @@ async def test_evaluate_jsonnet_file_with_session(mocker: MockerFixture) -> None
 
 async def test_resolve_defaults_only_passes_empty_overrides(tmp_path: Path,
                                                             mocker: MockerFixture) -> None:
-    _patch_to_thread(mocker)
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     (lib_path / 'defaults.libsonnet').write_text('{ a: 1 }')
@@ -177,7 +167,6 @@ async def test_resolve_defaults_only_passes_empty_overrides(tmp_path: Path,
 
 
 async def test_native_callback_params_use_short_names(mocker: MockerFixture) -> None:
-    _patch_to_thread(mocker)
     mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     mock_session = MagicMock()
