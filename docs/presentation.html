@@ -673,7 +673,7 @@
                       <p class="tableblock">Deep merge with <code>+:</code></p>
                     </td>
                     <td class="tableblock halign-left valign-top">
-                      <p class="tableblock">Imports and library functions</p>
+                      <p class="tableblock">Hidden fields with <code>::</code></p>
                     </td>
                   </tr>
                   <tr>
@@ -700,18 +700,45 @@
                           <div class="content">
                             <pre
                               class="highlightjs highlight"
+                            ><code class="language-jsonnet hljs" data-noescape="true" data-lang="jsonnet">package_json+: {
+  // :: makes it hidden in output
+  license:: null,
+}</code></pre>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="tableblock halign-left valign-top">
+                      <p class="tableblock">Imports and library functions</p>
+                    </td>
+                    <td class="tableblock halign-left valign-top">
+                      <p class="tableblock">&#160;</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="tableblock halign-left valign-top">
+                      <div>
+                        <div class="listingblock">
+                          <div class="content">
+                            <pre
+                              class="highlightjs highlight"
                             ><code class="language-jsonnet hljs" data-noescape="true" data-lang="jsonnet">local utils =
   import 'utils.libsonnet';
 
 python_deps+: {
   main+: {
-    click: utils.latestPypiPackageVersionCaret('click'),
+    click: utils
+      .latestPypiPackageVersionCaret(
+        'click'),
   },
 },</code></pre>
                           </div>
                         </div>
                       </div>
                     </td>
+                    <td class="tableblock halign-left valign-top"><div></div></td>
                   </tr>
                 </tbody>
               </table>

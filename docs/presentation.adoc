@@ -88,7 +88,7 @@ want_docs: if is_lib then true
            else false,
 ----
 
-| Deep merge with `+:` | Imports and library functions
+| Deep merge with `+:` | Hidden fields with `::`
 
 a|
 [source,jsonnet]
@@ -105,15 +105,33 @@ pyproject+: {
 a|
 [source,jsonnet]
 ----
+// Remove a default field on merge
+package_json+: {
+  // :: makes it hidden in output
+  license:: null,
+}
+// package.json will have no
+// "license" key
+----
+
+| Imports and library functions | {nbsp}
+
+a|
+[source,jsonnet]
+----
 local utils =
   import 'utils.libsonnet';
 
 python_deps+: {
   main+: {
-    click: utils.latestPypiPackageVersionCaret('click'),
+    click: utils
+      .latestPypiPackageVersionCaret(
+        'click'),
   },
 },
 ----
+
+a|
 |===
 
 === How It Works: Merge Defaults
