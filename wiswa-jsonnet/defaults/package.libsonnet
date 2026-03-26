@@ -201,7 +201,9 @@ local utils = import 'utils.libsonnet';
       printWidth: settings.line_width,
       singleQuote: true,
     },
-    scripts: if settings.project_type == 'python' then python_scripts(settings)
+    scripts: {
+      'dict:update': dictionary_update,
+    } + if settings.project_type == 'python' then python_scripts(settings)
     else if settings.project_type == 'c++' || settings.project_type == 'c' then c_cpp_scripts(settings)
     else if settings.project_type == 'typescript' then top.typescript_scripts(settings)
     else {},
