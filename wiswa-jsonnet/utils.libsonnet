@@ -5,12 +5,6 @@
  */
 {
   /**
-   * @brief Convert an object to a TOML form with no indentation.
-   * @param value The object to convert to TOML.
-   * @returns The TOML representation of the object.
-   * @rv string
-   */
-  /**
    * @brief Check if a PEP 508 dependency array contains a given package name.
    * @param deps An array of PEP 508 dependency strings (e.g. `["django>=5.2", "click>=8.0"]`).
    * @param name The package name to search for.
@@ -73,6 +67,12 @@
     else
       ['%s%s' % [name, self.poetryVerToPep508(val)]],
 
+  /**
+   * @brief Convert an object to a TOML form with no indentation.
+   * @param value The object to convert to TOML.
+   * @returns The TOML representation of the object.
+   * @rv string
+   */
   manifestToml(value)::
     std.manifestTomlEx(value, ''),
 
