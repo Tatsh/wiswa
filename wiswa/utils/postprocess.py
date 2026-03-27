@@ -45,8 +45,10 @@ async def _subprocess_log_run(*args: Any,
 
 async def _post_process_steps_python(settings: Settings,
                                      *,
+                                     debug: bool = False,
                                      on_command: Callable[[str], None] | None = None) -> None:
     is_uv = settings['package_manager'] == 'uv'
+    uv_quiet = () if debug else ('--quiet',)
     cleanup_tasks: list[Awaitable[None]] = []
     if is_uv:
         cleanup_tasks.append(anyio.Path('poetry.lock').unlink(missing_ok=True))
@@ -112,14 +114,14 @@ async def _post_process_steps_python(settings: Settings,
         anyio.Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8'))
     oc = on_command
     if is_uv:
-        await _subprocess_log_run(('uv', 'lock'), on_command=oc)
+        await _subprocess_log_run(('uv', *uv_quiet, 'lock'), on_command=oc)
         groups = [
             g for g in ('docs' if settings['want_docs'] else '',
                         'tests' if settings['want_tests'] else '', 'dev') if g
         ]
         group_args = tuple(f'--group={g}' for g in groups)
-        await _subprocess_log_run(('uv', 'sync', *group_args), on_command=oc)
-        await _subprocess_log_run(('uv', 'run', 'ruff', 'check', '--fix'),
+        await _subprocess_log_run(('uv', *uv_quiet, 'sync', *group_args), on_command=oc)
+        await _subprocess_log_run(('uv', *uv_quiet, 'run', 'ruff', 'check', '--fix'),
                                   on_command=oc,
                                   check=False)
     else:
@@ -379,6 +381,7 @@ async def _check_readme_badges(settings: Settings) -> None:
 
 async def post_process_steps(settings: Settings,
                              *,
+                             debug: bool = False,
                              on_command: Callable[[str], None] | None = None) -> None:
     """
     Run post-processing steps after project generation.
@@ -387,6 +390,8 @@ async def post_process_steps(settings: Settings,
     ----------
     settings : Settings
         Project settings.
+    debug : bool
+        Whether debug mode is enabled. When ``False``, ``uv`` is invoked with ``--quiet``.
     on_command : Callable[[str], None] | None
         Called with the command string before each subprocess runs.
     """
@@ -395,7 +400,7 @@ async def post_process_steps(settings: Settings,
         await anyio.Path('.github/workflows/publish.yml').unlink(missing_ok=True)
     match settings['project_type']:
         case 'python':
-            await _post_process_steps_python(settings, on_command=oc)
+            await _post_process_steps_python(settings, debug=debug, on_command=oc)
         case _:
             log.warning('No post-processing steps for project type `%s`.', settings['project_type'])
     await _check_readme_badges(settings)

@@ -190,6 +190,7 @@ async def _main_async(file: Path,
                 if not skip_postprocess:
                     spin.update('Post-processing.')
                     await post_process_steps(loaded,
+                                             debug=debug,
                                              on_command=lambda cmd: spin.update(f'Running {cmd}'))
                 if not skip_github:
                     spin.update('Configuring GitHub project settings.')
