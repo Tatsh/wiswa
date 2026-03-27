@@ -1,8 +1,17 @@
 {% from '.github/workflows/pyinstaller-build.sh.j2' import build %}
 {% from '.github/workflows/pyinstaller-test.ps1.j2' import test_powershell %}
 {% from '.github/workflows/pyinstaller-test.sh.j2' import test_bash %}
+{% set win_sv = settings.github.secret_vars.windows %}
+{% set apple_sv = settings.github.secret_vars.apple %}
 jobs:
   build:
+    env:
+{% if settings.supported_platforms == 'all' or 'windows' in settings.supported_platforms %}
+      WINDOWS_SIGNING_CERT: ${{ '{{' }} secrets.{{ win_sv.signing_certificate }} }}
+{% endif %}
+{% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
+      APPLE_SIGNING_CERT: ${{ '{{' }} secrets.{{ apple_sv.signing_certificate }} }}
+{% endif %}
     runs-on: ${{ '{{' }} matrix.os }}
     steps:
       - uses: 'actions/checkout@{{ github_latest_action_tag('actions', 'checkout') }}'
@@ -81,13 +90,12 @@ jobs:
           {{ build(settings) | indent(10) | trim }}
         shell: 'bash'
 {% if settings.supported_platforms == 'all' or 'windows' in settings.supported_platforms %}
-{% set win = settings.github.secret_vars.windows %}
-      - if: (matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm') && secrets.{{ win.signing_certificate }} != ''
+      - if: (matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm') && env.WINDOWS_SIGNING_CERT != ''
         name: 'Sign Windows binaries'
         env:
-          SIGNING_CERT_BASE64: ${{ '{{' }} secrets.{{ win.signing_certificate }} }}
-          SIGNING_PASSWORD: ${{ '{{' }} secrets.{{ win.signing_password }} }}
-          TIMESTAMP_URL: ${{ '{{' }} secrets.{{ win.timestamp_url }} }}
+          SIGNING_CERT_BASE64: ${{ '{{' }} secrets.{{ win_sv.signing_certificate }} }}
+          SIGNING_PASSWORD: ${{ '{{' }} secrets.{{ win_sv.signing_password }} }}
+          TIMESTAMP_URL: ${{ '{{' }} secrets.{{ win_sv.timestamp_url }} }}
         run: |
           $certBytes = [Convert]::FromBase64String($env:SIGNING_CERT_BASE64)
           $certPath = Join-Path $env:RUNNER_TEMP 'cert.pfx'
@@ -109,20 +117,15 @@ jobs:
           {{ test_powershell(settings.pyinstaller.test_commands) | indent(10) | trim }}
 {% endif %}
 {% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
-      - if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
-        name: 'Test binary'
-        run: |
-          {{ test_bash(settings.pyinstaller.test_commands) | indent(10) | trim }}
-{% set apple = settings.github.secret_vars.apple %}
-      - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && secrets.{{ apple.signing_certificate }} != ''
-        name: 'Sign and notarize macOS binaries'
+      - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && env.APPLE_SIGNING_CERT != ''
+        name: 'Sign and notarise macOS binaries'
         env:
-          APPLE_CERT_BASE64: ${{ '{{' }} secrets.{{ apple.signing_certificate }} }}
-          APPLE_CERT_PASSWORD: ${{ '{{' }} secrets.{{ apple.signing_password }} }}
-          APPLE_IDENTITY: ${{ '{{' }} secrets.{{ apple.signing_identity }} }}
-          APPLE_ID_EMAIL: ${{ '{{' }} secrets.{{ apple.apple_id }} }}
-          APPLE_ID_PASSWORD: ${{ '{{' }} secrets.{{ apple.app_specific_password }} }}
-          APPLE_TEAM: ${{ '{{' }} secrets.{{ apple.team_id }} }}
+          APPLE_CERT_BASE64: ${{ '{{' }} secrets.{{ apple_sv.signing_certificate }} }}
+          APPLE_CERT_PASSWORD: ${{ '{{' }} secrets.{{ apple_sv.signing_password }} }}
+          APPLE_IDENTITY: ${{ '{{' }} secrets.{{ apple_sv.signing_identity }} }}
+          APPLE_ID_EMAIL: ${{ '{{' }} secrets.{{ apple_sv.apple_id }} }}
+          APPLE_ID_PASSWORD: ${{ '{{' }} secrets.{{ apple_sv.app_specific_password }} }}
+          APPLE_TEAM: ${{ '{{' }} secrets.{{ apple_sv.team_id }} }}
         run: |
           keychain="$RUNNER_TEMP/signing.keychain-db"
           cert_path="$RUNNER_TEMP/cert.p12"
@@ -157,6 +160,10 @@ jobs:
           rm -f "$cert_path" "$zip_path"
           security delete-keychain "$keychain"
         shell: 'bash'
+      - if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
+        name: 'Test binary'
+        run: |
+          {{ test_bash(settings.pyinstaller.test_commands) | indent(10) | trim }}
 {% endif %}
       - name: 'Upload Artifacts'
         uses: 'actions/upload-artifact@{{ github_latest_action_tag('actions', 'upload-artifact') }}'
