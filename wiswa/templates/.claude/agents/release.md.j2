@@ -42,7 +42,7 @@ checks, bump the version, and push.
    2. **Stop work immediately and alert the user.** Do not attempt to work around the failure.
 {% if settings.package_manager == 'uv' %}
 
-10. **Run `uv sync`** to update `uv.lock` with the new version.
+10. **Run `uv lock`** to update `uv.lock` with the new version.
 {% endif %}
 
 11. **Commit the version bump.** Stage all changed files and commit with
