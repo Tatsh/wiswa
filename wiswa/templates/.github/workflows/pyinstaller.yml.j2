@@ -245,7 +245,7 @@ jobs:
           - os: 'windows-latest'
             dist_path: 'dist/*.exe'
             suffix: 'win-x86_64'
-  {% if not settings.private %}
+  {% if not settings.private and 'niquests' not in settings.python_deps.main %}
           - os: 'windows-11-arm'
             dist_path: 'dist/*.exe'
             suffix: 'win-arm64'

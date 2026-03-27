@@ -69,6 +69,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Vcpkg setup in the PyInstaller workflow template now appends to `PKG_CONFIG_PATH`,
   `CMAKE_PREFIX_PATH`, `LIB`, and `INCLUDE` environment variables instead of overriding them,
   preserving existing values from Visual Studio and other tools.
+- PyInstaller workflow template now excludes `windows-11-arm` from the build matrix when `niquests`
+  is a main dependency, since niquests does not yet support Windows ARM64.
 
 ## [0.0.1] - 2026-03-24
 
