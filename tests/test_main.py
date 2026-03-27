@@ -7,9 +7,8 @@ from unittest.mock import AsyncMock, MagicMock
 import asyncio
 
 from click.testing import CliRunner
-from multidict import CIMultiDict
 from wiswa.main import _Spinner, main  # noqa: PLC2701
-import aiohttp
+import niquests
 import pytest
 
 if TYPE_CHECKING:
@@ -359,16 +358,15 @@ def _make_http_error(
     status_code: int,
     headers: dict[str, str] | None = None,
     url: str = 'https://api.github.com/repos/test',
-) -> aiohttp.ClientResponseError:
-    request_info = MagicMock()
-    request_info.url = url
-    return aiohttp.ClientResponseError(
-        request_info=request_info,
-        history=(),
-        status=status_code,
-        headers=CIMultiDict(headers) if headers else None,
-        message='Error',
-    )
+) -> niquests.HTTPError:
+    mock_request = MagicMock()
+    mock_request.url = url
+    mock_response = MagicMock()
+    mock_response.status_code = status_code
+    mock_response.headers = headers or {}
+    error = niquests.HTTPError(response=mock_response)
+    error.request = mock_request
+    return error
 
 
 def _setup_main_mocks(mocker: MockerFixture, tmp_path: Path,
@@ -471,14 +469,13 @@ def test_main_http_error_non_rate_limit_status(mocker: MockerFixture, tmp_path: 
 
 
 def test_main_http_error_no_response(mocker: MockerFixture, tmp_path: Path) -> None:
-    request_info = MagicMock()
-    request_info.url = 'https://unknown'
-    error = aiohttp.ClientResponseError(
-        request_info=request_info,
-        history=(),
-        status=0,
-        message='Error',
-    )
+    mock_request = MagicMock()
+    mock_request.url = 'https://unknown'
+    mock_response = MagicMock()
+    mock_response.status_code = 0
+    mock_response.headers = {}
+    error = niquests.HTTPError(response=mock_response)
+    error.request = mock_request
     file_path, _ = _setup_main_mocks(mocker, tmp_path, side_effect=error)
     runner = CliRunner()
     result = runner.invoke(main, [str(file_path)])
@@ -634,6 +631,290 @@ def test_main_generic_exception(mocker: MockerFixture, tmp_path: Path) -> None:
     result = runner.invoke(main, [str(file_path)])
     assert result.exit_code != 0
     assert 'Aborted!' in result.output
+
+
+@pytest.mark.parametrize(
+    ('skip_flag', 'func_name'),
+    [
+        ('--skip-yarn', 'download_yarn'),
+        ('--skip-static', 'copy_static_files'),
+        ('--skip-postprocess', 'post_process_steps'),
+    ],
+)
+def test_main_new_skip_flags(skip_flag: str, func_name: str, mocker: MockerFixture,
+                             tmp_path: Path) -> None:
+    runner = CliRunner()
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.setup_logging')
+    mocker.patch(
+        'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
+        return_value=(
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+        ),
+    )
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mock_download_yarn = mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mock_copy_static = mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mock_post_process = mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
+
+    class DummyContextManager:
+        def __init__(self, value: object) -> None:
+            self.value: object = value
+
+        def __enter__(self) -> object:
+            return self.value
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: object,
+        ) -> None:
+            return None
+
+    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
+    result = runner.invoke(main, [skip_flag, str(file_path)], catch_exceptions=False)
+    assert result.exit_code == 0
+    mocks = {
+        'download_yarn': mock_download_yarn,
+        'copy_static_files': mock_copy_static,
+        'post_process_steps': mock_post_process,
+    }
+    assert not mocks[func_name].called
+
+
+def test_main_no_cache_flag(mocker: MockerFixture, tmp_path: Path) -> None:
+    runner = CliRunner()
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.setup_logging')
+    mocker.patch(
+        'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
+        return_value=(
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+        ),
+    )
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
+    mock_cached_session = mocker.patch('wiswa.main.cached_session')
+
+    class DummyContextManager:
+        def __init__(self, value: object) -> None:
+            self.value: object = value
+
+        def __enter__(self) -> object:
+            return self.value
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: object,
+        ) -> None:
+            return None
+
+    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
+    result = runner.invoke(main, ['--no-cache', str(file_path)], catch_exceptions=False)
+    assert result.exit_code == 0
+    mock_cached_session.assert_called_once()
+    call_kwargs = mock_cached_session.call_args[1]
+    assert call_kwargs['no_cache'] is True
+
+
+def test_main_cache_time_option(mocker: MockerFixture, tmp_path: Path) -> None:
+    runner = CliRunner()
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.setup_logging')
+    mocker.patch(
+        'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
+        return_value=(
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+        ),
+    )
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
+    mock_cached_session = mocker.patch('wiswa.main.cached_session')
+
+    class DummyContextManager:
+        def __init__(self, value: object) -> None:
+            self.value: object = value
+
+        def __enter__(self) -> object:
+            return self.value
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: object,
+        ) -> None:
+            return None
+
+    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
+    result = runner.invoke(main, ['--cache-time', '120', str(file_path)], catch_exceptions=False)
+    assert result.exit_code == 0
+    mock_cached_session.assert_called_once()
+    from datetime import timedelta
+    call_kwargs = mock_cached_session.call_args[1]
+    assert call_kwargs['expire_after'] == timedelta(seconds=120)
+
+
+def test_main_output_dir_option(mocker: MockerFixture, tmp_path: Path) -> None:
+    runner = CliRunner()
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    output_dir = tmp_path / 'out'
+    output_dir.mkdir()
+    mocker.patch('wiswa.main.setup_logging')
+    mocker.patch(
+        'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
+        return_value=(
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+        ),
+    )
+    eval_jsonnet = mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
+
+    class DummyContextManager:
+        def __init__(self, value: object) -> None:
+            self.value: object = value
+
+        def __enter__(self) -> object:
+            return self.value
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: object,
+        ) -> None:
+            return None
+
+    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
+    result = runner.invoke(main, ['-o', str(output_dir), str(file_path)], catch_exceptions=False)
+    assert result.exit_code == 0
+    call_kwargs = eval_jsonnet.call_args[1]
+    assert call_kwargs['output_dir'] == output_dir
+
+
+def test_main_quiet_flag(mocker: MockerFixture, tmp_path: Path) -> None:
+    runner = CliRunner()
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.setup_logging')
+    mocker.patch(
+        'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
+        return_value=(
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+        ),
+    )
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
+
+    class DummyContextManager:
+        def __init__(self, value: object) -> None:
+            self.value: object = value
+
+        def __enter__(self) -> object:
+            return self.value
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: object,
+        ) -> None:
+            return None
+
+    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
+    result = runner.invoke(main, ['-q', str(file_path)], catch_exceptions=False)
+    assert result.exit_code == 0
+    assert 'Done.' in result.output
 
 
 def test_main_has_legacy_poetry_deps_not_uv(mocker: MockerFixture, tmp_path: Path) -> None:

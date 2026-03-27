@@ -1,5 +1,6 @@
 adoc
 aiofiles
+aiohttp
 altool
 anchore
 anyio

@@ -9,6 +9,35 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `--no-cache` CLI option to disable HTTP response caching.
+- `--cache-time` CLI option to set cache expiry duration in seconds.
+- `--skip-yarn` CLI option to skip Yarn download.
+- `--skip-static` CLI option to skip static file copying.
+- `--skip-postprocess` CLI option to skip post-processing.
+- `-o`/`--output-dir` CLI option to set the output directory for generated files.
+- `-q`/`--quiet` CLI option to suppress the progress spinner.
+
+### Changed
+
+- Replaced `aiohttp` and `aiohttp-client-cache` with `niquests` as the HTTP client. The session
+  module now implements its own filesystem-backed cache via `CachedAsyncSession`. HTTP/2 and HTTP/3
+  are supported natively.
+- urllib3 request logging now appears in debug mode. Noisy `urllib3.util.retry` messages are
+  suppressed.
+- Jsonnet evaluation now emits a debug log message.
+- Parallelised independent async operations across the generation pipeline for faster project
+  creation and updates:
+  - `wiswa/main.py`: Yarn download and plugin fetch now run concurrently; static file copying and
+    `py.typed` creation also run in parallel.
+  - `wiswa/utils/templating.py`: Common, agent/skill, and Python-specific template writes now
+    execute concurrently via `asyncio.gather`.
+  - `wiswa/utils/github.py`: Removed duplicate API calls; security PUT requests and ruleset upsert
+    operations now run in parallel.
+  - `wiswa/utils/postprocess.py`: File cleanup operations and configuration file writes now run
+    concurrently.
+
 ### Fixed
 
 - GitHub expressions in workflow `run:` blocks moved to `env:` variables to prevent script injection
@@ -30,19 +59,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   subprocess calls, preventing Corepack from prompting interactively.
 - `_setup_github_session` now catches `keyring.errors.NoKeyringError` and logs a warning instead of
   crashing, so environments without a keyring backend no longer produce a traceback.
-
-### Changed
-
-- Parallelised independent async operations across the generation pipeline for faster project
-  creation and updates:
-  - `wiswa/main.py`: Yarn download and plugin fetch now run concurrently; static file copying and
-    `py.typed` creation also run in parallel.
-  - `wiswa/utils/templating.py`: Common, agent/skill, and Python-specific template writes now
-    execute concurrently via `asyncio.gather`.
-  - `wiswa/utils/github.py`: Removed duplicate API calls; security PUT requests and ruleset upsert
-    operations now run in parallel.
-  - `wiswa/utils/postprocess.py`: File cleanup operations and configuration file writes now run
-    concurrently.
 
 ## [0.0.1] - 2026-03-24
 
