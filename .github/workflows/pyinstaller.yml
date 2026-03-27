@@ -45,6 +45,17 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "LIB=$installed\lib"
           Add-Content -Path $env:GITHUB_ENV -Value "INCLUDE=$installed\include"
         shell: 'pwsh'
+      - if: matrix.os == 'windows-11-arm'
+        name: 'Install MSVC build tools'
+        uses: 'ilammy/msvc-dev-cmd@v1'
+        with:
+          arch: arm64
+      - if: matrix.os == 'windows-11-arm'
+        name: 'Remove Git link.exe from PATH'
+        run: |
+          $newPath = ($env:PATH -split ';' | Where-Object { $_ -notlike '*Git\usr\bin*' }) -join ';'
+          "PATH=$newPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+        shell: pwsh
       - name: 'Install dependencies (uv)'
         run: |
           uv sync
