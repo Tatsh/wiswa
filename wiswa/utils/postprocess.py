@@ -206,16 +206,6 @@ def _docs_badges(settings: Settings) -> Iterator[str]:
                f'pages.yml/badge.svg)](https://{gh.lower()}.github.io/{name}/)')
 
 
-def _get_main_dependency_names(settings: Settings) -> set[str]:
-    names = set(settings['python_deps']['main'])
-    if settings['package_manager'] == 'uv':
-        names |= {
-            dep.split('>')[0].split('<')[0].split('=')[0].split('!')[0].split('[')[0].strip()
-            for dep in settings['pyproject']['project'].get('dependencies', ())
-        }
-    return names
-
-
 def _python_tool_badges(settings: Settings) -> Iterator[str]:
     if settings['project_type'] != 'python':
         return
@@ -228,7 +218,7 @@ def _python_tool_badges(settings: Settings) -> Iterator[str]:
     else:
         yield _simple_icons_badge('Poetry', 'poetry', 'Poetry', '242d3e',
                                   'https://python-poetry.org')
-    dep_names = _get_main_dependency_names(settings)
+    dep_names = set(settings['python_deps']['main'])
     name_mapping = {'jinja': 'Jinja', 'pydantic': 'Pydantic', 'sqlalchemy': 'SQLAlchemy'}
     yield from (_simple_icons_badge(name_mapping.get(package, package), package,
                                     name_mapping.get(package, package), 'black',

@@ -34,6 +34,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - urllib3 request logging now appears in debug mode. Noisy `urllib3.util.retry` messages are
   suppressed.
 - Jsonnet evaluation now emits a debug log message.
+- Legacy Poetry dependencies declared via `pyproject.tool.poetry.dependencies` and
+  `pyproject.tool.poetry.group.*.dependencies` are now merged into `python_deps` at evaluation time,
+  making `python_deps` the single source of truth for all dependency existence checks in templates
+  and settings.
 - Parallelised independent async operations across the generation pipeline for faster project
   creation and updates:
   - `wiswa/main.py`: Yarn download and plugin fetch now run concurrently; static file copying and
@@ -70,7 +74,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `CMAKE_PREFIX_PATH`, `LIB`, and `INCLUDE` environment variables instead of overriding them,
   preserving existing values from Visual Studio and other tools.
 - PyInstaller workflow template now excludes `windows-11-arm` from the build matrix when `niquests`
-  is a main dependency, since niquests does not yet support Windows ARM64.
+  is a main dependency, since niquests' dependency qh3 does not provide a non-free-threaded wheel
+  for Windows ARM64.
 
 ## [0.0.1] - 2026-03-24
 

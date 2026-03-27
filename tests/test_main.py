@@ -508,6 +508,84 @@ def test_main_legacy_poetry_deps_warning(mocker: MockerFixture, tmp_path: Path) 
                         'dependencies': ['click>=8', 'requests>=2'],
                     },
                     'dependency-groups': {},
+                    'tool': {
+                        'poetry': {
+                            'dependencies': {
+                                'requests': '^2',
+                            },
+                        },
+                    },
+                },
+            },
+        ),
+    )
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
+    mock_log = mocker.patch('wiswa.main.log')
+
+    class DummyContextManager:
+        def __init__(self, value: object) -> None:
+            self.value: object = value
+
+        def __enter__(self) -> object:
+            return self.value
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: object,
+        ) -> None:
+            return None
+
+    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
+    result = runner.invoke(main, [str(file_path)], catch_exceptions=False)
+    assert result.exit_code == 0
+    mock_log.warning.assert_called_once()
+    assert 'deprecated' in mock_log.warning.call_args[0][0]
+
+
+def test_main_legacy_poetry_group_deps_warning(mocker: MockerFixture, tmp_path: Path) -> None:
+    runner = CliRunner()
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.setup_logging')
+    mocker.patch(
+        'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
+        return_value=(
+            '{}',
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0',
+                'package_manager': 'uv',
+                'python_deps': {
+                    'main': {},
+                },
+                'pyproject': {
+                    'project': {
+                        'dependencies': [],
+                    },
+                    'dependency-groups': {},
+                    'tool': {
+                        'poetry': {
+                            'group': {
+                                'dev': {
+                                    'dependencies': {
+                                        'pytest': '^8',
+                                    },
+                                },
+                            },
+                        },
+                    },
                 },
             },
         ),

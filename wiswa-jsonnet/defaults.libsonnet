@@ -828,7 +828,33 @@ local utils = import 'utils.libsonnet';
    * or arrays of `{ version, python }` objects for marker-conditional deps.
    * Wiswa converts these to the correct format for the chosen package manager.
    */
-  python_deps: if self.project_type == 'python' then default_deps else {
+  python_deps: if self.project_type == 'python' then
+    local has_poetry = std.objectHasAll(self.pyproject.tool, 'poetry');
+    local poetry_obj = if has_poetry then self.pyproject.tool.poetry else {};
+    local poetry_deps_obj = if has_poetry && std.objectHas(poetry_obj, 'dependencies')
+    then poetry_obj.dependencies
+    else {};
+    local is_optional_dep(v) = std.isObject(v) && std.objectHas(v, 'optional') && v.optional;
+    local legacy_main = if is_uv then {
+      [k]: poetry_deps_obj[k]
+      for k in std.objectFields(poetry_deps_obj)
+      if k != 'python' && !is_optional_dep(poetry_deps_obj[k])
+    } else {};
+    local poetry_group = if has_poetry && std.objectHas(poetry_obj, 'group')
+    then poetry_obj.group
+    else {};
+    local poetry_group_deps(name) =
+      if std.objectHas(poetry_group, name) && std.objectHas(poetry_group[name], 'dependencies')
+      then poetry_group[name].dependencies
+      else {};
+    local legacy_group(name) = if is_uv then poetry_group_deps(name) else {};
+    default_deps {
+      main+: legacy_main,
+      dev+: legacy_group('dev'),
+      docs+: legacy_group('docs'),
+      tests+: legacy_group('tests'),
+    }
+  else {
     main: {},
     dev: {},
     docs: {},
@@ -855,27 +881,13 @@ local utils = import 'utils.libsonnet';
     local poetry_deps_obj = if has_poetry && std.objectHas(poetry_obj, 'dependencies')
     then poetry_obj.dependencies
     else {},
-    local poetry_group = if has_poetry && std.objectHas(poetry_obj, 'group')
-    then poetry_obj.group
-    else {},
-    local poetry_group_deps(name) =
-      if std.objectHas(poetry_group, name)
-         && std.objectHas(poetry_group[name], 'dependencies')
-      then poetry_group[name].dependencies
-      else {},
     local is_optional_dep(v) = std.isObject(v) && std.objectHas(v, 'optional') && v.optional,
-    local legacy_poetry_deps =
-      if is_uv then
-        { [k]: poetry_deps_obj[k] for k in std.objectFields(poetry_deps_obj) if k != 'python' && !is_optional_dep(poetry_deps_obj[k]) }
-      else {},
     local legacy_poetry_optional_deps =
       if is_uv then
         { [k]: poetry_deps_obj[k] for k in std.objectFields(poetry_deps_obj) if is_optional_dep(poetry_deps_obj[k]) }
       else {},
     local poetry_extras = if has_poetry && std.objectHas(poetry_obj, 'extras') then poetry_obj.extras else {},
     local poetry_plugins = if has_poetry && std.objectHas(poetry_obj, 'plugins') then poetry_obj.plugins else {},
-    local legacy_poetry_group_deps(name) =
-      if is_uv then poetry_group_deps(name) else {},
     project+: {
       authors: utils.pyprojectAuthors(settings.authors),
       classifiers: utils.pyprojectClassifiers(settings),
@@ -892,7 +904,7 @@ local utils = import 'utils.libsonnet';
         repository: settings.repository_uri,
       },
     } + if is_uv then {
-      dependencies: std.set(to_pep508(py_deps.main) + to_pep508(legacy_poetry_deps)),
+      dependencies: std.set(to_pep508(py_deps.main)),
       'requires-python': python_req,
       dynamic:: super.dynamic,
     } + (if is_uv && std.length(std.objectFields(poetry_plugins)) > 0 then {
@@ -911,12 +923,12 @@ local utils = import 'utils.libsonnet';
                          },
                        } else {}) else {},
     [if is_uv then 'dependency-groups']: {
-                                           dev: std.set(to_pep508(py_deps.dev) + to_pep508(legacy_poetry_group_deps('dev'))),
+                                           dev: std.set(to_pep508(py_deps.dev)),
                                          } + (if settings.want_docs then {
-                                                docs: std.set(to_pep508(py_deps.docs) + to_pep508(legacy_poetry_group_deps('docs'))),
+                                                docs: std.set(to_pep508(py_deps.docs)),
                                               } else {})
                                          + (if settings.want_tests then {
-                                              tests: std.set(to_pep508(py_deps.tests) + to_pep508(legacy_poetry_group_deps('tests'))),
+                                              tests: std.set(to_pep508(py_deps.tests)),
                                             } else {}),
     tool+: {
              commitizen+: {
