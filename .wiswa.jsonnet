@@ -31,6 +31,26 @@ local utils = import 'utils.libsonnet';
       },
     },
   },
+  python_deps+: {
+    main+: {
+      aiofiles: utils.latestPypiPackageVersionCaret('aiofiles'),
+      niquests: utils.latestPypiPackageVersionCaret('niquests'),
+      anyio: utils.latestPypiPackageVersionCaret('anyio'),
+      beautifulsoup4: utils.latestPypiPackageVersionCaret('beautifulsoup4'),
+      fastmcp: utils.latestPypiPackageVersionCaret('fastmcp'),
+      jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
+      jsonnet: utils.latestPypiPackageVersionCaret('jsonnet'),
+      keyring: utils.latestPypiPackageVersionCaret('keyring'),
+      lxml: utils.latestPypiPackageVersionCaret('lxml'),
+      tomlkit: utils.latestPypiPackageVersionCaret('tomlkit'),
+    },
+    dev+: {
+      'types-jsonnet': utils.latestPypiPackageVersionCaret('types-jsonnet'),
+    },
+    tests+: {
+      'pytest-asyncio': utils.latestPypiPackageVersionCaret('pytest-asyncio'),
+    },
+  },
   pyproject+: {
     project+: {
       scripts+: {
@@ -46,32 +66,6 @@ local utils = import 'utils.libsonnet';
       pytest+: {
         ini_options+: {
           asyncio_mode: 'auto',
-        },
-      },
-      poetry+: {
-        dependencies+: {
-          aiofiles: utils.latestPypiPackageVersionCaret('aiofiles'),
-          niquests: utils.latestPypiPackageVersionCaret('niquests'),
-          anyio: utils.latestPypiPackageVersionCaret('anyio'),
-          beautifulsoup4: utils.latestPypiPackageVersionCaret('beautifulsoup4'),
-          fastmcp: utils.latestPypiPackageVersionCaret('fastmcp'),
-          jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
-          jsonnet: utils.latestPypiPackageVersionCaret('jsonnet'),
-          keyring: utils.latestPypiPackageVersionCaret('keyring'),
-          lxml: utils.latestPypiPackageVersionCaret('lxml'),
-          tomlkit: utils.latestPypiPackageVersionCaret('tomlkit'),
-        },
-        group+: {
-          dev+: {
-            dependencies+: {
-              'types-jsonnet': utils.latestPypiPackageVersionCaret('types-jsonnet'),
-            },
-          },
-          tests+: {
-            dependencies+: {
-              'pytest-asyncio': utils.latestPypiPackageVersionCaret('pytest-asyncio'),
-            },
-          },
         },
       },
       hatch+: {
