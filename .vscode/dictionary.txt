@@ -127,6 +127,7 @@ jsonnet
 jsonschema
 kdeplasma
 kwargs
+lastexitcode
 launchable
 leafo
 lextudio
@@ -234,6 +235,7 @@ timonwong
 tojson
 tomlkit
 tomllib
+toctree
 tomlq
 tonumber
 topython

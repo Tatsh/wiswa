@@ -18,6 +18,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `--skip-postprocess` CLI option to skip post-processing.
 - `-o`/`--output-dir` CLI option to set the output directory for generated files.
 - `-q`/`--quiet` CLI option to suppress the progress spinner.
+- Optional Windows Authenticode signing and macOS code signing with notarisation steps to the
+  PyInstaller workflow template (`pyinstaller.yml.j2`).
+- Configurable GitHub secret variable names under `github.secret_vars` in `defaults.libsonnet`,
+  allowing users to customise the secret names used for binary signing.
+- Sphinx documentation page (`docs/binary-signing.rst`) explaining how to set up binary signing.
 
 ### Changed
 

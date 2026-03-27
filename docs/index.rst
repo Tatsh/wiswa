@@ -3,6 +3,11 @@ wiswa
 
 .. include:: badges.rst
 
+.. toctree::
+   :hidden:
+
+   binary-signing
+
 Commands
 --------
 

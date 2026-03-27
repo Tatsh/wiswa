@@ -624,6 +624,37 @@ local utils = import 'utils.libsonnet';
     pages_using_jekyll: true,
     /** @brief GitHub username. */
     username: settings.github_username,
+    /**
+     * @brief Names of GitHub repository or organisation secrets used for binary signing.
+     *
+     * These are the secret variable names configured in GitHub, not the actual secret values.
+     */
+    secret_vars: {
+      /** @brief Windows Authenticode signing secret variable names. */
+      windows: {
+        /** @brief Name of the secret containing the base64-encoded PFX file. */
+        signing_certificate: 'WINDOWS_SIGNING_CERTIFICATE',
+        /** @brief Name of the secret containing the PFX password. */
+        signing_password: 'WINDOWS_SIGNING_PASSWORD',
+        /** @brief Name of the secret containing the RFC 3161 timestamp server URL (optional). */
+        timestamp_url: 'WINDOWS_TIMESTAMP_URL',
+      },
+      /** @brief macOS code signing and notarisation secret variable names. */
+      apple: {
+        /** @brief Name of the secret containing the base64-encoded .p12 file. */
+        signing_certificate: 'APPLE_SIGNING_CERTIFICATE',
+        /** @brief Name of the secret containing the .p12 password. */
+        signing_password: 'APPLE_SIGNING_PASSWORD',
+        /** @brief Name of the secret containing the code-signing identity string. */
+        signing_identity: 'APPLE_SIGNING_IDENTITY',
+        /** @brief Name of the secret containing the Apple ID email used for notarisation. */
+        apple_id: 'APPLE_ID',
+        /** @brief Name of the secret containing the app-specific password. */
+        app_specific_password: 'APPLE_APP_SPECIFIC_PASSWORD',
+        /** @brief Name of the secret containing the Team ID. */
+        team_id: 'APPLE_TEAM_ID',
+      },
+    },
     /** @brief GitHub Actions workflows configuration. */
     workflows: {
       /** @brief AppImage generation settings. */
