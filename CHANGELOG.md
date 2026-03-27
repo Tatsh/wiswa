@@ -23,6 +23,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Configurable GitHub secret variable names under `github.secret_vars` in `defaults.libsonnet`,
   allowing users to customise the secret names used for binary signing.
 - Sphinx documentation page (`docs/binary-signing.rst`) explaining how to set up binary signing.
+- Explicit `permissions: { contents: 'read' }` to the LuaRocks and WinGet publish workflows,
+  restricting the default `GITHUB_TOKEN` to read-only.
 
 ### Changed
 

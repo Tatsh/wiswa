@@ -22,6 +22,9 @@ local utils = import 'utils.libsonnet';
     },
   },
   name: 'Publish to LuaRocks',
+  permissions: {
+    contents: 'read',
+  },
   on: {
     push: {
       tags: [

@@ -15,6 +15,9 @@ function(settings) {
     },
   },
   name: 'Publish to WinGet',
+  permissions: {
+    contents: 'read',
+  },
   on: {
     release: {
       types: [
