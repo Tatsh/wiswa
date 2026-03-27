@@ -64,7 +64,12 @@ def _template_env(module_path: Path,
         aio_output = anyio.Path(output_file)
         await aio_output.parent.mkdir(parents=True, exist_ok=True)
         content = await template.render_async({'settings': settings})
-        await aio_output.write_text(f'{content.strip()}\n')
+        stripped = content.strip()
+        if not stripped:
+            await aio_output.unlink(missing_ok=True)
+            log.debug('Removed empty template output `%s`.', output_file)
+            return
+        await aio_output.write_text(f'{stripped}\n')
         log.debug('Wrote `%s`.', output_file)
 
     return _TemplateEnvTuple(env, templates_dir, resolve_template, write_file)
@@ -160,10 +165,6 @@ _PYTHON_ONLY_AGENTS = frozenset({
     'test-writer',
 })
 
-_CI_PLATFORM_AGENTS = frozenset({
-    'workflow-shellcheck',
-})
-
 
 async def _write_templated_files_claude(settings: Settings, templates_dir: Path,
                                         resolve_template: Callable[[Path], jinja2.Template],
@@ -177,10 +178,6 @@ async def _write_templated_files_claude(settings: Settings, templates_dir: Path,
             agent_name = file_path.stem.removesuffix('.md')
             output = Path('.claude/agents') / file_path.stem
             if (agent_name in _PYTHON_ONLY_AGENTS and settings['project_type'] != 'python'):
-                output.unlink(missing_ok=True)
-                continue
-            if (agent_name in _CI_PLATFORM_AGENTS and not settings['using_github']
-                    and not settings['using_gitlab']):
                 output.unlink(missing_ok=True)
                 continue
             tasks.append(write_file(resolve_template(file_path), output, overwrite=True))

@@ -17,7 +17,7 @@ function(settings)
                                                          { '_config.yml': utils.manifestYaml(settings.github.pages_config) } else {}
                                                      ) +
                                                      github.workflows(settings) else {};
-  local gitlab_items = if settings.using_gitlab then {
+  local gitlab_items = if settings.using_gitlab && std.objectHas(settings, 'gitlab_ci') then {
     '.gitlab-ci.yml': utils.manifestYaml(settings.gitlab_ci),
   } else {};
   local readthedocs_items = if settings.want_docs && settings.project_type == 'python' && settings.using_readthedocs then {

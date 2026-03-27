@@ -826,11 +826,12 @@ async def test_write_templated_files_claude_agents_skip_python_only_for_non_pyth
     assert '.claude/agents/qa-fixer.md' in written_files
 
 
-async def test_write_templated_files_claude_agents_skip_ci_agent_no_platform(
+async def test_write_templated_files_claude_agents_ci_agent_written_for_all_platforms(
         tmp_path: Path, mocker: MockerFixture) -> None:
     agents_dir = tmp_path / '.claude/agents'
     agents_dir.mkdir(parents=True)
-    (agents_dir / 'workflow-shellcheck.md.j2').write_text('shellcheck agent')
+    (agents_dir / 'workflow-shellcheck.md.j2').write_text(
+        '{% if settings.using_github %}github{% elif settings.using_gitlab %}gitlab{% endif %}')
     (agents_dir / 'qa-fixer.md.j2').write_text('qa agent')
     (tmp_path / 'CLAUDE.md.j2').write_text('claude')
     (tmp_path / 'AGENTS.md.j2').write_text('agents')
@@ -851,7 +852,7 @@ async def test_write_templated_files_claude_agents_skip_ci_agent_no_platform(
         ),
     )
     await write_templated_files(tmp_path, settings)
-    assert not any('workflow-shellcheck' in f for f in written_files)
+    assert '.claude/agents/workflow-shellcheck.md' in written_files
     assert '.claude/agents/qa-fixer.md' in written_files
 
 

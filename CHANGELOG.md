@@ -9,6 +9,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Templates that render to empty content now auto-delete the output file instead of writing a
+  near-empty file, replacing the hardcoded `_CI_PLATFORM_AGENTS` filtering with template-driven
+  conditional rendering.
+- The `gitlab_ci` field is now optional when `using_gitlab` is true, preventing a crash when
+  projects override `using_gitlab` without providing a `.gitlab-ci.yml` configuration.
+
 ## [0.1.0] - 2026-03-27
 
 ### Added
