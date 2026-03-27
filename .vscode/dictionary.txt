@@ -1,6 +1,5 @@
 adoc
 aiofiles
-aiohttp
 altool
 anchore
 anyio
@@ -156,6 +155,7 @@ namedtuples
 naumovs
 netrc
 nextdotjs
+niquests
 nhoizey
 nonexistent
 noqa
