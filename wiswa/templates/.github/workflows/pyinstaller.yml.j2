@@ -55,10 +55,11 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_ROOT=$env:USERPROFILE\vcpkg"
           Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_DEFAULT_TRIPLET={{ target.triplet }}"
           Add-Content -Path $env:GITHUB_ENV -Value "OPENSSL_DIR=$installed"
-          Add-Content -Path $env:GITHUB_ENV -Value "PKG_CONFIG_PATH=$installed\lib\pkgconfig"
-          Add-Content -Path $env:GITHUB_ENV -Value "CMAKE_PREFIX_PATH=$installed"
-          Add-Content -Path $env:GITHUB_ENV -Value "LIB=$installed\lib"
-          Add-Content -Path $env:GITHUB_ENV -Value "INCLUDE=$installed\include"
+          $sep = [IO.Path]::PathSeparator
+          Add-Content -Path $env:GITHUB_ENV -Value "PKG_CONFIG_PATH=$installed\lib\pkgconfig$sep$env:PKG_CONFIG_PATH"
+          Add-Content -Path $env:GITHUB_ENV -Value "CMAKE_PREFIX_PATH=$installed$sep$env:CMAKE_PREFIX_PATH"
+          Add-Content -Path $env:GITHUB_ENV -Value "LIB=$installed\lib$sep$env:LIB"
+          Add-Content -Path $env:GITHUB_ENV -Value "INCLUDE=$installed\include$sep$env:INCLUDE"
         shell: 'pwsh'
   {% endfor %}
 {% endif %}

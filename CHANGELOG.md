@@ -64,6 +64,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   subprocess calls, preventing Corepack from prompting interactively.
 - `_setup_github_session` now catches `keyring.errors.NoKeyringError` and logs a warning instead of
   crashing, so environments without a keyring backend no longer produce a traceback.
+- Vcpkg setup in the PyInstaller workflow template now appends to `PKG_CONFIG_PATH`,
+  `CMAKE_PREFIX_PATH`, `LIB`, and `INCLUDE` environment variables instead of overriding them,
+  preserving existing values from Visual Studio and other tools.
 
 ## [0.0.1] - 2026-03-24
 
