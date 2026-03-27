@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-03-27
+
 ### Added
 
 - `--no-cache` CLI option to disable HTTP response caching.
@@ -25,6 +27,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Sphinx documentation page (`docs/binary-signing.rst`) explaining how to set up binary signing.
 - Explicit `permissions: { contents: 'read' }` to the LuaRocks and WinGet publish workflows,
   restricting the default `GITHUB_TOKEN` to read-only.
+- MCP server (`wiswa-mcp`) that exposes settings discovery tools for AI assistants.
+- `utils.libjsonnet` symlink for backwards compatibility.
 
 ### Changed
 
@@ -48,6 +52,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     operations now run in parallel.
   - `wiswa/utils/postprocess.py`: File cleanup operations and configuration file writes now run
     concurrently.
+- Renamed `.libjsonnet` files to `.libsonnet`.
+- `uv` is now invoked with `--quiet` when not in debug mode during post-processing.
+- `license` field is now always included in generated `package.json`.
 
 ### Fixed
 
@@ -76,10 +83,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - PyInstaller workflow template now excludes `windows-11-arm` from the build matrix when `niquests`
   is a main dependency, since niquests' dependency qh3 does not provide a non-free-threaded wheel
   for Windows ARM64.
+- MacOS binaries are now signed before testing in PyInstaller workflow.
 
 ## [0.0.1] - 2026-03-24
 
 First version.
 
-[unreleased]: https://github.com/Tatsh/wiswa/-/compare/v0.0.1...HEAD
-[0.0.1]: https://github.com/Tatsh/bascom/releases/tag/v0.0.1
+[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Tatsh/wiswa/compare/v0.0.1...v0.1.0
+[0.0.1]: https://github.com/Tatsh/wiswa/releases/tag/v0.0.1

@@ -129,6 +129,7 @@ lextudio
 libera
 liberadotchat
 libname
+libjsonnet
 libsonnet
 linters
 luacheck

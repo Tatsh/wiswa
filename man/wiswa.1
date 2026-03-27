@@ -1,3 +1,4 @@
+'\" t
 .\" Man page generated from reStructuredText.
 .
 .
@@ -27,9 +28,273 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "WISWA" "1" "Mar 25, 2026" "0.0.1" "wiswa"
+.TH "WISWA" "1" "Mar 27, 2026" "0.1.0" "wiswa"
 .SH NAME
-wiswa \- wiswa v0.0.1
+wiswa \- wiswa v0.1.0
+.SH BINARY SIGNING
+.sp
+Wiswa can generate PyInstaller workflow steps that sign Windows and macOS binaries so that users do
+not see security warnings on launch. Signing is \fBoptional\fP and controlled entirely by whether the
+required GitHub secrets are present and non\-empty.
+.SS Contents
+.INDENT 0.0
+.IP \(bu 2
+\fI\%Overview\fP
+.IP \(bu 2
+\fI\%Windows: Authenticode Signing\fP
+.INDENT 2.0
+.IP \(bu 2
+\fI\%Obtain a Certificate\fP
+.IP \(bu 2
+\fI\%GitHub Secrets\fP
+.UNINDENT
+.IP \(bu 2
+\fI\%macOS: Code Signing and Notarisation\fP
+.INDENT 2.0
+.IP \(bu 2
+\fI\%Prerequisites\fP
+.IP \(bu 2
+\fI\%GitHub Secrets\fP
+.UNINDENT
+.IP \(bu 2
+\fI\%Customising Secret Names\fP
+.IP \(bu 2
+\fI\%How It Works\fP
+.IP \(bu 2
+\fI\%References\fP
+.UNINDENT
+.SS Overview
+.TS
+box center;
+l|l|l.
+T{
+Platform
+T}	T{
+Warning without signing
+T}	T{
+Mitigation
+T}
+_
+T{
+\fBWindows\fP
+T}	T{
+SmartScreen: \(dqWindows protected your PC\(dq / \(dqUnknown publisher\(dq
+T}	T{
+Authenticode code signing with a certificate from a trusted CA
+T}
+_
+T{
+\fBmacOS\fP
+T}	T{
+Gatekeeper: \(dqunidentified developer\(dq / \(dqcannot be opened\(dq
+T}	T{
+Code sign with a Developer ID Application certificate and notarise
+T}
+.TE
+.sp
+Linux binaries are not signed in the same way; only Windows and macOS are covered here.
+.SS Windows: Authenticode Signing
+.SS Obtain a Certificate
+.INDENT 0.0
+.IP 1. 3
+Buy an \fBOV (Organisation Validation)\fP or \fBEV (Extended Validation)\fP code\-signing certificate
+from a public CA (e.g. DigiCert, Sectigo, SSL.com). EV certificates build SmartScreen reputation
+faster.
+.sp
+For \fBtesting or internal use\fP, create a self\-signed code\-signing certificate with \fBmakecert\fP,
+\fBcertreq\fP, or PowerShell. Users will still see a warning unless they install the root in their
+trust store.
+.IP 2. 3
+Export the certificate (and private key) as a \fBPFX (.pfx / .p12)\fP file. Note the password.
+.IP 3. 3
+\fI(Optional)\fP Choose an RFC 3161 timestamp server (e.g.
+\fBhttp://timestamp.digicert.com\fP, \fBhttp://timestamp.sectigo.com\fP) so signatures remain valid
+after the certificate expires.
+.UNINDENT
+.SS GitHub Secrets
+.sp
+Add these as \fBrepository\fP or \fBorganisation\fP secrets:
+.TS
+box center;
+l|l.
+T{
+Secret name
+T}	T{
+Description
+T}
+_
+T{
+\fBWINDOWS_SIGNING_CERTIFICATE\fP
+T}	T{
+Base64\-encoded PFX file (e.g. output of \fBbase64 \-w0 cert.pfx\fP)
+T}
+_
+T{
+\fBWINDOWS_SIGNING_PASSWORD\fP
+T}	T{
+Password for the PFX
+T}
+.TE
+.sp
+Optional:
+.TS
+box center;
+l|l.
+T{
+Secret name
+T}	T{
+Description
+T}
+_
+T{
+\fBWINDOWS_TIMESTAMP_URL\fP
+T}	T{
+RFC 3161 timestamp server URL
+T}
+.TE
+.sp
+The generated workflow step will only run when \fBWINDOWS_SIGNING_CERTIFICATE\fP is non\-empty. If the
+secret is absent, Windows binaries are built unsigned (the current default behaviour).
+.SS macOS: Code Signing and Notarisation
+.SS Prerequisites
+.INDENT 0.0
+.IP 1. 3
+\fBEnrol in the Apple Developer Program.\fP
+.IP 2. 3
+\fBCreate a Developer ID Application certificate\fP in Certificates, Identifiers & Profiles.
+Download and install it in Keychain Access, then export as a \fB\&.p12\fP file with a password.
+.IP 3. 3
+\fBCreate an app\-specific password\fP in your Apple ID account under Sign\-In and Security →
+App\-Specific Passwords.
+.IP 4. 3
+\fBNote your Team ID\fP from the Apple Developer membership page or Xcode.
+.IP 5. 3
+\fBNote the signing identity\fP string, typically
+\fBDeveloper ID Application: Your Name (TEAM_ID)\fP\&.
+.UNINDENT
+.SS GitHub Secrets
+.sp
+Add these as \fBrepository\fP or \fBorganisation\fP secrets:
+.TS
+box center;
+l|l.
+T{
+Secret name
+T}	T{
+Description
+T}
+_
+T{
+\fBAPPLE_SIGNING_CERTIFICATE\fP
+T}	T{
+Base64\-encoded .p12 file
+T}
+_
+T{
+\fBAPPLE_SIGNING_PASSWORD\fP
+T}	T{
+Password for the .p12
+T}
+_
+T{
+\fBAPPLE_SIGNING_IDENTITY\fP
+T}	T{
+Full code\-signing identity string
+T}
+_
+T{
+\fBAPPLE_ID\fP
+T}	T{
+Apple ID email used for notarisation
+T}
+_
+T{
+\fBAPPLE_APP_SPECIFIC_PASSWORD\fP
+T}	T{
+App\-specific password for that Apple ID
+T}
+_
+T{
+\fBAPPLE_TEAM_ID\fP
+T}	T{
+Team ID (10\-character string)
+T}
+.TE
+.sp
+The generated workflow steps will only run when \fBAPPLE_SIGNING_CERTIFICATE\fP is non\-empty. If the
+secret is absent, macOS binaries are built unsigned.
+.SS Customising Secret Names
+.sp
+By default Wiswa uses the secret names listed above. If your repository or organisation uses
+different names, override them in \fB\&.wiswa.jsonnet\fP under the \fBgithub.secret_vars\fP key:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+{
+  github+: {
+    secret_vars+: {
+      windows+: {
+        signing_certificate: \(aqMY_WIN_CERT\(aq,
+        signing_password: \(aqMY_WIN_PASS\(aq,
+        timestamp_url: \(aqMY_WIN_TS_URL\(aq,
+      },
+      apple+: {
+        signing_certificate: \(aqMY_APPLE_CERT\(aq,
+        signing_password: \(aqMY_APPLE_PASS\(aq,
+        signing_identity: \(aqMY_APPLE_IDENTITY\(aq,
+        apple_id: \(aqMY_APPLE_ID\(aq,
+        app_specific_password: \(aqMY_APPLE_APP_PASS\(aq,
+        team_id: \(aqMY_APPLE_TEAM\(aq,
+      },
+    },
+  },
+}
+.EE
+.UNINDENT
+.UNINDENT
+.SS How It Works
+.sp
+When the PyInstaller workflow is generated by Wiswa and the corresponding secrets are set:
+.sp
+\fBWindows\fP
+.INDENT 0.0
+.IP 1. 3
+The base64\-encoded PFX is decoded to a temporary file.
+.IP 2. 3
+Each \fB\&.exe\fP in \fBdist/\fP is signed with \fBsigntool\fP\&.
+.IP 3. 3
+If a timestamp URL secret is set, the signature is timestamped.
+.IP 4. 3
+The temporary PFX file is removed.
+.UNINDENT
+.sp
+\fBmacOS\fP
+.INDENT 0.0
+.IP 1. 3
+The base64\-encoded .p12 is imported into a temporary keychain.
+.IP 2. 3
+Each binary in \fBdist/\fP is signed with \fBcodesign \-\-options runtime\fP (Hardened Runtime).
+.IP 3. 3
+The signed binaries are submitted to Apple\(aqs notary service with \fBxcrun notarytool\fP\&.
+.IP 4. 3
+The notary ticket is stapled to each binary with \fBxcrun stapler\fP\&.
+.IP 5. 3
+The temporary keychain and certificate file are cleaned up.
+.UNINDENT
+.SS References
+.INDENT 0.0
+.IP \(bu 2
+\X'tty: link https://learn.microsoft.com/en-us/windows/win32/seccrypto/signtool'\fI\%SignTool\fP\X'tty: link'
+.IP \(bu 2
+\X'tty: link https://learn.microsoft.com/en-us/windows/win32/seccrypto/authenticode-signing'\fI\%Authenticode\fP\X'tty: link'
+.IP \(bu 2
+\X'tty: link https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/Introduction/Introduction.html'\fI\%Apple Code Signing Guide\fP\X'tty: link'
+.IP \(bu 2
+\X'tty: link https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution'\fI\%Notarizing macOS Software\fP\X'tty: link'
+.IP \(bu 2
+\X'tty: link https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/customizing_the_notarization_workflow'\fI\%notarytool\fP\X'tty: link'
+.UNINDENT
 .SH COMMANDS
 .SS wiswa
 .sp
@@ -48,6 +313,16 @@ wiswa [OPTIONS] [FILE]
 Options
 .INDENT 0.0
 .TP
+.B \-\-cache\-time <cache_time>
+Cache expiry time in seconds.
+.INDENT 7.0
+.TP
+.B Default
+\fB600\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
 .B \-d, \-\-debug
 Enable debug output.
 .UNINDENT
@@ -55,6 +330,21 @@ Enable debug output.
 .TP
 .B \-J, \-\-jpath <jpath>
 Add a directory to the Jsonnet search path (only used when evaluating settings).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-cache
+Disable HTTP response caching.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-o, \-\-output\-dir <output_dir>
+Output directory for generated files.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-q, \-\-quiet
+Suppress the progress spinner.
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -73,8 +363,23 @@ Skip Jsonnet evaluation.
 .UNINDENT
 .INDENT 0.0
 .TP
+.B \-\-skip\-postprocess
+Skip post\-processing steps.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-skip\-static
+Skip copying static files.
+.UNINDENT
+.INDENT 0.0
+.TP
 .B \-\-skip\-templates
 Skip Jinja2 template evaluation.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-skip\-yarn
+Skip Yarn download.
 .UNINDENT
 .sp
 Arguments
@@ -82,6 +387,53 @@ Arguments
 .TP
 .B FILE
 Optional argument
+.UNINDENT
+.SH MCP SERVER
+.sp
+Wiswa includes an MCP server (\fBwiswa\-mcp\fP) that exposes settings discovery tools for AI
+assistants.
+.SS Claude Code
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+claude mcp add wiswa\-mcp \-\- wiswa\-mcp
+.EE
+.UNINDENT
+.UNINDENT
+.SS Cursor
+.sp
+Add to \fB\&.cursor/mcp.json\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+{
+  \(dqmcpServers\(dq: {
+    \(dqwiswa\-mcp\(dq: {
+      \(dqcommand\(dq: \(dqwiswa\-mcp\(dq
+    }
+  }
+}
+.EE
+.UNINDENT
+.UNINDENT
+.SS GitHub Copilot CLI
+.sp
+Add to \fB\&.github/copilot/mcp.json\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+{
+  \(dqmcpServers\(dq: {
+    \(dqwiswa\-mcp\(dq: {
+      \(dqcommand\(dq: \(dqwiswa\-mcp\(dq
+    }
+  }
+}
+.EE
+.UNINDENT
 .UNINDENT
 .SH AUTHOR
 Andrew Udvare <audvare@gmail.com>
