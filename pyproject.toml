@@ -7,7 +7,7 @@ dev = [
   "commitizen>=4.13.9",
   "cz-path>=0.0.6",
   "mypy>=1.19.1",
-  "ruff>=0.15.7",
+  "ruff>=0.15.8",
   "types-jsonnet>=0.21.0.20250708",
   "yapf>=0.43.0",
 ]

@@ -1,7 +1,6 @@
 adoc
 aiofiles
 aiohttp
-altool
 anchore
 anyio
 appdir
@@ -19,7 +18,6 @@ autouic
 autouse
 bascom
 beautifulsoup
-behavior
 bierner
 brightgreen
 bsky
@@ -73,14 +71,12 @@ endcode
 endfor
 endmacro
 endraw
-enroll
 esbenp
 esbonio
 excinfo
 exponentcase
 fastmcp
 fdroid
-filebackend
 fileprivate
 filevers
 flathub
@@ -106,7 +102,6 @@ hostux
 hoverxref
 htmlcov
 idtvuccnmtl
-ilammy
 intellicode
 internalerror
 intersphinx
@@ -149,7 +144,6 @@ mdfile
 mktemp
 modindex
 monkeypatch
-msvc
 msys
 mymod
 myproject
@@ -165,7 +159,6 @@ nonexistent
 noqa
 norecursedirs
 notarytool
-notlike
 nsucz
 nullptr
 numpy
@@ -173,7 +166,6 @@ numpydoc
 objc
 onefile
 oneline
-osslsigncode
 paramdoc
 pascalreitermann
 pathlib
@@ -232,10 +224,10 @@ templater
 testpaths
 timezone
 timonwong
+toctree
 tojson
 tomlkit
 tomllib
-toctree
 tomlq
 tonumber
 topython
