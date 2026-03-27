@@ -20,7 +20,7 @@ from .path import non_empty_file_exists, primary_module_to_path
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-    from aiohttp import ClientSession
+    from niquests import AsyncSession
     from wiswa.typing import Settings
 
 log = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class _TemplateEnvTuple(NamedTuple):
 
 def _template_env(module_path: Path,
                   settings: Settings,
-                  session: ClientSession | None = None) -> _TemplateEnvTuple:
+                  session: AsyncSession | None = None) -> _TemplateEnvTuple:
     env = jinja2.Environment(autoescape=jinja2.select_autoescape(),
                              enable_async=True,
                              extensions=(GithubAPIExtension, ParseMarkdownBadgeExtension,
@@ -47,7 +47,7 @@ def _template_env(module_path: Path,
                              trim_blocks=True,
                              undefined=jinja2.StrictUndefined)
     if session is not None:
-        env.globals['_aiohttp_session'] = session
+        env.globals['_http_session'] = session
     templates_dir = module_path / 'templates'
 
     def resolve_template(file_path: Path) -> jinja2.Template:
@@ -214,7 +214,7 @@ async def _should_overwrite_contributing(settings: Settings) -> bool:
 
 async def write_templated_files(module_path: Path,
                                 settings: Settings,
-                                session: ClientSession | None = None) -> None:
+                                session: AsyncSession | None = None) -> None:
     """
     Write templated files.
 
@@ -224,8 +224,8 @@ async def write_templated_files(module_path: Path,
         Path to the :py:mod:`wiswa` package directory.
     settings : Settings
         Project settings.
-    session : ClientSession | None
-        Optional aiohttp session for HTTP callbacks in templates.
+    session : AsyncSession | None
+        Optional HTTP session for callbacks in templates.
     """
     _, templates_dir, resolve_template, write_file = _template_env(module_path, settings, session)
     await anyio.Path('.github/copilot-instructions.md').unlink(missing_ok=True)

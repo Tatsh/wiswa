@@ -12,7 +12,7 @@ from wiswa.constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
 import anyio
 
 if TYPE_CHECKING:
-    from aiohttp import ClientSession
+    import niquests
 
 __all__ = ('download_yarn', 'download_yarn_plugins', 'get_github_release_latest_tag',
            'get_latest_yarn_version', 'get_npm_latest_package_version',
@@ -25,14 +25,14 @@ _PYPI_YANKED_RELEASES = {
 _cache: dict[str, str] = {}
 
 
-async def get_latest_yarn_version(session: ClientSession) -> str:  # pragma: no cover
+async def get_latest_yarn_version(session: niquests.AsyncSession) -> str:  # pragma: no cover
     """
     Get the latest Yarn version.
 
     Parameters
     ----------
-    session : ClientSession
-        The aiohttp session.
+    session : niquests.AsyncSession
+        The HTTP session.
 
     Returns
     -------
@@ -42,23 +42,23 @@ async def get_latest_yarn_version(session: ClientSession) -> str:  # pragma: no 
     key = 'yarn_latest'
     if key in _cache:
         return _cache[key]
-    async with session.get('https://repo.yarnpkg.com/tags', timeout=15) as resp:
-        resp.raise_for_status()
-        data = await resp.json()
+    resp = await session.get('https://repo.yarnpkg.com/tags', timeout=15)
+    resp.raise_for_status()
+    data = resp.json()
     result = cast('str', data['latest']['stable'])
     _cache[key] = result
     return result
 
 
-async def get_npm_latest_package_version(session: ClientSession,
+async def get_npm_latest_package_version(session: niquests.AsyncSession,
                                          package: str) -> str:  # pragma: no cover
     """
     Get the latest version of an NPM package.
 
     Parameters
     ----------
-    session : ClientSession
-        The aiohttp session.
+    session : niquests.AsyncSession
+        The HTTP session.
     package : str
         The NPM package name.
 
@@ -70,23 +70,23 @@ async def get_npm_latest_package_version(session: ClientSession,
     key = f'npm_{package}'
     if key in _cache:
         return _cache[key]
-    async with session.get(f'https://registry.npmjs.org/{package}/latest', timeout=15) as resp:
-        resp.raise_for_status()
-        data = await resp.json()
+    resp = await session.get(f'https://registry.npmjs.org/{package}/latest', timeout=15)
+    resp.raise_for_status()
+    data = resp.json()
     result = cast('str', data['version'])
     _cache[key] = result
     return result
 
 
-async def get_pypi_latest_package_version(session: ClientSession,
+async def get_pypi_latest_package_version(session: niquests.AsyncSession,
                                           package: str) -> str:  # pragma: no cover
     """
     Get the latest version of a PyPI package.
 
     Parameters
     ----------
-    session : ClientSession
-        The aiohttp session.
+    session : niquests.AsyncSession
+        The HTTP session.
     package : str
         The PyPI package name.
 
@@ -103,10 +103,9 @@ async def get_pypi_latest_package_version(session: ClientSession,
     key = f'pypi_{package}'
     if key in _cache:
         return _cache[key]
-    async with session.get(f'https://pypi.org/rss/project/{package}/releases.xml',
-                           timeout=15) as resp:
-        resp.raise_for_status()
-        content = await resp.read()
+    resp = await session.get(f'https://pypi.org/rss/project/{package}/releases.xml', timeout=15)
+    resp.raise_for_status()
+    content = resp.content or b''
     root = Soup(content, 'xml')
     versions = [x.text for x in root.select('item > title')]
     if not versions:
@@ -126,39 +125,39 @@ async def get_pypi_latest_package_version(session: ClientSession,
     return result
 
 
-async def download_yarn_plugins(session: ClientSession) -> None:
+async def download_yarn_plugins(session: niquests.AsyncSession) -> None:
     """
     Download Yarn plugins.
 
     Parameters
     ----------
-    session : ClientSession
-        The aiohttp session.
+    session : niquests.AsyncSession
+        The HTTP session.
     """
-    async with session.get(PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI, timeout=15) as resp:
-        resp.raise_for_status()
-        text = await resp.text()
+    resp = await session.get(PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI, timeout=15)
+    resp.raise_for_status()
+    text = resp.text or ''
     plugins_dir = anyio.Path('.yarn/plugins')
     await plugins_dir.mkdir(parents=True, exist_ok=True)
     await (plugins_dir / 'plugin-prettier-after-all-installed.cjs').write_text(f'{text.strip()}\n',
                                                                                encoding='utf-8')
 
 
-async def download_yarn(session: ClientSession, version: str) -> None:
+async def download_yarn(session: niquests.AsyncSession, version: str) -> None:
     """
     Download the specified version of Yarn and save it to ``.yarn/releases``.
 
     Parameters
     ----------
-    session : ClientSession
-        The aiohttp session.
+    session : niquests.AsyncSession
+        The HTTP session.
     version : str
         The Yarn version to download.
     """
-    async with session.get(f'https://repo.yarnpkg.com/{version}/packages/yarnpkg-cli/bin/yarn.js',
-                           timeout=15) as resp:
-        resp.raise_for_status()
-        text = await resp.text()
+    resp = await session.get(f'https://repo.yarnpkg.com/{version}/packages/yarnpkg-cli/bin/yarn.js',
+                             timeout=15)
+    resp.raise_for_status()
+    text = resp.text or ''
     releases_dir = Path('.yarn/releases')
     await anyio.to_thread.run_sync(lambda: rmtree(releases_dir, ignore_errors=True))
     aio_releases_dir = anyio.Path(releases_dir)
@@ -168,7 +167,7 @@ async def download_yarn(session: ClientSession, version: str) -> None:
     await anyio.to_thread.run_sync(lambda: Path(target).chmod(0o755))
 
 
-async def get_github_release_latest_tag(session: ClientSession,
+async def get_github_release_latest_tag(session: niquests.AsyncSession,
                                         owner: str,
                                         repo: str,
                                         *,
@@ -180,8 +179,8 @@ async def get_github_release_latest_tag(session: ClientSession,
 
     Parameters
     ----------
-    session : ClientSession
-        The aiohttp session.
+    session : niquests.AsyncSession
+        The HTTP session.
     owner : str
         The repository owner.
     repo : str
@@ -208,23 +207,22 @@ async def get_github_release_latest_tag(session: ClientSession,
         return _cache[key]
     version: str | None = None
     if not skip_releases:
-        async with session.get(f'https://api.github.com/repos/{owner}/{repo}/releases/latest',
-                               timeout=15) as resp:
-            if resp.ok:
-                data = await resp.json()
-                version = data['tag_name']
+        resp = await session.get(f'https://api.github.com/repos/{owner}/{repo}/releases/latest',
+                                 timeout=15)
+        if resp.ok:
+            data = resp.json()
+            version = data['tag_name']
     if not version:
-        async with session.get(f'https://api.github.com/repos/{owner}/{repo}/tags',
-                               timeout=15) as resp:
-            if resp.ok:
-                data = await resp.json()
-                tags = [x['name'] for x in data if 'name' in x]
-                if tags:
-                    if actions or (owner == 'google' and repo == 'yapf'):
-                        version = next(x for x in tags if x.startswith('v') and (
-                            re.search(r'\d$', x) if not allow_suffixes else True))
-                    else:
-                        version = tags[0]
+        resp = await session.get(f'https://api.github.com/repos/{owner}/{repo}/tags', timeout=15)
+        if resp.ok:
+            data = resp.json()
+            tags = [x['name'] for x in data if 'name' in x]
+            if tags:
+                if actions or (owner == 'google' and repo == 'yapf'):
+                    version = next(x for x in tags if x.startswith('v') and (
+                        re.search(r'\d$', x) if not allow_suffixes else True))
+                else:
+                    version = tags[0]
     if not version:
         msg = f'Could not get latest tag for {owner}/{repo}.'
         raise ValueError(msg)

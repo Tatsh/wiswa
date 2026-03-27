@@ -15,7 +15,7 @@ import platformdirs
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from aiohttp import ClientSession
+    from niquests import AsyncSession
     from wiswa.typing import Settings
 
 __all__ = ('evaluate_jsonnet_file', 'evaluate_jsonnet_project', 'evaluate_merged_settings',
@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 
 
 def _make_native_callbacks(
-        session: ClientSession | None = None
+        session: AsyncSession | None = None
 ) -> dict[str, tuple[tuple[str, ...], Callable[..., Any]]]:
     from .versions import (  # noqa: PLC0415, I001
         get_github_release_latest_tag, get_latest_yarn_version, get_npm_latest_package_version,
@@ -71,7 +71,7 @@ def _make_native_callbacks(
 async def evaluate_jsonnet_file(jpathdir: Sequence[str],
                                 file: Path,
                                 merged_settings: str,
-                                session: ClientSession | None = None) -> str:
+                                session: AsyncSession | None = None) -> str:
     """
     Evaluate a Jsonnet file with the given settings.
 
@@ -83,8 +83,8 @@ async def evaluate_jsonnet_file(jpathdir: Sequence[str],
         The path to the Jsonnet file to evaluate.
     merged_settings : str
         The merged settings as a JSON string.
-    session : ClientSession | None
-        Optional aiohttp session for HTTP callbacks.
+    session : AsyncSession | None
+        Optional HTTP session for callbacks.
 
     Returns
     -------
@@ -102,7 +102,7 @@ async def evaluate_jsonnet_file(jpathdir: Sequence[str],
 async def evaluate_jsonnet_project(lib_path: Path,
                                    jpathdir: Sequence[str],
                                    merged_settings: str,
-                                   session: ClientSession | None = None,
+                                   session: AsyncSession | None = None,
                                    file: Path | None = None,
                                    output_dir: Path | None = None) -> None:
     """
@@ -116,13 +116,14 @@ async def evaluate_jsonnet_project(lib_path: Path,
         The Jsonnet library search path.
     merged_settings : str
         The merged settings as a JSON string.
-    session : ClientSession | None
-        Optional aiohttp session for HTTP callbacks.
+    session : AsyncSession | None
+        Optional HTTP session for callbacks.
     file : Path | None
         The path to the Jsonnet file to evaluate (defaults to ``project.jsonnet`` in the library).
     output_dir : Path | None
         The directory to output generated files to (defaults to the current directory).
     """
+    log.debug('Evaluating Jsonnet. Please be patient.')
     if output_dir:
         await anyio.Path(output_dir).mkdir(parents=True, exist_ok=True)
     output_dir = output_dir or Path()
@@ -138,7 +139,7 @@ async def evaluate_jsonnet_project(lib_path: Path,
 async def evaluate_merged_settings(jpathdir: Sequence[str],
                                    lib_path: Path,
                                    settings: str,
-                                   session: ClientSession | None = None,
+                                   session: AsyncSession | None = None,
                                    *,
                                    user_defaults: bool = False) -> tuple[str, Settings]:
     """
@@ -152,8 +153,8 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
         The path to the Jsonnet library.
     settings : str
         The settings to merge with defaults and user defaults.
-    session : ClientSession | None
-        Optional aiohttp session for HTTP callbacks.
+    session : AsyncSession | None
+        Optional HTTP session for callbacks.
     user_defaults : bool
         Whether to include user defaults from the user preferences directory.
 
@@ -193,7 +194,7 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
 
 async def resolve_defaults_only(jpathdir: Sequence[str],
                                 lib_path: Path,
-                                session: ClientSession | None = None) -> dict[str, Any]:
+                                session: AsyncSession | None = None) -> dict[str, Any]:
     """
     Resolve the default settings without any project or user overrides.
 
@@ -203,8 +204,8 @@ async def resolve_defaults_only(jpathdir: Sequence[str],
         The Jsonnet library search path.
     lib_path : Path
         The path to the Jsonnet library.
-    session : ClientSession | None
-        Optional aiohttp session for HTTP callbacks.
+    session : AsyncSession | None
+        Optional HTTP session for callbacks.
 
     Returns
     -------

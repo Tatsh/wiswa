@@ -7,7 +7,7 @@ import json
 import re
 
 from fastmcp import FastMCP
-import aiohttp
+import niquests
 
 from .utils.jsonnet import resolve_defaults_only
 
@@ -23,7 +23,7 @@ async def _get_defaults() -> dict[str, Any]:
     global _resolved_defaults  # noqa: PLW0603
     if _resolved_defaults is None:
         with importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as lib_path:
-            async with aiohttp.ClientSession() as session:
+            async with niquests.AsyncSession() as session:
                 _resolved_defaults = await resolve_defaults_only([str(lib_path)], lib_path, session)
     return _resolved_defaults
 

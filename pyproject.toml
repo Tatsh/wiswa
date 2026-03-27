@@ -48,8 +48,6 @@ classifiers = [
 ]
 dependencies = [
   "aiofiles>=25.1.0",
-  "aiohttp-client-cache[filesystem]>=0.14.3",
-  "aiohttp>=3.13.3",
   "anyio>=4.13.0",
   "bascom>=0.1.2",
   "beautifulsoup4>=4.14.3",
@@ -59,6 +57,7 @@ dependencies = [
   "jsonnet>=0.22.0",
   "keyring>=25.7.0",
   "lxml>=6.0.2",
+  "niquests>=3.18.2",
   "tomlkit>=0.14.0",
   "typing-extensions>=4.15.0",
 ]

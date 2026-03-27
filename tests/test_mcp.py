@@ -63,7 +63,7 @@ class TestGetDefaultsReal:
         mocker.stopall()
         wiswa.mcp._resolved_defaults = None  # noqa: SLF001
         mock_session = AsyncMock()
-        mock_session_cls = mocker.patch('wiswa.mcp.aiohttp.ClientSession',
+        mock_session_cls = mocker.patch('wiswa.mcp.niquests.AsyncSession',
                                         return_value=mock_session)
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session.__aexit__ = AsyncMock(return_value=False)

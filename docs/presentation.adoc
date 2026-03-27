@@ -431,7 +431,7 @@ AI assistants can explore and modify Wiswa configuration *programmatically*.
 wiswa/
   main.py              -- async orchestrator
   mcp.py               -- FastMCP server
-  session.py           -- cached aiohttp client
+  session.py           -- cached niquests client
   utils/
     jsonnet.py         -- Jsonnet eval + native callbacks
     versions.py        -- package version fetching

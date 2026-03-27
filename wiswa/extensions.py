@@ -9,7 +9,7 @@ import re
 from jinja2.ext import Extension
 
 if TYPE_CHECKING:
-    from aiohttp import ClientSession
+    from niquests import AsyncSession
     import jinja2
 
 __all__ = ('GithubAPIExtension', 'ParseMarkdownBadgeExtension', 'ShellExtension',
@@ -136,10 +136,10 @@ class GithubAPIExtension(Extension):
         super().__init__(environment)
 
         async def _github_latest_action_tag(owner: str, repo: str) -> str:
-            session: ClientSession | None = environment.globals.get(
-                '_aiohttp_session')  # type: ignore[assignment]
+            session: AsyncSession | None = environment.globals.get(
+                '_http_session')  # type: ignore[assignment]
             if session is None:
-                msg = 'No aiohttp session available for GitHub API calls'
+                msg = 'No HTTP session available for GitHub API calls.'
                 raise RuntimeError(msg)
             return await get_github_release_latest_tag(session,
                                                        owner,

@@ -51,11 +51,7 @@ local utils = import 'utils.libsonnet';
       poetry+: {
         dependencies+: {
           aiofiles: utils.latestPypiPackageVersionCaret('aiofiles'),
-          aiohttp: utils.latestPypiPackageVersionCaret('aiohttp'),
-          'aiohttp-client-cache': {
-            version: utils.latestPypiPackageVersionCaret('aiohttp-client-cache'),
-            extras: ['filesystem'],
-          },
+          niquests: utils.latestPypiPackageVersionCaret('niquests'),
           anyio: utils.latestPypiPackageVersionCaret('anyio'),
           beautifulsoup4: utils.latestPypiPackageVersionCaret('beautifulsoup4'),
           fastmcp: utils.latestPypiPackageVersionCaret('fastmcp'),

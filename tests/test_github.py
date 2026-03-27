@@ -29,18 +29,12 @@ def _make_settings(**overrides: Any) -> Settings:
     return cast('Settings', base)
 
 
-def _make_async_cm(mock_resp: MagicMock) -> MagicMock:
-    cm = MagicMock()
-    cm.__aenter__ = AsyncMock(return_value=mock_resp)
-    cm.__aexit__ = AsyncMock(return_value=False)
-    return cm
-
-
 def _make_resp(status: int = 200, json_data: Any = None) -> MagicMock:
     resp = MagicMock()
-    resp.status = status
-    resp.raise_for_status = MagicMock()
-    resp.json = AsyncMock(return_value=json_data if json_data is not None else [])
+    resp.status_code = status
+    resp.ok = 200 <= status < 400
+    resp.raise_for_status = MagicMock(return_value=resp)
+    resp.json = MagicMock(return_value=json_data if json_data is not None else [])
     return resp
 
 
@@ -50,10 +44,10 @@ def _mock_github_session(mocker: MockerFixture) -> MagicMock:
     session = MagicMock()
     default_resp = _make_resp()
     session.headers = MagicMock()
-    session.patch.return_value = _make_async_cm(default_resp)
-    session.get.return_value = _make_async_cm(default_resp)
-    session.put.return_value = _make_async_cm(default_resp)
-    session.post.return_value = _make_async_cm(default_resp)
+    session.patch = AsyncMock(return_value=default_resp)
+    session.get = AsyncMock(return_value=default_resp)
+    session.put = AsyncMock(return_value=default_resp)
+    session.post = AsyncMock(return_value=default_resp)
     return session
 
 
@@ -138,7 +132,7 @@ async def test_setup_github_project_updates_existing_rulesets(mocker: MockerFixt
             'id': 3
         },
     ])
-    session.get.return_value = _make_async_cm(rulesets_resp)
+    session.get = AsyncMock(return_value=rulesets_resp)
     await setup_github_project(session, _make_settings())
     post_calls = [
         c for c in session.post.call_args_list if 'rulesets' in str(c.args[0] if c.args else '')
@@ -157,10 +151,10 @@ async def test_setup_github_project_creates_pages_when_not_existing(mocker: Mock
 
     def side_effect(url: str, **kwargs: object) -> MagicMock:
         if 'pages' in url:
-            return _make_async_cm(pages_resp)
-        return _make_async_cm(default_resp)
+            return pages_resp
+        return default_resp
 
-    session.get.side_effect = side_effect
+    session.get = AsyncMock(side_effect=side_effect)
     await setup_github_project(session, _make_settings())
     pages_post = [c for c in session.post.call_args_list if 'pages' in str(c.args[0])]
     assert len(pages_post) == 1
@@ -173,10 +167,10 @@ async def test_setup_github_project_skips_pages_when_existing(mocker: MockerFixt
 
     def side_effect(url: str, **kwargs: object) -> MagicMock:
         if 'pages' in url:
-            return _make_async_cm(pages_resp)
-        return _make_async_cm(default_resp)
+            return pages_resp
+        return default_resp
 
-    session.get.side_effect = side_effect
+    session.get = AsyncMock(side_effect=side_effect)
     await setup_github_project(session, _make_settings())
     pages_post = [c for c in session.post.call_args_list if 'pages' in str(c.args[0])]
     assert len(pages_post) == 0
@@ -185,7 +179,7 @@ async def test_setup_github_project_skips_pages_when_existing(mocker: MockerFixt
 async def test_setup_github_project_mixed_existing_and_new_rulesets(mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
     rulesets_resp = _make_resp(200, [{'name': 'Protect version tags', 'id': 10}])
-    session.get.return_value = _make_async_cm(rulesets_resp)
+    session.get = AsyncMock(return_value=rulesets_resp)
     await setup_github_project(session, _make_settings())
     put_ruleset_calls = [
         c for c in session.put.call_args_list if 'rulesets/' in str(c.args[0] if c.args else '')
@@ -220,15 +214,13 @@ async def test_setup_github_project_returns_none_on_no_keyring(mocker: MockerFix
 
 
 async def test_setup_github_project_handles_http_error(mocker: MockerFixture) -> None:
-    import aiohttp
+    import niquests
 
     session = _mock_github_session(mocker)
     error_resp = _make_resp(200)
-    error_resp.raise_for_status.side_effect = aiohttp.ClientResponseError(request_info=MagicMock(),
-                                                                          history=(),
-                                                                          status=400,
-                                                                          message='Bad Request')
-    session.patch.return_value = _make_async_cm(error_resp)
+    error_resp.raise_for_status.side_effect = niquests.HTTPError(response=MagicMock(
+        status_code=400))
+    session.patch = AsyncMock(return_value=error_resp)
     mock_log = mocker.patch('wiswa.utils.github.log')
     await setup_github_project(session, _make_settings())
     mock_log.warning.assert_called_once()

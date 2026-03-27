@@ -7,14 +7,13 @@ import asyncio
 import getpass
 import logging
 
-import aiohttp
 import anyio
 import keyring
+import niquests
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
-    from aiohttp import ClientSession
     from wiswa.typing import Settings
 
 __all__ = ('setup_github_project',)
@@ -70,7 +69,8 @@ def _get_repo_config(settings: Settings) -> dict[str, Any]:
     }
 
 
-async def _setup_github_session(session: ClientSession) -> tuple[ClientSession, str] | None:
+async def _setup_github_session(
+        session: niquests.AsyncSession) -> tuple[niquests.AsyncSession, str] | None:
     try:
         token = await anyio.to_thread.run_sync(
             lambda: keyring.get_password('tmu-github-api', getpass.getuser()))
@@ -88,14 +88,13 @@ async def _setup_github_session(session: ClientSession) -> tuple[ClientSession, 
     return session, 'https://api.github.com'
 
 
-async def _configure_github_repo(session: ClientSession, host: str, repo_name: str,
+async def _configure_github_repo(session: niquests.AsyncSession, host: str, repo_name: str,
                                  settings: Settings) -> None:
-    async with session.patch(f'{host}/repos/{repo_name}', json=_get_repo_config(settings)) as resp:
-        resp.raise_for_status()
+    (await session.patch(f'{host}/repos/{repo_name}',
+                         json=_get_repo_config(settings))).raise_for_status()
 
     async def _put(url: str, **kwargs: Any) -> None:
-        async with session.put(url, **kwargs) as resp:
-            resp.raise_for_status()
+        (await session.put(url, **kwargs)).raise_for_status()
 
     put_tasks: list[Awaitable[None]] = [
         _put(f'{host}/repos/{repo_name}/topics',
@@ -200,14 +199,14 @@ _DESIRED_RULESETS: list[dict[str, Any]] = [{
 }]
 
 
-async def setup_github_project(session: ClientSession, settings: Settings) -> None:
+async def setup_github_project(session: niquests.AsyncSession, settings: Settings) -> None:
     """
     Configure the GitHub repository (topics, rulesets, security, Pages).
 
     Parameters
     ----------
-    session : ClientSession
-        The aiohttp session.
+    session : niquests.AsyncSession
+        The HTTP session.
     settings : Settings
         The project settings dictionary.
     """
@@ -225,9 +224,9 @@ async def setup_github_project(session: ClientSession, settings: Settings) -> No
 
     try:
         await _configure_github_repo(session, host, repo_name, settings)
-        async with session.get(f'{host}/repos/{repo_name}/rulesets', expire_after=0) as r:
-            r.raise_for_status()
-            rulesets = await r.json()
+        r = await session.get(f'{host}/repos/{repo_name}/rulesets', expire_after=0)
+        r.raise_for_status()
+        rulesets = r.json()
         existing: dict[str, int] = {x['name']: x['id'] for x in rulesets}
         rulesets_url = f'{host}/repos/{repo_name}/rulesets'
 
@@ -235,23 +234,20 @@ async def setup_github_project(session: ClientSession, settings: Settings) -> No
             name = ruleset['name']
             log.debug('Processing ruleset "%s".', name)
             if name in existing:
-                async with session.put(f'{rulesets_url}/{existing[name]}', json=ruleset) as resp:
-                    resp.raise_for_status()
+                (await session.put(f'{rulesets_url}/{existing[name]}',
+                                   json=ruleset)).raise_for_status()
             else:
-                async with session.post(rulesets_url, json=ruleset) as resp:
-                    resp.raise_for_status()
+                (await session.post(rulesets_url, json=ruleset)).raise_for_status()
 
         await asyncio.gather(*(_upsert_ruleset(rs) for rs in _DESIRED_RULESETS))
-        async with session.get(f'{host}/repos/{repo_name}/pages') as resp:
-            pages_status = resp.status
-        if pages_status != HTTPStatus.OK:
-            async with session.post(
-                    f'{host}/repos/{repo_name}/pages',
-                    json={'source': {
-                        'branch': settings['default_branch'],
-                        'path': '/'
-                    }}) as resp:
-                resp.raise_for_status()
-    except aiohttp.ClientResponseError as e:
-        log.warning('Caught error updating repo: %s.', e.message)
+        pages_resp = await session.get(f'{host}/repos/{repo_name}/pages')
+        if pages_resp.status_code != HTTPStatus.OK:
+            (await
+             session.post(f'{host}/repos/{repo_name}/pages',
+                          json={'source': {
+                              'branch': settings['default_branch'],
+                              'path': '/'
+                          }})).raise_for_status()
+    except niquests.HTTPError as e:
+        log.warning('Caught error updating repo: %s.', e)
         log.debug('%r', e)

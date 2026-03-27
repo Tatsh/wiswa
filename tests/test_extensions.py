@@ -233,7 +233,7 @@ async def test_github_latest_action_tag_no_session() -> None:
 
     env = jinja2.Environment(extensions=[GithubAPIExtension], autoescape=True)
     func = cast('Any', env.globals['github_latest_action_tag'])
-    with pytest.raises(RuntimeError, match='No aiohttp session'):
+    with pytest.raises(RuntimeError, match='No HTTP session'):
         await func('owner', 'repo')
 
 
@@ -248,7 +248,7 @@ async def test_github_latest_action_tag_with_session(mocker: MockerFixture) -> N
                  return_value='v4')
     env = jinja2.Environment(extensions=[GithubAPIExtension], autoescape=True)
     mock_session = mocker.MagicMock()
-    env.globals['_aiohttp_session'] = mock_session
+    env.globals['_http_session'] = mock_session
     func = cast('Any', env.globals['github_latest_action_tag'])
     result = await func('owner', 'repo')
     assert result == 'v4'
