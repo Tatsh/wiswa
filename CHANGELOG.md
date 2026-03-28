@@ -11,11 +11,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Split the Python QA workflow into granular parallel jobs (ruff, mypy, format, prettier,
-  markdownlint, spelling) using native GitHub Actions path filters instead of `dorny/paths-filter`.
-  Only mypy uses a Python version matrix. The format job uses the minimum supported Python version.
+- Split QA workflows for all project types (Python, TypeScript, C/C++) into granular parallel jobs
+  (ruff, mypy, format, eslint, prettier, markdownlint, spelling) using native GitHub Actions path
+  filters instead of `dorny/paths-filter`. Only mypy uses a Python version matrix. The format job
+  uses the minimum supported Python version.
+- Added path filters to the TypeScript tests workflow.
 
 ### Fixed
+
+- Release agent template no longer shows `uv lock` or `gen-manpage` steps for non-Python projects.
+- Agent templates with conditional steps now use Markdown auto-numbering to avoid gaps.
 
 - Templates that render to empty content now auto-delete the output file instead of writing a
   near-empty file, replacing the hardcoded `_CI_PLATFORM_AGENTS` filtering with template-driven
