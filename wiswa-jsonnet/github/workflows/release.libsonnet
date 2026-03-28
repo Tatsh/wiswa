@@ -9,7 +9,7 @@ function(settings)
                        (settings.supported_platforms == 'all' ||
                         std.member(settings.supported_platforms, 'linux'));
   local watched_workflows = std.sort(
-    ['QA'] +
+    ['QA', 'Prettier', 'Spelling', 'markdownlint'] +
     (if settings.want_tests then ['Tests'] else []) +
     (if !settings.private then ['Publish'] else []) +
     (if has_appimage then ['AppImage'] else []) +

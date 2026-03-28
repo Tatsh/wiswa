@@ -3,7 +3,7 @@ local utils = import 'utils.libsonnet';
 
 function(settings)
   local watched_workflows = std.sort(
-    ['QA'] +
+    ['Prettier', 'QA', 'Spelling', 'markdownlint'] +
     (if settings.want_tests then ['Tests'] else [])
   );
   {
