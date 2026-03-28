@@ -16,6 +16,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   filters instead of `dorny/paths-filter`. Only mypy uses a Python version matrix. The format job
   uses the minimum supported Python version.
 - Added path filters to the TypeScript tests workflow.
+- All publish workflows (NPM, PyPI, LuaRocks, WinGet) now wait for QA and test workflows to
+  succeed before publishing.
+- NPM and LuaRocks publish workflows now create a draft GitHub release.
+- Python, TypeScript, and Lua projects now unconditionally get a release workflow that publishes the
+  draft GitHub release after all workflows succeed.
+- Extracted the workflow-polling check job into a shared `_check-workflows.libsonnet` helper.
 
 ### Fixed
 

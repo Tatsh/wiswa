@@ -1,52 +1,70 @@
 local cache_yarn = import 'github/workflows/_cache-yarn.libsonnet';
+local check_workflows = import 'github/workflows/_check-workflows.libsonnet';
 local utils = import 'utils.libsonnet';
 
-function(settings) {
-  jobs: {
-    publish: {
-      permissions: {
-        contents: 'read',
-        'id-token': 'write',
-      },
-      'runs-on': settings.github.workflows.publish_npm_any.runs_on,
-      steps: [
-        {
-          uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
+function(settings)
+  local watched_workflows = std.sort(
+    ['QA'] +
+    (if settings.want_tests then ['Tests'] else [])
+  );
+  {
+    jobs: {
+      check: check_workflows.job(watched_workflows),
+      publish: {
+        needs: ['check'],
+        permissions: {
+          contents: 'write',
+          'id-token': 'write',
         },
-        {
-          name: 'Setup Node.js',
-          uses: 'actions/setup-node@' + utils.githubLatestActionTag('actions', 'setup-node'),
-          with: {
-            'node-version': settings.github.workflows.publish_npm_any.node_version,
-            'registry-url': settings.github.workflows.publish_npm_any.registry_url,
+        'runs-on': settings.github.workflows.publish_npm_any.runs_on,
+        steps: [
+          {
+            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
-        },
-        {
-          name: 'Update npm',
-          run: 'npm install -g npm@latest',
-        },
-        cache_yarn,
-        {
-          name: 'Install dependencies',
-          run: 'yarn',
-        },
-        {
-          name: 'Build',
-          run: 'yarn tsc',
-        },
-        {
-          name: 'Publish to NPM',
-          run: 'yarn npm publish',
-        },
-      ],
+          {
+            name: 'Setup Node.js',
+            uses: 'actions/setup-node@' + utils.githubLatestActionTag('actions', 'setup-node'),
+            with: {
+              'node-version': settings.github.workflows.publish_npm_any.node_version,
+              'registry-url': settings.github.workflows.publish_npm_any.registry_url,
+            },
+          },
+          {
+            name: 'Update npm',
+            run: 'npm install -g npm@latest',
+          },
+          cache_yarn,
+          {
+            name: 'Install dependencies',
+            run: 'yarn',
+          },
+          {
+            name: 'Build',
+            run: 'yarn tsc',
+          },
+          {
+            name: 'Publish to NPM',
+            run: 'yarn npm publish',
+          },
+          {
+            uses: 'softprops/action-gh-release@' + utils.githubLatestActionTag('softprops', 'action-gh-release'),
+            with: {
+              draft: true,
+            },
+          },
+        ],
+      },
     },
-  },
-  name: 'Publish to NPM',
-  on: {
-    push: {
-      tags: [
-        'v*',
-      ],
+    name: 'Publish',
+    on: {
+      push: {
+        tags: [
+          'v*',
+        ],
+      },
     },
-  },
-}
+    permissions: {
+      contents: 'write',
+      'id-token': 'write',
+    },
+  }

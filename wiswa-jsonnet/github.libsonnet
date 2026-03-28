@@ -46,7 +46,7 @@ local utils = import 'utils.libsonnet';
     } else {}
   ) + (
     if settings.project_type == 'lua' && !settings.private then {
-      '.github/workflows/publish.yml': utils.manifestYaml(lua_publish),
+      '.github/workflows/publish.yml': utils.manifestYaml(lua_publish(settings)),
     } else {}
   ) + (
     if (settings.project_type == 'c++' || settings.project_type == 'c') && settings.want_winget then {
@@ -61,7 +61,8 @@ local utils = import 'utils.libsonnet';
       '.github/workflows/snap.yml': utils.manifestYaml(snap_python(settings)),
     } else {}
   ) + (
-    if (settings.want_main || settings.has_multiple_entry_points) && settings.project_type == 'python' then {
+    if settings.project_type == 'python' || settings.project_type == 'typescript' ||
+       settings.project_type == 'lua' then {
       '.github/workflows/release.yml': utils.manifestYaml(release(settings)),
     } else {}
   ) + (

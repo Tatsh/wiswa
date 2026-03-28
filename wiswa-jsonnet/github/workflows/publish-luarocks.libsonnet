@@ -1,35 +1,49 @@
+local check_workflows = import 'github/workflows/_check-workflows.libsonnet';
 local utils = import 'utils.libsonnet';
 
-{
-  jobs: {
-    publish: {
-      'runs-on': 'ubuntu-latest',
-      steps: [
-        {
-          uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-        },
-        {
-          uses: 'leafo/gh-actions-luarocks@' + utils.githubLatestActionTag('actions', 'checkout'),
-        },
-        {
-          env: {
-            LUAROCKS_API_KEY: '${{ secrets.LUAROCKS_API_KEY }}',
+function(settings)
+  local watched_workflows = std.sort(
+    ['QA'] +
+    (if settings.want_tests then ['Tests'] else [])
+  );
+  {
+    jobs: {
+      check: check_workflows.job(watched_workflows),
+      publish: {
+        needs: ['check'],
+        'runs-on': 'ubuntu-latest',
+        steps: [
+          {
+            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
-          name: 'Upload package',
-          run: 'luarocks upload --api-key="$LUAROCKS_API_KEY" *.rockspec',
-        },
-      ],
+          {
+            uses: 'leafo/gh-actions-luarocks@' + utils.githubLatestActionTag('leafo', 'gh-actions-luarocks'),
+          },
+          {
+            env: {
+              LUAROCKS_API_KEY: '${{ secrets.LUAROCKS_API_KEY }}',
+            },
+            name: 'Upload package',
+            run: 'luarocks upload --api-key="$LUAROCKS_API_KEY" *.rockspec',
+          },
+          {
+            uses: 'softprops/action-gh-release@' + utils.githubLatestActionTag('softprops', 'action-gh-release'),
+            with: {
+              draft: true,
+            },
+          },
+        ],
+      },
     },
-  },
-  name: 'Publish to LuaRocks',
-  permissions: {
-    contents: 'read',
-  },
-  on: {
-    push: {
-      tags: [
-        'v*',
-      ],
+    name: 'Publish',
+    permissions: {
+      contents: 'write',
     },
-  },
-}
+    on: {
+      push: {
+        tags: [
+          'v*',
+        ],
+      },
+    },
+  }
