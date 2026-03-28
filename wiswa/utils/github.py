@@ -240,14 +240,15 @@ async def setup_github_project(session: niquests.AsyncSession, settings: Setting
                 (await session.post(rulesets_url, json=ruleset)).raise_for_status()
 
         await asyncio.gather(*(_upsert_ruleset(rs) for rs in _DESIRED_RULESETS))
-        pages_resp = await session.get(f'{host}/repos/{repo_name}/pages')
-        if pages_resp.status_code != HTTPStatus.OK:
-            (await
-             session.post(f'{host}/repos/{repo_name}/pages',
-                          json={'source': {
-                              'branch': settings['default_branch'],
-                              'path': '/'
-                          }})).raise_for_status()
+        if not settings.get('private', False):
+            pages_resp = await session.get(f'{host}/repos/{repo_name}/pages')
+            if pages_resp.status_code != HTTPStatus.OK:
+                (await
+                 session.post(f'{host}/repos/{repo_name}/pages',
+                              json={'source': {
+                                  'branch': settings['default_branch'],
+                                  'path': '/'
+                              }})).raise_for_status()
     except niquests.HTTPError as e:
         log.warning('Caught error updating repo: %s.', e)
         log.debug('%r', e)
