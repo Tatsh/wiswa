@@ -1,165 +1,104 @@
-local cache_yarn = import 'github/workflows/_cache-yarn.libsonnet';
+local common = import 'github/workflows/_qa-common.libsonnet';
 local utils = import 'utils.libsonnet';
 
 function(settings)
   local is_uv = settings.package_manager == 'uv';
   local run_cmd = if is_uv then 'uv run' else 'poetry run';
-  local fmt_check_id = if settings.want_yapf then 'yapf' else 'ruff-format';
-  local fmt_check_cmd = if settings.want_yapf then '%s yapf -prd .' % run_cmd
-  else '%s ruff format --check .' % run_cmd;
-  local eslint_ids = if settings.force_eslint then ['eslint'] else [];
-  local python_check_ids = ['ruff', 'mypy', fmt_check_id];
-  local always_check_ids = eslint_ids + ['prettier', 'markdownlint', 'spelling'];
-  local check_ids = python_check_ids + always_check_ids;
-  local check_lines = std.join(' &&\n', [
-    if std.member(python_check_ids, id) then
-      '([ "${{ needs.changes.outputs.python }}" != "true" ] || [ "${{ steps.%s.outcome }}" = "success" ])' % id
-    else
-      '[ "${{ steps.%s.outcome }}" = "success" ]' % id
-    for id in check_ids
-  ]);
+  local python_paths = ['**/*.py', '**/*.pyi', 'pyproject.toml', 'tests/pyproject.toml'];
+  local uv_setup_steps = if is_uv then [
+    {
+      name: 'Install uv',
+      uses: 'astral-sh/setup-uv@' + utils.githubLatestActionTag('astral-sh', 'setup-uv'),
+    },
+  ] else [
+    {
+      name: 'Install Poetry',
+      run: 'pipx install poetry',
+    },
+  ];
+  local apt_steps = if std.length(settings.github.workflows.qa.apt_packages) > 0 then [
+    {
+      name: 'Install dependencies',
+      run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
+    },
+  ] else [];
+  local python_setup(version='3.13', matrix=false) = {
+    name: if matrix then 'Set up Python ${{ matrix.python-version }}' else 'Set up Python',
+    uses: 'actions/setup-python@' + utils.githubLatestActionTag('actions', 'setup-python'),
+    with: {
+      'python-version': if matrix then '${{ matrix.python-version }}' else version,
+    } + if !is_uv then { cache: 'poetry' } else {},
+  };
+  local install_deps(include_tests=false) = {
+    name: if is_uv then 'Install dependencies (uv)' else 'Install dependencies (Poetry)',
+    run: if is_uv then (if include_tests then 'uv sync --group dev --group tests --all-extras'
+                         else 'uv sync --group dev --all-extras')
+    else (if include_tests then 'poetry install --with=dev,tests --all-extras'
+          else 'poetry install --with=dev --all-extras'),
+  };
+  local on_python = common.on_trigger(settings) + {
+    pull_request+: { paths: python_paths },
+    push+: { paths: python_paths },
+  };
   {
-    jobs: {
-      changes: {
-        'runs-on': settings.qa_runs_on,
-        outputs: {
-          python: '${{ steps.filter.outputs.python }}',
+    '.github/workflows/qa.yml': utils.manifestYaml({
+      jobs: {
+        ruff: {
+          'runs-on': settings.qa_runs_on,
+          steps: [
+            common.checkout,
+            {
+              name: 'Lint with Ruff',
+              uses: 'astral-sh/ruff-action@' + utils.githubLatestActionTag('astral-sh', 'ruff-action'),
+            },
+          ],
         },
-        steps: [
-          {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
-          {
-            id: 'filter',
-            uses: 'dorny/paths-filter@' + utils.githubLatestActionTag('dorny', 'paths-filter'),
-            with: {
-              filters: |||
-                python:
-                  - '**/*.py'
-                  - '**/*.pyi'
-                  - '**/*.toml'
-              |||,
+        mypy: {
+          'runs-on': settings.qa_runs_on,
+          steps: [common.checkout] + uv_setup_steps + apt_steps + [
+            python_setup(matrix=true),
+            install_deps(include_tests=settings.want_tests),
+            {
+              name: 'Lint with mypy',
+              run: '%s mypy .' % run_cmd,
+            },
+          ],
+          strategy: {
+            matrix: {
+              'python-version': settings.supported_python_versions,
             },
           },
-        ],
-      },
-      qa: {
-        needs: 'changes',
-        'runs-on': settings.qa_runs_on,
-        steps: [
-          {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
-        ] + (if is_uv then [{
-               'if': "needs.changes.outputs.python == 'true'",
-               name: 'Install uv',
-               uses: 'astral-sh/setup-uv@' + utils.githubLatestActionTag('astral-sh', 'setup-uv'),
-             }] else [{
-               'if': "needs.changes.outputs.python == 'true'",
-               name: 'Install Poetry',
-               run: 'pipx install poetry',
-             }]) + (if std.length(settings.github.workflows.qa.apt_packages) > 0 then [{
-                      'if': "needs.changes.outputs.python == 'true'",
-                      name: 'Install dependencies',
-                      run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
-                    }] else []) + [
-          {
-            'if': "needs.changes.outputs.python == 'true'",
-            name: 'Set up Python ${{ matrix.python-version }}',
-            uses: 'actions/setup-python@' + utils.githubLatestActionTag('actions', 'setup-python'),
-            with: {
-              'python-version': '${{ matrix.python-version }}',
-            } + if !is_uv then { cache: 'poetry' } else {},
-          },
-          {
-            'if': "needs.changes.outputs.python == 'true'",
-            name: if is_uv then 'Install dependencies (uv)' else 'Install dependencies (Poetry)',
-            run: if is_uv then (if settings.want_tests then 'uv sync --group dev --group tests --all-extras'
-                                else 'uv sync --group dev --all-extras')
-            else (if settings.want_tests then 'poetry install --with=dev,tests --all-extras'
-                  else 'poetry install --with=dev --all-extras'),
-          },
-          cache_yarn,
-          {
-            name: 'Install dependencies (Yarn)',
-            run: 'yarn',
-          },
-          {
-            'continue-on-error': true,
-            'if': "needs.changes.outputs.python == 'true'",
-            id: 'ruff',
-            name: 'Lint with Ruff',
-            uses: 'astral-sh/ruff-action@' + utils.githubLatestActionTag('astral-sh', 'ruff-action'),
-          },
-          {
-            'continue-on-error': true,
-            'if': "needs.changes.outputs.python == 'true'",
-            id: 'mypy',
-            name: 'Lint with mypy',
-            run: 'yarn mypy .',
-          },
-        ] + (if settings.force_eslint then [
-               {
-                 'continue-on-error': true,
-                 id: 'eslint',
-                 name: 'Lint with ESLint',
-                 run: 'yarn eslint',
-               },
-             ] else []) + [
-          {
-            'continue-on-error': true,
-            id: 'prettier',
-            name: 'Check formatting (Prettier)',
-            run: 'yarn prettier -c .',
-          },
-          {
-            'continue-on-error': true,
-            'if': "needs.changes.outputs.python == 'true'",
-            id: fmt_check_id,
-            name: if settings.want_yapf then 'Check formatting (YAPF)' else 'Check formatting (Ruff)',
-            run: fmt_check_cmd,
-          },
-          {
-            'continue-on-error': true,
-            id: 'markdownlint',
-            name: 'Check formatting (markdownlint)',
-            run: 'yarn markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
-          },
-          {
-            'continue-on-error': true,
-            id: 'spelling',
-            name: 'Check spelling',
-            run: 'yarn check-spelling',
-          },
-          {
-            'if': 'always()',
-            name: 'Check results',
-            run: |||
-              %(checks)s
-            ||| % { checks: check_lines },
-          },
-        ],
-        strategy: {
-          matrix: {
-            'python-version': settings.supported_python_versions,
-          },
         },
-      },
-    },
-    name: 'QA',
-    on: {
-      pull_request: {
-        branches: [
-          settings.default_branch,
-        ],
-      },
-      push: {
-        branches: [
-          settings.default_branch,
-        ],
-      },
-    },
-    permissions: {
-      contents: 'read',
-    },
+        format: {
+          'runs-on': settings.qa_runs_on,
+          steps: [common.checkout] + uv_setup_steps + apt_steps + [
+            python_setup(version=settings.supported_python_versions[0]),
+            install_deps(),
+            if settings.want_yapf then {
+              name: 'Check formatting (YAPF)',
+              run: '%s yapf -prd .' % run_cmd,
+            } else {
+              name: 'Check formatting (Ruff)',
+              run: '%s ruff format --check .' % run_cmd,
+            },
+          ],
+        },
+      } + (if settings.force_eslint then {
+             eslint: {
+               'runs-on': settings.qa_runs_on,
+               steps: [common.checkout] + common.yarn_steps + [
+                 {
+                   name: 'Lint with ESLint',
+                   run: 'yarn eslint',
+                 },
+               ],
+             },
+           } else {}),
+      name: 'QA',
+      on: on_python,
+      permissions: common.permissions,
+    }),
+    '.github/workflows/prettier.yml': utils.manifestYaml(common.prettier(settings)),
+    '.github/workflows/markdownlint.yml': utils.manifestYaml(common.markdownlint(settings)),
+    '.github/workflows/spelling.yml': utils.manifestYaml(common.spelling(settings)),
   }

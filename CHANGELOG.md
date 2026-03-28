@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Split the Python QA workflow into granular parallel jobs (ruff, mypy, format, prettier,
+  markdownlint, spelling) using native GitHub Actions path filters instead of `dorny/paths-filter`.
+  Only mypy uses a Python version matrix. The format job uses the minimum supported Python version.
+
 ### Fixed
 
 - Templates that render to empty content now auto-delete the output file instead of writing a
