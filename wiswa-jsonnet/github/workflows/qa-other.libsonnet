@@ -1,110 +1,45 @@
-local cache_yarn = import 'github/workflows/_cache-yarn.libsonnet';
+local common = import 'github/workflows/_qa-common.libsonnet';
 local utils = import 'utils.libsonnet';
 
 function(settings)
   local is_c_cpp = settings.project_type == 'c' || settings.project_type == 'c++';
-  local clang_format_ids = if is_c_cpp then ['clang-format'] else [];
-  local always_check_ids = ['prettier', 'markdownlint', 'spelling'];
-  local check_ids = clang_format_ids + always_check_ids;
-  local check_lines = std.join(' &&\n', [
-    if std.member(clang_format_ids, id) then
-      '([ "${{ needs.changes.outputs.cpp }}" != "true" ] || [ "${{ steps.%s.outcome }}" = "success" ])' % id
-    else
-      '[ "${{ steps.%s.outcome }}" = "success" ]' % id
-    for id in check_ids
-  ]);
-  local changes_filters = if is_c_cpp then |||
-    cpp:
-      - '**/*.c'
-      - '**/*.cpp'
-      - '**/*.h'
-      - '**/*.hpp'
-  ||| else '';
+  local cpp_paths = ['**/*.c', '**/*.cpp', '**/*.h', '**/*.hpp', '.github/workflows/qa.yml'];
+  local apt_steps = if std.length(settings.github.workflows.qa.apt_packages) > 0 then [
+    {
+      name: 'Install dependencies',
+      run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
+    },
+  ] else [];
   {
-    jobs: (if is_c_cpp then {
-      changes: {
-        'runs-on': settings.qa_runs_on,
-        outputs: {
-          cpp: '${{ steps.filter.outputs.cpp }}',
+    '.github/workflows/qa.yml': utils.manifestYaml(
+      if is_c_cpp then {
+        jobs: {
+          'clang-format': {
+            'runs-on': settings.qa_runs_on,
+            steps: [
+              common.checkout,
+              {
+                name: 'Check formatting (clang-format)',
+                run: 'clang-format -n %s' % settings.clang_format_args,
+              },
+            ],
+          },
         },
-        steps: [
-          {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
-          {
-            id: 'filter',
-            uses: 'dorny/paths-filter@' + utils.githubLatestActionTag('dorny', 'paths-filter'),
-            with: {
-              filters: changes_filters,
-            },
-          },
-        ],
-      },
-    } else {}) + {
-      qa: (if is_c_cpp then { needs: 'changes' } else {}) + {
-        'runs-on': settings.qa_runs_on,
-        steps: [
-          {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
-        ] + (if std.length(settings.github.workflows.qa.apt_packages) > 0 then [{
-               name: 'Install dependencies',
-               run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
-             }] else []) + [
-          cache_yarn,
-          {
-            name: 'Install dependencies (Yarn)',
-            run: 'yarn',
-          },
-        ] + (if is_c_cpp then [{
-               'continue-on-error': true,
-               'if': "needs.changes.outputs.cpp == 'true'",
-               id: 'clang-format',
-               name: 'Check formatting (clang-format)',
-               run: 'clang-format -n %s' % settings.clang_format_args,
-             }] else []) + [
-          {
-            'continue-on-error': true,
-            id: 'prettier',
-            name: 'Check formatting (Prettier)',
-            run: 'yarn prettier -c .',
-          },
-          {
-            'continue-on-error': true,
-            id: 'markdownlint',
-            name: 'Check formatting (markdownlint)',
-            run: 'yarn markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
-          },
-          {
-            'continue-on-error': true,
-            id: 'spelling',
-            name: 'Check spelling',
-            run: 'yarn check-spelling',
-          },
-          {
-            'if': 'always()',
-            name: 'Check results',
-            run: |||
-              %(checks)s
-            ||| % { checks: check_lines },
-          },
-        ],
-      },
-    },
-    name: 'QA',
-    on: {
-      pull_request: {
-        branches: [
-          settings.default_branch,
-        ],
-      },
-      push: {
-        branches: [
-          settings.default_branch,
-        ],
-      },
-    },
-    permissions: {
-      contents: 'read',
-    },
+        name: 'QA',
+        on: common.on_trigger(settings) + {
+          pull_request+: { paths: cpp_paths },
+          push+: { paths: cpp_paths },
+        },
+        permissions: common.permissions,
+      } else {
+        // Empty QA for project types with no language-specific linting
+        jobs: {},
+        name: 'QA',
+        on: common.on_trigger(settings),
+        permissions: common.permissions,
+      }
+    ),
+    '.github/workflows/prettier.yml': utils.manifestYaml(common.prettier(settings)),
+    '.github/workflows/markdownlint.yml': utils.manifestYaml(common.markdownlint(settings)),
+    '.github/workflows/spelling.yml': utils.manifestYaml(common.spelling(settings)),
   }

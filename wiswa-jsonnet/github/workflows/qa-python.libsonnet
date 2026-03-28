@@ -4,7 +4,13 @@ local utils = import 'utils.libsonnet';
 function(settings)
   local is_uv = settings.package_manager == 'uv';
   local run_cmd = if is_uv then 'uv run' else 'poetry run';
-  local python_paths = ['**/*.py', '**/*.pyi', 'pyproject.toml', 'tests/pyproject.toml'];
+  local python_paths = [
+    '**/*.py',
+    '**/*.pyi',
+    '.github/workflows/qa.yml',
+    'pyproject.toml',
+    'tests/pyproject.toml',
+  ];
   local uv_setup_steps = if is_uv then [
     {
       name: 'Install uv',
@@ -32,7 +38,7 @@ function(settings)
   local install_deps(include_tests=false) = {
     name: if is_uv then 'Install dependencies (uv)' else 'Install dependencies (Poetry)',
     run: if is_uv then (if include_tests then 'uv sync --group dev --group tests --all-extras'
-                         else 'uv sync --group dev --all-extras')
+                        else 'uv sync --group dev --all-extras')
     else (if include_tests then 'poetry install --with=dev,tests --all-extras'
           else 'poetry install --with=dev --all-extras'),
   };

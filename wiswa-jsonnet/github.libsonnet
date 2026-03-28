@@ -23,10 +23,8 @@ local utils = import 'utils.libsonnet';
    */
   workflows(settings): (
     if settings.project_type == 'python' then qa_python(settings)
-    else if settings.project_type == 'typescript' then
-      { '.github/workflows/qa.yml': utils.manifestYaml(qa_typescript(settings)) }
-    else
-      { '.github/workflows/qa.yml': utils.manifestYaml(qa_other(settings)) }
+    else if settings.project_type == 'typescript' then qa_typescript(settings)
+    else qa_other(settings)
   ) + (
     if settings.want_codeql then {
       '.github/workflows/codeql.yml': utils.manifestYaml(codeql(settings)),

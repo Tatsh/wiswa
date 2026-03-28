@@ -29,6 +29,7 @@ name: 'Prettier'
       - '**/*.xml'
       - '**/*.yaml'
       - '**/*.yml'
+      - '.github/workflows/prettier.yml'
       - '.prettierignore'
   push:
     branches:
@@ -44,6 +45,7 @@ name: 'Prettier'
       - '**/*.xml'
       - '**/*.yaml'
       - '**/*.yml'
+      - '.github/workflows/prettier.yml'
       - '.prettierignore'
 permissions:
   contents: 'read'

@@ -21,11 +21,13 @@ name: 'markdownlint'
     paths:
       - '**/*.md'
       - '**/*.mdc'
+      - '.github/workflows/markdownlint.yml'
   push:
     branches:
       - 'master'
     paths:
       - '**/*.md'
       - '**/*.mdc'
+      - '.github/workflows/markdownlint.yml'
 permissions:
   contents: 'read'

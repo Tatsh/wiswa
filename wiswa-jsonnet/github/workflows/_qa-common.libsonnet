@@ -53,6 +53,7 @@ local utils = import 'utils.libsonnet';
           '**/*.xml',
           '**/*.yaml',
           '**/*.yml',
+          '.github/workflows/prettier.yml',
           '.prettierignore',
         ],
       },
@@ -68,6 +69,7 @@ local utils = import 'utils.libsonnet';
           '**/*.xml',
           '**/*.yaml',
           '**/*.yml',
+          '.github/workflows/prettier.yml',
           '.prettierignore',
         ],
       },
@@ -90,10 +92,10 @@ local utils = import 'utils.libsonnet';
     name: 'markdownlint',
     on: on_trigger(settings) + {
       pull_request+: {
-        paths: ['**/*.md', '**/*.mdc'],
+        paths: ['**/*.md', '**/*.mdc', '.github/workflows/markdownlint.yml'],
       },
       push+: {
-        paths: ['**/*.md', '**/*.mdc'],
+        paths: ['**/*.md', '**/*.mdc', '.github/workflows/markdownlint.yml'],
       },
     },
     permissions: permissions,

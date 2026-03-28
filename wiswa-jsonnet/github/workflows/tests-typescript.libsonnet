@@ -2,6 +2,17 @@ local cache_yarn = import 'github/workflows/_cache-yarn.libsonnet';
 local utils = import 'utils.libsonnet';
 
 function(settings)
+  local ts_paths = [
+    '**/*.cjs',
+    '**/*.js',
+    '**/*.jsx',
+    '**/*.mjs',
+    '**/*.ts',
+    '**/*.tsx',
+    '.github/workflows/tests.yml',
+    'package.json',
+    'tsconfig.json',
+  ];
   {
     jobs: {
       test: {
@@ -33,14 +44,12 @@ function(settings)
     name: 'Tests',
     on: {
       pull_request: {
-        branches: [
-          settings.default_branch,
-        ],
+        branches: [settings.default_branch],
+        paths: ts_paths,
       },
       push: {
-        branches: [
-          settings.default_branch,
-        ],
+        branches: [settings.default_branch],
+        paths: ts_paths,
       },
     },
     permissions: {

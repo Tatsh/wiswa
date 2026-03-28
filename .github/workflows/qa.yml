@@ -49,6 +49,7 @@ name: 'QA'
     paths:
       - '**/*.py'
       - '**/*.pyi'
+      - '.github/workflows/qa.yml'
       - 'pyproject.toml'
       - 'tests/pyproject.toml'
   push:
@@ -57,6 +58,7 @@ name: 'QA'
     paths:
       - '**/*.py'
       - '**/*.pyi'
+      - '.github/workflows/qa.yml'
       - 'pyproject.toml'
       - 'tests/pyproject.toml'
 permissions:

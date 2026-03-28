@@ -1,112 +1,46 @@
-local cache_yarn = import 'github/workflows/_cache-yarn.libsonnet';
+local common = import 'github/workflows/_qa-common.libsonnet';
 local utils = import 'utils.libsonnet';
 
 function(settings)
-  local ts_check_ids = ['eslint'];
-  local always_check_ids = ['prettier', 'markdownlint', 'spelling'];
-  local check_ids = ts_check_ids + always_check_ids;
-  local check_lines = std.join(' &&\n', [
-    if std.member(ts_check_ids, id) then
-      '([ "${{ needs.changes.outputs.typescript }}" != "true" ] || [ "${{ steps.%s.outcome }}" = "success" ])' % id
-    else
-      '[ "${{ steps.%s.outcome }}" = "success" ]' % id
-    for id in check_ids
-  ]);
+  local ts_paths = [
+    '**/*.cjs',
+    '**/*.js',
+    '**/*.jsx',
+    '**/*.mjs',
+    '**/*.ts',
+    '**/*.tsx',
+    '.github/workflows/qa.yml',
+    'package.json',
+    'tsconfig.json',
+  ];
+  local on_ts = common.on_trigger(settings) + {
+    pull_request+: { paths: ts_paths },
+    push+: { paths: ts_paths },
+  };
+  local apt_steps = if std.length(settings.github.workflows.qa.apt_packages) > 0 then [
+    {
+      name: 'Install dependencies',
+      run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
+    },
+  ] else [];
   {
-    jobs: {
-      changes: {
-        'runs-on': settings.qa_runs_on,
-        outputs: {
-          typescript: '${{ steps.filter.outputs.typescript }}',
-        },
-        steps: [
-          {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
-          {
-            id: 'filter',
-            uses: 'dorny/paths-filter@' + utils.githubLatestActionTag('dorny', 'paths-filter'),
-            with: {
-              filters: |||
-                typescript:
-                  - '**/*.ts'
-                  - '**/*.tsx'
-                  - '**/*.js'
-                  - '**/*.jsx'
-                  - '**/*.mjs'
-                  - '**/*.cjs'
-                  - 'package.json'
-                  - 'tsconfig.json'
-              |||,
+    '.github/workflows/qa.yml': utils.manifestYaml({
+      jobs: {
+        eslint: {
+          'runs-on': settings.qa_runs_on,
+          steps: [common.checkout] + apt_steps + common.yarn_steps + [
+            {
+              name: 'ESLint',
+              run: 'yarn eslint',
             },
-          },
-        ],
+          ],
+        },
       },
-      qa: {
-        needs: 'changes',
-        'runs-on': settings.qa_runs_on,
-        steps: [
-          {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
-        ] + (if std.length(settings.github.workflows.qa.apt_packages) > 0 then [{
-               name: 'Install dependencies',
-               run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
-             }] else []) + [
-          cache_yarn,
-          {
-            name: 'Install dependencies (Yarn)',
-            run: 'yarn',
-          },
-          {
-            'continue-on-error': true,
-            'if': "needs.changes.outputs.typescript == 'true'",
-            id: 'eslint',
-            name: 'ESLint',
-            run: 'yarn eslint',
-          },
-          {
-            'continue-on-error': true,
-            id: 'prettier',
-            name: 'Check formatting (Prettier)',
-            run: 'yarn prettier -c .',
-          },
-          {
-            'continue-on-error': true,
-            id: 'markdownlint',
-            name: 'Check formatting (markdownlint)',
-            run: 'yarn markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
-          },
-          {
-            'continue-on-error': true,
-            id: 'spelling',
-            name: 'Check spelling',
-            run: 'yarn check-spelling',
-          },
-          {
-            'if': 'always()',
-            name: 'Check results',
-            run: |||
-              %(checks)s
-            ||| % { checks: check_lines },
-          },
-        ],
-      },
-    },
-    name: 'QA',
-    on: {
-      pull_request: {
-        branches: [
-          settings.default_branch,
-        ],
-      },
-      push: {
-        branches: [
-          settings.default_branch,
-        ],
-      },
-    },
-    permissions: {
-      contents: 'read',
-    },
+      name: 'QA',
+      on: on_ts,
+      permissions: common.permissions,
+    }),
+    '.github/workflows/prettier.yml': utils.manifestYaml(common.prettier(settings)),
+    '.github/workflows/markdownlint.yml': utils.manifestYaml(common.markdownlint(settings)),
+    '.github/workflows/spelling.yml': utils.manifestYaml(common.spelling(settings)),
   }
