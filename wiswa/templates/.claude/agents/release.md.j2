@@ -26,7 +26,7 @@ checks, bump the version, and push.
 1. **Launch agents in parallel** before bumping:
    - **copy-editor** - to fix prose in the changelog entries.
    - **qa-fixer** - to format and fix any lint/spelling issues.
-{% if settings.want_man %}
+{% if settings.project_type == 'python' and settings.want_man %}
 
 1. **Generate man pages.** Run `yarn gen-manpage` and then `git add man/`.
 {% endif %}
@@ -40,7 +40,7 @@ checks, bump the version, and push.
    `--changelog` or `-ch` to `cz bump`. If `cz bump` fails for any reason:
    1. **Restore the repository** to the pre-bump state: `git checkout -- .`
    1. **Stop work immediately and alert the user.** Do not attempt to work around the failure.
-{% if settings.package_manager == 'uv' %}
+{% if settings.project_type == 'python' and settings.package_manager == 'uv' %}
 
 1. **Run `uv lock`** to update `uv.lock` with the new version.
 {% endif %}
