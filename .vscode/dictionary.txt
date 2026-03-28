@@ -128,8 +128,8 @@ leafo
 lextudio
 libera
 liberadotchat
-libname
 libjsonnet
+libname
 libsonnet
 linters
 luacheck

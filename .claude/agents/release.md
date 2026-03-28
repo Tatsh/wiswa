@@ -39,7 +39,7 @@ checks, bump the version, and push.
    1. **Restore the repository** to the pre-bump state: `git checkout -- .`
    2. **Stop work immediately and alert the user.** Do not attempt to work around the failure.
 
-10. **Run `uv sync`** to update `uv.lock` with the new version.
+10. **Run `uv lock`** to update `uv.lock` with the new version.
 
 11. **Commit the version bump.** Stage all changed files and commit with
     `git commit -S -s -m 'bump: vOLD → vNEW'` (replace OLD/NEW with actual versions).

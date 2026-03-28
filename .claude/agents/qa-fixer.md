@@ -22,6 +22,7 @@ instruction files under `.github/instructions/`.
 
 ## Rules
 
+- Never attempt to use scripts to mass-edit files.
 - Never suppress or disable linter rules to make checks pass. Fix the root cause.
 - Follow all project conventions when fixing issues (see `.github/instructions/`).
 - Click command entry points must only have a single-line docstring (no `Parameters`/`Returns`/
