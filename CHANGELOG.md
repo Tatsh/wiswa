@@ -35,6 +35,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Python, TypeScript, and Lua projects now unconditionally get a release workflow that publishes the
   draft GitHub release after all workflows succeed.
 - Extracted the workflow-polling check job into a shared `_check-workflows.libsonnet` helper.
+- PyInstaller workflow template no longer excludes `windows-11-arm` from the build matrix based on
+  the `niquests` dependency. Windows ARM64 builds are now always included for non-private projects.
 
 ### Fixed
 
