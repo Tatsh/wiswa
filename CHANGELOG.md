@@ -11,13 +11,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Renamed `settings.local.json` to `settings.local.json.dist` in Claude Code project output so
-  users can copy the file to `settings.local.json` without it being overwritten on regeneration.
-- Expanded default Claude Code permissions in `defaults.libsonnet`: added more git subcommands
-  (`diff`, `log`, `rebase`, `restore`, `stash`, `up`), package manager commands (uv or Poetry based
-  on `package_manager` setting), `cspell`/`markdownlint-cli2`/`prettier` yarn scripts, C/C++ tools
-  (`cmake`, `clang-format`, `vcpkg`), `WebFetch` domains, and temp file read/write permissions.
-  GitHub and GitLab API permissions are now conditional on platform settings.
+- Expanded default Claude Code permissions in `defaults.libsonnet`: package manager commands (uv or
+  Poetry based on `package_manager` setting), `cspell`/`markdownlint-cli2`/`prettier` yarn scripts,
+  C/C++ tools (`cmake`, `clang-format`, `vcpkg`), `WebFetch` domains, and temp file
+  read/write permissions. `gh` and `glab` API permissions are now conditional on platform settings.
 - Dictionary update script now invokes `python` instead of `python3`.
 - `get_github_release_latest_tag` no longer truncates action tags to the major version (e.g. `v7`
   instead of `v7.0.0`), returning full semver tags instead. This fixes compatibility with
@@ -34,7 +31,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - NPM and LuaRocks publish workflows now create a draft GitHub release.
 - Python, TypeScript, and Lua projects now unconditionally get a release workflow that publishes the
   draft GitHub release after all workflows succeed.
-- Extracted the workflow-polling check job into a shared `_check-workflows.libsonnet` helper.
 - PyInstaller workflow template no longer excludes `windows-11-arm` from the build matrix based on
   the `niquests` dependency. Windows ARM64 builds are now always included for non-private projects.
 - `uv lock` now runs with `--upgrade` during post-processing so all packages (including transitive
