@@ -171,7 +171,6 @@ async def get_github_release_latest_tag(session: niquests.AsyncSession,
                                         owner: str,
                                         repo: str,
                                         *,
-                                        actions: bool = False,
                                         skip_releases: bool = False,
                                         allow_suffixes: bool = True) -> str:
     """
@@ -185,8 +184,6 @@ async def get_github_release_latest_tag(session: niquests.AsyncSession,
         The repository owner.
     repo : str
         The repository name.
-    actions : bool
-        Whether to only consider tags that look like they are for GitHub Actions.
     skip_releases : bool
         Whether to skip releases and only consider tags.
     allow_suffixes : bool
@@ -202,7 +199,7 @@ async def get_github_release_latest_tag(session: niquests.AsyncSession,
     ValueError
         If no tags are found.
     """
-    key = f'gh_{owner}/{repo}_{actions}_{skip_releases}_{allow_suffixes}'
+    key = f'gh_{owner}/{repo}_{skip_releases}_{allow_suffixes}'
     if key in _cache:
         return _cache[key]
     version: str | None = None
@@ -218,7 +215,7 @@ async def get_github_release_latest_tag(session: niquests.AsyncSession,
             data = resp.json()
             tags = [x['name'] for x in data if 'name' in x]
             if tags:
-                if actions or (owner == 'google' and repo == 'yapf'):
+                if not allow_suffixes or (owner == 'google' and repo == 'yapf'):
                     version = next(x for x in tags if x.startswith('v') and (
                         re.search(r'\d$', x) if not allow_suffixes else True))
                 else:
@@ -226,6 +223,5 @@ async def get_github_release_latest_tag(session: niquests.AsyncSession,
     if not version:
         msg = f'Could not get latest tag for {owner}/{repo}.'
         raise ValueError(msg)
-    result = version.split('.')[0] if actions else version
-    _cache[key] = result
-    return result
+    _cache[key] = version
+    return version

@@ -11,6 +11,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `get_github_release_latest_tag` no longer truncates action tags to the major version (e.g. `v7`
+  instead of `v7.0.0`), returning full semver tags instead. This fixes compatibility with
+  repositories like `astral-sh/setup-uv` that only publish immutable full version tags.
+- Removed the `actions` parameter from `get_github_release_latest_tag`; the `not allow_suffixes`
+  condition now drives the filtering behaviour previously gated by `actions`.
 - Split QA workflows for all project types (Python, TypeScript, C/C++) into granular parallel jobs
   (ruff, mypy, format, eslint, prettier, markdownlint, spelling) using native GitHub Actions path
   filters instead of `dorny/paths-filter`. Only mypy uses a Python version matrix. The format job

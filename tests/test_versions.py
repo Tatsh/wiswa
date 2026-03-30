@@ -96,10 +96,9 @@ async def test_get_github_release_latest_tag_actions_mode() -> None:
     result = await get_github_release_latest_tag(mock_session,
                                                  'owner',
                                                  'repo3',
-                                                 actions=True,
                                                  skip_releases=True,
                                                  allow_suffixes=False)
-    assert result == 'v4'
+    assert result == 'v4.1.2'
 
 
 async def test_get_github_release_latest_tag_no_tags_raises() -> None:
@@ -133,10 +132,9 @@ async def test_get_github_release_latest_tag_actions_no_suffix() -> None:
     result = await get_github_release_latest_tag(mock_session,
                                                  'owner',
                                                  'repo5',
-                                                 actions=True,
                                                  skip_releases=True,
                                                  allow_suffixes=False)
-    assert result == 'v3'
+    assert result == 'v3.0.1'
 
 
 async def test_get_github_release_latest_tag_both_fail() -> None:
@@ -146,6 +144,66 @@ async def test_get_github_release_latest_tag_both_fail() -> None:
     mock_session.get = AsyncMock(side_effect=[release_resp, tags_resp])
     with pytest.raises(ValueError, match='Could not get latest tag'):
         await get_github_release_latest_tag(mock_session, 'owner', 'repo6')
+
+
+async def test_get_github_release_latest_tag_no_suffix_skips_non_v_prefix() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(
+        return_value=_make_response(ok=True, json_data=[{
+            'name': '4.1.2'
+        }, {
+            'name': 'v3.0.0'
+        }]))
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'owner',
+                                                 'repo7',
+                                                 skip_releases=True,
+                                                 allow_suffixes=False)
+    assert result == 'v3.0.0'
+
+
+async def test_get_github_release_latest_tag_no_suffix_no_matching_tag() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(ok=True,
+                                                             json_data=[{
+                                                                 'name': '4.1.2'
+                                                             }, {
+                                                                 'name': 'release-3.0.0'
+                                                             }]))
+    with pytest.raises(RuntimeError, match='coroutine raised StopIteration'):
+        await get_github_release_latest_tag(mock_session,
+                                            'owner',
+                                            'repo8',
+                                            skip_releases=True,
+                                            allow_suffixes=False)
+
+
+async def test_get_github_release_latest_tag_google_yapf_special_case() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(ok=True,
+                                                             json_data=[{
+                                                                 'name': 'release-0.40'
+                                                             }, {
+                                                                 'name': 'v0.40.0'
+                                                             }]))
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'google',
+                                                 'yapf',
+                                                 skip_releases=True,
+                                                 allow_suffixes=True)
+    assert result == 'v0.40.0'
+
+
+async def test_get_github_release_latest_tag_no_suffix_via_fallback() -> None:
+    release_resp = _make_response(ok=False)
+    tags_resp = _make_response(ok=True, json_data=[{'name': 'v2.0.0-rc'}, {'name': 'v1.5.0'}])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[release_resp, tags_resp])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'owner',
+                                                 'repo9',
+                                                 allow_suffixes=False)
+    assert result == 'v1.5.0'
 
 
 async def test_get_github_release_latest_tag_cache_hit() -> None:

@@ -144,7 +144,6 @@ class GithubAPIExtension(Extension):
             return await get_github_release_latest_tag(session,
                                                        owner,
                                                        repo,
-                                                       actions=True,
                                                        skip_releases=True,
                                                        allow_suffixes=False)
 

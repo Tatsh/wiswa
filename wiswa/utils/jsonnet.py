@@ -46,7 +46,6 @@ def _make_native_callbacks(
 
     gh_action = partial(get_github_release_latest_tag,
                         session,
-                        actions=True,
                         skip_releases=True,
                         allow_suffixes=False)
     gh_tag = partial(get_github_release_latest_tag, session, skip_releases=True)
