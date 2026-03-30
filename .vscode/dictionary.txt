@@ -92,6 +92,7 @@ getenv
 getline
 ggdb
 githistory
+glab
 globaltoc
 gmock
 gnucxx
