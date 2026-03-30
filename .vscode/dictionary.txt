@@ -161,6 +161,7 @@ nonexistent
 noqa
 norecursedirs
 notarytool
+npmjs
 nsucz
 nullptr
 numpy
