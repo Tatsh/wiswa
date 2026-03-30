@@ -213,6 +213,15 @@ async def test_setup_github_project_returns_none_on_no_keyring(mocker: MockerFix
     session.patch.assert_not_called()
 
 
+async def test_setup_github_project_skips_pages_when_private(mocker: MockerFixture) -> None:
+    session = _mock_github_session(mocker)
+    await setup_github_project(session, _make_settings(private=True))
+    pages_calls = [c for c in session.get.call_args_list if 'pages' in str(c.args[0])]
+    assert len(pages_calls) == 0
+    pages_post = [c for c in session.post.call_args_list if 'pages' in str(c.args[0])]
+    assert len(pages_post) == 0
+
+
 async def test_setup_github_project_handles_http_error(mocker: MockerFixture) -> None:
     import niquests
 
