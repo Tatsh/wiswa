@@ -341,25 +341,10 @@ local utils = import 'utils.libsonnet';
        * @brief Allowed commands.
        * @var string[]
        */
-      allow: (if settings.using_github then ['Bash(gh api *)'] else []) + [
-        'Bash(git add *)',
-        'Bash(git check-ignore *)',
-        'Bash(git commit *)',
-        'Bash(git diff *)',
-        'Bash(git log *)',
-        'Bash(git rebase *)',
-        'Bash(git restore *)',
-        'Bash(git stash *)',
-        'Bash(git status *)',
-        'Bash(git up *)',
-      ] + (if settings.using_gitlab then ['Bash(glab api *)'] else []) + [
-        'Bash(find *)',
-        'Bash(grep *)',
-        'Bash(ls *)',
-        'Bash(mkdir *)',
-        'Bash(mkdir -p *)',
+      allow: (if settings.using_github then ['Bash(gh api *)'] else []) + (
+        if settings.using_gitlab then ['Bash(glab api *)'] else []
+      ) + [
         'Bash(mkdir -p .wiswa-ci)',
-        'Bash(mkdir --parents *)',
         'Bash(mkdir --parents .wiswa-ci)',
         'Bash(mkdir .wiswa-ci)',
         'Bash(mktemp *)',
@@ -418,9 +403,10 @@ local utils = import 'utils.libsonnet';
         'Bash(yarn test *)',
         'Bash(yarn test:cov *)',
         'Read(/.wiswa-ci/**)',
-        'Write(/.wiswa-ci/**)',
+        'Edit(/.wiswa-ci/**)',
         'WebFetch(domain:github.com)',
         'WebFetch(domain:gitlab.com)',
+        'WebFetch(domain:npmjs.com)',
         'WebFetch(domain:readthedocs.io)',
         'WebFetch(domain:pypi.org)',
       ] + (if settings.project_type == 'c' || settings.project_type == 'c++' then [
