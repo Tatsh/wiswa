@@ -357,6 +357,11 @@ local utils = import 'utils.libsonnet';
         'Bash(grep *)',
         'Bash(ls *)',
         'Bash(mkdir *)',
+        'Bash(mkdir -p *)',
+        'Bash(mkdir -p .wiswa-ci)',
+        'Bash(mkdir --parents *)',
+        'Bash(mkdir --parents .wiswa-ci)',
+        'Bash(mkdir .wiswa-ci)',
         'Bash(mktemp *)',
       ] + (if settings.package_manager == 'uv' then [
              'Bash(uv add *)',
