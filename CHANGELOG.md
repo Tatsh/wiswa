@@ -11,6 +11,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Renamed `settings.local.json` to `settings.local.json.dist` in Claude Code project output so
+  users can copy the file to `settings.local.json` without it being overwritten on regeneration.
+- Expanded default Claude Code permissions in `defaults.libsonnet`: added more git subcommands
+  (`diff`, `log`, `rebase`, `restore`, `stash`, `up`), package manager commands (uv or Poetry based
+  on `package_manager` setting), `cspell`/`markdownlint-cli2`/`prettier` yarn scripts, C/C++ tools
+  (`cmake`, `clang-format`, `vcpkg`), `WebFetch` domains, and temp file read/write permissions.
+  GitHub and GitLab API permissions are now conditional on platform settings.
+- Dictionary update script now invokes `python` instead of `python3`.
 - `get_github_release_latest_tag` no longer truncates action tags to the major version (e.g. `v7`
   instead of `v7.0.0`), returning full semver tags instead. This fixes compatibility with
   repositories like `astral-sh/setup-uv` that only publish immutable full version tags.

@@ -329,11 +329,11 @@ local utils = import 'utils.libsonnet';
   stubs_only: false,
   /** @brief If the project should have a `CITATION.cff` file. */
   want_cff: true,
-  /** @brief If the project should include `.claude/settings.local.json`. */
+  /** @brief If the project should include `.claude/settings.local.json.dist`. */
   want_claude: true,
   /** @brief If the project should include `.claude/agents/` and related files (requires want_claude). */
   want_claude_agents: self.want_claude,
-  /** @brief JSON object written to `.claude/settings.local.json` when `want_claude` is true. */
+  /** @brief JSON object written to `.claude/settings.local.json.dist` when `want_claude` is true. */
   claude_settings_local: {
     /** @brief Permissions dictionary. */
     permissions: {
@@ -341,30 +341,88 @@ local utils = import 'utils.libsonnet';
        * @brief Allowed commands.
        * @var string[]
        */
-      allow: [
-        'Bash(gh api *)',
+      allow: (if settings.using_github then ['Bash(gh api *)'] else []) + [
         'Bash(git add *)',
         'Bash(git check-ignore *)',
         'Bash(git commit *)',
+        'Bash(git diff *)',
+        'Bash(git log *)',
+        'Bash(git rebase *)',
+        'Bash(git restore *)',
+        'Bash(git stash *)',
         'Bash(git status *)',
+        'Bash(git up *)',
+      ] + (if settings.using_gitlab then ['Bash(glab api *)'] else []) + [
         'Bash(find *)',
         'Bash(grep *)',
         'Bash(ls *)',
+        'Bash(mkdir *)',
         'Bash(mktemp *)',
+      ] + (if settings.package_manager == 'uv' then [
+             'Bash(uv add *)',
+             'Bash(uv audit *)',
+             'Bash(uv cache *)',
+             'Bash(uv export *)',
+             'Bash(uv lock *)',
+             'Bash(uv pip *)',
+             'Bash(uv remove *)',
+             'Bash(uv run pytest *)',
+             'Bash(uv run ruff *)',
+             'Bash(uv run sphinx-build *)',
+             'Bash(uv run yapf *)',
+             'Bash(uv run wiswa *)',
+             'Bash(uv sync *)',
+             'Bash(uv tree *)',
+             'Bash(uv venv *)',
+             'Bash(uv version *)',
+           ] else [
+             'Bash(poetry about *)',
+             'Bash(poetry add *)',
+             'Bash(poetry check *)',
+             'Bash(poetry export *)',
+             'Bash(poetry help *)',
+             'Bash(poetry list *)',
+             'Bash(poetry lock *)',
+             'Bash(poetry install *)',
+             'Bash(poetry remove *)',
+             'Bash(poetry search *)',
+             'Bash(poetry show *)',
+             'Bash(poetry sync *)',
+             'Bash(poetry up *)',
+             'Bash(poetry update *)',
+             'Bash(poetry version *)',
+             'Bash(poetry cache *)',
+             'Bash(poetry debug *)',
+             'Bash(poetry env *)',
+           ]) + [
+        'Bash(rm -f .vscode/dictionary.txt)',
         'Bash(yarn check-formatting *)',
         'Bash(yarn check-spelling *)',
+        'Bash(yarn cspell *)',
         'Bash(yarn dict:update *)',
         'Bash(yarn format *)',
         'Bash(yarn gen-docs *)',
         'Bash(yarn gen-manpage *)',
+        'Bash(yarn markdownlint-cli2 *)',
         'Bash(yarn mypy *)',
+        'Bash(yarn prettier *)',
         'Bash(yarn qa *)',
         'Bash(yarn regen *)',
         'Bash(yarn ruff *)',
         'Bash(yarn ruff:fix *)',
         'Bash(yarn test *)',
         'Bash(yarn test:cov *)',
-      ],
+        'Read(//tmp/claude-ci/*)',
+        'Write(//tmp/claude-ci/*)',
+        'WebFetch(domain:github.com)',
+        'WebFetch(domain:gitlab.com)',
+        'WebFetch(domain:readthedocs.io)',
+        'WebFetch(domain:pypi.org)',
+      ] + (if settings.project_type == 'c' || settings.project_type == 'c++' then [
+             'Bash(cmake *)',
+             'Bash(clang-format *)',
+             'Bash(vcpkg *)',
+           ] else []),
     },
   },
   /**

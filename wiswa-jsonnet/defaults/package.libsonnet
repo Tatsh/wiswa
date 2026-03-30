@@ -28,7 +28,7 @@ local utils = import 'utils.libsonnet';
     },
   ],
   local python_deps = { pyright: utils.latestNpmPackageVersionCaret('pyright') },
-  local dictionary_update = "rm -f .vscode/dictionary.txt && cspell --no-progress './**/*' './**/.*' 2>&1 | grep -oP '(?<=Unknown word \\()\\S+(?=\\))' | python3 -c \"import sys; print('\\n'.join(sorted(set(l.strip().lower() for l in sys.stdin if l.strip()))))\" > .vscode/dictionary.txt",
+  local dictionary_update = "rm -f .vscode/dictionary.txt && cspell --no-progress './**/*' './**/.*' 2>&1 | grep -oP '(?<=Unknown word \\()\\S+(?=\\))' | python -c \"import sys; print('\\n'.join(sorted(set(l.strip().lower() for l in sys.stdin if l.strip()))))\" > .vscode/dictionary.txt",
   local python_test_scripts(run_cmd) = {
     test: '%s pytest' % run_cmd,
     'test:cov': 'yarn test --cov . --cov-branch --cov-report html --cov-report term-missing:skip-covered',
