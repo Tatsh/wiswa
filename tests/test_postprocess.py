@@ -665,6 +665,106 @@ async def test_post_process_steps_on_command_callback(tmp_path: Path,
     assert any('uv' in c for c in commands)
 
 
+async def test_post_process_steps_uv_lock_has_upgrade_flag(tmp_path: Path,
+                                                           monkeypatch: pytest.MonkeyPatch,
+                                                           mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any', _make_settings())
+    await post_process_steps(settings, on_command=commands.append)
+    lock_cmds = [c for c in commands if 'uv' in c and 'lock' in c]
+    assert len(lock_cmds) == 1
+    assert '--upgrade' in lock_cmds[0]
+
+
+async def test_post_process_steps_uv_quiet_by_default(tmp_path: Path,
+                                                      monkeypatch: pytest.MonkeyPatch,
+                                                      mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any', _make_settings())
+    await post_process_steps(settings, on_command=commands.append)
+    uv_cmds = [c for c in commands if c.startswith('uv')]
+    assert all('--quiet' in c for c in uv_cmds)
+
+
+async def test_post_process_steps_uv_no_quiet_in_debug(tmp_path: Path,
+                                                       monkeypatch: pytest.MonkeyPatch,
+                                                       mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any', _make_settings())
+    await post_process_steps(settings, debug=True, on_command=commands.append)
+    uv_cmds = [c for c in commands if c.startswith('uv')]
+    assert all('--quiet' not in c for c in uv_cmds)
+
+
+async def test_post_process_steps_poetry_quiet_by_default(tmp_path: Path,
+                                                          monkeypatch: pytest.MonkeyPatch,
+                                                          mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    pyproject = tmp_path / 'pyproject.toml'
+    pyproject.write_text(
+        '[tool.commitizen]\n'
+        'version_files = ["wiswa/__init__.py:^__version__"]\n'
+        '[tool.coverage]\nrun = {}\n'
+        '[tool.pytest]\nini_options = {}\n'
+        '[tool.yapf]\nbased_on_style = "pep8"\n'
+        '[tool.yapfignore]\nignore_patterns = []\n'
+        '[tool.ruff.lint]\nignore = []\n'
+        '[tool.poetry.group.docs.dependencies]\nsphinx = "^7"\n'
+        '[tool.poetry.group.tests.dependencies]\npytest = "^8"\n',
+        encoding='utf-8',
+    )
+    (tmp_path / 'package.json').write_text(
+        '{"scripts": {"check-formatting": "old", "format": "old"}}',
+        encoding='utf-8',
+    )
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any', _make_settings(package_manager='poetry'))
+    await post_process_steps(settings, on_command=commands.append)
+    poetry_cmds = [c for c in commands if c.startswith('poetry')]
+    assert len(poetry_cmds) >= 4
+    assert all('--quiet' in c for c in poetry_cmds)
+
+
+async def test_post_process_steps_poetry_no_quiet_in_debug(tmp_path: Path,
+                                                           monkeypatch: pytest.MonkeyPatch,
+                                                           mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    pyproject = tmp_path / 'pyproject.toml'
+    pyproject.write_text(
+        '[tool.commitizen]\n'
+        'version_files = ["wiswa/__init__.py:^__version__"]\n'
+        '[tool.coverage]\nrun = {}\n'
+        '[tool.pytest]\nini_options = {}\n'
+        '[tool.yapf]\nbased_on_style = "pep8"\n'
+        '[tool.yapfignore]\nignore_patterns = []\n'
+        '[tool.ruff.lint]\nignore = []\n'
+        '[tool.poetry.group.docs.dependencies]\nsphinx = "^7"\n'
+        '[tool.poetry.group.tests.dependencies]\npytest = "^8"\n',
+        encoding='utf-8',
+    )
+    (tmp_path / 'package.json').write_text(
+        '{"scripts": {"check-formatting": "old", "format": "old"}}',
+        encoding='utf-8',
+    )
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any', _make_settings(package_manager='poetry'))
+    await post_process_steps(settings, debug=True, on_command=commands.append)
+    poetry_cmds = [c for c in commands if c.startswith('poetry')]
+    assert len(poetry_cmds) >= 4
+    assert all('--quiet' not in c for c in poetry_cmds)
+
+
 async def test_post_process_steps_subprocess_failure(tmp_path: Path,
                                                      monkeypatch: pytest.MonkeyPatch,
                                                      mocker: MockerFixture) -> None:

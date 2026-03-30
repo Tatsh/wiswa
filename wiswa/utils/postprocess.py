@@ -48,7 +48,7 @@ async def _post_process_steps_python(settings: Settings,
                                      debug: bool = False,
                                      on_command: Callable[[str], None] | None = None) -> None:
     is_uv = settings['package_manager'] == 'uv'
-    uv_quiet = () if debug else ('--quiet',)
+    quiet_arg = () if debug else ('--quiet',)
     cleanup_tasks: list[Awaitable[None]] = []
     if is_uv:
         cleanup_tasks.append(anyio.Path('poetry.lock').unlink(missing_ok=True))
@@ -114,26 +114,26 @@ async def _post_process_steps_python(settings: Settings,
         anyio.Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8'))
     oc = on_command
     if is_uv:
-        await _subprocess_log_run(('uv', *uv_quiet, 'lock'), on_command=oc)
+        await _subprocess_log_run(('uv', *quiet_arg, 'lock', '--upgrade'), on_command=oc)
         groups = [
             g for g in ('docs' if settings['want_docs'] else '',
                         'tests' if settings['want_tests'] else '', 'dev') if g
         ]
         group_args = tuple(f'--group={g}' for g in groups)
-        await _subprocess_log_run(('uv', *uv_quiet, 'sync', *group_args), on_command=oc)
-        await _subprocess_log_run(('uv', *uv_quiet, 'run', 'ruff', 'check', '--fix'),
+        await _subprocess_log_run(('uv', *quiet_arg, 'sync', *group_args), on_command=oc)
+        await _subprocess_log_run(('uv', *quiet_arg, 'run', 'ruff', 'check', '--fix'),
                                   on_command=oc,
                                   check=False)
     else:
-        await _subprocess_log_run(('poetry', 'lock'), on_command=oc)
+        await _subprocess_log_run(('poetry', *quiet_arg, 'lock'), on_command=oc)
         with_arg = ','.join(x for x in ('docs' if settings['want_docs'] else '',
                                         'tests' if settings['want_tests'] else '', 'dev') if x)
-        await _subprocess_log_run(('poetry', 'update', *((f'--with={with_arg}',) if with_arg else
-                                                         ())),
+        await _subprocess_log_run(
+            ('poetry', *quiet_arg, 'update', *((f'--with={with_arg}',) if with_arg else ())),
+            on_command=oc)
+        await _subprocess_log_run(('poetry', *quiet_arg, 'install', '--all-groups', '--all-extras'),
                                   on_command=oc)
-        await _subprocess_log_run(('poetry', 'install', '--all-groups', '--all-extras'),
-                                  on_command=oc)
-        await _subprocess_log_run(('poetry', 'run', 'ruff', 'check', '--fix'),
+        await _subprocess_log_run(('poetry', *quiet_arg, 'run', 'ruff', 'check', '--fix'),
                                   on_command=oc,
                                   check=False)
 
@@ -381,7 +381,8 @@ async def post_process_steps(settings: Settings,
     settings : Settings
         Project settings.
     debug : bool
-        Whether debug mode is enabled. When ``False``, ``uv`` is invoked with ``--quiet``.
+        Whether debug mode is enabled. When ``False``, ``uv`` and Poetry are invoked with
+        ``--quiet``.
     on_command : Callable[[str], None] | None
         Called with the command string before each subprocess runs.
     """
