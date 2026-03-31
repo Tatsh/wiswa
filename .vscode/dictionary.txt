@@ -39,6 +39,7 @@ conftest
 contenttypes
 contrib
 coveragerc
+cutoff
 coverallsapp
 cpack
 ctes
