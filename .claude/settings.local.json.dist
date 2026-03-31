@@ -43,6 +43,7 @@
       "Edit(/.vscode/dictionary.txt)",
       "Edit(/.wiswa-ci/**)",
       "Read(/.vscode/dictionary.txt)",
+      "Update(/.vscode/dictionary.txt)",
       "Read(/.wiswa-ci/**)",
       "Read(~/.cache/mypy/**)",
       "Read(~/.cache/uv/**)",

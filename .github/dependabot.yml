@@ -1,16 +1,19 @@
 multi-ecosystem-groups:
-  infrastructure:
+  general:
     schedule:
       interval: 'weekly'
 updates:
   - cooldown:
       default-days: 7
     directory: '/'
+    multi-ecosystem-group: 'general'
     package-ecosystem: 'npm'
   - directory: '/'
+    multi-ecosystem-group: 'general'
     package-ecosystem: 'github-actions'
   - cooldown:
       default-days: 7
     directory: '/'
+    multi-ecosystem-group: 'general'
     package-ecosystem: 'uv'
 version: 2

@@ -4,10 +4,12 @@
  * @brief Default configuration for Dependabot, a tool for keeping dependencies up to date.
  */
 {
+  local group = 'general',
   local cooldown = { 'default-days': 7 },
   local python_settings(settings) = [{
     cooldown: cooldown,
     directory: '/',
+    'multi-ecosystem-group': group,
     'package-ecosystem': if settings.package_manager == 'uv' then 'uv' else 'pip',
   }],
   /**
@@ -20,7 +22,7 @@
    */
   updates(settings):: {
     'multi-ecosystem-groups': {
-      infrastructure: {
+      [group]: {
         schedule: {
           interval: 'weekly',
         },
@@ -30,10 +32,12 @@
       {
         cooldown: cooldown,
         directory: '/',
+        'multi-ecosystem-group': group,
         'package-ecosystem': 'npm',
       },
       {
         directory: '/',
+        'multi-ecosystem-group': group,
         'package-ecosystem': 'github-actions',
       },
     ] + if settings.project_type == 'python' then python_settings(settings) else [],
