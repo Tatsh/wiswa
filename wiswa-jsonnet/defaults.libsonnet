@@ -416,6 +416,7 @@ local utils = import 'utils.libsonnet';
         'Edit(/.vscode/dictionary.txt)',
         'Edit(/.wiswa-ci/**)',
         'Read(/.vscode/dictionary.txt)',
+        'Update(/.vscode/dictionary.txt)',
         'Read(/.wiswa-ci/**)',
         'Read(~/.cache/mypy/**)',
         'Read(~/.cache/uv/**)',
@@ -1219,6 +1220,7 @@ local utils = import 'utils.libsonnet';
    * {
    *   enableTelemetry?: boolean;
    *   nodeLinker?: 'node-modules' | 'pnp';
+   *   npmMinimalAgeGate?: number;
    *   plugins?: { path: string }[];
    *   yarnPath: string;
    * }

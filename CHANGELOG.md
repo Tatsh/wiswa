@@ -13,6 +13,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `cspell_pre_commit_hook` setting (default `true`). When set to `false`, the cspell pre-commit
   hook is excluded from `.pre-commit-config.yaml`.
+- Version age gating for PyPI and npm package version fetching:
+  - PyPI version fetching now respects `exclude-newer` and `exclude-newer-package` from
+    `~/.config/uv/uv.toml`, filtering out versions published after the configured cutoff.
+  - npm version fetching now filters out versions published within the last 7 days, matching Yarn's
+    `npmMinimalAgeGate` default.
+- `npmMinimalAgeGate: 10080` to default yarnrc settings, enforcing a 7-day minimum age before new
+  npm package versions are used.
 
 ### Changed
 
@@ -50,6 +57,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `gitlab_ci` in `defaults.libsonnet` now defaults to an empty object; `project.jsonnet` checks
   non-emptiness instead of using `std.objectHas`, so users no longer need to define `gitlab_ci` when
   `using_gitlab` is true.
+- Relaxed minimum versions for `fastmcp` (3.2.0 to 3.1.1), `niquests` (3.18.3 to 3.18.2), and
+  `ruff` (0.15.8 to 0.15.7).
 
 ### Fixed
 

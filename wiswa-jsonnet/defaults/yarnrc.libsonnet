@@ -10,6 +10,11 @@
   enableTelemetry: false,
   /** @brief Node linker to use. */
   nodeLinker: 'node-modules',
+  /**
+   * @brief Minimum number of minutes since a package was published before it can be used.
+   * @var number
+   */
+  npmMinimalAgeGate: 10080,
   /** @brief Access to use when publishing to the registry. */
   npmPublishAccess: 'public',
   /** @brief Whether to attach a provenance statement when publishing packages to the registry. */

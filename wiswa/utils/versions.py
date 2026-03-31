@@ -1,15 +1,21 @@
 """Version fetching and Yarn download utilities."""
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
+from functools import cache
 from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING, cast
+import logging
+import operator
 import re
 
-from bs4 import BeautifulSoup as Soup
+from bs4 import BeautifulSoup as Soup, Tag
 from packaging.version import InvalidVersion, Version, parse as parse_version
 from wiswa.constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
 import anyio
+import tomlkit
 
 if TYPE_CHECKING:
     import niquests
@@ -18,11 +24,102 @@ __all__ = ('download_yarn', 'download_yarn_plugins', 'get_github_release_latest_
            'get_latest_yarn_version', 'get_npm_latest_package_version',
            'get_pypi_latest_package_version')
 
+log = logging.getLogger(__name__)
+
 _PYPI_YANKED_RELEASES = {
     'sphinx-8.3.0',
 }
 
 _cache: dict[str, str] = {}
+
+_NPM_AGE_GATE_DEFAULT_MINUTES = 10080
+"""Default npm minimum age gate in minutes (7 days)."""
+
+
+def _parse_duration(value: str) -> timedelta | None:
+    """
+    Parse a duration string.
+
+    Supports ISO 8601 durations (``P7D``, ``P2W``, ``PT24H``), friendly
+    durations (``7 days``, ``24 hours``, ``2 weeks``), and plain integers
+    interpreted as days. Calendar units (months, years) are not supported.
+    """
+    value = value.strip()
+    m = re.fullmatch(r'PT(\d+)H', value, re.IGNORECASE)
+    if m:
+        return timedelta(hours=int(m.group(1)))
+    m = re.fullmatch(r'P(\d+)([DW])', value, re.IGNORECASE)
+    if m:
+        n = int(m.group(1))
+        return (timedelta(days=n) if m.group(2).upper() == 'D' else timedelta(weeks=n))
+    m = re.fullmatch(r'P(\d+)DT(\d+)H', value, re.IGNORECASE)
+    if m:
+        return timedelta(days=int(m.group(1)), hours=int(m.group(2)))
+    m = re.fullmatch(r'(\d+)\s*(hours?|days?|weeks?)', value, re.IGNORECASE)
+    if m:
+        n = int(m.group(1))
+        match m.group(2).lower()[0]:
+            case 'h':
+                return timedelta(hours=n)
+            case 'd':
+                return timedelta(days=n)
+            case 'w':
+                return timedelta(weeks=n)
+    try:
+        return timedelta(days=int(value))
+    except ValueError:
+        return None
+
+
+def _parse_exclude_newer(value: str) -> datetime | None:
+    """
+    Parse an ``exclude-newer`` value.
+
+    Accepts an RFC 3339 timestamp or a duration (resolved relative to
+    now).
+    """
+    value = value.strip()
+    try:
+        return datetime.fromisoformat(value.replace('Z', '+00:00'))
+    except ValueError:
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            delta = _parse_duration(value)
+            if delta is not None:
+                return datetime.now(tz=timezone.utc) - delta
+            return None
+
+
+@cache
+def _get_uv_config() -> tuple[datetime | None, dict[str, datetime]]:
+    """
+    Read ``exclude-newer`` and ``exclude-newer-package`` from uv config.
+
+    Returns
+    -------
+    tuple[datetime | None, dict[str, datetime]]
+        A global cutoff and a per-package mapping of cutoff datetimes.
+    """
+    uv_toml = Path.home() / '.config' / 'uv' / 'uv.toml'
+    if not uv_toml.exists():
+        return None, {}
+    try:
+        data = tomlkit.loads(uv_toml.read_text(encoding='utf-8')).unwrap()
+    except OSError:
+        return None, {}
+    global_cutoff: datetime | None = None
+    raw = data.get('exclude-newer')
+    if raw is not None:
+        global_cutoff = _parse_exclude_newer(str(raw))
+    per_package: dict[str, datetime] = {}
+    pkg_map = data.get('exclude-newer-package')
+    if isinstance(pkg_map, dict):
+        for pkg, val in pkg_map.items():
+            dt = _parse_exclude_newer(str(val))
+            if dt is not None:
+                per_package[str(pkg)] = dt
+    return global_cutoff, per_package
 
 
 async def get_latest_yarn_version(session: niquests.AsyncSession) -> str:  # pragma: no cover
@@ -53,27 +150,55 @@ async def get_latest_yarn_version(session: niquests.AsyncSession) -> str:  # pra
 async def get_npm_latest_package_version(session: niquests.AsyncSession,
                                          package: str) -> str:  # pragma: no cover
     """
-    Get the latest version of an NPM package.
+    Get the latest version of an npm package.
+
+    Filters out versions published within the last
+    ``_NPM_AGE_GATE_DEFAULT_MINUTES`` minutes (7 days) to match Yarn's
+    ``npmMinimalAgeGate`` default.
 
     Parameters
     ----------
     session : niquests.AsyncSession
         The HTTP session.
     package : str
-        The NPM package name.
+        The npm package name.
 
     Returns
     -------
     str
-        The latest version string.
+        The latest version string that passes the age gate.
     """
     key = f'npm_{package}'
     if key in _cache:
         return _cache[key]
-    resp = await session.get(f'https://registry.npmjs.org/{package}/latest', timeout=15)
+    resp = await session.get(f'https://registry.npmjs.org/{package}', timeout=15)
     resp.raise_for_status()
     data = resp.json()
-    result = cast('str', data['version'])
+    time_map: dict[str, str] = data.get('time', {})
+    latest_tag = cast('str', data.get('dist-tags', {}).get('latest', ''))
+    cutoff = datetime.now(tz=timezone.utc) - timedelta(minutes=_NPM_AGE_GATE_DEFAULT_MINUTES)
+    candidates: list[tuple[Version, datetime]] = []
+    for ver_str, pub_date_str in time_map.items():
+        if ver_str in {'created', 'modified'}:
+            continue
+        try:
+            ver = parse_version(ver_str)
+        except InvalidVersion:
+            continue
+        if ver.is_prerelease or ver.is_devrelease:
+            continue
+        try:
+            pub_date = datetime.fromisoformat(pub_date_str.replace('Z', '+00:00'))
+        except ValueError:
+            continue
+        if pub_date <= cutoff:
+            candidates.append((ver, pub_date))
+    if candidates:
+        result = str(max(candidates, key=operator.itemgetter(0))[0])
+    else:
+        result = latest_tag
+        log.debug('No npm version of %s passes the age gate of %d '
+                  'minutes; using latest: %s', package, _NPM_AGE_GATE_DEFAULT_MINUTES, result)
     _cache[key] = result
     return result
 
@@ -82,6 +207,10 @@ async def get_pypi_latest_package_version(session: niquests.AsyncSession,
                                           package: str) -> str:  # pragma: no cover
     """
     Get the latest version of a PyPI package.
+
+    Respects ``exclude-newer-package`` (per-package) and
+    ``exclude-newer`` (global) from ``~/.config/uv/uv.toml`` to filter
+    out versions published after the cutoff.
 
     Parameters
     ----------
@@ -103,24 +232,56 @@ async def get_pypi_latest_package_version(session: niquests.AsyncSession,
     key = f'pypi_{package}'
     if key in _cache:
         return _cache[key]
+    global_cutoff, per_package = _get_uv_config()
+    cutoff = per_package.get(package, global_cutoff)
     resp = await session.get(f'https://pypi.org/rss/project/{package}/releases.xml', timeout=15)
     resp.raise_for_status()
     content = resp.content or b''
     root = Soup(content, 'xml')
-    versions = [x.text for x in root.select('item > title')]
-    if not versions:
+    items = root.select('item')
+    if not items:
         msg = f'No versions found for package `{package}`.'
         raise ValueError(msg)
 
-    def parse_version_safe(v: str) -> Version | None:
+    def _parse_version_safe(v: str) -> Version | None:
         try:
             return parse_version(v)
         except InvalidVersion:
             return None
 
-    result = str(
-        max(w for w in (parse_version_safe(v) for v in versions) if w and not w.is_prerelease
-            and not w.is_devrelease and f'{package}-{w}' not in _PYPI_YANKED_RELEASES))
+    def _is_candidate(item: Tag) -> Version | None:
+        title = item.select_one('title')
+        if not title or not title.text:
+            return None
+        ver = _parse_version_safe(title.text)
+        if (not ver or ver.is_prerelease or ver.is_devrelease
+                or f'{package}-{ver}' in _PYPI_YANKED_RELEASES):
+            return None
+        if cutoff is not None:
+            pub_el = item.select_one('pubDate')
+            if pub_el and pub_el.text:
+                try:
+                    if parsedate_to_datetime(pub_el.text) > cutoff:
+                        return None
+                except (ValueError, TypeError):
+                    pass
+        return ver
+
+    candidates = [v for item in items if (v := _is_candidate(item)) is not None]
+    if not candidates and cutoff is not None:
+        unfiltered = [
+            v for item in items if (title := item.select_one('title')) and title.text and (
+                v := _parse_version_safe(title.text)) is not None and not v.is_prerelease
+            and not v.is_devrelease and f'{package}-{v}' not in _PYPI_YANKED_RELEASES
+        ]
+        if unfiltered:
+            candidates = unfiltered
+            log.debug('No PyPI version of %s passes exclude-newer; '
+                      'using latest unfiltered: %s', package, max(candidates))
+    if not candidates:
+        msg = f'No versions found for package `{package}`.'
+        raise ValueError(msg)
+    result = str(max(candidates))
     _cache[key] = result
     return result
 
