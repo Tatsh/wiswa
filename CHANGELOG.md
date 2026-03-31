@@ -37,6 +37,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   dependencies) are resolved to their highest possible versions.
 - Poetry commands now receive `--quiet` when debug mode is off, matching the existing behaviour for
   uv commands.
+- `gitlab_ci` in `defaults.libsonnet` now defaults to an empty object; `project.jsonnet` checks
+  non-emptiness instead of using `std.objectHas`, so users no longer need to define `gitlab_ci` when
+  `using_gitlab` is true.
 
 ### Fixed
 

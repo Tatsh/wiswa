@@ -323,6 +323,8 @@ local utils = import 'utils.libsonnet';
    * @var boolean
    */
   using_gitlab: std.member(self.repository_uri, 'gitlab.com'),
+  /** @brief GitLab CI configuration object; manifest as `.gitlab-ci.yml` when non-empty. */
+  gitlab_ci: {},
   /** @brief If the project hosts documentation on ReadTheDocs. */
   using_readthedocs: true,
   /** @brief If the project consists of only Python typing stubs. */
