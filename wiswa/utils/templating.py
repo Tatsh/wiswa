@@ -240,6 +240,19 @@ async def write_templated_files(module_path: Path,
                 and await general_instructions.read_text(encoding='utf-8') == expected):
             await general_instructions.unlink()
             log.debug('Removed `%s` (matched would-be content).', general_instructions)
+    general_cursor_rule = anyio.Path('.cursor/rules/general.mdc')
+    general_cursor_rule_template = templates_dir / '.cursor/rules/general.mdc.j2'
+    if settings['want_cursor']:
+        await write_file(resolve_template(general_cursor_rule_template),
+                         Path(general_cursor_rule),
+                         overwrite=True)
+    else:
+        template = resolve_template(general_cursor_rule_template)
+        expected = f'{(await template.render_async({"settings": settings})).strip()}\n'
+        if (await general_cursor_rule.exists()
+                and await general_cursor_rule.read_text(encoding='utf-8') == expected):
+            await general_cursor_rule.unlink()
+            log.debug('Removed `%s` (matched would-be content).', general_cursor_rule)
     if settings.get('want_claude_agents', False):
         await _write_templated_files_claude(settings, templates_dir, resolve_template, write_file)
     contributing_overwrite = await _should_overwrite_contributing(settings)

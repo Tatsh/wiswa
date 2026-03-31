@@ -9,6 +9,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `cspell_pre_commit_hook` setting (default `true`). When set to `false`, the cspell pre-commit
+  hook is excluded from `.pre-commit-config.yaml`.
+
 ### Changed
 
 - Expanded default Claude Code permissions in `defaults.libsonnet`: package manager commands (uv or
@@ -37,6 +42,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   dependencies) are resolved to their highest possible versions.
 - Poetry commands now receive `--quiet` when debug mode is off, matching the existing behaviour for
   uv commands.
+- British English spelling rules in generated templates (Copilot `general.instructions.md`,
+  Cursor `general.mdc`, Claude `copy-editor.md`) are now conditional on the `cspell_language`
+  setting. When `cspell_language` is `en-US`, en-GB rules are excluded. Cursor `general.mdc` was
+  converted from a static file to a Jinja2 template, and `cspell_language` was added as a derived
+  Jsonnet field.
 - `gitlab_ci` in `defaults.libsonnet` now defaults to an empty object; `project.jsonnet` checks
   non-emptiness instead of using `std.objectHas`, so users no longer need to define `gitlab_ci` when
   `using_gitlab` is true.

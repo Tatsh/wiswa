@@ -74,14 +74,13 @@ local eslint = import 'defaults/pre-commit-config/eslint.libsonnet';
           'markdown',
         ],
       },
-      {
+    ] + (if settings.cspell_pre_commit_hook then [{
         entry: 'yarn cspell --no-progress --no-must-find-files --no-summary',
         id: 'cspell',
         language: 'node',
         name: 'check spelling',
         types: ['text'],
-      },
-    ],
+      }] else []),
     repo: 'local',
   },
 }

@@ -78,11 +78,15 @@ Do not edit:
 
 ### Spelling
 
+{% if settings.cspell_language | default('en-GB') != 'en-US' -%}
 - Use en-GB spelling throughout: colour, favourite, organisation, licence (noun), license (verb).
 - Always use `-ise` endings: organise, recognise, modernise, serialise.
+{% endif -%}
 - Fix obvious spelling mistakes.
+{% if settings.cspell_language | default('en-GB') != 'en-US' -%}
 - Code identifiers within comments keep their original (often en-US) spelling:
   `# Call the colorize() function.` is correct because `colorize` is a code identifier.
+{% endif -%}
 {% if settings.project_type == 'python' %}
 - In docstrings, wrap code identifiers in double backticks (`identifier`) or use Sphinx
   cross-references (`:py:class:`, `:py:func:`, `:py:mod:`, `:py:meth:`). Plain unquoted
@@ -113,7 +117,7 @@ Do not edit:
 ## Rules
 
 - Never change code logic or behaviour.
-- Never change code identifiers even if they use en-US spelling.
+- Never change code identifiers{% if settings.cspell_language | default('en-GB') != 'en-US' %} even if they use en-US spelling{% endif %}.
 - Never change the meaning of a comment or string.
 - If unsure whether a change is correct, leave it as is.
 - Keep changes minimal - fix the issue, do not rewrite surrounding prose.

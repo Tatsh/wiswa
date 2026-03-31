@@ -226,6 +226,8 @@ local utils = import 'utils.libsonnet';
    * @var boolean
    */
   want_coveralls: self.using_github && !self.stubs_only && !self.private,
+  /** @brief If the cspell pre-commit hook should be included. */
+  cspell_pre_commit_hook: true,
   /** @brief If the project will use SQLFluff. */
   want_sqlfluff: false,
   /** @brief If the project will publish to WinGet using GitHub Actions (C/C++ only). */
@@ -535,6 +537,8 @@ local utils = import 'utils.libsonnet';
       name: '%s %s' % [self['given-names'], self['family-names']],
     },
   ],
+  /** @brief The cspell language setting, derived from `package_json.cspell.language`. */
+  cspell_language: self.package_json.cspell.language,
   /** @brief Copilot instructions settings. */
   copilot: {
     /** @brief Introductory text for the general instructions. */

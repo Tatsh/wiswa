@@ -21,7 +21,9 @@ changed files, not the entire project.
 
 ### When Python code is being committed
 
-If any changed files are under `wiswa/` or `tests/`, run the following agents **in order**:
+If any changed files are under `wiswa/` or `tests/`, run the following agents **in order** but
+you must skip any agents that are not relevant to the changed files
+(e.g. if no Click command files changed, skip the click-auditor):
 
 1. **python-moderniser** - upgrade to modern Python features.
 1. **click-auditor** - validate Click command consistency. **Only run if files under

@@ -912,6 +912,96 @@ async def test_write_templated_files_mit_writes_license(tmp_path: Path,
     assert 'LICENSE.txt' in written_files
 
 
+async def test_write_templated_files_cursor_wanted(tmp_path: Path, mocker: MockerFixture) -> None:
+    _, _, written_files = _mock_template_env(mocker, tmp_path)
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
+    mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
+    settings = cast('Any',
+                    _make_settings(want_cursor=True, want_copilot=False, want_claude_agents=False))
+    await write_templated_files(tmp_path, settings)
+    assert any('general.mdc' in f for f in written_files)
+
+
+async def test_write_templated_files_cursor_not_wanted_removes_matching(
+        tmp_path: Path, mocker: MockerFixture, monkeypatch: Any) -> None:
+    monkeypatch.chdir(tmp_path)
+    cursor_dir = tmp_path / '.cursor/rules'
+    cursor_dir.mkdir(parents=True)
+    general_file = cursor_dir / 'general.mdc'
+    mock_template = MagicMock()
+    mock_template.render_async = AsyncMock(return_value='expected content')
+    general_file.write_text('expected content\n')
+    mock_resolve = MagicMock(return_value=mock_template)
+    mock_write_file = AsyncMock()
+    mocker.patch(
+        'wiswa.utils.templating._template_env',
+        return_value=(MagicMock(), tmp_path, mock_resolve, mock_write_file),
+    )
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
+    mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
+    settings = cast('Any',
+                    _make_settings(want_cursor=False, want_copilot=False, want_claude_agents=False))
+    await write_templated_files(tmp_path, settings)
+    assert not general_file.exists()
+
+
+async def test_write_templated_files_cursor_not_wanted_content_differs(
+        tmp_path: Path, mocker: MockerFixture, monkeypatch: Any) -> None:
+    monkeypatch.chdir(tmp_path)
+    cursor_dir = tmp_path / '.cursor/rules'
+    cursor_dir.mkdir(parents=True)
+    general_file = cursor_dir / 'general.mdc'
+    general_file.write_text('different content\n')
+    mock_template = MagicMock()
+    mock_template.render_async = AsyncMock(return_value='expected content')
+    mock_resolve = MagicMock(return_value=mock_template)
+    mock_write_file = AsyncMock()
+    mocker.patch(
+        'wiswa.utils.templating._template_env',
+        return_value=(MagicMock(), tmp_path, mock_resolve, mock_write_file),
+    )
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
+    mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
+    settings = cast('Any',
+                    _make_settings(want_cursor=False, want_copilot=False, want_claude_agents=False))
+    await write_templated_files(tmp_path, settings)
+    assert general_file.exists()
+
+
+async def test_write_templated_files_cursor_not_wanted_no_matching_file(
+        tmp_path: Path, mocker: MockerFixture, monkeypatch: Any) -> None:
+    monkeypatch.chdir(tmp_path)
+    mock_template = MagicMock()
+    mock_template.render_async = AsyncMock(return_value='expected content')
+    mock_resolve = MagicMock(return_value=mock_template)
+    mock_write_file = AsyncMock()
+    mocker.patch(
+        'wiswa.utils.templating._template_env',
+        return_value=(MagicMock(), tmp_path, mock_resolve, mock_write_file),
+    )
+    mocker.patch(
+        'wiswa.utils.templating._should_overwrite_contributing',
+        new_callable=AsyncMock,
+        return_value=False,
+    )
+    mocker.patch('wiswa.utils.templating._write_templated_files_python', new_callable=AsyncMock)
+    settings = cast('Any',
+                    _make_settings(want_cursor=False, want_copilot=False, want_claude_agents=False))
+    await write_templated_files(tmp_path, settings)
+
+
 async def test_write_templated_files_copilot_not_wanted_content_differs(
         tmp_path: Path, mocker: MockerFixture, monkeypatch: Any) -> None:
     monkeypatch.chdir(tmp_path)
