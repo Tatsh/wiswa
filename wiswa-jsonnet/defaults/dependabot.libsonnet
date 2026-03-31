@@ -4,13 +4,18 @@
  * @brief Default configuration for Dependabot, a tool for keeping dependencies up to date.
  */
 {
-  local group = 'general',
   local cooldown = { 'default-days': 7 },
+  local groups = {
+    development: { 'dependency-type': 'development' },
+    production: { 'dependency-type': 'production' },
+  },
+  local schedule = { interval: 'weekly' },
   local python_settings(settings) = [{
     cooldown: cooldown,
     directory: '/',
-    'multi-ecosystem-group': group,
+    groups: groups,
     'package-ecosystem': if settings.package_manager == 'uv' then 'uv' else 'pip',
+    schedule: schedule,
   }],
   /**
    * @brief Get dependabot configuration.
@@ -21,24 +26,21 @@
    * @sa [Dependabot Configuration Options](https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuring-dependabot-version-updates#configuration-options)
    */
   updates(settings):: {
-    'multi-ecosystem-groups': {
-      [group]: {
-        schedule: {
-          interval: 'weekly',
-        },
-      },
-    },
     updates: [
       {
         cooldown: cooldown,
         directory: '/',
-        'multi-ecosystem-group': group,
+        groups: groups,
         'package-ecosystem': 'npm',
+        schedule: schedule,
       },
       {
         directory: '/',
-        'multi-ecosystem-group': group,
+        groups: {
+          'github-actions': { patterns: ['*'] },
+        },
         'package-ecosystem': 'github-actions',
+        schedule: schedule,
       },
     ] + if settings.project_type == 'python' then python_settings(settings) else [],
     version: 2,
