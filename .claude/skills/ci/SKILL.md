@@ -19,11 +19,13 @@ files. Launch each agent sequentially using the Agent tool with subagent_type `g
 telling it to follow the corresponding `.claude/agents/<name>.md` file. Scope each agent to only the
 changed files, not the entire project.
 
+You must skip any agents that are not relevant to the changed files (e.g. if no Click command files
+changed, skip the click-auditor).
+
 ### When Python code is being committed
 
-If any changed files are under `wiswa/` or `tests/`, run the following agents **in order** but
-you must skip any agents that are not relevant to the changed files
-(e.g. if no Click command files changed, skip the click-auditor):
+If any changed files are under `wiswa/` or `tests/`, run the following
+agents **in order**:
 
 1. **python-moderniser** - upgrade to modern Python features.
 1. **click-auditor** - validate Click command consistency. **Only run if files under
