@@ -38,6 +38,7 @@ commitizen
 conftest
 contenttypes
 contrib
+cooldown
 coveragerc
 cutoff
 coverallsapp

@@ -20,6 +20,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     `npmMinimalAgeGate` default.
 - `npmMinimalAgeGate: 10080` to default yarnrc settings, enforcing a 7-day minimum age before new
   npm package versions are used.
+- 7-day cooldown and `multi-ecosystem-groups` to default Dependabot configuration.
 
 ### Changed
 
