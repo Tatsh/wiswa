@@ -40,11 +40,11 @@ contenttypes
 contrib
 cooldown
 coveragerc
-cutoff
 coverallsapp
 cpack
 ctes
 ctypes
+cutoff
 dashcam
 dataclasses
 datarootdir
