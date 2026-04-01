@@ -42,6 +42,7 @@ cooldown
 coveragerc
 coverallsapp
 cpack
+cyclonedx
 ctes
 ctypes
 cutoff
@@ -184,6 +185,7 @@ pydantic
 pydocstyle
 pyformat
 pyinstaller
+pylock
 pylint
 pypa
 pypi
