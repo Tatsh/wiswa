@@ -5,7 +5,7 @@ from collections.abc import Awaitable, Iterable, Iterator, Sequence
 from functools import cache
 from pathlib import Path
 from shlex import quote
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import quote as urllib_quote, urlencode
 import asyncio
 import json
@@ -18,7 +18,7 @@ import tomlkit
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from wiswa.typing import Settings
+    from wiswa.typing import ExportRequirements, Settings
 
 __all__ = ('post_process_steps',)
 
@@ -41,6 +41,116 @@ async def _subprocess_log_run(*args: Any,
         msg = f'Command {cmd!r} returned non-zero exit status {proc.returncode}.'
         raise RuntimeError(msg)
     return proc
+
+
+_FORMAT_DEFAULT_FILENAMES: dict[str, str] = {
+    'pylock.toml': 'pylock.toml',
+    'cyclonedx1.5': 'cyclonedx.json',
+}
+
+
+def _resolve_output_filename(er: ExportRequirements) -> str:
+    if explicit := er.get('output_filename', ''):
+        return explicit
+    return _FORMAT_DEFAULT_FILENAMES.get(er.get('format', 'requirements.txt'), 'requirements.txt')
+
+
+_UV_EXPORT_PRE_OUTPUT_BOOL_FLAGS: tuple[tuple[str, str, bool], ...] = (
+    ('all_packages', '--all-packages', False),
+    ('all_extras', '--all-extras', False),
+    ('no_dev', '--no-dev', False),
+    ('only_dev', '--only-dev', False),
+    ('no_default_groups', '--no-default-groups', False),
+    ('all_groups', '--all-groups', False),
+    ('no_annotate', '--no-annotate', False),
+    ('no_header', '--no-header', False),
+    ('no_editable', '--no-editable', False),
+)
+"""Boolean keys mapped to ``uv export`` flags emitted before ``--output-file``.
+
+:meta hide-value:
+"""
+
+_UV_EXPORT_POST_OUTPUT_BOOL_FLAGS: tuple[tuple[str, str, bool], ...] = (
+    ('no_emit_project', '--no-emit-project', True),
+    ('no_emit_workspace', '--no-emit-workspace', False),
+    ('no_emit_local', '--no-emit-local', False),
+    ('locked', '--locked', False),
+    ('frozen', '--frozen', False),
+)
+"""Boolean keys mapped to ``uv export`` flags emitted after ``--output-file``.
+
+:meta hide-value:
+"""
+
+_UV_EXPORT_PRE_OUTPUT_LIST_FLAGS: tuple[tuple[str, str], ...] = (
+    ('package', '--package'),
+    ('prune', '--prune'),
+    ('extra', '--extra'),
+    ('no_extra', '--no-extra'),
+    ('group', '--group'),
+    ('no_group', '--no-group'),
+    ('only_group', '--only-group'),
+)
+"""Sequence keys mapped to ``uv export`` flags emitted before ``--output-file``.
+
+:meta hide-value:
+"""
+
+
+def _build_uv_export_args(settings: Settings, quiet_arg: tuple[str, ...] = ()) -> tuple[str, ...]:
+    er = settings['export_requirements']
+    args: list[str] = ['uv', *quiet_arg, 'export']
+    if er.get('format', 'requirements.txt') != 'requirements.txt':
+        args.extend(('--format', er['format']))
+    for key, flag, default in _UV_EXPORT_PRE_OUTPUT_BOOL_FLAGS:
+        if er.get(key, default):
+            args.append(flag)
+    for key, flag in _UV_EXPORT_PRE_OUTPUT_LIST_FLAGS:
+        for val in cast('Sequence[str]', er.get(key, [])):
+            args.extend((flag, val))
+    if er.get('no_hashes', False) or not er.get('with_hashes', True):
+        args.append('--no-hashes')
+    args.extend(('--output-file', _resolve_output_filename(er)))
+    for key, flag, default in _UV_EXPORT_POST_OUTPUT_BOOL_FLAGS:
+        if er.get(key, default):
+            args.append(flag)
+    for val in er.get('no_emit_package', []):
+        args.extend(('--no-emit-package', val))
+    if script := er.get('script', ''):
+        args.extend(('--script', script))
+    return tuple(args)
+
+
+def _build_poetry_export_args(
+    settings: Settings, quiet_arg: tuple[str, ...] = ()) -> tuple[str, ...]:
+    er = settings['export_requirements']
+    args: list[str] = ['poetry', *quiet_arg, 'export']
+    if er.get('all_extras', False):
+        args.append('--all-extras')
+    else:
+        args.extend(f'--extras={extra}' for extra in er.get('extra', []))
+    args.extend(('-f', er.get('format', 'requirements.txt')))
+    args.extend(('-o', _resolve_output_filename(er)))
+    group_list: list[str] = []
+    if not er.get('no_dev', False):
+        group_list.append('dev')
+    if er.get('all_groups', False):
+        if settings['want_docs']:
+            group_list.append('docs')
+        if settings['want_tests']:
+            group_list.append('tests')
+    else:
+        group_list.extend(er.get('group', []))
+    if group_list:
+        args.append(f"--with={','.join(group_list)}")
+    if er.get('only_dev', False):
+        args.append('--only=dev')
+    args.extend(f'--only={og}' for og in er.get('only_group', []))
+    args.extend(f'--without={ng}' for ng in er.get('no_group', []))
+    if er.get('no_hashes', False) or not er.get('with_hashes', True):
+        args.append('--without-hashes')
+    return tuple(args)
 
 
 async def _post_process_steps_python(settings: Settings,
@@ -124,6 +234,8 @@ async def _post_process_steps_python(settings: Settings,
         await _subprocess_log_run(('uv', *quiet_arg, 'run', 'ruff', 'check', '--fix'),
                                   on_command=oc,
                                   check=False)
+        if settings['export_requirements'].get('enabled', False):
+            await _subprocess_log_run(_build_uv_export_args(settings, quiet_arg), on_command=oc)
     else:
         await _subprocess_log_run(('poetry', *quiet_arg, 'lock'), on_command=oc)
         with_arg = ','.join(x for x in ('docs' if settings['want_docs'] else '',
@@ -136,6 +248,8 @@ async def _post_process_steps_python(settings: Settings,
         await _subprocess_log_run(('poetry', *quiet_arg, 'run', 'ruff', 'check', '--fix'),
                                   on_command=oc,
                                   check=False)
+        if settings['export_requirements'].get('enabled', False):
+            await _subprocess_log_run(_build_poetry_export_args(settings, quiet_arg), on_command=oc)
 
 
 @cache

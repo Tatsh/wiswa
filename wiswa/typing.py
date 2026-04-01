@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
-__all__ = ('CustomProjectBadge', 'PackageJSON', 'PackageManager', 'ProjectType', 'PyProject',
-           'PyProjectBuildSystem', 'PyProjectProject', 'PyProjectTool', 'PyProjectToolCommitizen',
-           'PyProjectToolPoetry', 'PyProjectToolPoetryPackage', 'PythonDeps', 'Settings',
-           'SettingsGitHub', 'SettingsSocial', 'SettingsSocialMastodon', 'SettingsSocialTextAndURI',
-           'VSCode', 'VSCodeLaunch', 'VSCodeLaunchConfiguration')
+__all__ = ('CustomProjectBadge', 'ExportRequirements', 'PackageJSON', 'PackageManager',
+           'ProjectType', 'PyProject', 'PyProjectBuildSystem', 'PyProjectProject', 'PyProjectTool',
+           'PyProjectToolCommitizen', 'PyProjectToolPoetry', 'PyProjectToolPoetryPackage',
+           'PythonDeps', 'Settings', 'SettingsGitHub', 'SettingsSocial', 'SettingsSocialMastodon',
+           'SettingsSocialTextAndURI', 'VSCode', 'VSCodeLaunch', 'VSCodeLaunchConfiguration')
 
 PackageManager: TypeAlias = Literal['poetry', 'uv']
 """
@@ -206,6 +206,66 @@ class PackageJSON(TypedDict):
     """A mapping of development dependencies and their versions."""
 
 
+class ExportRequirements(TypedDict, total=False):
+    """Configuration for exporting requirements from the lock file."""
+    enabled: bool
+    """Whether to run the export step and add a pre-commit hook."""
+    format: str
+    """Output format (``requirements.txt``, ``pylock.toml``, ``cyclonedx1.5``)."""
+    output_filename: str
+    """Path to write the exported file."""
+    all_extras: bool
+    """Include all optional dependencies."""
+    all_groups: bool
+    """Include dependencies from all dependency groups."""
+    all_packages: bool
+    """Export the entire workspace."""
+    extra: Sequence[str]
+    """Include optional dependencies from these extra names."""
+    frozen: bool
+    """Do not update the lock file before exporting."""
+    group: Sequence[str]
+    """Include dependencies from these dependency groups."""
+    locked: bool
+    """Assert that the lock file will remain unchanged."""
+    no_annotate: bool
+    """Exclude comment annotations indicating the source of each package."""
+    no_default_groups: bool
+    """Ignore the default dependency groups."""
+    no_dev: bool
+    """Disable the development dependency group."""
+    no_editable: bool
+    """Export editable dependencies as non-editable."""
+    no_emit_local: bool
+    """Do not include local path dependencies."""
+    no_emit_package: Sequence[str]
+    """Do not emit these packages."""
+    no_emit_project: bool
+    """Do not emit the current project."""
+    no_emit_workspace: bool
+    """Do not emit any workspace members."""
+    no_extra: Sequence[str]
+    """Exclude these optional dependencies when ``all_extras`` is set."""
+    no_group: Sequence[str]
+    """Disable these dependency groups."""
+    no_hashes: bool
+    """Omit hashes in the generated output."""
+    no_header: bool
+    """Exclude the comment header."""
+    only_dev: bool
+    """Only include the development dependency group."""
+    only_group: Sequence[str]
+    """Only include dependencies from these groups."""
+    package: Sequence[str]
+    """Export dependencies for these specific workspace packages."""
+    prune: Sequence[str]
+    """Prune these packages from the dependency tree."""
+    script: str
+    """Export dependencies for a PEP 723 script instead of the project."""
+    with_hashes: bool
+    """Include hashes (default ``True``; set to ``False`` to pass ``--no-hashes``)."""
+
+
 class Settings(TypedDict):
     """Project settings."""
     default_branch: str
@@ -275,6 +335,8 @@ class Settings(TypedDict):
     """JSON object written to ``.claude/settings.local.json`` when ``want_claude`` is true."""
     custom_project_badges: Sequence[CustomProjectBadge]
     """Custom project badges displayed before the social section in the README."""
+    export_requirements: ExportRequirements
+    """Configuration for exporting requirements from the lock file."""
     want_docs: bool
     """If the project will generate documentation."""
     want_main: bool

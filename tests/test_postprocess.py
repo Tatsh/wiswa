@@ -53,6 +53,36 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
                 'dependencies': [],
             },
         },
+        'export_requirements': {
+            'enabled': False,
+            'format': 'requirements.txt',
+            'output_filename': 'requirements.txt',
+            'all_extras': False,
+            'all_groups': False,
+            'all_packages': False,
+            'extra': [],
+            'frozen': False,
+            'group': [],
+            'locked': False,
+            'no_annotate': False,
+            'no_default_groups': False,
+            'no_dev': False,
+            'no_editable': False,
+            'no_emit_local': False,
+            'no_emit_package': [],
+            'no_emit_project': True,
+            'no_emit_workspace': False,
+            'no_extra': [],
+            'no_group': [],
+            'no_hashes': False,
+            'no_header': False,
+            'only_dev': False,
+            'only_group': [],
+            'package': [],
+            'prune': [],
+            'script': '',
+            'with_hashes': True,
+        },
         'vscode': {
             'launch': None,
         },
@@ -883,3 +913,345 @@ async def test_post_process_steps_no_docs_badges(tmp_path: Path, monkeypatch: py
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'readthedocs' not in content
+
+
+def _export_settings(**overrides: Any) -> dict[str, Any]:
+    er: dict[str, Any] = {
+        'enabled': True,
+        'format': 'requirements.txt',
+        'output_filename': 'requirements.txt',
+        'all_extras': False,
+        'all_groups': False,
+        'all_packages': False,
+        'extra': [],
+        'frozen': False,
+        'group': [],
+        'locked': False,
+        'no_annotate': False,
+        'no_default_groups': False,
+        'no_dev': False,
+        'no_editable': False,
+        'no_emit_local': False,
+        'no_emit_package': [],
+        'no_emit_project': True,
+        'no_emit_workspace': False,
+        'no_extra': [],
+        'no_group': [],
+        'no_hashes': False,
+        'no_header': False,
+        'only_dev': False,
+        'only_group': [],
+        'package': [],
+        'prune': [],
+        'script': '',
+        'with_hashes': True,
+    }
+    return er | overrides
+
+
+def _setup_poetry_project(tmp_path: Path) -> None:
+    (tmp_path / 'pyproject.toml').write_text(
+        '[tool.commitizen]\n'
+        'version_files = ["wiswa/__init__.py:^__version__"]\n'
+        '[tool.coverage]\nrun = {}\n'
+        '[tool.pytest]\nini_options = {}\n'
+        '[tool.yapf]\nbased_on_style = "pep8"\n'
+        '[tool.yapfignore]\nignore_patterns = []\n'
+        '[tool.ruff.lint]\nignore = []\n'
+        '[tool.poetry.group.docs.dependencies]\nsphinx = "^7"\n'
+        '[tool.poetry.group.tests.dependencies]\npytest = "^8"\n',
+        encoding='utf-8',
+    )
+    (tmp_path / 'package.json').write_text(
+        '{"scripts": {"check-formatting": "old", "format": "old"}}',
+        encoding='utf-8',
+    )
+
+
+def _get_export_cmd(commands: list[str], tool: str = 'uv') -> str | None:
+    for c in commands:
+        if tool in c and 'export' in c:
+            return c
+    return None
+
+
+async def test_post_process_steps_uv_export_defaults(tmp_path: Path,
+                                                     monkeypatch: pytest.MonkeyPatch,
+                                                     mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any', _make_settings(export_requirements=_export_settings()))
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands)
+    assert cmd is not None
+    assert '--output-file requirements.txt' in cmd
+    assert '--no-emit-project' in cmd
+    assert '--format' not in cmd
+
+
+async def test_post_process_steps_uv_export_disabled(tmp_path: Path,
+                                                     monkeypatch: pytest.MonkeyPatch,
+                                                     mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any', _make_settings())
+    await post_process_steps(settings, on_command=commands.append)
+    assert _get_export_cmd(commands) is None
+
+
+async def test_post_process_steps_uv_export_all_flags(tmp_path: Path,
+                                                      monkeypatch: pytest.MonkeyPatch,
+                                                      mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast(
+        'Any',
+        _make_settings(export_requirements=_export_settings(
+            format='pylock.toml',
+            output_filename='deps.txt',
+            all_extras=True,
+            all_groups=True,
+            all_packages=True,
+            extra=['docs'],
+            frozen=True,
+            group=['tests'],
+            locked=True,
+            no_annotate=True,
+            no_default_groups=True,
+            no_dev=True,
+            no_editable=True,
+            no_emit_local=True,
+            no_emit_package=['foo'],
+            no_emit_project=True,
+            no_emit_workspace=True,
+            no_extra=['bar'],
+            no_group=['ci'],
+            no_hashes=True,
+            no_header=True,
+            only_dev=True,
+            only_group=['lint'],
+            package=['pkg1'],
+            prune=['pkg2'],
+            script='script.py',
+        )))
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands)
+    assert cmd is not None
+    for flag in ('--format pylock.toml', '--all-packages', '--package pkg1', '--prune pkg2',
+                 '--extra docs', '--all-extras', '--no-extra bar', '--no-dev', '--only-dev',
+                 '--group tests', '--no-group ci', '--no-default-groups', '--only-group lint',
+                 '--all-groups', '--no-annotate', '--no-header', '--no-editable', '--no-hashes',
+                 '--output-file deps.txt', '--no-emit-project', '--no-emit-workspace',
+                 '--no-emit-local', '--no-emit-package foo', '--locked', '--frozen',
+                 '--script script.py'):
+        assert flag in cmd
+
+
+async def test_post_process_steps_uv_export_with_hashes_false(tmp_path: Path,
+                                                              monkeypatch: pytest.MonkeyPatch,
+                                                              mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any', _make_settings(export_requirements=_export_settings(with_hashes=False)))
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands)
+    assert cmd is not None
+    assert '--no-hashes' in cmd
+
+
+async def test_post_process_steps_uv_export_hashes_default(tmp_path: Path,
+                                                           monkeypatch: pytest.MonkeyPatch,
+                                                           mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any', _make_settings(export_requirements=_export_settings()))
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands)
+    assert cmd is not None
+    assert '--no-hashes' not in cmd
+
+
+async def test_post_process_steps_uv_export_no_emit_project_false(tmp_path: Path,
+                                                                  monkeypatch: pytest.MonkeyPatch,
+                                                                  mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any',
+                    _make_settings(export_requirements=_export_settings(no_emit_project=False)))
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands)
+    assert cmd is not None
+    assert '--no-emit-project' not in cmd
+
+
+async def test_post_process_steps_uv_export_pylock_derives_filename(tmp_path: Path,
+                                                                    monkeypatch: pytest.MonkeyPatch,
+                                                                    mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast(
+        'Any',
+        _make_settings(
+            export_requirements=_export_settings(format='pylock.toml', output_filename='')))
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands)
+    assert cmd is not None
+    assert '--output-file pylock.toml' in cmd
+
+
+async def test_post_process_steps_uv_export_quiet(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                  mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any', _make_settings(export_requirements=_export_settings()))
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands)
+    assert cmd is not None
+    assert cmd.startswith('uv --quiet export')
+
+
+async def test_post_process_steps_uv_export_debug_no_quiet(tmp_path: Path,
+                                                           monkeypatch: pytest.MonkeyPatch,
+                                                           mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any', _make_settings(export_requirements=_export_settings()))
+    await post_process_steps(settings, debug=True, on_command=commands.append)
+    cmd = _get_export_cmd(commands)
+    assert cmd is not None
+    assert '--quiet' not in cmd
+
+
+async def test_post_process_steps_poetry_export_defaults(tmp_path: Path,
+                                                         monkeypatch: pytest.MonkeyPatch,
+                                                         mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_poetry_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast(
+        'Any', _make_settings(package_manager='poetry', export_requirements=_export_settings()))
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands, tool='poetry')
+    assert cmd is not None
+    assert '-f requirements.txt' in cmd
+    assert '-o requirements.txt' in cmd
+    assert '--with=dev' in cmd
+
+
+async def test_post_process_steps_poetry_export_disabled(tmp_path: Path,
+                                                         monkeypatch: pytest.MonkeyPatch,
+                                                         mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_poetry_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast('Any', _make_settings(package_manager='poetry'))
+    await post_process_steps(settings, on_command=commands.append)
+    assert _get_export_cmd(commands, tool='poetry') is None
+
+
+async def test_post_process_steps_poetry_export_all_groups(tmp_path: Path,
+                                                           monkeypatch: pytest.MonkeyPatch,
+                                                           mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_poetry_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast(
+        'Any',
+        _make_settings(package_manager='poetry',
+                       export_requirements=_export_settings(all_groups=True)))
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands, tool='poetry')
+    assert cmd is not None
+    assert '--with=dev,docs,tests' in cmd
+
+
+async def test_post_process_steps_poetry_export_no_dev(tmp_path: Path,
+                                                       monkeypatch: pytest.MonkeyPatch,
+                                                       mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_poetry_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast(
+        'Any',
+        _make_settings(package_manager='poetry',
+                       export_requirements=_export_settings(no_dev=True, group=['tests'])))
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands, tool='poetry')
+    assert cmd is not None
+    assert '--with=tests' in cmd
+    assert 'dev' not in cmd.split('--with=')[1].split(' ')[0]
+
+
+async def test_post_process_steps_poetry_export_without_hashes(tmp_path: Path,
+                                                               monkeypatch: pytest.MonkeyPatch,
+                                                               mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_poetry_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast(
+        'Any',
+        _make_settings(package_manager='poetry',
+                       export_requirements=_export_settings(no_hashes=True)))
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands, tool='poetry')
+    assert cmd is not None
+    assert '--without-hashes' in cmd
+
+
+async def test_post_process_steps_poetry_export_all_extras(tmp_path: Path,
+                                                           monkeypatch: pytest.MonkeyPatch,
+                                                           mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_poetry_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast(
+        'Any',
+        _make_settings(package_manager='poetry',
+                       export_requirements=_export_settings(all_extras=True)))
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands, tool='poetry')
+    assert cmd is not None
+    assert '--all-extras' in cmd
+    assert '--extras=' not in cmd
+
+
+async def test_post_process_steps_poetry_export_extras(tmp_path: Path,
+                                                       monkeypatch: pytest.MonkeyPatch,
+                                                       mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_poetry_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast(
+        'Any',
+        _make_settings(package_manager='poetry',
+                       export_requirements=_export_settings(extra=['docs', 'tests'])))
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands, tool='poetry')
+    assert cmd is not None
+    assert '--extras=docs' in cmd
+    assert '--extras=tests' in cmd

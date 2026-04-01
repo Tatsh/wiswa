@@ -58,8 +58,76 @@ local utils = import 'utils.libsonnet';
    * @var boolean
    */
   using_pypi: self.project_type == 'python',
-  /** @brief If the project should generate a `requirements.txt` file from the Poetry dependencies. */
-  saves_requirements_txt: false,
+  /**
+   * @brief Configuration for exporting requirements from the lock file.
+   *
+   * When ``enabled`` is true a pre-commit hook is added (local ``uv export``
+   * for uv, ``poetry-plugin-export`` for Poetry) and the export runs during
+   * post-processing.  All fields map directly to ``uv export`` flags;
+   * Poetry-only equivalents are translated automatically.
+   */
+  export_requirements: {
+    /** @brief Whether to run the export step and add a pre-commit hook. */
+    enabled: false,
+    /** @brief Output format (``requirements.txt``, ``pylock.toml``, ``cyclonedx1.5``). */
+    format: 'requirements.txt',
+    /** @brief Path to write the exported file. Derived from ``format`` when not overridden. */
+    output_filename: if self.format == 'pylock.toml' then 'pylock.toml'
+                     else if self.format == 'cyclonedx1.5' then 'cyclonedx.json'
+                     else 'requirements.txt',
+    /** @brief Include all optional dependencies. */
+    all_extras: false,
+    /** @brief Include dependencies from all dependency groups. */
+    all_groups: false,
+    /** @brief Export the entire workspace. */
+    all_packages: false,
+    /** @brief Include optional dependencies from these extra names. */
+    extra: [],
+    /** @brief Do not update the lock file before exporting. */
+    frozen: false,
+    /** @brief Include dependencies from these dependency groups. */
+    group: [],
+    /** @brief Assert that the lock file will remain unchanged. */
+    locked: false,
+    /** @brief Exclude comment annotations indicating the source of each package. */
+    no_annotate: false,
+    /** @brief Ignore the default dependency groups. */
+    no_default_groups: false,
+    /** @brief Disable the development dependency group. */
+    no_dev: false,
+    /** @brief Export editable dependencies as non-editable. */
+    no_editable: false,
+    /** @brief Do not include local path dependencies. */
+    no_emit_local: false,
+    /** @brief Do not emit these packages. */
+    no_emit_package: [],
+    /** @brief Do not emit the current project. */
+    no_emit_project: true,
+    /** @brief Do not emit any workspace members. */
+    no_emit_workspace: false,
+    /** @brief Exclude these optional dependencies when ``all_extras`` is set. */
+    no_extra: [],
+    /** @brief Disable these dependency groups. */
+    no_group: [],
+    /** @brief Omit hashes in the generated output. */
+    no_hashes: false,
+    /** @brief Exclude the comment header. */
+    no_header: false,
+    /** @brief Only include the development dependency group. */
+    only_dev: false,
+    /** @brief Only include dependencies from these groups. */
+    only_group: [],
+    /** @brief Export dependencies for these specific workspace packages. */
+    package: [],
+    /** @brief Prune these packages from the dependency tree. */
+    prune: [],
+    /** @brief Export dependencies for a PEP 723 script instead of the project. */
+    script: '',
+    /** @brief Include hashes (default true; set to false to pass --no-hashes). */
+    with_hashes: true,
+  },
+  /** @brief Backward-compatible alias for ``export_requirements.enabled``. */
+  saves_requirements_txt: self.export_requirements.enabled,
   /** @brief If the project is private (not published). */
   private: false,
   /**
@@ -595,7 +663,7 @@ local utils = import 'utils.libsonnet';
     local yapf_precommit = if settings.want_yapf then
       [import 'defaults/pre-commit-config/yapf.libsonnet']
     else [],
-    local poetry_plugin_export = if settings.project_type == 'python' && settings.saves_requirements_txt && !is_uv then
+    local poetry_plugin_export = if settings.project_type == 'python' && settings.export_requirements.enabled && !is_uv then
       [(import 'defaults/pre-commit-config/poetry-plugin-export.libsonnet').get(settings)]
     else [],
     local pkg_mgr_hooks = if is_uv then [import 'defaults/pre-commit-config/uv.libsonnet']
@@ -1200,6 +1268,7 @@ local utils = import 'utils.libsonnet';
                             '*.libsonnet',
                             '*.libsonnet',
                             '*.lock',
+                            'pylock*.toml',
                             '.eslintignore',
                             '.shellcheckrc',
                             '/.yarn/**/*.cjs',

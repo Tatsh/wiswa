@@ -13,26 +13,29 @@ local utils = import 'utils.libsonnet';
    * hooks.
    * @returns An object containing the hooks to be added to the pre-commit configuration.
    *
-   * If `settings.want_docs` and `settings.want_tests` are both true, the hook will include the
-   * groups `dev`, `docs`, and `tests`. If only `settings.want_docs` is true, it will include `dev`
-   * and `docs`. If only `settings.want_tests` is true, it will include `dev` and `tests`. The base
-   * case is to include only the `dev` group.
+   * Options are read from ``settings.export_requirements`` and translated to
+   * Poetry equivalents where possible.  uv-only flags are silently ignored.
    */
   get(settings):: {
-    local with_groups = if settings.want_docs && settings.want_tests then 'dev,docs,tests' else
-      if settings.want_docs then 'dev,docs' else
-        if settings.want_tests then 'dev,tests' else 'dev',
+    local er = settings.export_requirements,
+    local group_list =
+      (if !er.no_dev then ['dev'] else [])
+      + (if er.all_groups then
+           (if settings.want_docs then ['docs'] else [])
+           + (if settings.want_tests then ['tests'] else [])
+         else er.group),
+    local with_groups = std.join(',', group_list),
     hooks: [
       {
-        args: [
-          '--all-extras',
-          '-f',
-          'requirements.txt',
-          '-o',
-          'requirements.txt',
-          '--with=%s' % with_groups,
-          '--without-hashes',
-        ],
+        args:
+          (if er.all_extras then ['--all-extras']
+           else std.flatMap(function(e) ['--extras=%s' % e], er.extra))
+          + ['-f', er.format, '-o', er.output_filename]
+          + (if std.length(with_groups) > 0 then ['--with=%s' % with_groups] else [])
+          + (if er.only_dev then ['--only=dev'] else [])
+          + std.flatMap(function(g) ['--only=%s' % g], er.only_group)
+          + std.flatMap(function(g) ['--without=%s' % g], er.no_group)
+          + (if er.no_hashes || !er.with_hashes then ['--without-hashes'] else []),
         id: 'poetry-export',
       },
     ],

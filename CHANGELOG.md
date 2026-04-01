@@ -21,6 +21,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `npmMinimalAgeGate: 10080` to default yarnrc settings, enforcing a 7-day minimum age before new
   npm package versions are used.
 - 7-day cooldown and `multi-ecosystem-groups` to default Dependabot configuration.
+- `export_requirements` setting that replaces the `saves_requirements_txt` boolean with a rich
+  configuration object supporting all `uv export` options.
+  - When enabled, a local pre-commit hook runs `uv export` (for uv projects) or the
+    `poetry-plugin-export` hook is configured (for Poetry projects) to keep requirements in sync
+    with the lock file.
+  - Post-processing now runs `uv export` or `poetry export` when `export_requirements.enabled` is
+    true.
+  - `output_filename` automatically derives from `format` (e.g. `pylock.toml` format produces a
+    `pylock.toml` filename).
+  - `pylock*.toml` is now included in Prettier ignore patterns.
+  - Backward-compatible alias `saves_requirements_txt` is preserved.
+
+### Deprecated
+
+- `saves_requirements_txt` setting. Use `export_requirements` instead.
 
 ### Changed
 

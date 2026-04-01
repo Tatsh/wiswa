@@ -117,8 +117,8 @@ local utils = import 'utils.libsonnet';
         '.vscode/extensions.json',
         'dist/**',
         'man/**',
-      ] + (if settings.saves_requirements_txt && settings.project_type == 'python' then [
-             'requirements.txt',
+      ] + (if settings.export_requirements.enabled && settings.project_type == 'python' then [
+             settings.export_requirements.output_filename,
            ] else []),
       language: 'en-GB',
       languageSettings: [
