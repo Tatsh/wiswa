@@ -154,7 +154,9 @@ async def get_npm_latest_package_version(session: niquests.AsyncSession,
 
     Filters out versions published within the last
     ``_NPM_AGE_GATE_DEFAULT_MINUTES`` minutes (7 days) to match Yarn's
-    ``npmMinimalAgeGate`` default.
+    ``npmMinimalAgeGate`` default. Versions that appear in the registry
+    ``time`` map but are absent from the published ``versions`` map are
+    also excluded.
 
     Parameters
     ----------
@@ -175,11 +177,12 @@ async def get_npm_latest_package_version(session: niquests.AsyncSession,
     resp.raise_for_status()
     data = resp.json()
     time_map: dict[str, str] = data.get('time', {})
+    published_versions: set[str] = set(data.get('versions', {}))
     latest_tag = cast('str', data.get('dist-tags', {}).get('latest', ''))
     cutoff = datetime.now(tz=timezone.utc) - timedelta(minutes=_NPM_AGE_GATE_DEFAULT_MINUTES)
     candidates: list[tuple[Version, datetime]] = []
     for ver_str, pub_date_str in time_map.items():
-        if ver_str in {'created', 'modified'}:
+        if ver_str in {'created', 'modified'} or ver_str not in published_versions:
             continue
         try:
             ver = parse_version(ver_str)

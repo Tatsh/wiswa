@@ -34,10 +34,11 @@ def _clear_version_cache() -> None:
 
 
 def _make_response(
-        text: str = '',
-        json_data: object = None,
-        ok: bool = True,  # noqa: FBT001, FBT002
-        content: bytes = b'') -> MagicMock:
+    text: str = '',
+    json_data: object = None,
+    ok: bool = True,  # noqa: FBT001, FBT002
+    content: bytes = b'',
+) -> MagicMock:
     """Create a mock niquests response."""
     resp = MagicMock()
     resp.ok = ok
@@ -233,24 +234,27 @@ async def test_get_github_release_latest_tag_cache_hit() -> None:
 # _parse_duration tests
 
 
-@pytest.mark.parametrize(('value', 'expected'), [
-    ('PT24H', timedelta(hours=24)),
-    ('pt12h', timedelta(hours=12)),
-    ('P7D', timedelta(days=7)),
-    ('p3d', timedelta(days=3)),
-    ('P2W', timedelta(weeks=2)),
-    ('p1w', timedelta(weeks=1)),
-    ('P1DT12H', timedelta(days=1, hours=12)),
-    ('P3DT6H', timedelta(days=3, hours=6)),
-    ('7 days', timedelta(days=7)),
-    ('1 day', timedelta(days=1)),
-    ('24 hours', timedelta(hours=24)),
-    ('1 hour', timedelta(hours=1)),
-    ('2 weeks', timedelta(weeks=2)),
-    ('1 week', timedelta(weeks=1)),
-    ('10', timedelta(days=10)),
-    ('0', timedelta(days=0)),
-])
+@pytest.mark.parametrize(
+    ('value', 'expected'),
+    [
+        ('PT24H', timedelta(hours=24)),
+        ('pt12h', timedelta(hours=12)),
+        ('P7D', timedelta(days=7)),
+        ('p3d', timedelta(days=3)),
+        ('P2W', timedelta(weeks=2)),
+        ('p1w', timedelta(weeks=1)),
+        ('P1DT12H', timedelta(days=1, hours=12)),
+        ('P3DT6H', timedelta(days=3, hours=6)),
+        ('7 days', timedelta(days=7)),
+        ('1 day', timedelta(days=1)),
+        ('24 hours', timedelta(hours=24)),
+        ('1 hour', timedelta(hours=1)),
+        ('2 weeks', timedelta(weeks=2)),
+        ('1 week', timedelta(weeks=1)),
+        ('10', timedelta(days=10)),
+        ('0', timedelta(days=0)),
+    ],
+)
 def test_parse_duration_valid(value: str, expected: timedelta) -> None:
     assert _parse_duration(value) == expected
 
@@ -331,7 +335,8 @@ def test_get_uv_config_with_per_package(tmp_path: Path, mocker: MockerFixture) -
         '[exclude-newer-package]\n'
         'requests = "2025-02-01T00:00:00Z"\n'
         'flask = "2025-03-01T00:00:00Z"\n',
-        encoding='utf-8')
+        encoding='utf-8',
+    )
     mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     global_cutoff, per_package = _get_uv_config()
     assert global_cutoff is None
@@ -348,7 +353,8 @@ def test_get_uv_config_with_both(tmp_path: Path, mocker: MockerFixture) -> None:
     uv_toml.write_text(
         'exclude-newer = "2025-01-01T00:00:00Z"\n\n'
         '[exclude-newer-package]\nrequests = "2025-06-01T00:00:00Z"\n',
-        encoding='utf-8')
+        encoding='utf-8',
+    )
     mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     global_cutoff, per_package = _get_uv_config()
     assert global_cutoff == datetime(2025, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
@@ -385,6 +391,10 @@ async def test_get_npm_latest_package_version_picks_oldest_stable() -> None:
             'dist-tags': {
                 'latest': '2.0.0'
             },
+            'versions': {
+                '1.0.0': {},
+                '2.0.0': {},
+            },
             'time': {
                 'created': '2020-01-01T00:00:00Z',
                 'modified': '2025-01-01T00:00:00Z',
@@ -399,14 +409,18 @@ async def test_get_npm_latest_package_version_picks_oldest_stable() -> None:
 async def test_get_npm_latest_package_version_all_too_new_falls_back_to_latest() -> None:
     new_date = (datetime.now(tz=timezone.utc) - timedelta(minutes=5)).isoformat()
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(json_data={
-        'dist-tags': {
-            'latest': '3.0.0'
-        },
-        'time': {
-            '3.0.0': new_date,
-        },
-    }))
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={
+            'dist-tags': {
+                'latest': '3.0.0'
+            },
+            'versions': {
+                '3.0.0': {},
+            },
+            'time': {
+                '3.0.0': new_date,
+            },
+        }))
     result = await get_npm_latest_package_version(mock_session, 'new-only-pkg')
     assert result == '3.0.0'
 
@@ -418,6 +432,10 @@ async def test_get_npm_latest_package_version_skips_prerelease() -> None:
         json_data={
             'dist-tags': {
                 'latest': '2.0.0-beta.1'
+            },
+            'versions': {
+                '1.0.0': {},
+                '2.0.0-beta.1': {},
             },
             'time': {
                 '1.0.0': old_date,
@@ -436,6 +454,10 @@ async def test_get_npm_latest_package_version_skips_invalid_versions() -> None:
             'dist-tags': {
                 'latest': '1.0.0'
             },
+            'versions': {
+                'not-a-version': {},
+                '1.0.0': {},
+            },
             'time': {
                 'not-a-version': old_date,
                 '1.0.0': old_date,
@@ -453,6 +475,10 @@ async def test_get_npm_latest_package_version_skips_invalid_dates() -> None:
             'dist-tags': {
                 'latest': '2.0.0'
             },
+            'versions': {
+                '1.0.0': {},
+                '2.0.0': {},
+            },
             'time': {
                 '1.0.0': old_date,
                 '2.0.0': 'not-a-date',
@@ -465,14 +491,18 @@ async def test_get_npm_latest_package_version_skips_invalid_dates() -> None:
 async def test_get_npm_latest_package_version_cache_hit() -> None:
     old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(json_data={
-        'dist-tags': {
-            'latest': '1.0.0'
-        },
-        'time': {
-            '1.0.0': old_date
-        },
-    }))
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={
+            'dist-tags': {
+                'latest': '1.0.0'
+            },
+            'versions': {
+                '1.0.0': {},
+            },
+            'time': {
+                '1.0.0': old_date
+            },
+        }))
     result1 = await get_npm_latest_package_version(mock_session, 'cached-npm')
     result2 = await get_npm_latest_package_version(mock_session, 'cached-npm')
     assert result1 == result2 == '1.0.0'
@@ -487,6 +517,11 @@ async def test_get_npm_latest_package_version_picks_highest_version() -> None:
             'dist-tags': {
                 'latest': '3.0.0'
             },
+            'versions': {
+                '1.0.0': {},
+                '2.0.0': {},
+                '3.0.0': {},
+            },
             'time': {
                 '1.0.0': old_date,
                 '2.0.0': old_date,
@@ -494,6 +529,85 @@ async def test_get_npm_latest_package_version_picks_highest_version() -> None:
             },
         }))
     result = await get_npm_latest_package_version(mock_session, 'multi-ver-pkg')
+    assert result == '3.0.0'
+
+
+async def test_get_npm_latest_package_version_skips_unpublished_versions() -> None:
+    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={
+            'dist-tags': {
+                'latest': '2.0.0'
+            },
+            'versions': {
+                '1.0.0': {},
+            },
+            'time': {
+                '1.0.0': old_date,
+                '2.0.0': old_date,
+            },
+        }))
+    result = await get_npm_latest_package_version(mock_session, 'unpublished-pkg')
+    assert result == '1.0.0'
+
+
+async def test_get_npm_latest_package_version_all_unpublished_falls_back_to_latest() -> None:
+    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={
+            'dist-tags': {
+                'latest': '3.0.0'
+            },
+            'versions': {},
+            'time': {
+                '1.0.0': old_date,
+                '2.0.0': old_date,
+                '3.0.0': old_date,
+            },
+        }))
+    result = await get_npm_latest_package_version(mock_session, 'all-unpublished-pkg')
+    assert result == '3.0.0'
+
+
+async def test_get_npm_latest_package_version_no_versions_key_falls_back_to_latest() -> None:
+    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data={
+        'dist-tags': {
+            'latest': '1.0.0'
+        },
+        'time': {
+            '1.0.0': old_date,
+        },
+    }))
+    result = await get_npm_latest_package_version(mock_session, 'no-versions-key-pkg')
+    assert result == '1.0.0'
+
+
+async def test_get_npm_latest_package_version_mixed_published_unpublished() -> None:
+    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={
+            'dist-tags': {
+                'latest': '4.0.0'
+            },
+            'versions': {
+                '1.0.0': {},
+                '3.0.0': {},
+            },
+            'time': {
+                'created': '2020-01-01T00:00:00Z',
+                'modified': '2025-01-01T00:00:00Z',
+                '1.0.0': old_date,
+                '2.0.0': old_date,
+                '3.0.0': old_date,
+                '4.0.0': old_date,
+            },
+        }))
+    result = await get_npm_latest_package_version(mock_session, 'mixed-pub-pkg')
     assert result == '3.0.0'
 
 

@@ -71,6 +71,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   conditional rendering.
 - The `gitlab_ci` field is now optional when `using_gitlab` is true, preventing a crash when
   projects override `using_gitlab` without providing a `.gitlab-ci.yml` configuration.
+- `get_npm_latest_package_version` now filters out unpublished npm versions (versions present in the
+  registry `time` map but absent from the `versions` map), fixing incorrect version resolution for
+  packages with unpublished versions such as `pyright-to-gitlab-ci`.
 
 ## [0.1.0] - 2026-03-27
 
