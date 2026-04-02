@@ -73,8 +73,8 @@ local utils = import 'utils.libsonnet';
     format: 'requirements.txt',
     /** @brief Path to write the exported file. Derived from ``format`` when not overridden. */
     output_filename: if self.format == 'pylock.toml' then 'pylock.toml'
-                     else if self.format == 'cyclonedx1.5' then 'cyclonedx.json'
-                     else 'requirements.txt',
+    else if self.format == 'cyclonedx1.5' then 'cyclonedx.json'
+    else 'requirements.txt',
     /** @brief Include all optional dependencies. */
     all_extras: false,
     /** @brief Include dependencies from all dependency groups. */
@@ -904,7 +904,10 @@ local utils = import 'utils.libsonnet';
     '/CMakeUserPresets.json',
     '/vcpkg_installed/',
   ] else [],
-  local claude_ignore = if self.want_claude then ['.claude/settings.local.json'] else [],
+  local claude_ignore = if self.want_claude then [
+    '/.claude/settings.json',
+    '/.claude/settings.local.json',
+  ] else [],
   local python_ignore = if self.project_type == 'python' then [
     '.venv/',
     '/docs/_build/',
