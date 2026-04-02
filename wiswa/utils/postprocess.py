@@ -515,6 +515,8 @@ async def post_process_steps(settings: Settings,
                                              indent=2,
                                              sort_keys=True),
                                   encoding='utf-8')
+    if settings['regenerate_yarn_lock']:
+        await anyio.Path('yarn.lock').unlink(missing_ok=True)
     yarn_env = os.environ | {'COREPACK_ENABLE_DOWNLOAD_PROMPT': '0'}
     await _subprocess_log_run(('yarn',), on_command=oc, env=yarn_env)
     await _subprocess_log_run(('yarn', 'format'), on_command=oc, check=False, env=yarn_env)

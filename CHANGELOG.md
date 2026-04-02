@@ -21,6 +21,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `npmMinimalAgeGate: 10080` to default yarnrc settings, enforcing a 7-day minimum age before new
   npm package versions are used.
 - 7-day cooldown and `multi-ecosystem-groups` to default Dependabot configuration.
+- `regenerate_yarn_lock` setting (default `true`). When enabled, `yarn.lock` is deleted before
+  running Yarn during post-processing, ensuring a fresh lock file is generated.
 - `export_requirements` setting that replaces the `saves_requirements_txt` boolean with a rich
   configuration object supporting all `uv export` options.
   - When enabled, a local pre-commit hook runs `uv export` (for uv projects) or the

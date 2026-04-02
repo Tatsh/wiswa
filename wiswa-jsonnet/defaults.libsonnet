@@ -515,6 +515,8 @@ local utils = import 'utils.libsonnet';
   want_gpg: true,
   /** @brief If the project should will generate documentation. */
   want_docs: true,
+  /** @brief If ``yarn.lock`` should be deleted before running Yarn during post-processing. */
+  regenerate_yarn_lock: true,
   /** @brief If the project should have a main module (for CLI). */
   want_main: false,
   /** @brief If the project has multiple entry points (CLI commands). */

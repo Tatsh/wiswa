@@ -308,8 +308,8 @@ class Settings(TypedDict):
     """If the project consists of only typing stubs."""
     supported_platforms: str | list[str]
     """
-    Supported platforms for the project, 'all', string, or an array of strings. Values: 'windows',
-    'linux', 'macos', 'ios'.
+    Supported platforms for the project, ``'all'``, string, or an array of strings. Values:
+    ``'windows'``, ``'linux'``, ``'macos'``, ``'ios'``.
     """
     using_django: bool
     """If the project is using Django."""
@@ -345,6 +345,8 @@ class Settings(TypedDict):
     """If the project will have manual pages."""
     package_manager: PackageManager
     """The Python package manager to use ('poetry' or 'uv')."""
+    regenerate_yarn_lock: bool
+    """If ``yarn.lock`` should be deleted before running Yarn during post-processing."""
     want_tests: bool
     """If the project will have tests."""
     want_yapf: bool

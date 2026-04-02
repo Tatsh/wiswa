@@ -86,6 +86,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'vscode': {
             'launch': None,
         },
+        'regenerate_yarn_lock': False,
         '_readme_existed': False,
     }
     return base | overrides
@@ -1255,3 +1256,29 @@ async def test_post_process_steps_poetry_export_extras(tmp_path: Path,
     assert cmd is not None
     assert '--extras=docs' in cmd
     assert '--extras=tests' in cmd
+
+
+async def test_post_process_steps_regenerate_yarn_lock_true(tmp_path: Path,
+                                                            monkeypatch: pytest.MonkeyPatch,
+                                                            mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    yarn_lock = tmp_path / 'yarn.lock'
+    yarn_lock.write_text('# yarn lockfile v1\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings(regenerate_yarn_lock=True))
+    await post_process_steps(settings)
+    assert not yarn_lock.exists()
+
+
+async def test_post_process_steps_regenerate_yarn_lock_false(tmp_path: Path,
+                                                             monkeypatch: pytest.MonkeyPatch,
+                                                             mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    yarn_lock = tmp_path / 'yarn.lock'
+    yarn_lock.write_text('# yarn lockfile v1\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings(regenerate_yarn_lock=False))
+    await post_process_steps(settings)
+    assert yarn_lock.exists()
