@@ -238,6 +238,7 @@ exclude-newer = "1 week"
 
 [tool.uv.exclude-newer-package]
 fastmcp = false
+pygments = false
 qh3 = false
 
 [tool.yapf]

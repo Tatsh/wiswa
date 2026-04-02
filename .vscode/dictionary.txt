@@ -42,10 +42,10 @@ cooldown
 coveragerc
 coverallsapp
 cpack
-cyclonedx
 ctes
 ctypes
 cutoff
+cyclonedx
 dashcam
 dataclasses
 datarootdir
@@ -184,9 +184,10 @@ pycache
 pydantic
 pydocstyle
 pyformat
+pygments
 pyinstaller
-pylock
 pylint
+pylock
 pypa
 pypi
 pyproject
