@@ -1137,7 +1137,8 @@ local utils = import 'utils.libsonnet';
                  './tests',
                ] else [],
                pythonVersion: settings.supported_python_versions[0],
-             } + if settings.stubs_only then { reportImplicitOverride: 'none' } else {},
+             } + (if settings.stubs_only then { reportImplicitOverride: 'none' } else {})
+               + (if is_uv then { venv: '.venv', venvPath: '.' } else {}),
              ruff+: {
                lint+: if settings.stubs_only then {
                  ignore: std.set(pyproject.tool.ruff.lint.ignore + [

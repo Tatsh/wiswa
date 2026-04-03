@@ -26,6 +26,4 @@
   reportUnnecessaryTypeIgnoreComment: 'none',
   /** @brief Sets the overall type checking strictness level; 'off' disables most type checking rules. */
   typeCheckingMode: 'off',
-  /** @brief Disables using library code for type inference, relying on type stubs instead. */
-  useLibraryCodeForTypes: false,
 }
