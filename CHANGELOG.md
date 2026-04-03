@@ -41,6 +41,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Generated Sphinx `conf.py` now uses the standard-library `tomllib` module instead of `tomlkit`
+  when the project's minimum Python version is 3.11 or higher. The `tomlkit` docs dependency is
+  only included for projects that still support Python < 3.11.
 - Expanded default Claude Code permissions in `defaults.libsonnet`: package manager commands (uv or
   Poetry based on `package_manager` setting), `cspell`/`markdownlint-cli2`/`prettier` yarn scripts,
   C/C++ tools (`cmake`, `clang-format`, `vcpkg`), `WebFetch` domains, and temp file

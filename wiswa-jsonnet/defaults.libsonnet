@@ -20,6 +20,7 @@ local utils = import 'utils.libsonnet';
     self.project_name,
     self.want_coveralls,
     self.want_sqlfluff,
+    self.supported_python_versions[0],
   ),
   local is_uv = self.package_manager == 'uv',
   local github = if settings.using_github then pre_commit_configs.github else [],

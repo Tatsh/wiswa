@@ -6,7 +6,7 @@ local utils = import 'utils.libsonnet';
  * All version specifiers use Poetry conventions (^, ~, etc.). Conversion to PEP 508 for uv
  * happens at pyproject.toml assembly time.
  */
-function(want_main, want_yapf, stubs_only, project_name, want_coveralls, want_sqlfluff) {
+function(want_main, want_yapf, stubs_only, project_name, want_coveralls, want_sqlfluff, min_python_version='3.10') {
   local ver(package) = utils.latestPypiPackageVersionCaret(package),
   local want_main_deps = if want_main then { click: ver('click') } else {},
   local bascom_dep = if want_main && !stubs_only && project_name != 'bascom' then { bascom: ver('bascom') } else {},
@@ -21,6 +21,7 @@ function(want_main, want_yapf, stubs_only, project_name, want_coveralls, want_sq
   } + cz_path_dep + (
     if want_yapf then { yapf: ver('yapf') } else {}
   ) + (if want_sqlfluff then { sqlfluff: ver('sqlfluff') } else {}),
+  local needs_tomlkit = std.parseInt(std.split(min_python_version, '.')[1]) < 11,
   docs: {
     'autodoc-pydantic': ver('autodoc-pydantic'),
     doc8: ver('doc8'),
@@ -32,8 +33,8 @@ function(want_main, want_yapf, stubs_only, project_name, want_coveralls, want_sq
     sphinx: [{ version: ver('sphinx'), python: '>=3.13' }],
     'sphinx-datatables': ver('sphinx-datatables'),
     'sphinx-immaterial': ver('sphinx-immaterial'),
-    tomlkit: ver('tomlkit'),
-  } + (if want_main then { 'sphinx-click': ver('sphinx-click') } else {}),
+  } + (if needs_tomlkit then { tomlkit: ver('tomlkit') } else {})
+    + (if want_main then { 'sphinx-click': ver('sphinx-click') } else {}),
   tests: {
     mock: ver('mock'),
     pytest: ver('pytest'),

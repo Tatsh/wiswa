@@ -16,9 +16,16 @@ import django
 import django_stubs_ext
     {% endif %}
 {% endif %}
+{% set min_minor = settings.supported_python_versions[0].split('.')[1] | int %}
+{% if min_minor >= 11 %}
+import tomllib
+with (Path(__file__).parent.parent / 'pyproject.toml').open('rb') as f:
+    project_ = tomllib.load(f)['project']
+{% else %}
 import tomlkit
 with (Path(__file__).parent.parent / 'pyproject.toml').open(newline='\n', encoding='utf-8') as f:
     project_ = tomlkit.load(f).unwrap()['project']
+{% endif %}
     authors_list, name, version = itemgetter('authors', 'name', 'version')(project_)
 authors = [f'{d["name"]} <{d["email"]}>' for d in authors_list]
 # region Path setup
