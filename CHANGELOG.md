@@ -32,16 +32,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     true.
   - `output_filename` automatically derives from `format` (e.g. `pylock.toml` format produces a
     `pylock.toml` filename).
-  - `pylock*.toml` is now included in Prettier ignore patterns.
   - Backward-compatible alias `saves_requirements_txt` is preserved.
-- Wiswa CLI progress uses `yaspin` on stderr with weighted random cli-spinners (dots-style
+- Wiswa CLI progress uses `yaspin` on stderr with weighted random CLI spinners (dots-style
   animations are more likely than other styles), and shows a `Starting up.` message before
   long-running work begins.
 - `clear_resolved_defaults_cache()` on `wiswa.mcp` and `clear_resolution_caches()` on
   `wiswa.utils.versions` for tests and long-lived processes that need fresh Jsonnet defaults or
   version-resolution caches.
-- `CachedAsyncSession.cache_directory` and `CachedAsyncSession.expire_after_total_seconds`
-  properties for cache introspection and testing.
 
 ### Deprecated
 
@@ -49,8 +46,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Coverage `omit` lists now include `**/*.j2` in this repository and in generated
-  `pyproject.toml` defaults so Jinja templates are not measured as Python.
+- Coverage `omit` lists now include `**/*.j2` in generated `pyproject.toml` defaults so Jinja
+  templates are not measured as Python.
 - Generated Sphinx `conf.py` now uses the standard-library `tomllib` module instead of `tomlkit`
   when the project's minimum Python version is 3.11 or higher. The `tomlkit` docs dependency is
   only included for projects that still support Python < 3.11.
@@ -58,16 +55,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Poetry based on `package_manager` setting), `cspell`/`markdownlint-cli2`/`prettier` yarn scripts,
   C/C++ tools (`cmake`, `clang-format`, `vcpkg`), `WebFetch` domains, and temp file
   read/write permissions. `gh` and `glab` API permissions are now conditional on platform settings.
-- Dictionary update script now invokes `python` instead of `python3`.
 - `get_github_release_latest_tag` no longer truncates action tags to the major version (e.g. `v7`
   instead of `v7.0.0`), returning full semver tags instead. This fixes compatibility with
   repositories like `astral-sh/setup-uv` that only publish immutable full version tags.
-- Removed the `actions` parameter from `get_github_release_latest_tag`; the `not allow_suffixes`
-  condition now drives the filtering behaviour previously gated by `actions`.
 - Split QA workflows for all project types (Python, TypeScript, C/C++) into granular parallel jobs
-  (ruff, mypy, format, eslint, prettier, markdownlint, spelling) using native GitHub Actions path
-  filters instead of `dorny/paths-filter`. Only mypy uses a Python version matrix. The format job
-  uses the minimum supported Python version.
+  (ruff, mypy, format, eslint, prettier, markdownlint, and spelling) using native GitHub Actions path
+  filters instead of `dorny/paths-filter`.
 - Added path filters to the TypeScript tests workflow.
 - All publish workflows (NPM, PyPI, LuaRocks, WinGet) now wait for QA and test workflows to
   succeed before publishing.
@@ -107,12 +100,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Release agent template no longer shows `uv lock` or `gen-manpage` steps for non-Python projects.
-- Agent templates with conditional steps now use Markdown auto-numbering to avoid gaps.
-
 - Templates that render to empty content now auto-delete the output file instead of writing a
-  near-empty file, replacing the hardcoded `_CI_PLATFORM_AGENTS` filtering with template-driven
-  conditional rendering.
+  near-empty file, using template-driven conditional rendering instead of hardcoded filtering.
 - The `gitlab_ci` field is now optional when `using_gitlab` is true, preventing a crash when
   projects override `using_gitlab` without providing a `.gitlab-ci.yml` configuration.
 - `get_npm_latest_package_version` now filters out unpublished npm versions (versions present in the
