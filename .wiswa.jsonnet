@@ -12,6 +12,11 @@ local utils = import 'utils.libsonnet';
   copilot: {
     intro: 'Wiswa is a tool to generate and manage projects.',
   },
+  github+: {
+    pages_config+: {
+      exclude+: ['wiswa/templates/'],
+    },
+  },
   shared_ignore+: ['/docs/_build*/'],
   prettierignore+: ['*.adoc', 'Doxyfile'],
   package_json+: {

@@ -1,1 +1,3 @@
+exclude:
+  - 'wiswa/templates/'
 theme: 'jekyll-theme-hacker'
