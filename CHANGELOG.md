@@ -113,6 +113,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Bundled Jsonnet defaults failed to load on Python 3.10 and 3.11 in the CLI and MCP server when
   `importlib.resources.as_file()` was used on the package directory (multiplexed path); resolution
   now anchors on `defaults.libsonnet` and uses its parent as the library path.
+- PyInstaller workflow passes `--collect-data yaspin` so frozen binaries bundle `yaspin` package
+  data (for example `spinners.json`).
+- Regen agent template avoids inline `{% endif %}` immediately before Markdown code fences when
+  Jinja uses `trim_blocks`, fixing broken shell blocks after regen.
 
 ## [0.1.0] - 2026-03-27
 

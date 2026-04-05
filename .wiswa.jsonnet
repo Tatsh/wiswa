@@ -22,7 +22,7 @@ local utils = import 'utils.libsonnet';
     },
   },
   pyinstaller+: {
-    collect_data+: ['fastmcp'],
+    collect_data+: ['fastmcp', 'yaspin'],
     copy_metadata+: ['fastmcp'],
     vcpkg: {
       enabled: true,
