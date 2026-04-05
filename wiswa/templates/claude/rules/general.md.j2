@@ -1,3 +1,17 @@
 # General guidelines
 
 {% include '_partials/general-guidelines.md.j2' %}
+
+## Avoiding Permission Prompts
+
+Bash commands containing `$()` subshells trigger interactive permission prompts. Avoid these:
+
+- **Git commits**: create `.wiswa-ci` if it does not exist (`mkdir -p .wiswa-ci`), then create a
+  unique message file with `mktemp .wiswa-ci/message-XXXXXXXX`. Write the commit message there with
+  the **Write** tool (not Bash `echo` or `cat`). Commit with
+  `git commit {{ '-S ' if settings.get('want_gpg', False) }}-s -F <tempfile>` without using the
+  sandbox. Never use `-m "$(cat <<'EOF' ...)"` or write the message file from Bash with a
+  fixed path (permission prompts).
+- **Command substitution**: prefer chaining with `&&` and temp files over `$()` inline.
+- **Backticks**: same issue as `$()` - avoid `` `command` `` in Bash tool calls.
+- **Pipes into commands** are fine (`echo foo | git commit --stdin` etc.).

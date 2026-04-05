@@ -4,7 +4,10 @@ All agent definitions, skills, and project rules live under **`.claude/`**. Use 
 use Claude Code, Cursor, GitHub Copilot, or another assistant: open or reference the files directly,
 and use each product's own mechanics for attaching repo context where needed.
 
-- **Read `CLAUDE.md` first in Claude Code** - it points here and holds Claude-specific notes.
+- **Read the relevant `.claude/agents/*.md` and `.claude/rules/*.md` files** (and any skill they
+  name) before editing managed files, running Wiswa, or following multi-step workflows listed here.
+- If the user is only adding instructions for the assistant, **do not edit the repository** unless
+  they ask for a concrete change.
 
 ## General conventions
 
