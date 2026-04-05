@@ -184,7 +184,6 @@ pycache
 pydantic
 pydocstyle
 pyformat
-pygments
 pyinstaller
 pylint
 pylock
