@@ -15,7 +15,7 @@ import platformdirs
 if TYPE_CHECKING:
     from pathlib import Path
 
-__all__ = ('cached_session',)
+__all__ = ('CachedAsyncSession', 'cached_session')
 
 log = logging.getLogger(__name__)
 
@@ -32,6 +32,16 @@ class CachedAsyncSession(niquests.AsyncSession):
         self._cache_dir = cache_dir
         self._expire_seconds = expire_after.total_seconds()
         self._cache_dir.mkdir(parents=True, exist_ok=True)
+
+    @property
+    def cache_directory(self) -> Path:
+        """Filesystem directory used for this session's response cache."""
+        return self._cache_dir
+
+    @property
+    def expire_after_total_seconds(self) -> float:
+        """Cache TTL in seconds for GET and HEAD responses."""
+        return self._expire_seconds
 
     def _cache_key(self, method: str, url: str) -> Path:
         key = sha256(f'{method} {url}'.encode()).hexdigest()

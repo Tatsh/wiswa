@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 import stat
 
 from wiswa.utils.versions import (
+    clear_resolution_caches,
     download_yarn,
     download_yarn_plugins,
     get_github_release_latest_tag,
@@ -15,11 +16,6 @@ from wiswa.utils.versions import (
     get_pypi_latest_package_version,
 )
 import pytest
-import wiswa.utils.versions
-
-_get_uv_config = wiswa.utils.versions._get_uv_config  # noqa: SLF001
-_parse_duration = wiswa.utils.versions._parse_duration  # noqa: SLF001
-_parse_exclude_newer = wiswa.utils.versions._parse_exclude_newer  # noqa: SLF001
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -29,8 +25,7 @@ if TYPE_CHECKING:
 
 @pytest.fixture(autouse=True)
 def _clear_version_cache() -> None:
-    wiswa.utils.versions._cache.clear()  # noqa: SLF001
-    _get_uv_config.cache_clear()
+    clear_resolution_caches()
 
 
 def _make_response(
@@ -231,152 +226,126 @@ async def test_get_github_release_latest_tag_cache_hit() -> None:
     assert mock_session.get.call_count == 1
 
 
-# _parse_duration tests
+async def test_get_pypi_latest_package_version_uv_toml_global_parses_timestamp(
+        tmp_path: Path, mocker: MockerFixture) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text('exclude-newer = "2025-01-15T12:00:00Z"\n', encoding='utf-8')
+    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
+    xml = _make_pypi_xml([
+        ('2.0.0', 'Mon, 01 Jun 2025 00:00:00 GMT'),
+        ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+    ])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    result = await get_pypi_latest_package_version(mock_session, 'toml-parse-pkg')
+    assert result == '1.0.0'
 
 
 @pytest.mark.parametrize(
-    ('value', 'expected'),
+    ('toml_value', 'pkg', 'use_bare_int'),
     [
-        ('PT24H', timedelta(hours=24)),
-        ('pt12h', timedelta(hours=12)),
-        ('P7D', timedelta(days=7)),
-        ('p3d', timedelta(days=3)),
-        ('P2W', timedelta(weeks=2)),
-        ('p1w', timedelta(weeks=1)),
-        ('P1DT12H', timedelta(days=1, hours=12)),
-        ('P3DT6H', timedelta(days=3, hours=6)),
-        ('7 days', timedelta(days=7)),
-        ('1 day', timedelta(days=1)),
-        ('24 hours', timedelta(hours=24)),
-        ('1 hour', timedelta(hours=1)),
-        ('2 weeks', timedelta(weeks=2)),
-        ('1 week', timedelta(weeks=1)),
-        ('10', timedelta(days=10)),
-        ('0', timedelta(days=0)),
+        ('PT4H', 'dur-pt4h', False),
+        ('P10D', 'dur-p10d', False),
+        ('P2W', 'dur-p2w', False),
+        ('P1DT2H', 'dur-p1dt2h', False),
+        ('9 hours', 'dur-9h', False),
+        ('8 days', 'dur-8d', False),
+        ('2 weeks', 'dur-2w', False),
+        ('30', 'dur-intdays', True),
     ],
 )
-def test_parse_duration_valid(value: str, expected: timedelta) -> None:
-    assert _parse_duration(value) == expected
+async def test_get_pypi_exclude_newer_duration_forms(
+        tmp_path: Path,
+        mocker: MockerFixture,
+        toml_value: str,
+        pkg: str,
+        use_bare_int: bool,  # noqa: FBT001
+) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    line = (f'exclude-newer = {toml_value}\n'
+            if use_bare_int else f'exclude-newer = "{toml_value}"\n')
+    (uv_dir / 'uv.toml').write_text(line, encoding='utf-8')
+    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
+    fixed_now = datetime(2025, 8, 1, 12, 0, 0, tzinfo=timezone.utc)
+    mocker.patch('wiswa.utils.versions.datetime', wraps=datetime)
+    mocker.patch('wiswa.utils.versions.datetime.now', return_value=fixed_now)
+    xml = _make_pypi_xml([
+        ('2.0.0', 'Mon, 01 Aug 2025 10:00:00 GMT'),
+        ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+    ])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    result = await get_pypi_latest_package_version(mock_session, pkg)
+    assert result == '1.0.0'
 
 
-@pytest.mark.parametrize('value', ['', 'abc', 'P1M', 'P1Y', 'not-a-duration', '1.5'])
-def test_parse_duration_invalid(value: str) -> None:
-    assert _parse_duration(value) is None
-
-
-def test_parse_duration_strips_whitespace() -> None:
-    assert _parse_duration('  P7D  ') == timedelta(days=7)
-
-
-# _parse_exclude_newer tests
-
-
-def test_parse_exclude_newer_iso_timestamp() -> None:
-    result = _parse_exclude_newer('2025-01-15T10:30:00+00:00')
-    assert result == datetime(2025, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
-
-
-def test_parse_exclude_newer_iso_timestamp_with_z() -> None:
-    result = _parse_exclude_newer('2025-01-15T10:30:00Z')
-    assert result == datetime(2025, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
-
-
-def test_parse_exclude_newer_naive_timestamp() -> None:
-    result = _parse_exclude_newer('2025-06-01T00:00:00')
-    assert result is not None
-    assert result.year == 2025
-    assert result.month == 6
-    assert result.day == 1
-    assert result.tzinfo is None
-
-
-def test_parse_exclude_newer_duration(mocker: MockerFixture) -> None:
+async def test_get_pypi_latest_package_version_uv_toml_duration_exclude_newer(
+        tmp_path: Path, mocker: MockerFixture) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text('exclude-newer = "P7D"\n', encoding='utf-8')
+    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     fixed_now = datetime(2025, 3, 15, 12, 0, 0, tzinfo=timezone.utc)
     mocker.patch('wiswa.utils.versions.datetime', wraps=datetime)
     mocker.patch('wiswa.utils.versions.datetime.now', return_value=fixed_now)
-    result = _parse_exclude_newer('P7D')
-    assert result == fixed_now - timedelta(days=7)
+    xml = _make_pypi_xml([('1.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT')])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    result = await get_pypi_latest_package_version(mock_session, 'duration-cutoff-pkg')
+    assert result == '1.0.0'
 
 
-def test_parse_exclude_newer_invalid() -> None:
-    assert _parse_exclude_newer('not-valid-at-all') is None
-
-
-def test_parse_exclude_newer_strips_whitespace() -> None:
-    result = _parse_exclude_newer('  2025-01-15T10:30:00+00:00  ')
-    assert result == datetime(2025, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
-
-
-# _get_uv_config tests
-
-
-def test_get_uv_config_no_file(tmp_path: Path, mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
-    result = _get_uv_config()
-    assert result == (None, {})
-
-
-def test_get_uv_config_with_global_exclude_newer(tmp_path: Path, mocker: MockerFixture) -> None:
+async def test_get_pypi_per_package_uv_toml_skips_invalid_timestamp(tmp_path: Path,
+                                                                    mocker: MockerFixture) -> None:
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
-    uv_toml = uv_dir / 'uv.toml'
-    uv_toml.write_text('exclude-newer = "2025-01-15T00:00:00Z"\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
-    global_cutoff, per_package = _get_uv_config()
-    assert global_cutoff == datetime(2025, 1, 15, 0, 0, 0, tzinfo=timezone.utc)
-    assert per_package == {}
-
-
-def test_get_uv_config_with_per_package(tmp_path: Path, mocker: MockerFixture) -> None:
-    uv_dir = tmp_path / '.config' / 'uv'
-    uv_dir.mkdir(parents=True)
-    uv_toml = uv_dir / 'uv.toml'
-    uv_toml.write_text(
+    (uv_dir / 'uv.toml').write_text(
         '[exclude-newer-package]\n'
-        'requests = "2025-02-01T00:00:00Z"\n'
-        'flask = "2025-03-01T00:00:00Z"\n',
+        'keep = "2025-02-01T00:00:00Z"\n'
+        'drop = "not-a-timestamp"\n',
         encoding='utf-8',
     )
     mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
-    global_cutoff, per_package = _get_uv_config()
-    assert global_cutoff is None
-    assert per_package == {
-        'flask': datetime(2025, 3, 1, 0, 0, 0, tzinfo=timezone.utc),
-        'requests': datetime(2025, 2, 1, 0, 0, 0, tzinfo=timezone.utc),
-    }
+    xml = _make_pypi_xml([
+        ('2.0.0', 'Mon, 01 Mar 2025 00:00:00 GMT'),
+        ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+    ])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    result = await get_pypi_latest_package_version(mock_session, 'keep')
+    assert result == '1.0.0'
 
 
-def test_get_uv_config_with_both(tmp_path: Path, mocker: MockerFixture) -> None:
-    uv_dir = tmp_path / '.config' / 'uv'
-    uv_dir.mkdir(parents=True)
-    uv_toml = uv_dir / 'uv.toml'
-    uv_toml.write_text(
-        'exclude-newer = "2025-01-01T00:00:00Z"\n\n'
-        '[exclude-newer-package]\nrequests = "2025-06-01T00:00:00Z"\n',
-        encoding='utf-8',
-    )
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
-    global_cutoff, per_package = _get_uv_config()
-    assert global_cutoff == datetime(2025, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-    assert per_package == {'requests': datetime(2025, 6, 1, 0, 0, 0, tzinfo=timezone.utc)}
-
-
-def test_get_uv_config_empty_file(tmp_path: Path, mocker: MockerFixture) -> None:
+async def test_get_pypi_uv_toml_empty_behaves_like_no_config(tmp_path: Path,
+                                                             mocker: MockerFixture) -> None:
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('', encoding='utf-8')
     mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
-    assert _get_uv_config() == (None, {})
+    xml = _make_pypi_xml([('1.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT')])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    result = await get_pypi_latest_package_version(mock_session, 'empty-uv-pkg')
+    assert result == '1.0.0'
 
 
-def test_get_uv_config_os_error(tmp_path: Path, mocker: MockerFixture) -> None:
+async def test_get_pypi_uv_toml_read_os_error_falls_back_to_no_cutoff(
+        tmp_path: Path, mocker: MockerFixture) -> None:
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
-    uv_toml = uv_dir / 'uv.toml'
-    uv_toml.write_text('valid = true', encoding='utf-8')
+    (uv_dir / 'uv.toml').write_text('valid = true', encoding='utf-8')
     mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     mocker.patch('pathlib.Path.read_text', side_effect=OSError('Permission denied'))
-    assert _get_uv_config() == (None, {})
+    xml = _make_pypi_xml([
+        ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
+        ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+    ])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    result = await get_pypi_latest_package_version(mock_session, 'read-error-pkg')
+    assert result == '2.0.0'
 
 
 # get_npm_latest_package_version tests
@@ -621,8 +590,9 @@ def _make_pypi_xml(versions: list[tuple[str, str]]) -> bytes:
     return f'<?xml version="1.0"?><rss><channel>{items}</channel></rss>'.encode()
 
 
-async def test_get_pypi_latest_package_version_no_cutoff(mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions._get_uv_config', return_value=(None, {}))
+async def test_get_pypi_latest_package_version_no_cutoff(tmp_path: Path,
+                                                         mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -633,9 +603,12 @@ async def test_get_pypi_latest_package_version_no_cutoff(mocker: MockerFixture) 
     assert result == '2.0.0'
 
 
-async def test_get_pypi_latest_package_version_global_cutoff(mocker: MockerFixture) -> None:
-    cutoff = datetime(2024, 6, 1, 0, 0, 0, tzinfo=timezone.utc)
-    mocker.patch('wiswa.utils.versions._get_uv_config', return_value=(cutoff, {}))
+async def test_get_pypi_latest_package_version_global_cutoff(tmp_path: Path,
+                                                             mocker: MockerFixture) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text('exclude-newer = "2024-06-01T00:00:00Z"\n', encoding='utf-8')
+    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -646,10 +619,16 @@ async def test_get_pypi_latest_package_version_global_cutoff(mocker: MockerFixtu
     assert result == '1.0.0'
 
 
-async def test_get_pypi_latest_package_version_per_package_cutoff(mocker: MockerFixture) -> None:
-    global_cutoff = datetime(2020, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-    per_package = {'my-pkg': datetime(2024, 6, 1, 0, 0, 0, tzinfo=timezone.utc)}
-    mocker.patch('wiswa.utils.versions._get_uv_config', return_value=(global_cutoff, per_package))
+async def test_get_pypi_latest_package_version_per_package_cutoff(tmp_path: Path,
+                                                                  mocker: MockerFixture) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text(
+        'exclude-newer = "2020-01-01T00:00:00Z"\n\n'
+        '[exclude-newer-package]\nmy-pkg = "2024-06-01T00:00:00Z"\n',
+        encoding='utf-8',
+    )
+    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -660,9 +639,12 @@ async def test_get_pypi_latest_package_version_per_package_cutoff(mocker: Mocker
     assert result == '1.0.0'
 
 
-async def test_get_pypi_latest_package_version_all_filtered_fallback(mocker: MockerFixture) -> None:
-    cutoff = datetime(2020, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-    mocker.patch('wiswa.utils.versions._get_uv_config', return_value=(cutoff, {}))
+async def test_get_pypi_latest_package_version_all_filtered_fallback(tmp_path: Path,
+                                                                     mocker: MockerFixture) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text('exclude-newer = "2020-01-01T00:00:00Z"\n', encoding='utf-8')
+    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -673,8 +655,9 @@ async def test_get_pypi_latest_package_version_all_filtered_fallback(mocker: Moc
     assert result == '2.0.0'
 
 
-async def test_get_pypi_latest_package_version_no_items_raises(mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions._get_uv_config', return_value=(None, {}))
+async def test_get_pypi_latest_package_version_no_items_raises(tmp_path: Path,
+                                                               mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = b'<?xml version="1.0"?><rss><channel></channel></rss>'
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(content=xml))
@@ -682,8 +665,9 @@ async def test_get_pypi_latest_package_version_no_items_raises(mocker: MockerFix
         await get_pypi_latest_package_version(mock_session, 'empty-pkg')
 
 
-async def test_get_pypi_latest_package_version_skips_prerelease(mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions._get_uv_config', return_value=(None, {}))
+async def test_get_pypi_latest_package_version_skips_prerelease(tmp_path: Path,
+                                                                mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0a1', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -694,8 +678,9 @@ async def test_get_pypi_latest_package_version_skips_prerelease(mocker: MockerFi
     assert result == '1.0.0'
 
 
-async def test_get_pypi_latest_package_version_skips_yanked(mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions._get_uv_config', return_value=(None, {}))
+async def test_get_pypi_latest_package_version_skips_yanked(tmp_path: Path,
+                                                            mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('8.3.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('8.2.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -706,8 +691,9 @@ async def test_get_pypi_latest_package_version_skips_yanked(mocker: MockerFixtur
     assert result == '8.2.0'
 
 
-async def test_get_pypi_latest_package_version_cache_hit(mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions._get_uv_config', return_value=(None, {}))
+async def test_get_pypi_latest_package_version_cache_hit(tmp_path: Path,
+                                                         mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(content=xml))
@@ -718,8 +704,8 @@ async def test_get_pypi_latest_package_version_cache_hit(mocker: MockerFixture) 
 
 
 async def test_get_pypi_latest_package_version_only_prerelease_raises(
-        mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions._get_uv_config', return_value=(None, {}))
+        tmp_path: Path, mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0a1', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('1.0.0rc1', 'Mon, 01 Jan 2024 00:00:00 GMT'),

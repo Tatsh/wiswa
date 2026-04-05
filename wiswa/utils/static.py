@@ -61,13 +61,6 @@ async def _sync_file_pairs(
                 await aio_dest.unlink()
                 log.debug('Removed `%s` (matched would-be content).', dest)
         await remove_empty_dirs(dir_path, stop_at)
-        root = dir_path
-        while root.parent not in {stop_at, root}:
-            root = root.parent
-        aio_root = anyio.Path(root)
-        if (await aio_root.exists() and await aio_root.is_dir()  # pragma: no cover
-                and not [p async for p in aio_root.iterdir()]):
-            await aio_root.rmdir()
 
 
 async def _sync_json_file(path: Path,

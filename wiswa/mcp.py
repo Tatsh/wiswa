@@ -11,7 +11,7 @@ import niquests
 
 from .utils.jsonnet import resolve_defaults_only
 
-__all__ = ('main',)
+__all__ = ('clear_resolved_defaults_cache', 'main')
 
 mcp = FastMCP('wiswa')
 
@@ -26,6 +26,12 @@ async def _get_defaults() -> dict[str, Any]:
             async with niquests.AsyncSession() as session:
                 _resolved_defaults = await resolve_defaults_only([str(lib_path)], lib_path, session)
     return _resolved_defaults
+
+
+def clear_resolved_defaults_cache() -> None:
+    """Forget lazily loaded Jsonnet defaults (for tests and dev server reload)."""
+    global _resolved_defaults  # noqa: PLW0603
+    _resolved_defaults = None
 
 
 def navigate(data: Any, parts: list[str]) -> Any:

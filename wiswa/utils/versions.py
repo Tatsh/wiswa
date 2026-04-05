@@ -20,9 +20,15 @@ import tomlkit
 if TYPE_CHECKING:
     import niquests
 
-__all__ = ('download_yarn', 'download_yarn_plugins', 'get_github_release_latest_tag',
-           'get_latest_yarn_version', 'get_npm_latest_package_version',
-           'get_pypi_latest_package_version')
+__all__ = (
+    'clear_resolution_caches',
+    'download_yarn',
+    'download_yarn_plugins',
+    'get_github_release_latest_tag',
+    'get_latest_yarn_version',
+    'get_npm_latest_package_version',
+    'get_pypi_latest_package_version',
+)
 
 log = logging.getLogger(__name__)
 
@@ -58,13 +64,12 @@ def _parse_duration(value: str) -> timedelta | None:
     m = re.fullmatch(r'(\d+)\s*(hours?|days?|weeks?)', value, re.IGNORECASE)
     if m:
         n = int(m.group(1))
-        match m.group(2).lower()[0]:
-            case 'h':
-                return timedelta(hours=n)
-            case 'd':
-                return timedelta(days=n)
-            case 'w':
-                return timedelta(weeks=n)
+        unit = m.group(2).lower()[0]
+        if unit == 'h':
+            return timedelta(hours=n)
+        if unit == 'd':
+            return timedelta(days=n)
+        return timedelta(weeks=n)
     try:
         return timedelta(days=int(value))
     except ValueError:
@@ -120,6 +125,17 @@ def _get_uv_config() -> tuple[datetime | None, dict[str, datetime]]:
             if dt is not None:
                 per_package[str(pkg)] = dt
     return global_cutoff, per_package
+
+
+def clear_resolution_caches() -> None:
+    """
+    Drop memoised HTTP version results and the parsed ``uv.toml`` cache.
+
+    Intended for tests and for long-lived processes that need a fresh read of
+    ``~/.config/uv/uv.toml``.
+    """
+    _cache.clear()
+    _get_uv_config.cache_clear()
 
 
 async def get_latest_yarn_version(session: niquests.AsyncSession) -> str:  # pragma: no cover

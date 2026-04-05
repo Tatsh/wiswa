@@ -44,6 +44,7 @@ local utils = import 'utils.libsonnet';
       keyring: utils.latestPypiPackageVersionCaret('keyring'),
       lxml: utils.latestPypiPackageVersionCaret('lxml'),
       tomlkit: utils.latestPypiPackageVersionCaret('tomlkit'),
+      yaspin: utils.latestPypiPackageVersionCaret('yaspin'),
     },
     dev+: {
       'types-jsonnet': utils.latestPypiPackageVersionCaret('types-jsonnet'),
@@ -59,7 +60,7 @@ local utils = import 'utils.libsonnet';
       },
     },
     tool+: {
-      local extra_omit = ['typing.py'],
+      local extra_omit = ['typing.py', '**/*.j2'],
       coverage+: {
         report+: { omit+: extra_omit },
         run+: { omit+: extra_omit },

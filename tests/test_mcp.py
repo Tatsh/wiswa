@@ -7,6 +7,7 @@ import json
 import sys
 
 from wiswa.mcp import (
+    clear_resolved_defaults_cache,
     collect_paths,
     format_key,
     generate_override_snippet,
@@ -21,6 +22,8 @@ from wiswa.mcp import (
 import pytest
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from pytest_mock import MockerFixture
 
 MOCK_DEFAULTS: dict[str, Any] = {
@@ -51,7 +54,15 @@ MOCK_DEFAULTS: dict[str, Any] = {
 
 @pytest.fixture(autouse=True)
 def _mock_defaults(mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.mcp._get_defaults', new_callable=AsyncMock, return_value=MOCK_DEFAULTS)
+    mocker.patch('wiswa.mcp.resolve_defaults_only',
+                 new_callable=AsyncMock,
+                 return_value=MOCK_DEFAULTS)
+
+
+@pytest.fixture(autouse=True)
+def _clear_mcp_cache() -> Iterator[None]:
+    yield
+    clear_resolved_defaults_cache()
 
 
 class TestGetDefaultsReal:
@@ -59,9 +70,8 @@ class TestGetDefaultsReal:
     @pytest.mark.skipif(sys.version_info < (3, 12),
                         reason='importlib.resources.as_file() does not support directories')
     async def test_resolves_and_caches(mocker: MockerFixture) -> None:
-        import wiswa.mcp
         mocker.stopall()
-        wiswa.mcp._resolved_defaults = None  # noqa: SLF001
+        clear_resolved_defaults_cache()
         mock_session = AsyncMock()
         mock_session_cls = mocker.patch('wiswa.mcp.niquests.AsyncSession',
                                         return_value=mock_session)
@@ -70,19 +80,16 @@ class TestGetDefaultsReal:
         mock_resolve = mocker.patch('wiswa.mcp.resolve_defaults_only',
                                     new_callable=AsyncMock,
                                     return_value={'a': 1})
-        try:
-            result = await wiswa.mcp._get_defaults()  # noqa: SLF001
-            assert result == {'a': 1}
-            mock_session_cls.assert_called_once()
-            mock_resolve.assert_called_once()
-            call_kwargs = mock_resolve.call_args
-            assert call_kwargs[1].get('session', call_kwargs[0][2]) is mock_session
-            result2 = await wiswa.mcp._get_defaults()  # noqa: SLF001
-            assert result2 == {'a': 1}
-            assert mock_resolve.call_count == 1
-            assert mock_session_cls.call_count == 1
-        finally:
-            wiswa.mcp._resolved_defaults = None  # noqa: SLF001
+        result_json = await get_defaults()
+        assert json.loads(result_json) == {'a': 1}
+        mock_session_cls.assert_called_once()
+        mock_resolve.assert_called_once()
+        call_kwargs = mock_resolve.call_args
+        assert call_kwargs[1].get('session', call_kwargs[0][2]) is mock_session
+        result2_json = await get_defaults()
+        assert json.loads(result2_json) == {'a': 1}
+        assert mock_resolve.call_count == 1
+        assert mock_session_cls.call_count == 1
 
 
 class TestNavigate:

@@ -67,7 +67,6 @@
     },
     "gitignore": true,
     "globs": ["**/*.md", "**/*.mdc"],
-    "ignores": [".cursor/plans/**"],
     "noBanner": true,
     "showFound": true
   },

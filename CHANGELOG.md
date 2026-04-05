@@ -34,6 +34,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     `pylock.toml` filename).
   - `pylock*.toml` is now included in Prettier ignore patterns.
   - Backward-compatible alias `saves_requirements_txt` is preserved.
+- Wiswa CLI progress uses `yaspin` on stderr with weighted random cli-spinners (dots-style
+  animations are more likely than other styles), and shows a `Starting up.` message before
+  long-running work begins.
+- `clear_resolved_defaults_cache()` on `wiswa.mcp` and `clear_resolution_caches()` on
+  `wiswa.utils.versions` for tests and long-lived processes that need fresh Jsonnet defaults or
+  version-resolution caches.
+- `CachedAsyncSession.cache_directory` and `CachedAsyncSession.expire_after_total_seconds`
+  properties for cache introspection and testing.
 
 ### Deprecated
 
@@ -41,6 +49,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Coverage `omit` lists now include `**/*.j2` in this repository and in generated
+  `pyproject.toml` defaults so Jinja templates are not measured as Python.
 - Generated Sphinx `conf.py` now uses the standard-library `tomllib` module instead of `tomlkit`
   when the project's minimum Python version is 3.11 or higher. The `tomlkit` docs dependency is
   only included for projects that still support Python < 3.11.

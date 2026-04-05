@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from hashlib import sha256
 from time import time
 from typing import TYPE_CHECKING
 import json
@@ -15,6 +16,11 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
+def _cached_entry_path(cache_dir: Path, method: str, url: str) -> Path:
+    digest = sha256(f'{method} {url}'.encode()).hexdigest()
+    return cache_dir / digest
+
+
 def test_cached_session_returns_cached_async_session(mocker: MockerFixture) -> None:
     mocker.patch('wiswa.session.platformdirs.user_cache_path')
     session = cached_session()
@@ -25,14 +31,14 @@ def test_cached_session_expire_after_is_10_minutes(mocker: MockerFixture) -> Non
     mocker.patch('wiswa.session.platformdirs.user_cache_path')
     session = cached_session()
     assert isinstance(session, CachedAsyncSession)
-    assert session._expire_seconds == timedelta(minutes=10).total_seconds()  # noqa: SLF001
+    assert session.expire_after_total_seconds == timedelta(minutes=10).total_seconds()
 
 
 def test_cached_session_uses_user_cache_path(mocker: MockerFixture) -> None:
     mock_cache_path = mocker.patch('wiswa.session.platformdirs.user_cache_path')
     session = cached_session()
     assert isinstance(session, CachedAsyncSession)
-    assert session._cache_dir == mock_cache_path.return_value / 'wiswa/http'  # noqa: SLF001
+    assert session.cache_directory == mock_cache_path.return_value / 'wiswa/http'
 
 
 def test_cached_session_no_cache_returns_plain_session(mocker: MockerFixture) -> None:
@@ -45,40 +51,40 @@ def test_cached_session_custom_expire_after(mocker: MockerFixture) -> None:
     mocker.patch('wiswa.session.platformdirs.user_cache_path')
     session = cached_session(expire_after=timedelta(hours=1))
     assert isinstance(session, CachedAsyncSession)
-    assert session._expire_seconds == pytest.approx(3600.0)  # noqa: SLF001
+    assert session.expire_after_total_seconds == pytest.approx(3600.0)
 
 
 def test_cached_async_session_creates_cache_dir(tmp_path: Path) -> None:
     cache_dir = tmp_path / 'sub' / 'cache'
     session = CachedAsyncSession(cache_dir=cache_dir)
     assert cache_dir.is_dir()
-    assert session._cache_dir == cache_dir  # noqa: SLF001
+    assert session.cache_directory == cache_dir
 
 
 def test_cached_async_session_cache_key_deterministic(tmp_path: Path) -> None:
     session = CachedAsyncSession(cache_dir=tmp_path)
-    key1 = session._cache_key('GET', 'https://example.com')  # noqa: SLF001
-    key2 = session._cache_key('GET', 'https://example.com')  # noqa: SLF001
+    key1 = _cached_entry_path(session.cache_directory, 'GET', 'https://example.com')
+    key2 = _cached_entry_path(session.cache_directory, 'GET', 'https://example.com')
     assert key1 == key2
 
 
 def test_cached_async_session_cache_key_differs_by_method(tmp_path: Path) -> None:
     session = CachedAsyncSession(cache_dir=tmp_path)
-    get_key = session._cache_key('GET', 'https://example.com')  # noqa: SLF001
-    head_key = session._cache_key('HEAD', 'https://example.com')  # noqa: SLF001
+    get_key = _cached_entry_path(session.cache_directory, 'GET', 'https://example.com')
+    head_key = _cached_entry_path(session.cache_directory, 'HEAD', 'https://example.com')
     assert get_key != head_key
 
 
 def test_cached_async_session_cache_key_differs_by_url(tmp_path: Path) -> None:
     session = CachedAsyncSession(cache_dir=tmp_path)
-    key1 = session._cache_key('GET', 'https://a.com')  # noqa: SLF001
-    key2 = session._cache_key('GET', 'https://b.com')  # noqa: SLF001
+    key1 = _cached_entry_path(session.cache_directory, 'GET', 'https://a.com')
+    key2 = _cached_entry_path(session.cache_directory, 'GET', 'https://b.com')
     assert key1 != key2
 
 
 async def test_cached_async_session_cache_hit(tmp_path: Path, mocker: MockerFixture) -> None:
     session = CachedAsyncSession(cache_dir=tmp_path)
-    cache_path = session._cache_key('GET', 'https://example.com/data')  # noqa: SLF001
+    cache_path = _cached_entry_path(session.cache_directory, 'GET', 'https://example.com/data')
     cache_path.write_text(json.dumps({
         'ts': time(),
         'status_code': 200,
@@ -100,7 +106,7 @@ async def test_cached_async_session_cache_hit(tmp_path: Path, mocker: MockerFixt
 
 async def test_cached_async_session_cache_expired(tmp_path: Path, mocker: MockerFixture) -> None:
     session = CachedAsyncSession(cache_dir=tmp_path, expire_after=timedelta(seconds=0))
-    cache_path = session._cache_key('GET', 'https://example.com/old')  # noqa: SLF001
+    cache_path = _cached_entry_path(session.cache_directory, 'GET', 'https://example.com/old')
     cache_path.write_text(json.dumps({
         'ts': time() - 100,
         'status_code': 200,
@@ -123,7 +129,7 @@ async def test_cached_async_session_cache_expired(tmp_path: Path, mocker: Mocker
 
 async def test_cached_async_session_bypass_cache(tmp_path: Path, mocker: MockerFixture) -> None:
     session = CachedAsyncSession(cache_dir=tmp_path)
-    cache_path = session._cache_key('GET', 'https://example.com/bypass')  # noqa: SLF001
+    cache_path = _cached_entry_path(session.cache_directory, 'GET', 'https://example.com/bypass')
     cache_path.write_text(json.dumps({
         'ts': time(),
         'status_code': 200,
@@ -167,7 +173,7 @@ async def test_cached_async_session_cache_miss_stores(tmp_path: Path,
     mock_resp.encoding = 'utf-8'
     mocker.patch.object(niquests.AsyncSession, 'request', return_value=mock_resp)
     await session.request('GET', 'https://example.com/new')
-    cache_path = session._cache_key('GET', 'https://example.com/new')  # noqa: SLF001
+    cache_path = _cached_entry_path(session.cache_directory, 'GET', 'https://example.com/new')
     assert cache_path.exists()
     data = json.loads(cache_path.read_text(encoding='utf-8'))
     assert data['status_code'] == 200
@@ -176,7 +182,7 @@ async def test_cached_async_session_cache_miss_stores(tmp_path: Path,
 
 async def test_cached_async_session_corrupted_cache(tmp_path: Path, mocker: MockerFixture) -> None:
     session = CachedAsyncSession(cache_dir=tmp_path)
-    cache_path = session._cache_key('GET', 'https://example.com/bad')  # noqa: SLF001
+    cache_path = _cached_entry_path(session.cache_directory, 'GET', 'https://example.com/bad')
     cache_path.write_text('not json', encoding='utf-8')
     mock_resp = niquests.Response()
     mock_resp.status_code = 200
@@ -191,7 +197,8 @@ async def test_cached_async_session_corrupted_cache(tmp_path: Path, mocker: Mock
 async def test_cached_async_session_cache_missing_key(tmp_path: Path,
                                                       mocker: MockerFixture) -> None:
     session = CachedAsyncSession(cache_dir=tmp_path)
-    cache_path = session._cache_key('GET', 'https://example.com/missing-key')  # noqa: SLF001
+    cache_path = _cached_entry_path(session.cache_directory, 'GET',
+                                    'https://example.com/missing-key')
     cache_path.write_text(json.dumps({'ts': time()}), encoding='utf-8')
     mock_resp = niquests.Response()
     mock_resp.status_code = 200
@@ -213,7 +220,7 @@ async def test_cached_async_session_failed_response_not_cached(tmp_path: Path,
     mock_resp.encoding = 'utf-8'
     mocker.patch.object(niquests.AsyncSession, 'request', return_value=mock_resp)
     await session.request('GET', 'https://example.com/missing')
-    cache_path = session._cache_key('GET', 'https://example.com/missing')  # noqa: SLF001
+    cache_path = _cached_entry_path(session.cache_directory, 'GET', 'https://example.com/missing')
     assert not cache_path.exists()
 
 
@@ -228,14 +235,14 @@ async def test_cached_async_session_head_request_cached(tmp_path: Path,
     mock_resp.encoding = 'utf-8'
     mocker.patch.object(niquests.AsyncSession, 'request', return_value=mock_resp)
     await session.request('HEAD', 'https://example.com/head')
-    cache_path = session._cache_key('HEAD', 'https://example.com/head')  # noqa: SLF001
+    cache_path = _cached_entry_path(session.cache_directory, 'HEAD', 'https://example.com/head')
     assert cache_path.exists()
 
 
 async def test_cached_async_session_custom_expire_after_per_request(tmp_path: Path,
                                                                     mocker: MockerFixture) -> None:
     session = CachedAsyncSession(cache_dir=tmp_path, expire_after=timedelta(hours=1))
-    cache_path = session._cache_key('GET', 'https://example.com/ttl')  # noqa: SLF001
+    cache_path = _cached_entry_path(session.cache_directory, 'GET', 'https://example.com/ttl')
     cache_path.write_text(json.dumps({
         'ts': time() - 5,
         'status_code': 200,

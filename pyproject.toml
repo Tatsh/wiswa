@@ -60,6 +60,7 @@ dependencies = [
   "niquests>=3.18.2",
   "tomlkit>=0.14.0",
   "typing-extensions>=4.15.0",
+  "yaspin>=3.4.0",
 ]
 description = "A highly opinionated way to generate and maintain projects with Jsonnet."
 keywords = ["command line", "jsonnet", "project generator", "project management", "scaffolding"]
@@ -109,6 +110,7 @@ omit = [
   "tests/*/test_*.py",
   "tests/test_*.py",
   "typing.py",
+  "**/*.j2",
 ]
 show_missing = true
 
@@ -121,6 +123,7 @@ omit = [
   "tests/*/test_*.py",
   "tests/test_*.py",
   "typing.py",
+  "**/*.j2",
 ]
 
 [tool.doc8]

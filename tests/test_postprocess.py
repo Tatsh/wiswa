@@ -1277,6 +1277,47 @@ async def test_post_process_steps_poetry_export_extras(tmp_path: Path,
     assert '--extras=tests' in cmd
 
 
+async def test_post_process_steps_poetry_export_all_groups_empty_with(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_poetry_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast(
+        'Any',
+        _make_settings(
+            package_manager='poetry',
+            want_docs=False,
+            want_tests=False,
+            export_requirements=_export_settings(all_groups=True, no_dev=True),
+        ),
+    )
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands, tool='poetry')
+    assert cmd is not None
+    assert '--with=' not in cmd
+
+
+async def test_post_process_steps_poetry_export_only_dev(tmp_path: Path,
+                                                         monkeypatch: pytest.MonkeyPatch,
+                                                         mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_poetry_project(tmp_path)
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+    settings = cast(
+        'Any',
+        _make_settings(
+            package_manager='poetry',
+            export_requirements=_export_settings(only_dev=True),
+        ),
+    )
+    await post_process_steps(settings, on_command=commands.append)
+    cmd = _get_export_cmd(commands, tool='poetry')
+    assert cmd is not None
+    assert '--only=dev' in cmd
+
+
 async def test_post_process_steps_regenerate_yarn_lock_true(tmp_path: Path,
                                                             monkeypatch: pytest.MonkeyPatch,
                                                             mocker: MockerFixture) -> None:

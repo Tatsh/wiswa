@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
-import asyncio
 
 from click.testing import CliRunner
-from wiswa.main import _Spinner, main  # noqa: PLC2701
+from wiswa.main import main
 import niquests
 import pytest
 
@@ -15,40 +14,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from pytest_mock import MockerFixture
-
-
-async def test_spinner_disabled() -> None:
-    spin = _Spinner(enabled=False)
-    spin.update('test')
-    assert spin._task is None  # noqa: SLF001
-    await spin.stop()
-
-
-async def test_spinner_enabled_starts_task(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv('WISWA_PROGRESS', '1')
-    spin = _Spinner(enabled=True)
-    spin.update('working')
-    assert spin._task is not None  # noqa: SLF001
-    await asyncio.sleep(0.15)
-    await spin.stop()
-    assert spin._task is None  # noqa: SLF001
-
-
-async def test_spinner_update_does_not_create_duplicate_tasks(
-        monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv('WISWA_PROGRESS', '1')
-    spin = _Spinner(enabled=True)
-    spin.update('first')
-    task1 = spin._task  # noqa: SLF001
-    spin.update('second')
-    task2 = spin._task  # noqa: SLF001
-    assert task1 is task2
-    await spin.stop()
-
-
-async def test_spinner_stop_when_not_started() -> None:
-    spin = _Spinner(enabled=False)
-    await spin.stop()  # Should not raise
 
 
 @pytest.mark.parametrize(

@@ -13,6 +13,10 @@
 - All fixtures must be defined in the `tests/conftest.py` file.
 - Do not add docstrings to test functions or methods.
 - Mock external dependencies and IO operations in tests.
+- Prefer exercising the package under test through its public APIs. Do not import names beginning
+  with `_` from that package, and do not `mocker.patch` those names, except when patching a
+  third-party native binding that upstream exposes under a leading underscore (as many C extensions
+  do).
 - If a parameter must exist in a callback, use `_` as the identifier if it is not a keyword
   argument.
 - Use the `runner` fixture (type `CliRunner`) from `conftest.py` for testing Click commands.
