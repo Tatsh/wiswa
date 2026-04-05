@@ -24,7 +24,11 @@ __all__ = ('post_process_steps',)
 
 log = logging.getLogger(__name__)
 
-_LEGACY_WISWA_AI_PATHS: tuple[str, ...] = (
+_FORMAT_DEFAULT_FILENAMES = {
+    'cyclonedx1.5': 'cyclonedx.json',
+    'pylock.toml': 'pylock.toml',
+}
+_LEGACY_WISWA_AI_PATHS = (
     '.cursor/permissions.json.dist',
     '.cursor/rules/general.mdc',
     '.cursor/rules/json-yaml.mdc',
@@ -59,22 +63,16 @@ async def _subprocess_log_run(*args: Any,
     assert isinstance(args[0], Iterable)
     cmd = list(args[0])
     cmd_str = ' '.join(quote(x) for x in cmd)
-    log.debug('Running command: %s', cmd_str)
+    log.debug('Running command: `%s`', cmd_str)
     if on_command is not None:
         on_command(cmd_str)
     check = kwargs.pop('check', True)
     proc = await asyncio.create_subprocess_exec(*cmd, **kwargs)
     await proc.communicate()
     if check and proc.returncode != 0:
-        msg = f'Command {cmd!r} returned non-zero exit status {proc.returncode}.'
+        msg = f'Command `{cmd_str}` returned non-zero exit status {proc.returncode}.'
         raise RuntimeError(msg)
     return proc
-
-
-_FORMAT_DEFAULT_FILENAMES: dict[str, str] = {
-    'pylock.toml': 'pylock.toml',
-    'cyclonedx1.5': 'cyclonedx.json',
-}
 
 
 def _resolve_output_filename(er: ExportRequirements) -> str:
@@ -94,7 +92,8 @@ _UV_EXPORT_PRE_OUTPUT_BOOL_FLAGS: tuple[tuple[str, str, bool], ...] = (
     ('no_header', '--no-header', False),
     ('no_editable', '--no-editable', False),
 )
-"""Boolean keys mapped to ``uv export`` flags emitted before ``--output-file``.
+"""
+Boolean keys mapped to ``uv export`` flags emitted before ``--output-file``.
 
 :meta hide-value:
 """
@@ -106,7 +105,8 @@ _UV_EXPORT_POST_OUTPUT_BOOL_FLAGS: tuple[tuple[str, str, bool], ...] = (
     ('locked', '--locked', False),
     ('frozen', '--frozen', False),
 )
-"""Boolean keys mapped to ``uv export`` flags emitted after ``--output-file``.
+"""
+Boolean keys mapped to ``uv export`` flags emitted after ``--output-file``.
 
 :meta hide-value:
 """
@@ -120,7 +120,8 @@ _UV_EXPORT_PRE_OUTPUT_LIST_FLAGS: tuple[tuple[str, str], ...] = (
     ('no_group', '--no-group'),
     ('only_group', '--only-group'),
 )
-"""Sequence keys mapped to ``uv export`` flags emitted before ``--output-file``.
+"""
+Sequence keys mapped to ``uv export`` flags emitted before ``--output-file``.
 
 :meta hide-value:
 """
@@ -259,7 +260,7 @@ async def _post_process_steps_python(settings: Settings,
         ]
         group_args = tuple(f'--group={g}' for g in groups)
         await _subprocess_log_run(('uv', *quiet_arg, 'sync', *group_args), on_command=oc)
-        await _subprocess_log_run(('uv', *quiet_arg, 'run', 'ruff', 'check', '--fix'),
+        await _subprocess_log_run(('uv', *quiet_arg, 'run', 'ruff', *quiet_arg, 'check', '--fix'),
                                   on_command=oc,
                                   check=False)
         if settings['export_requirements'].get('enabled', False):
@@ -273,9 +274,10 @@ async def _post_process_steps_python(settings: Settings,
             on_command=oc)
         await _subprocess_log_run(('poetry', *quiet_arg, 'install', '--all-groups', '--all-extras'),
                                   on_command=oc)
-        await _subprocess_log_run(('poetry', *quiet_arg, 'run', 'ruff', 'check', '--fix'),
-                                  on_command=oc,
-                                  check=False)
+        await _subprocess_log_run(
+            ('poetry', *quiet_arg, 'run', 'ruff', *quiet_arg, 'check', '--fix'),
+            on_command=oc,
+            check=False)
         if settings['export_requirements'].get('enabled', False):
             await _subprocess_log_run(_build_poetry_export_args(settings, quiet_arg), on_command=oc)
 
@@ -528,13 +530,12 @@ async def post_process_steps(settings: Settings,
     on_command : Callable[[str], None] | None
         Called with the command string before each subprocess runs.
     """
-    oc = on_command
     await _remove_legacy_wiswa_ai_files()
     if settings['private']:
         await anyio.Path('.github/workflows/publish.yml').unlink(missing_ok=True)
     match settings['project_type']:
         case 'python':
-            await _post_process_steps_python(settings, debug=debug, on_command=oc)
+            await _post_process_steps_python(settings, debug=debug, on_command=on_command)
         case _:
             log.warning('No post-processing steps for project type `%s`.', settings['project_type'])
     await _check_readme_badges(settings)
@@ -547,5 +548,14 @@ async def post_process_steps(settings: Settings,
     if settings['regenerate_yarn_lock']:
         await anyio.Path('yarn.lock').unlink(missing_ok=True)
     yarn_env = os.environ | {'COREPACK_ENABLE_DOWNLOAD_PROMPT': '0'}
-    await _subprocess_log_run(('yarn',), on_command=oc, env=yarn_env)
-    await _subprocess_log_run(('yarn', 'format'), on_command=oc, check=False, env=yarn_env)
+    await _subprocess_log_run(('yarn',),
+                              on_command=on_command,
+                              env=yarn_env,
+                              stdout=asyncio.subprocess.PIPE,
+                              stderr=asyncio.subprocess.PIPE)
+    await _subprocess_log_run(('yarn', 'format'),
+                              on_command=on_command,
+                              check=False,
+                              env=yarn_env,
+                              stdout=asyncio.subprocess.PIPE,
+                              stderr=asyncio.subprocess.PIPE)

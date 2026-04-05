@@ -957,7 +957,7 @@ def test_main_quiet_flag(mocker: MockerFixture, tmp_path: Path) -> None:
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     result = runner.invoke(main, ['-q', str(file_path)], catch_exceptions=False)
     assert result.exit_code == 0
-    assert 'Done.' in result.output
+    assert 'Done.' not in result.output
 
 
 def test_main_has_legacy_poetry_deps_not_uv(mocker: MockerFixture, tmp_path: Path) -> None:

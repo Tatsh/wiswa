@@ -171,26 +171,21 @@ async def _main_async(
     try:
         async with cached_session(no_cache=no_cache,
                                   expire_after=timedelta(seconds=cache_time)) as session:
-            with (
-                    importlib.resources.as_file(
-                        importlib.resources.files('wiswa-jsonnet') / 'defaults.libsonnet') as
-                    jsonnet_defaults_file,
-                    importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path,
-            ):
+            with (importlib.resources.as_file(
+                    importlib.resources.files('wiswa-jsonnet') / 'defaults.libsonnet') as
+                  jsonnet_defaults_file,
+                  importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path):
                 lib_path = Path(jsonnet_defaults_file).parent
                 jpathdir = [str(lib_path)]
                 merged_settings, loaded = await evaluate_merged_settings(
-                    [*jpath, *jpathdir],
-                    lib_path,
-                    await anyio.Path(file).read_text(encoding='utf-8'),
-                    session,
-                )
+                    [*jpath, *jpathdir], lib_path, await
+                    anyio.Path(file).read_text(encoding='utf-8'), session)
                 if _has_legacy_poetry_deps(loaded):
                     log.warning(
                         'pyproject.tool.poetry.*.dependencies is deprecated. '
                         'Move dependencies to python_deps.main/dev/docs/tests in .wiswa.jsonnet.')
                 if not skip_jsonnet:
-                    spin_update('Generating project files (please be patient).')
+                    spin_update('Evaluating Jsonnet. Please be patient...')
                     await evaluate_jsonnet_project(lib_path,
                                                    jpathdir,
                                                    merged_settings,
@@ -216,7 +211,7 @@ async def _main_async(
                     await post_process_steps(
                         loaded,
                         debug=debug,
-                        on_command=lambda cmd: spin_update(f'Running {cmd}'),
+                        on_command=lambda cmd: spin_update(f'Running: {cmd}'),
                     )
                 if not skip_github:
                     spin_update('Configuring GitHub project settings.')
@@ -246,7 +241,8 @@ async def _main_async(
         raise click.Abort from e
     else:
         await spin_stop()
-        click.echo('Done.')
+        if not quiet:
+            click.echo('Done.')
     finally:
         await spin_stop()
 
@@ -274,7 +270,12 @@ async def _main_async(
     type=click.Path(file_okay=False, path_type=Path),
     help='Output directory for generated files.',
 )
-@click.option('-q', '--quiet', is_flag=True, help='Suppress the progress spinner.')
+@click.option(
+    '-q',
+    '--quiet',
+    is_flag=True,
+    help='Suppress the progress spinner and the final Done message.',
+)
 @click.option('--skip-github', is_flag=True, help='Skip configuring GitHub project.')
 @click.option('--skip-jsonnet', is_flag=True, help='Skip Jsonnet evaluation.')
 @click.option('--skip-postprocess', is_flag=True, help='Skip post-processing steps.')
