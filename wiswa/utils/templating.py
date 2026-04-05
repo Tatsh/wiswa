@@ -35,6 +35,28 @@ class _TemplateEnvTuple(NamedTuple):
     write_file: Callable[..., Awaitable[None]]
 
 
+async def _write_rendered_template(template: jinja2.Template,
+                                   output_file: Path | str,
+                                   *,
+                                   settings: Settings,
+                                   overwrite: bool = False) -> None:
+    """Render one template to disk, or remove the output if the render is empty."""
+    output_file = Path(output_file)
+    if not overwrite and await non_empty_file_exists(output_file):
+        log.debug('Skipping template `%s`.', output_file)
+        return
+    aio_output = anyio.Path(output_file)
+    await aio_output.parent.mkdir(parents=True, exist_ok=True)
+    content = await template.render_async({'settings': settings})
+    stripped = content.strip()
+    if not stripped:
+        log.debug('Removed empty template output `%s`.', output_file)
+        await aio_output.unlink(missing_ok=True)
+    else:
+        await aio_output.write_text(f'{stripped}\n')
+        log.debug('Wrote `%s`.', output_file)
+
+
 def _template_env(module_path: Path,
                   settings: Settings,
                   session: AsyncSession | None = None) -> _TemplateEnvTuple:
@@ -57,20 +79,10 @@ def _template_env(module_path: Path,
                          output_file: Path | str,
                          *,
                          overwrite: bool = False) -> None:
-        output_file = Path(output_file)
-        if not overwrite and await non_empty_file_exists(output_file):
-            log.debug('Skipping template `%s`.', output_file)
-            return
-        aio_output = anyio.Path(output_file)
-        await aio_output.parent.mkdir(parents=True, exist_ok=True)
-        content = await template.render_async({'settings': settings})
-        stripped = content.strip()
-        if not stripped:
-            await aio_output.unlink(missing_ok=True)
-            log.debug('Removed empty template output `%s`.', output_file)
-            return
-        await aio_output.write_text(f'{stripped}\n')
-        log.debug('Wrote `%s`.', output_file)
+        await _write_rendered_template(template,
+                                       output_file,
+                                       settings=settings,
+                                       overwrite=overwrite)
 
     return _TemplateEnvTuple(env, templates_dir, resolve_template, write_file)
 
@@ -232,10 +244,10 @@ async def _write_templated_files_claude(settings: Settings, templates_dir: Path,
                 continue
             agent_name = file_path.stem.removesuffix('.md')
             output = Path('.claude/agents') / file_path.stem
-            if (agent_name in _PYTHON_ONLY_AGENTS and settings['project_type'] != 'python'):
+            if agent_name in _PYTHON_ONLY_AGENTS and settings['project_type'] != 'python':
                 await anyio.Path(output).unlink(missing_ok=True)
-                continue
-            tasks.append(write_file(resolve_template(file_path), output, overwrite=True))
+            else:
+                tasks.append(write_file(resolve_template(file_path), output, overwrite=True))
     skills_aio = anyio.Path(templates_dir / 'claude/skills')
     if await skills_aio.is_dir():
         skill_subdirs: list[Path] = [

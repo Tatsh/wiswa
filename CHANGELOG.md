@@ -46,6 +46,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The Markdown Claude rule ships from `wiswa/templates/claude/rules/markdown.md.j2` instead of a
+  static file under `wiswa/static/claude/rules/`. The GitHub Pages (Jekyll) / Liquid bullet is
+  emitted only when `using_github` is true.
+- Template output uses a shared `_write_rendered_template` coroutine so empty renders delete the
+  target path consistently; Python-only Claude agent templates no longer use `continue` when
+  skipping non-Python projects.
 - Coverage `omit` lists now include `**/*.j2` in generated `pyproject.toml` defaults so Jinja
   templates are not measured as Python.
 - Generated Sphinx `conf.py` now uses the standard-library `tomllib` module instead of `tomlkit`

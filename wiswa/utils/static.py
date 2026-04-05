@@ -26,7 +26,7 @@ def _claude_rule_pairs(module_path: Path, project_type: str, *,
                        stubs_only: bool) -> list[tuple[Path, Path]]:
     base = module_path / 'static/claude/rules'
     pairs: list[tuple[Path, Path]] = [(Path(f'.claude/rules/{name}.md'), base / f'{name}.md')
-                                      for name in ('json-yaml', 'markdown', 'toml-ini')]
+                                      for name in ('json-yaml', 'toml-ini')]
     match project_type:
         case 'c++':
             pairs.append((Path('.claude/rules/cpp.md'), base / 'cpp.md'))

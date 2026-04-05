@@ -416,10 +416,27 @@ async def test_write_templated_files_claude_agents_wanted(tmp_path: Path,
     module_path = _copy_wiswa_package(tmp_path)
     out = await _run_write(monkeypatch, tmp_path, module_path, _make_settings(want_ai=True))
     assert (out / '.claude/rules/general.md').exists()
+    assert (out / '.claude/rules/markdown.md').exists()
+    markdown_rule = (out / '.claude/rules/markdown.md').read_text(encoding='utf-8')
+    assert 'GitHub Pages' not in markdown_rule
     assert (out / '.claude/agents/regen.md').exists()
     assert (out / '.claude/skills/ci/SKILL.md').exists()
     assert (out / 'CLAUDE.md').exists()
     assert (out / 'AGENTS.md').exists()
+
+
+async def test_write_templated_files_markdown_rule_includes_github_pages_when_using_github(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    module_path = _copy_wiswa_package(tmp_path)
+    out = await _run_write(
+        monkeypatch,
+        tmp_path,
+        module_path,
+        _make_settings(want_ai=True, using_github=True),
+    )
+    markdown_rule = (out / '.claude/rules/markdown.md').read_text(encoding='utf-8')
+    assert 'GitHub Pages' in markdown_rule
+    assert 'Jekyll' in markdown_rule
 
 
 async def test_write_templated_files_claude_skills_non_dir_entry(
