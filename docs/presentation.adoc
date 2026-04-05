@@ -136,7 +136,7 @@ a|
 
 === How It Works: Merge Defaults
 
-Merge with 400+ built-in defaults from `defaults.libsonnet` (and your own footnote:[Controlled by the `-u` flag -- shared personal preferences across all your projects.]).
+Merge with 400+ built-in defaults from `defaults.libsonnet` (and your own footnote:[Controlled by `uses_user_defaults` in `.wiswa.jsonnet` -- when true, merges shared personal `defaults.jsonnet` from the user config directory.]).
 
 [.big]
 `defaults.libsonnet` + `user defaults.jsonnet` + `.wiswa.jsonnet`
@@ -290,7 +290,7 @@ utils.latestYarnVersion()                      // "4.6.0"
 
 [%step]
 . Make changes to `.wiswa.jsonnet` (or re-run to pick up new defaults)
-. Run `wiswa` to regenerate all managed files (with `-u` to merge user defaults)
+. Run `wiswa` to regenerate all managed files (set `uses_user_defaults: true` to merge user-level `defaults.jsonnet`)
 . Post-processing locks dependencies and formats code
 . Review the `git diff`
 . Commit

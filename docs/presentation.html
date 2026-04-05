@@ -765,8 +765,9 @@ python_deps+: {
             </div>
             <div class="footnotes">
               <div class="footnote">
-                1. Controlled by the <code>-u</code> flag&#8201;&#8212;&#8201;shared personal
-                preferences across all your projects.
+                1. Controlled by <code>uses_user_defaults</code> in
+                <code>.wiswa.jsonnet</code>&#8201;&#8212;&#8201;when true, merges shared personal
+                <code>defaults.jsonnet</code> from the user config directory.
               </div>
             </div>
           </section>
@@ -1052,8 +1053,10 @@ utils.latestYarnVersion()                      // "4.6.0"</code></pre>
                 </li>
                 <li class="fragment">
                   <p>
-                    Run <code>wiswa</code> to regenerate all managed files (with <code>-u</code> to
-                    merge user defaults)
+                    Run <code>wiswa</code> to regenerate all managed files (<code
+                      >uses_user_defaults: true</code
+                    >
+                    merges user-level <code>defaults.jsonnet</code>)
                   </p>
                 </li>
                 <li class="fragment"><p>Post-processing locks dependencies and formats code</p></li>

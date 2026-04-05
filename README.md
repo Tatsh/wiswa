@@ -53,7 +53,6 @@ Options:
   --no-cache                      Disable HTTP response caching.
   -o, --output-dir DIRECTORY      Output directory for generated files.
   -q, --quiet                     Suppress the progress spinner.
-  -u, --user-defaults             Merge defaults.jsonnet from the user preferences directory.
   --skip-github                   Skip configuring GitHub project.
   --skip-jsonnet                  Skip Jsonnet evaluation.
   --skip-postprocess              Skip post-processing steps.

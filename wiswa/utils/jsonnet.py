@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 import json
 import logging
+import re
 import time
 
 import _jsonnet  # noqa: PLC2701
@@ -23,6 +24,11 @@ __all__ = ('evaluate_jsonnet_file', 'evaluate_jsonnet_project', 'evaluate_merged
            'resolve_defaults_only')
 
 log = logging.getLogger(__name__)
+
+# Whether to merge `defaults.jsonnet` from the user config dir is detected by scanning the project
+# snippet so Jsonnet runs once. Enabling user defaults only inside that file (without this literal
+# in `.wiswa.jsonnet`) is not supported.
+_PROJECT_USES_USER_DEFAULTS = re.compile(r'uses_user_defaults\s*:\s*true\b')
 
 
 def _make_native_callbacks(
@@ -145,11 +151,13 @@ async def evaluate_jsonnet_project(lib_path: Path,
 async def evaluate_merged_settings(jpathdir: Sequence[str],
                                    lib_path: Path,
                                    settings: str,
-                                   session: AsyncSession | None = None,
-                                   *,
-                                   user_defaults: bool = False) -> tuple[str, Settings]:
+                                   session: AsyncSession | None = None) -> tuple[str, Settings]:
     """
     Evaluate the merged settings using Jsonnet.
+
+    Merge order is built-in ``defaults.libsonnet``, user-level ``defaults.jsonnet``, then the
+    project file. The user-level file is read only when the project snippet contains the literal
+    pattern ``uses_user_defaults: true`` (regex, not a full Jsonnet parse).
 
     Parameters
     ----------
@@ -158,12 +166,9 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
     lib_path : Path
         The path to the Jsonnet library.
     settings : str
-        The settings to merge with defaults and user defaults.
+        The project settings snippet (for example the contents of ``.wiswa.jsonnet``).
     session : AsyncSession | None
         Optional HTTP session for callbacks.
-    user_defaults : bool
-        Whether to include user defaults from the user preferences directory. The defaults file must
-        exist when ``user_defaults`` is true.
 
     Returns
     -------
@@ -173,33 +178,40 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
     Raises
     ------
     FileNotFoundError
-        If ``user_defaults`` is true and the user defaults file does not exist.
+        If the project snippet matches ``uses_user_defaults: true`` and the user defaults file does
+        not exist.
     """
     user_defaults_jsonnet = platformdirs.user_config_path('wiswa') / 'defaults.jsonnet'
     native_callbacks = _make_native_callbacks(session)
     defaults_path = anyio.Path(
         lib_path.resolve(strict=True) / 'defaults.libsonnet')  # noqa: ASYNC240
     defaults_text = await defaults_path.read_text()
-    if user_defaults:
+    user_defaults_text = '{}'
+    if _PROJECT_USES_USER_DEFAULTS.search(settings):
         aio_user = anyio.Path(user_defaults_jsonnet)
         if not await aio_user.exists():
             raise FileNotFoundError(user_defaults_jsonnet)
         user_defaults_text = await aio_user.read_text(encoding='utf-8')
-    else:
-        user_defaults_text = '{}'
-    t0 = time.perf_counter()
-    s = await anyio.to_thread.run_sync(lambda: _jsonnet.evaluate_snippet(
-        '',
-        'function(defaults, user_defaults, settings) defaults + user_defaults + settings',
-        jpathdir=list(jpathdir),
-        native_callbacks=native_callbacks,
-        tla_codes={
-            'defaults': defaults_text,
-            'settings': settings,
-            'user_defaults': user_defaults_text,
-        }))
-    log.debug('Jsonnet evaluation (merged settings) took %.3fs.', time.perf_counter() - t0)
-    return s, (json.loads(s) | {'_readme_existed': await anyio.Path('README.md').exists()})
+
+    async def _eval_merge(user_overlay: str) -> str:
+        t0 = time.perf_counter()
+        result = await anyio.to_thread.run_sync(lambda: _jsonnet.evaluate_snippet(
+            '',
+            'function(defaults, user_defaults, settings) defaults + user_defaults + settings',
+            jpathdir=list(jpathdir),
+            native_callbacks=native_callbacks,
+            tla_codes={
+                'defaults': defaults_text,
+                'settings': settings,
+                'user_defaults': user_overlay,
+            }))
+        log.debug('Jsonnet evaluation (merged settings) took %.3fs.', time.perf_counter() - t0)
+        return result
+
+    merged_json = await _eval_merge(user_defaults_text)
+    merged_dict = json.loads(merged_json)
+    readme_existed = await anyio.Path('README.md').exists()
+    return merged_json, (merged_dict | {'_readme_existed': readme_existed})
 
 
 async def resolve_defaults_only(jpathdir: Sequence[str],

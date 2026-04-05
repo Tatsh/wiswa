@@ -119,7 +119,7 @@
     "gen-manpage": "uv run sphinx-build -T -E -b man -d docs/_build/doctrees -D language=en docs man",
     "mypy": "uv run mypy",
     "qa": "yarn mypy . && yarn ruff . && yarn check-spelling && yarn check-formatting",
-    "regen": "uv run wiswa -u",
+    "regen": "uv run wiswa",
     "ruff": "uv run ruff check",
     "ruff:fix": "uv run ruff check --fix",
     "test": "uv run pytest",

@@ -322,7 +322,12 @@ class Settings(TypedDict):
     want_ai: bool
     """If the project should include ``AGENTS.md``, ``CLAUDE.md``, and the ``.claude/`` tree."""
     uses_user_defaults: bool
-    """If the generated ``regen`` script should pass ``-u`` to merge user-level defaults."""
+    """
+    If user-level ``defaults.jsonnet`` is merged with project settings.
+
+    Wiswa detects this only from a literal ``uses_user_defaults: true`` in ``.wiswa.jsonnet``; the
+    flag cannot be enabled from user ``defaults.jsonnet`` alone.
+    """
     want_codeql: bool
     """If the project should include ``.github/workflows/codeql.yml``."""
     want_gpg: bool

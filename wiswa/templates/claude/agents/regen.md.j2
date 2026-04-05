@@ -23,48 +23,30 @@ and verify nothing is broken before committing.
    after.
 {% endif %}
 
-1. **Run Wiswa.** User-level `defaults.jsonnet` is merged only when you pass `-u` / `--user-defaults`.
+1. **Run Wiswa.** User-level `defaults.jsonnet` is merged when `uses_user_defaults` is `true` in
+   `.wiswa.jsonnet` (see Wiswa's built-in defaults for the fallback). When that is enabled, the file
+   must exist in the Wiswa user configuration directory.
 {# With trim_blocks on, keep `{% endif %}` on a separate line from shell text before a closing code fence. #}
 {% if settings.project_type == 'python' %}
+
    Prefer `yarn regen`; it is the usual way to invoke Wiswa in Python projects.
-   {% if settings.uses_user_defaults %}
-   The script passes `-u`, so user defaults are merged.
-   {% else %}
-   The script does not pass `-u`; add `-u` only if you need user defaults merged.
-   {% endif %}
 
    ```shell
    yarn regen
    ```
 
-   For debug logging, run `wiswa` directly with `-d`{% if settings.uses_user_defaults %} and `-u`{% endif %}:
+   For debug logging, run `wiswa` directly:
 
-{% if settings.uses_user_defaults %}
-   ```shell
-   wiswa -d -u
-   ```
-{% else %}
    ```shell
    wiswa -d
    ```
-{% endif %}
 {% else %}
+
    Pass `-d` for debug.
-   {% if settings.uses_user_defaults %}
-   Include `-u` so user defaults are merged.
-   {% else %}
-   Add `-u` only if you need user defaults merged.
-   {% endif %}
 
-{% if settings.uses_user_defaults %}
-   ```shell
-   wiswa -d -u
-   ```
-{% else %}
    ```shell
    wiswa -d
    ```
-{% endif %}
 {% endif %}
 
 1. **Lock dependencies.** If `uv.lock` exists, run `uv lock`. If `poetry.lock` exists, run

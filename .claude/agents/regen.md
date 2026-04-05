@@ -21,18 +21,20 @@ and verify nothing is broken before committing.
    running Wiswa. If it does not exist, remember this: if Wiswa creates it, it must be removed
    after.
 
-1. **Run Wiswa.** User-level `defaults.jsonnet` is merged only when you pass `-u` / `--user-defaults`.
+1. **Run Wiswa.** User-level `defaults.jsonnet` is merged when `uses_user_defaults` is `true` in
+   `.wiswa.jsonnet` (see Wiswa's built-in defaults for the fallback). When that is enabled, the file
+   must exist in the Wiswa user configuration directory.
+
    Prefer `yarn regen`; it is the usual way to invoke Wiswa in Python projects.
-   The script passes `-u`, so user defaults are merged.
 
    ```shell
    yarn regen
    ```
 
-   For debug logging, run `wiswa` directly with `-d` and `-u`:
+   For debug logging, run `wiswa` directly:
 
    ```shell
-   wiswa -d -u
+   wiswa -d
    ```
 
 1. **Lock dependencies.** If `uv.lock` exists, run `uv lock`. If `poetry.lock` exists, run

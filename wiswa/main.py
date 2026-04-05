@@ -134,7 +134,6 @@ async def _main_async(
     skip_static: bool = False,
     skip_templates: bool = False,
     skip_yarn: bool = False,
-    user_defaults: bool = False,
 ) -> None:
     setup_logging(
         debug=debug,
@@ -185,7 +184,6 @@ async def _main_async(
                     lib_path,
                     await anyio.Path(file).read_text(encoding='utf-8'),
                     session,
-                    user_defaults=user_defaults,
                 )
                 if _has_legacy_poetry_deps(loaded):
                     log.warning(
@@ -277,12 +275,6 @@ async def _main_async(
     help='Output directory for generated files.',
 )
 @click.option('-q', '--quiet', is_flag=True, help='Suppress the progress spinner.')
-@click.option(
-    '-u',
-    '--user-defaults',
-    is_flag=True,
-    help='Merge defaults.jsonnet from the user preferences directory.',
-)
 @click.option('--skip-github', is_flag=True, help='Skip configuring GitHub project.')
 @click.option('--skip-jsonnet', is_flag=True, help='Skip Jsonnet evaluation.')
 @click.option('--skip-postprocess', is_flag=True, help='Skip post-processing steps.')
@@ -309,7 +301,6 @@ def main(
     skip_static: bool = False,
     skip_templates: bool = False,
     skip_yarn: bool = False,
-    user_defaults: bool = False,
 ) -> None:
     """Entry point for the Wiswa CLI."""
     async def _run() -> None:
@@ -327,7 +318,6 @@ def main(
             skip_static=skip_static,
             skip_templates=skip_templates,
             skip_yarn=skip_yarn,
-            user_defaults=user_defaults,
         )
 
     anyio.run(_run)

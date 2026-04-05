@@ -408,7 +408,9 @@ local utils = import 'utils.libsonnet';
    */
   want_ai: true,
   /**
-   * @brief If the generated ``yarn regen`` script should pass ``-u`` so user defaults are merged.
+   * @brief If user-level ``defaults.jsonnet`` is merged with project settings.
+   * @details Wiswa reads a ``uses_user_defaults: true`` literal only from ``.wiswa.jsonnet`` to
+   *     enable merging; the flag cannot be enabled from user ``defaults.jsonnet`` alone.
    * @var boolean
    */
   uses_user_defaults: false,

@@ -46,6 +46,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Removed `-u` / `--user-defaults` from the Wiswa CLI. User-level `defaults.jsonnet` is merged only
+  when `.wiswa.jsonnet` contains the literal `uses_user_defaults: true` (regex scan, then a single
+  Jsonnet evaluation). Enabling that behaviour only inside user `defaults.jsonnet`, without the
+  literal in the project file, is not supported. The `yarn regen` script always invokes `wiswa`
+  without extra flags for this behaviour.
 - The Markdown Claude rule ships from `wiswa/templates/claude/rules/markdown.md.j2` instead of a
   static file under `wiswa/static/claude/rules/`. The GitHub Pages (Jekyll) / Liquid bullet is
   emitted only when `using_github` is true.
