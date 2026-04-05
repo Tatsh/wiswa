@@ -240,6 +240,9 @@ max-statements = 100
 default-groups = "all"
 exclude-newer = "1 week"
 
+[tool.uv.exclude-newer-package]
+qh3 = false
+
 [tool.yapf]
 align_closing_bracket_with_visual_indent = true
 allow_multiline_dictionary_keys = false
