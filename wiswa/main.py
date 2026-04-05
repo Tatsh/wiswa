@@ -167,7 +167,7 @@ async def _main_async(
         await asyncio.to_thread(progress_spinner.stop)
         progress_spinner = None
 
-    spin_update('Starting up.')
+    spin_update('Starting up...')
     try:
         async with cached_session(no_cache=no_cache,
                                   expire_after=timedelta(seconds=cache_time)) as session:
@@ -192,29 +192,29 @@ async def _main_async(
                                                    session,
                                                    output_dir=output_dir)
                 if not skip_templates:
-                    spin_update('Writing templated files.')
+                    spin_update('Writing templated files...')
                     await write_templated_files(module_path, loaded, session)
                 if not skip_yarn:
-                    spin_update('Downloading Yarn.')
+                    spin_update('Downloading Yarn...')
                     await asyncio.gather(
                         download_yarn(session, loaded['yarn_version']),
                         download_yarn_plugins(session),
                     )
                 if not skip_static:
-                    spin_update('Copying static files.')
+                    spin_update('Copying static files...')
                     copy_tasks: list[Awaitable[None]] = [copy_static_files(loaded, module_path)]
                     if loaded['project_type'] == 'python' and not loaded['stubs_only']:
                         copy_tasks.append(create_py_typed_files(loaded))
                     await asyncio.gather(*copy_tasks)
                 if not skip_postprocess:
-                    spin_update('Post-processing.')
+                    spin_update('Post-processing...')
                     await post_process_steps(
                         loaded,
                         debug=debug,
-                        on_command=lambda cmd: spin_update(f'Running: {cmd}'),
+                        on_command=lambda cmd: spin_update(f'Running `{cmd}` ...'),
                     )
                 if not skip_github:
-                    spin_update('Configuring GitHub project settings.')
+                    spin_update('Configuring GitHub project settings...')
                     await setup_github_project(session, loaded)
     except niquests.HTTPError as e:
         await spin_stop()

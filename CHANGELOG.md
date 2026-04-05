@@ -46,11 +46,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- CLI progress labels end with ellipses, and post-processing subprocess hints wrap the shell command
+  in backticks with a trailing ellipsis.
 - `--quiet` (`-q`) now suppresses the final `Done.` line as well as the progress spinner; `--help`
-  and the man page describe this behaviour. Spinner strings during Jsonnet and post-processing were
-  tightened, subprocess updates use a `Running:` prefix, post-processing passes `--quiet` through to
-  Ruff when not in debug mode, Yarn install and format capture subprocess stdout/stderr, and failed
-  command errors use the shell command string.
+  and the man page describe this behaviour. Post-processing passes `--quiet` through to Ruff when
+  not in debug mode, Yarn install and format capture subprocess stdout/stderr, and failed command
+  errors use the shell command string.
 - Removed `-u` / `--user-defaults` from the Wiswa CLI. User-level `defaults.jsonnet` is merged only
   when `.wiswa.jsonnet` contains the literal `uses_user_defaults: true` (regex scan, then a single
   Jsonnet evaluation). Enabling that behaviour only inside user `defaults.jsonnet`, without the
