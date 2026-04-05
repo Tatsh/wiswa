@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock
 import json
-import sys
 
 from wiswa.mcp import (
     clear_resolved_defaults_cache,
@@ -67,8 +66,6 @@ def _clear_mcp_cache() -> Iterator[None]:
 
 class TestGetDefaultsReal:
     @staticmethod
-    @pytest.mark.skipif(sys.version_info < (3, 12),
-                        reason='importlib.resources.as_file() does not support directories')
     async def test_resolves_and_caches(mocker: MockerFixture) -> None:
         mocker.stopall()
         clear_resolved_defaults_cache()

@@ -1,6 +1,7 @@
 """FastMCP server for Wiswa settings."""
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 import importlib.resources
 import json
@@ -22,14 +23,16 @@ _IDENT_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
 async def _get_defaults() -> dict[str, Any]:
     global _resolved_defaults  # noqa: PLW0603
     if _resolved_defaults is None:
-        with importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as lib_path:
+        marker = importlib.resources.files('wiswa-jsonnet') / 'defaults.libsonnet'
+        with importlib.resources.as_file(marker) as defaults_file:
+            lib_path = Path(defaults_file).parent
             async with niquests.AsyncSession() as session:
                 _resolved_defaults = await resolve_defaults_only([str(lib_path)], lib_path, session)
     return _resolved_defaults
 
 
 def clear_resolved_defaults_cache() -> None:
-    """Forget lazily loaded Jsonnet defaults (for tests and dev server reload)."""
+    """Forget lazily loaded Jsonnet defaults (for tests and development server reload)."""
     global _resolved_defaults  # noqa: PLW0603
     _resolved_defaults = None
 

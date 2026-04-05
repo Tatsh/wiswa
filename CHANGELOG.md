@@ -118,6 +118,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `get_npm_latest_package_version` now filters out unpublished npm versions (versions present in the
   registry `time` map but absent from the `versions` map), fixing incorrect version resolution for
   packages with unpublished versions such as `pyright-to-gitlab-ci`.
+- Bundled Jsonnet defaults failed to load on Python 3.10 and 3.11 in the CLI and MCP server when
+  `importlib.resources.as_file()` was used on the package directory (multiplexed path); resolution
+  now anchors on `defaults.libsonnet` and uses its parent as the library path.
 
 ## [0.1.0] - 2026-03-27
 

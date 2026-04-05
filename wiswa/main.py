@@ -45,7 +45,8 @@ __all__ = ('main',)
 
 log = logging.getLogger(__name__)
 
-# Each dots* name is repeated this many times in the draw pool so they beat any single other.
+# Each dots* spinner name is repeated this many times in the draw pool, so those names beat
+# any other single spinner.
 _DOT_FAMILY_WEIGHT = 4
 _DOT_SPINNER_NAMES = (
     'dots',
@@ -172,10 +173,12 @@ async def _main_async(
         async with cached_session(no_cache=no_cache,
                                   expire_after=timedelta(seconds=cache_time)) as session:
             with (
-                    importlib.resources.as_file(importlib.resources.files('wiswa-jsonnet')) as
-                    lib_path,
+                    importlib.resources.as_file(
+                        importlib.resources.files('wiswa-jsonnet') / 'defaults.libsonnet') as
+                    jsonnet_defaults_file,
                     importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path,
             ):
+                lib_path = Path(jsonnet_defaults_file).parent
                 jpathdir = [str(lib_path)]
                 merged_settings, loaded = await evaluate_merged_settings(
                     [*jpath, *jpathdir],

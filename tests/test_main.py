@@ -69,7 +69,7 @@ def test_main_basic_invocation(args: list[str], mocker: MockerFixture, tmp_path:
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     result = runner.invoke(main, [*args, str(file_path)])
     assert result.exit_code == 0
@@ -195,7 +195,7 @@ def test_main_skip_flags(skip_flag: str, func_name: str, mocker: MockerFixture,
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     args = [skip_flag, str(file_path)]
     result = runner.invoke(main, args, catch_exceptions=False)
@@ -252,7 +252,7 @@ def test_main_stubs_only_skips_create_py_typed_files(mocker: MockerFixture, tmp_
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     result = runner.invoke(main, [str(file_path)], catch_exceptions=False)
     assert result.exit_code == 0
@@ -304,7 +304,7 @@ def test_main_jpath_option_passed(mocker: MockerFixture, tmp_path: Path) -> None
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     jpath1 = str(tmp_path / 'lib1')
     jpath2 = str(tmp_path / 'lib2')
@@ -377,7 +377,7 @@ def test_main_user_defaults_option_passed(
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     result = runner.invoke(main, [*extra_args, str(file_path)], catch_exceptions=False)
     assert result.exit_code == 0
@@ -444,7 +444,7 @@ def _setup_main_mocks(mocker: MockerFixture, tmp_path: Path,
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     return file_path, DummyContextManager
 
@@ -574,7 +574,7 @@ def test_main_legacy_poetry_deps_warning(mocker: MockerFixture, tmp_path: Path) 
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     result = runner.invoke(main, [str(file_path)], catch_exceptions=False)
     assert result.exit_code == 0
@@ -645,7 +645,7 @@ def test_main_legacy_poetry_group_deps_warning(mocker: MockerFixture, tmp_path: 
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     result = runner.invoke(main, [str(file_path)], catch_exceptions=False)
     assert result.exit_code == 0
@@ -707,7 +707,7 @@ def test_main_no_legacy_deps_no_warning(mocker: MockerFixture, tmp_path: Path) -
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     result = runner.invoke(main, [str(file_path)], catch_exceptions=False)
     assert result.exit_code == 0
@@ -795,7 +795,7 @@ def test_main_new_skip_flags(skip_flag: str, func_name: str, mocker: MockerFixtu
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     result = runner.invoke(main, [skip_flag, str(file_path)], catch_exceptions=False)
     assert result.exit_code == 0
@@ -853,7 +853,7 @@ def test_main_no_cache_flag(mocker: MockerFixture, tmp_path: Path) -> None:
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     result = runner.invoke(main, ['--no-cache', str(file_path)], catch_exceptions=False)
     assert result.exit_code == 0
@@ -908,7 +908,7 @@ def test_main_cache_time_option(mocker: MockerFixture, tmp_path: Path) -> None:
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     result = runner.invoke(main, ['--cache-time', '120', str(file_path)], catch_exceptions=False)
     assert result.exit_code == 0
@@ -965,7 +965,7 @@ def test_main_output_dir_option(mocker: MockerFixture, tmp_path: Path) -> None:
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     result = runner.invoke(main, ['-o', str(output_dir), str(file_path)], catch_exceptions=False)
     assert result.exit_code == 0
@@ -1018,7 +1018,7 @@ def test_main_quiet_flag(mocker: MockerFixture, tmp_path: Path) -> None:
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     result = runner.invoke(main, ['-q', str(file_path)], catch_exceptions=False)
     assert result.exit_code == 0
@@ -1072,7 +1072,7 @@ def test_main_has_legacy_poetry_deps_not_uv(mocker: MockerFixture, tmp_path: Pat
         ) -> None:
             return None
 
-    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
     mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
     result = runner.invoke(main, [str(file_path)], catch_exceptions=False)
     assert result.exit_code == 0
