@@ -115,8 +115,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   now anchors on `defaults.libsonnet` and uses its parent as the library path.
 - PyInstaller workflow passes `--collect-data yaspin` so frozen binaries bundle `yaspin` package
   data (for example `spinners.json`).
-- Regen agent template avoids inline `{% endif %}` immediately before Markdown code fences when
-  Jinja uses `trim_blocks`, fixing broken shell blocks after regen.
+- Regen agent template splits Jinja branches so a closing `endif` directive is not emitted
+  immediately before Markdown code fences when `trim_blocks` is enabled, fixing broken shell blocks
+  after regen.
 
 ## [0.1.0] - 2026-03-27
 
