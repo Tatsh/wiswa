@@ -25,6 +25,7 @@ buianhthang
 buildsystems
 buymeacoffee
 bytearray
+caplog
 cashapp
 cashtag
 cdrommsf
@@ -106,6 +107,7 @@ hostux
 hoverxref
 htmlcov
 idtvuccnmtl
+intdays
 intellicode
 internalerror
 intersphinx
@@ -272,6 +274,7 @@ xcrun
 yapf
 yapfignore
 yarnrc
+yaspin
 zainchen
 zengxingxin
 zeshuaro
