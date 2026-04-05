@@ -402,11 +402,17 @@ local utils = import 'utils.libsonnet';
   stubs_only: false,
   /** @brief If the project should have a `CITATION.cff` file. */
   want_cff: true,
-  /** @brief If the project should include `.claude/settings.local.json.dist`. */
-  want_claude: true,
-  /** @brief If the project should include `.claude/agents/` and related files (requires want_claude). */
-  want_claude_agents: self.want_claude,
-  /** @brief JSON object written to `.claude/settings.local.json.dist` when `want_claude` is true. */
+  /**
+   * @brief If the project should include ``AGENTS.md``, ``CLAUDE.md``, and the ``.claude/`` tree.
+   * @var boolean
+   */
+  want_ai: true,
+  /**
+   * @brief If the generated ``yarn regen`` script should pass ``-u`` so user defaults are merged.
+   * @var boolean
+   */
+  uses_user_defaults: false,
+  /** @brief JSON object written to ``.claude/settings.local.json.dist`` when ``want_ai`` is true. */
   claude_settings_local: {
     /** @brief Permissions dictionary. */
     permissions: {
@@ -516,10 +522,6 @@ local utils = import 'utils.libsonnet';
    * @var boolean
    */
   want_codeql: !self.stubs_only && self.using_github,
-  /** @brief If the project should include `.github/instructions` dir and files. */
-  want_copilot: true,
-  /** @brief If the project should include `.cursor` dir and files. */
-  want_cursor: true,
   /** @brief If Git commits and tags should be GPG-signed. */
   want_gpg: true,
   /** @brief If the project should will generate documentation. */
@@ -915,7 +917,7 @@ local utils = import 'utils.libsonnet';
     '/CMakeUserPresets.json',
     '/vcpkg_installed/',
   ] else [],
-  local claude_ignore = if self.want_claude then [
+  local claude_ignore = if self.want_ai then [
     '/.claude/settings.json',
     '/.claude/settings.local.json',
   ] else [],

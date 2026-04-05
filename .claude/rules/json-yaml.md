@@ -1,9 +1,3 @@
----
-description: JSON and YAML guidelines
-globs: '**/*.cff, **/*.json, **/*.yaml, **/*.yml, **/.clang-format'
-alwaysApply: false
----
-
 # JSON and YAML
 
 - By default, output should be recursively sorted by key.

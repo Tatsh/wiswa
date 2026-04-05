@@ -5,7 +5,7 @@ Fixes issues reported by markdownlint-cli2 in Markdown and MDC files.
 ## Role
 
 You fix Markdown linting errors. Follow all conventions in
-`.github/instructions/markdown.instructions.md`.
+`.claude/rules/markdown.md`.
 
 ## Configuration
 

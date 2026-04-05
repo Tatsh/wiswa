@@ -1,23 +1,27 @@
 wiswa
 =====
 
-.. include:: badges.rst
+.. only:: html
+
+   .. include:: badges.rst
+
+.. click:: wiswa.main:main
+   :prog: wiswa
+   :nested: full
 
 .. toctree::
    :hidden:
 
-   binary-signing
    mcp-server
-   library/index
-
-Commands
---------
-
-.. click:: wiswa.main:main
-  :prog: wiswa
-  :nested: full
+   binary-signing
 
 .. only:: html
+
+   .. toctree::
+      :hidden:
+
+      library/index
+
 
    Indices and tables
    ==================

@@ -45,15 +45,22 @@ Usage: wiswa [OPTIONS] [FILE]
   Entry point for the Wiswa CLI.
 
 Options:
-  -d, --debug          Enable debug output.
-  -J, --jpath TEXT     Add a directory to the Jsonnet search path (only used
-                       when evaluating settings).
-  -u, --user-defaults  Use defaults.jsonnet file in user preferences
-                       directory.
-  --skip-github        Skip configuring GitHub project.
-  --skip-jsonnet       Skip Jsonnet evaluation.
-  --skip-templates     Skip Jinja2 template evaluation.
-  -h, --help           Show this message and exit.
+  --cache-time INTEGER            Cache expiry time in seconds.  [default:
+                                  600]
+  -d, --debug                     Enable debug output.
+  -J, --jpath TEXT                Add a directory to the Jsonnet search path
+                                  (only used when evaluating settings).
+  --no-cache                      Disable HTTP response caching.
+  -o, --output-dir DIRECTORY      Output directory for generated files.
+  -q, --quiet                     Suppress the progress spinner.
+  -u, --user-defaults             Merge defaults.jsonnet from the user preferences directory.
+  --skip-github                   Skip configuring GitHub project.
+  --skip-jsonnet                  Skip Jsonnet evaluation.
+  --skip-postprocess              Skip post-processing steps.
+  --skip-static                   Skip copying static files.
+  --skip-templates                Skip Jinja2 template evaluation.
+  --skip-yarn                     Skip Yarn download.
+  -h, --help                      Show this message and exit.
 ```
 
 ## MCP Server

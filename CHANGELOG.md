@@ -89,6 +89,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   projects when consolidating on the new layout.
 - `evaluate_merged_settings` now requires `-u` / `--user-defaults` on the `wiswa` CLI to load user
   Jsonnet defaults (defaults are off without the flag).
+- Jsonnet defaults replace `want_claude` and `want_claude_agents` with `want_ai`, which gates
+  `AGENTS.md`, `CLAUDE.md`, and the `.claude/` tree. Removed `want_copilot` and `want_cursor`; editor
+  artefacts now follow the consolidated template layout.
+- Added Jsonnet `uses_user_defaults` (default `false`) so generated `yarn regen` can opt into
+  passing `-u` / `--user-defaults`.
 
 ### Fixed
 

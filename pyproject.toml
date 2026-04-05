@@ -7,7 +7,7 @@ dev = [
   "commitizen>=4.13.9",
   "cz-path>=0.0.6",
   "mypy>=1.19.1",
-  "ruff>=0.15.7",
+  "ruff>=0.15.8",
   "types-jsonnet>=0.21.0.20250708",
   "yapf>=0.43.0",
 ]
@@ -153,7 +153,8 @@ reportMissingModuleSource = "error"
 reportPropertyTypeMismatch = "error"
 reportUnnecessaryTypeIgnoreComment = "none"
 typeCheckingMode = "off"
-useLibraryCodeForTypes = false
+venv = ".venv"
+venvPath = "."
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -235,11 +236,6 @@ max-statements = 100
 [tool.uv]
 default-groups = "all"
 exclude-newer = "1 week"
-
-[tool.uv.exclude-newer-package]
-fastmcp = false
-pygments = false
-qh3 = false
 
 [tool.yapf]
 align_closing_bracket_with_visual_indent = true

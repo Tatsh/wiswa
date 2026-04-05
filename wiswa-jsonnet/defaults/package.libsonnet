@@ -45,7 +45,7 @@ local utils = import 'utils.libsonnet';
     format: 'prettier -w . && %s && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix' % fmt_apply,
     mypy: '%s mypy' % run_cmd,
     qa: 'yarn mypy . && yarn ruff . && yarn check-spelling && yarn check-formatting',
-    regen: '%s wiswa' % run_cmd,
+    regen: (if settings.uses_user_defaults then '%s wiswa -u' else '%s wiswa') % run_cmd,
     ruff: '%s ruff check' % run_cmd,
     'ruff:fix': '%s ruff check --fix' % run_cmd,
   } + if settings.want_tests then python_test_scripts(
@@ -182,10 +182,7 @@ local utils = import 'utils.libsonnet';
           },
         },
         {
-          files: [
-            '*.md',
-            '*.mdc',
-          ],
+          files: ['*.md'],
           options: {
             parser: 'markdown',
           },

@@ -1,9 +1,3 @@
----
-description: Markdown guidelines
-globs: '**/*.md'
-alwaysApply: false
----
-
 # Markdown guidelines
 
 - `MD033`: `<kbd>` tags are allowed. Other raw HTML is not.

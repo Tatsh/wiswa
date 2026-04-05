@@ -9,7 +9,7 @@ and verify nothing is broken before committing.
 
 ## Prerequisites
 
-- Wiswa must be installed. Use `~/dev/wiswa/.venv/bin/wiswa` or the system-installed `wiswa`.
+- Wiswa must be installed and available as `wiswa` on the PATH.
 - `.wiswa.jsonnet` must exist in the project root.
 - `.wiswa.jsonnet` must contain a `copilot:` or `copilot+:` key, or `stubs_only: true`.
 
@@ -23,16 +23,23 @@ and verify nothing is broken before committing.
    and settings.
 
 1. **Record pre-existing `tests/test_main.py`.** Check if `tests/test_main.py` exists before
-   running Wiswa. If it does not exist, remember this — if Wiswa creates it, it must be removed
+   running Wiswa. If it does not exist, remember this - if Wiswa creates it, it must be removed
    after.
 
-1. **Run Wiswa.** Execute:
+1. **Run Wiswa.** User-level `defaults.jsonnet` is merged only when you pass `-u` / `--user-defaults`.
+   Prefer `yarn regen`; it is the usual way to invoke Wiswa in Python projects.
+   The script passes `-u`, so user defaults are merged.
 
    ```shell
-   ~/dev/wiswa/.venv/bin/wiswa -du
+   yarn regen
    ```
 
-   The `-d` flag enables debug output and `-u` uses user defaults.
+   For debug logging, run `wiswa` directly with `-d` and `-u`:
+
+   ````shell
+   wiswa -d -u   ```
+
+   ````
 
 1. **Lock dependencies.** If `uv.lock` exists, run `uv lock`. If `poetry.lock` exists, run
    `poetry lock`.

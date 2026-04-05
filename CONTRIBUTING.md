@@ -99,8 +99,8 @@ locally or allowing Dependabot to do them.
    commits.
 4. Submit a pull request with a clear description of your changes.
 
-[Markdown instructions]: .github/instructions/markdown.instructions.md
-[Python instructions]: .github/instructions/python.instructions.md
-[Python tests instructions]: .github/instructions/python-tests.instructions.md
-[JSON/YAML guidelines]: .github/instructions/json-yaml.instructions.md
-[TOML/INI guidelines]: .github/instructions/toml-ini.instructions.md
+[Markdown instructions]: .claude/rules/markdown.md
+[Python instructions]: .claude/rules/python.md
+[Python tests instructions]: .claude/rules/python-tests.md
+[JSON/YAML guidelines]: .claude/rules/json-yaml.md
+[TOML/INI guidelines]: .claude/rules/toml-ini.md

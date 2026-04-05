@@ -2,6 +2,7 @@ local utils = import 'utils.libsonnet';
 
 {
   local top = self,
+  uses_user_defaults: true,
   want_djlint: true,
   want_main: true,
   project_name: 'wiswa',

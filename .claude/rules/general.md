@@ -1,8 +1,4 @@
-# Copilot Instructions
-
-Wiswa is a tool to generate and manage projects.
-
-## General
+# General guidelines
 
 - Do not explain project structure or conventions in comments or docstrings.
 - Use 2 spaces for indentation except in Python.
@@ -12,7 +8,7 @@ Wiswa is a tool to generate and manage projects.
 - Use UTF-8 encoding for all files.
 - Use spaces instead of tabs for indentation.
 - Use British spelling in comments and docstrings.
-- Use American spelling for all identifiers and string literals, except in docstrings.
+- Use American spelling for all identifiers and string literals.
 - Never mention the spelling or other project conventions in comments or docstrings.
 - Use full sentences in comments and docstrings.
 - Use the Oxford comma in lists.

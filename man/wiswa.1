@@ -28,9 +28,148 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "WISWA" "1" "Mar 27, 2026" "0.1.0" "wiswa"
+.TH "WISWA" "1" "Apr 05, 2026" "0.1.0" "wiswa"
 .SH NAME
 wiswa \- wiswa v0.1.0
+.SH WISWA
+.sp
+Entry point for the Wiswa CLI.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+wiswa [OPTIONS] [FILE]
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-cache\-time <cache_time>
+Cache expiry time in seconds.
+.INDENT 7.0
+.TP
+.B Default
+\fB600\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-J, \-\-jpath <jpath>
+Add a directory to the Jsonnet search path (only used when evaluating settings).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-cache
+Disable HTTP response caching.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-o, \-\-output\-dir <output_dir>
+Output directory for generated files.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-q, \-\-quiet
+Suppress the progress spinner.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-u, \-\-user\-defaults
+Merge defaults.jsonnet from the user preferences directory.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-skip\-github
+Skip configuring GitHub project.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-skip\-jsonnet
+Skip Jsonnet evaluation.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-skip\-postprocess
+Skip post\-processing steps.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-skip\-static
+Skip copying static files.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-skip\-templates
+Skip Jinja2 template evaluation.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-skip\-yarn
+Skip Yarn download.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Optional argument
+.UNINDENT
+.SH MCP SERVER
+.sp
+Wiswa includes an MCP server (\fBwiswa\-mcp\fP) that exposes settings discovery tools for AI
+assistants.
+.SS Claude Code
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+claude mcp add wiswa\-mcp \-\- wiswa\-mcp
+.EE
+.UNINDENT
+.UNINDENT
+.SS Cursor
+.sp
+Add to \fB\&.cursor/mcp.json\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+{
+  \(dqmcpServers\(dq: {
+    \(dqwiswa\-mcp\(dq: {
+      \(dqcommand\(dq: \(dqwiswa\-mcp\(dq
+    }
+  }
+}
+.EE
+.UNINDENT
+.UNINDENT
+.SS GitHub Copilot CLI
+.sp
+Add to \fB\&.github/copilot/mcp.json\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+{
+  \(dqmcpServers\(dq: {
+    \(dqwiswa\-mcp\(dq: {
+      \(dqcommand\(dq: \(dqwiswa\-mcp\(dq
+    }
+  }
+}
+.EE
+.UNINDENT
+.UNINDENT
 .SH BINARY SIGNING
 .sp
 Wiswa can generate PyInstaller workflow steps that sign Windows and macOS binaries so that users do
@@ -294,146 +433,6 @@ The temporary keychain and certificate file are cleaned up.
 \X'tty: link https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution'\fI\%Notarizing macOS Software\fP\X'tty: link'
 .IP \(bu 2
 \X'tty: link https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/customizing_the_notarization_workflow'\fI\%notarytool\fP\X'tty: link'
-.UNINDENT
-.SH COMMANDS
-.SS wiswa
-.sp
-Entry point for the Wiswa CLI.
-.sp
-Usage
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-wiswa [OPTIONS] [FILE]
-.EE
-.UNINDENT
-.UNINDENT
-.sp
-Options
-.INDENT 0.0
-.TP
-.B \-\-cache\-time <cache_time>
-Cache expiry time in seconds.
-.INDENT 7.0
-.TP
-.B Default
-\fB600\fP
-.UNINDENT
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-d, \-\-debug
-Enable debug output.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-J, \-\-jpath <jpath>
-Add a directory to the Jsonnet search path (only used when evaluating settings).
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-\-no\-cache
-Disable HTTP response caching.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-o, \-\-output\-dir <output_dir>
-Output directory for generated files.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-q, \-\-quiet
-Suppress the progress spinner.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-u, \-\-user\-defaults
-Use defaults.jsonnet file in user preferences directory.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-\-skip\-github
-Skip configuring GitHub project.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-\-skip\-jsonnet
-Skip Jsonnet evaluation.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-\-skip\-postprocess
-Skip post\-processing steps.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-\-skip\-static
-Skip copying static files.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-\-skip\-templates
-Skip Jinja2 template evaluation.
-.UNINDENT
-.INDENT 0.0
-.TP
-.B \-\-skip\-yarn
-Skip Yarn download.
-.UNINDENT
-.sp
-Arguments
-.INDENT 0.0
-.TP
-.B FILE
-Optional argument
-.UNINDENT
-.SH MCP SERVER
-.sp
-Wiswa includes an MCP server (\fBwiswa\-mcp\fP) that exposes settings discovery tools for AI
-assistants.
-.SS Claude Code
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-claude mcp add wiswa\-mcp \-\- wiswa\-mcp
-.EE
-.UNINDENT
-.UNINDENT
-.SS Cursor
-.sp
-Add to \fB\&.cursor/mcp.json\fP:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-{
-  \(dqmcpServers\(dq: {
-    \(dqwiswa\-mcp\(dq: {
-      \(dqcommand\(dq: \(dqwiswa\-mcp\(dq
-    }
-  }
-}
-.EE
-.UNINDENT
-.UNINDENT
-.SS GitHub Copilot CLI
-.sp
-Add to \fB\&.github/copilot/mcp.json\fP:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-{
-  \(dqmcpServers\(dq: {
-    \(dqwiswa\-mcp\(dq: {
-      \(dqcommand\(dq: \(dqwiswa\-mcp\(dq
-    }
-  }
-}
-.EE
-.UNINDENT
 .UNINDENT
 .SH AUTHOR
 Andrew Udvare <audvare@gmail.com>

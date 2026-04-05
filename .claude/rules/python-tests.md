@@ -1,9 +1,3 @@
----
-description: Python test guidelines
-globs: tests/**/*.py
-alwaysApply: false
----
-
 # Python test guidelines
 
 - Always add type hints including the return value.
