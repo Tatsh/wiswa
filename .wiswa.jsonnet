@@ -9,9 +9,6 @@ local utils = import 'utils.libsonnet';
   version: '0.1.0',
   description: 'A highly opinionated way to generate and maintain projects with Jsonnet.',
   keywords: ['command line', 'jsonnet', 'project generator', 'project management', 'scaffolding'],
-  copilot: {
-    intro: 'Wiswa is a tool to generate and manage projects.',
-  },
   github+: {
     pages_config+: {
       exclude+: ['wiswa/templates/'],

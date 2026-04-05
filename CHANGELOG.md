@@ -97,6 +97,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   artefacts now follow the consolidated template layout.
 - Added Jsonnet `uses_user_defaults` (default `false`) so generated `yarn regen` can opt into
   passing `-u` / `--user-defaults`.
+- Jsonnet defaults no longer define `copilot.intro`; generated `AGENTS.md` drops the optional
+  Overview section from that field.
+- Regen agent no longer requires a `copilot` key in `.wiswa.jsonnet`.
 
 ### Fixed
 

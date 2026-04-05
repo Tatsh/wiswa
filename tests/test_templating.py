@@ -354,9 +354,6 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'version': '0.0.1',
         'yarn_version': '4',
         '_readme_existed': False,
-        'copilot': {
-            'intro': 'A test project.'
-        },
         'codeowners': {},
         'using_readthedocs': False,
         'security_addendum': '',

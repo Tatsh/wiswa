@@ -2,13 +2,9 @@
 
 All agent definitions, skills, and project rules live under **`.claude/`**. Use that tree whether you
 use Claude Code, Cursor, GitHub Copilot, or another assistant: open or reference the files directly,
-and use each product’s own mechanics for attaching repo context where needed.
+and use each product's own mechanics for attaching repo context where needed.
 
 - **Read `CLAUDE.md` first in Claude Code** - it points here and holds Claude-specific notes.
-
-## Overview
-
-Wiswa is a tool to generate and manage projects.
 
 ## General conventions
 

@@ -64,7 +64,7 @@ local utils = import 'utils.libsonnet';
    *
    * When ``enabled`` is true a pre-commit hook is added (local ``uv export``
    * for uv, ``poetry-plugin-export`` for Poetry) and the export runs during
-   * post-processing.  All fields map directly to ``uv export`` flags;
+   * post-processing. All fields map directly to ``uv export`` flags;
    * Poetry-only equivalents are translated automatically.
    */
   export_requirements: {
@@ -305,7 +305,7 @@ local utils = import 'utils.libsonnet';
   /**
    * @brief Social media configuration (for badges).
    *
-   * @brief If a URI is provided, a badge will be generated for it. For GitHub and Mastodon, the username
+   * If a URI is provided, a badge will be generated for it. For GitHub and Mastodon, the username
    * is sufficient to generate the URI.
    */
   social: {
@@ -524,7 +524,7 @@ local utils = import 'utils.libsonnet';
   want_codeql: !self.stubs_only && self.using_github,
   /** @brief If Git commits and tags should be GPG-signed. */
   want_gpg: true,
-  /** @brief If the project should will generate documentation. */
+  /** @brief If the project will generate documentation. */
   want_docs: true,
   /** @brief If ``yarn.lock`` should be deleted before running Yarn during post-processing. */
   regenerate_yarn_lock: true,
@@ -621,11 +621,6 @@ local utils = import 'utils.libsonnet';
   ],
   /** @brief The cspell language setting, derived from `package_json.cspell.language`. */
   cspell_language: self.package_json.cspell.language,
-  /** @brief Copilot instructions settings. */
-  copilot: {
-    /** @brief Introductory text for the general instructions. */
-    intro: '(Not set.)',
-  },
   /** @brief Project name. */
   project_name: 'not-a-project-name',
   /**
@@ -1393,7 +1388,7 @@ local utils = import 'utils.libsonnet';
     'source-code': settings.repository_uri,
     /**
      * @brief A short description of the project. Maximum length 78 characters. Should not end in a
-       full stop.
+     * full stop.
      * @var string
      */
     summary: settings.description,

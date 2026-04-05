@@ -11,19 +11,14 @@ and verify nothing is broken before committing.
 
 - Wiswa must be installed and available as `wiswa` on the PATH.
 - `.wiswa.jsonnet` must exist in the project root.
-- `.wiswa.jsonnet` must contain a `copilot:` or `copilot+:` key, or `stubs_only: true`.
 
 ## Workflow
-
-1. **Verify `.wiswa.jsonnet` is configured.** Check that it contains `copilot:` or `copilot+:` or
-   `stubs_only: true`. If none are present, stop and alert the user to add
-   `copilot: { intro: '...' }`.
 
 1. Run the wiswa-sync agent skill to ensure `.wiswa.jsonnet` is up to date with the latest schema
    and settings.
 
 1. **Record pre-existing `tests/test_main.py`.** Check if `tests/test_main.py` exists before
-   running Wiswa. If it does not exist, remember this - if Wiswa creates it, it must be removed
+   running Wiswa. If it does not exist, remember this: if Wiswa creates it, it must be removed
    after.
 
 1. **Run Wiswa.** User-level `defaults.jsonnet` is merged only when you pass `-u` / `--user-defaults`.
@@ -36,10 +31,9 @@ and verify nothing is broken before committing.
 
    For debug logging, run `wiswa` directly with `-d` and `-u`:
 
-   ````shell
-   wiswa -d -u   ```
-
-   ````
+   ```shell
+   wiswa -d -u
+   ```
 
 1. **Lock dependencies.** If `uv.lock` exists, run `uv lock`. If `poetry.lock` exists, run
    `poetry lock`.
