@@ -286,6 +286,9 @@
   githubLatestTag(owner, repo):: std.native('githubLatestTag')(owner, repo),
   /**
    * @brief Get the latest version of Yarn.
+   *
+   * Requires a native function `latestYarnVersion` to be defined in the Jsonnet environment.
+   *
    * @returns The latest Yarn version (string).
    * @rv string
    */
