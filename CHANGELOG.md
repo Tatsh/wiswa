@@ -80,6 +80,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `using_gitlab` is true.
 - Relaxed minimum versions for `fastmcp` (3.2.0 to 3.1.1), `niquests` (3.18.3 to 3.18.2), and
   `ruff` (0.15.8 to 0.15.7).
+- Regenerated template layout now uses `claude/`, `cursor/`, and `github/` segments under
+  `wiswa/templates/` instead of dotted directories (`.claude`, `.cursor`, `.github`) in the template
+  tree.
+- Static AI language rules ship as Markdown under `wiswa/static/claude/rules/`; bundled Cursor
+  `.mdc` rule copies under `wiswa/static/.cursor/rules/` are removed.
+- Post-processing removes legacy Cursor rule and GitHub Copilot instruction paths from generated
+  projects when consolidating on the new layout.
+- `evaluate_merged_settings` now requires `-u` / `--user-defaults` on the `wiswa` CLI to load user
+  Jsonnet defaults (defaults are off without the flag).
 
 ### Fixed
 

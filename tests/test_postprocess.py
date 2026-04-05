@@ -88,6 +88,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         },
         'regenerate_yarn_lock': False,
         '_readme_existed': False,
+        'want_ai': True,
     }
     return base | overrides
 
@@ -130,6 +131,24 @@ async def test_post_process_steps_python_uv(tmp_path: Path, monkeypatch: pytest.
     settings = cast('Any', _make_settings())
     await post_process_steps(settings)
     assert not (tmp_path / 'poetry.lock').exists()
+
+
+async def test_post_process_steps_removes_legacy_wiswa_ai_files(tmp_path: Path,
+                                                                monkeypatch: pytest.MonkeyPatch,
+                                                                mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    legacy_cursor = tmp_path / '.cursor' / 'rules' / 'general.mdc'
+    legacy_cursor.parent.mkdir(parents=True)
+    legacy_cursor.write_text('legacy')
+    legacy_gh = tmp_path / '.github' / 'instructions' / 'python.instructions.md'
+    legacy_gh.parent.mkdir(parents=True)
+    legacy_gh.write_text('legacy')
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings())
+    await post_process_steps(settings)
+    assert not legacy_cursor.exists()
+    assert not legacy_gh.exists()
 
 
 async def test_post_process_steps_python_no_tests(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,

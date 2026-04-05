@@ -354,6 +354,71 @@ def test_main_jpath_option_passed(mocker: MockerFixture, tmp_path: Path) -> None
     assert jpath2 in args[0]
 
 
+@pytest.mark.parametrize(
+    ('extra_args', 'expected_user_defaults'),
+    [
+        ([], False),
+        (['-u'], True),
+        (['--user-defaults'], True),
+    ],
+)
+def test_main_user_defaults_option_passed(
+        mocker: MockerFixture,
+        tmp_path: Path,
+        extra_args: list[str],
+        expected_user_defaults: bool,  # noqa: FBT001
+) -> None:
+    runner = CliRunner()
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.setup_logging')
+    eval_merged = mocker.patch(
+        'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
+        return_value=(
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+        ),
+    )
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
+
+    class DummyContextManager:
+        def __init__(self, value: object) -> None:
+            self.value: object = value
+
+        def __enter__(self) -> object:
+            return self.value
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: object,
+        ) -> None:
+            return None
+
+    mocker.patch('importlib.resources.files', side_effect=lambda _: DummyContextManager(tmp_path))
+    mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
+    result = runner.invoke(main, [*extra_args, str(file_path)], catch_exceptions=False)
+    assert result.exit_code == 0
+    assert eval_merged.call_args[1]['user_defaults'] is expected_user_defaults
+
+
 def _make_http_error(
     status_code: int,
     headers: dict[str, str] | None = None,

@@ -1,4 +1,4 @@
-"""Jsonnet evaluation."""
+"""Evaluate Jsonnet for merged settings and generated project output."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 import json
 import logging
+import time
 
 import _jsonnet  # noqa: PLC2701
 import anyio
@@ -39,7 +40,7 @@ def _make_native_callbacks(
         }
     # Jsonnet native callbacks are sync, but our HTTP functions are async. These callbacks run
     # inside anyio.to_thread.run_sync, so we use anyio.from_thread.run to schedule the async
-    # call back on the event loop.
+    # work on the event loop.
 
     def _sync_wrap(async_fn: Callable[..., Any], *args: Any) -> Any:  # pragma: no cover
         return anyio.from_thread.run(async_fn, *args)
@@ -91,11 +92,18 @@ async def evaluate_jsonnet_file(jpathdir: Sequence[str],
         The evaluated Jsonnet output as a string.
     """
     native_callbacks = _make_native_callbacks(session)
-    return await anyio.to_thread.run_sync(
-        lambda: _jsonnet.evaluate_file(str(file),
-                                       jpathdir=list(jpathdir),
-                                       native_callbacks=native_callbacks,
-                                       tla_codes={'settings': merged_settings}))
+    path_str = str(file)
+    t0 = time.perf_counter()
+
+    def _evaluate() -> str:
+        return _jsonnet.evaluate_file(path_str,
+                                      jpathdir=list(jpathdir),
+                                      native_callbacks=native_callbacks,
+                                      tla_codes={'settings': merged_settings})
+
+    result = await anyio.to_thread.run_sync(_evaluate)
+    log.debug('Jsonnet evaluation of `%s` took %.3fs.', path_str, time.perf_counter() - t0)
+    return result
 
 
 async def evaluate_jsonnet_project(lib_path: Path,
@@ -120,9 +128,8 @@ async def evaluate_jsonnet_project(lib_path: Path,
     file : Path | None
         The path to the Jsonnet file to evaluate (defaults to ``project.jsonnet`` in the library).
     output_dir : Path | None
-        The directory to output generated files to (defaults to the current directory).
+        Output directory for generated files (defaults to the current directory).
     """
-    log.debug('Evaluating Jsonnet. Please be patient.')
     if output_dir:
         await anyio.Path(output_dir).mkdir(parents=True, exist_ok=True)
     output_dir = output_dir or Path()
@@ -155,7 +162,8 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
     session : AsyncSession | None
         Optional HTTP session for callbacks.
     user_defaults : bool
-        Whether to include user defaults from the user preferences directory.
+        Whether to include user defaults from the user preferences directory. The defaults file must
+        exist when ``user_defaults`` is true.
 
     Returns
     -------
@@ -165,19 +173,21 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
     Raises
     ------
     FileNotFoundError
-        If the ``user_defaults`` option is given but no user defaults file exists.
+        If ``user_defaults`` is true and the user defaults file does not exist.
     """
     user_defaults_jsonnet = platformdirs.user_config_path('wiswa') / 'defaults.jsonnet'
-    if user_defaults and not user_defaults_jsonnet.exists():
-        msg = ('The user_defaults=True option was given, but no defaults.jsonnet file exists in'
-               f' the user preferences directory (path: {user_defaults_jsonnet}).')
-        raise FileNotFoundError(msg)
     native_callbacks = _make_native_callbacks(session)
     defaults_path = anyio.Path(
         lib_path.resolve(strict=True) / 'defaults.libsonnet')  # noqa: ASYNC240
     defaults_text = await defaults_path.read_text()
-    user_defaults_text = (await anyio.Path(user_defaults_jsonnet).read_text()
-                          if user_defaults else '{}')
+    if user_defaults:
+        aio_user = anyio.Path(user_defaults_jsonnet)
+        if not await aio_user.exists():
+            raise FileNotFoundError(user_defaults_jsonnet)
+        user_defaults_text = await aio_user.read_text(encoding='utf-8')
+    else:
+        user_defaults_text = '{}'
+    t0 = time.perf_counter()
     s = await anyio.to_thread.run_sync(lambda: _jsonnet.evaluate_snippet(
         '',
         'function(defaults, user_defaults, settings) defaults + user_defaults + settings',
@@ -188,6 +198,7 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
             'settings': settings,
             'user_defaults': user_defaults_text,
         }))
+    log.debug('Jsonnet evaluation (merged settings) took %.3fs.', time.perf_counter() - t0)
     return s, (json.loads(s) | {'_readme_existed': await anyio.Path('README.md').exists()})
 
 
@@ -215,6 +226,7 @@ async def resolve_defaults_only(jpathdir: Sequence[str],
     defaults_path = anyio.Path(
         lib_path.resolve(strict=True) / 'defaults.libsonnet')  # noqa: ASYNC240
     defaults_text = await defaults_path.read_text()
+    t0 = time.perf_counter()
     s = await anyio.to_thread.run_sync(lambda: _jsonnet.evaluate_snippet(
         '',
         'function(defaults, user_defaults, settings) defaults + user_defaults + settings',
@@ -225,5 +237,6 @@ async def resolve_defaults_only(jpathdir: Sequence[str],
             'settings': '{}',
             'user_defaults': '{}',
         }))
+    log.debug('Jsonnet evaluation (defaults only) took %.3fs.', time.perf_counter() - t0)
     result: dict[str, Any] = json.loads(s)
     return result

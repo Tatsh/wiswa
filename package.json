@@ -67,6 +67,7 @@
     },
     "gitignore": true,
     "globs": ["**/*.md", "**/*.mdc"],
+    "ignores": [".cursor/plans/**"],
     "noBanner": true,
     "showFound": true
   },
@@ -90,7 +91,7 @@
         }
       },
       {
-        "files": ["*.md", "*.mdc"],
+        "files": ["*.md"],
         "options": {
           "parser": "markdown"
         }
@@ -119,7 +120,7 @@
     "gen-manpage": "uv run sphinx-build -T -E -b man -d docs/_build/doctrees -D language=en docs man",
     "mypy": "uv run mypy",
     "qa": "yarn mypy . && yarn ruff . && yarn check-spelling && yarn check-formatting",
-    "regen": "uv run wiswa",
+    "regen": "uv run wiswa -u",
     "ruff": "uv run ruff check",
     "ruff:fix": "uv run ruff check --fix",
     "test": "uv run pytest",

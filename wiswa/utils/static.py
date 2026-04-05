@@ -1,4 +1,4 @@
-"""Copying static files into the project."""
+"""Copy static files from the Wiswa package into the generated project."""
 from __future__ import annotations
 
 from functools import partial
@@ -22,50 +22,23 @@ __all__ = ('copy_static_files',)
 log = logging.getLogger(__name__)
 
 
-def _cursor_and_instruction_pairs(
-    module_path: Path,
-    project_type: str,
-    *,
-    stubs_only: bool,
-) -> tuple[list[tuple[Path, Path]], list[tuple[Path, Path]]]:
-    cursor_pairs: list[tuple[Path, Path]] = []
-    instruction_pairs: list[tuple[Path, Path]] = []
-    for name in ('json-yaml', 'markdown', 'toml-ini'):
-        cursor_pairs.append((
-            Path(f'.cursor/rules/{name}.mdc'),
-            module_path / 'static/.cursor/rules' / f'{name}.mdc',
-        ))
-        instruction_pairs.append((
-            Path(f'.github/instructions/{name}.instructions.md'),
-            module_path / 'static/.github/instructions' / f'{name}.instructions.md',
-        ))
+def _claude_rule_pairs(module_path: Path, project_type: str, *,
+                       stubs_only: bool) -> list[tuple[Path, Path]]:
+    base = module_path / 'static/claude/rules'
+    pairs: list[tuple[Path, Path]] = [(Path(f'.claude/rules/{name}.md'), base / f'{name}.md')
+                                      for name in ('json-yaml', 'markdown', 'toml-ini')]
     match project_type:
         case 'c++':
-            instruction_pairs.append((
-                Path('.github/instructions/cpp.instructions.md'),
-                module_path / 'static/.github/instructions/cpp.instructions.md',
-            ))
-            cursor_pairs.append((
-                Path('.cursor/rules/cpp.mdc'),
-                module_path / 'static/.cursor/rules/cpp.mdc',
-            ))
+            pairs.append((Path('.claude/rules/cpp.md'), base / 'cpp.md'))
         case 'python':
             if not stubs_only:
-                cursor_pairs.extend([
-                    (Path('.cursor/rules/python.mdc'),
-                     module_path / 'static/.cursor/rules/python.mdc'),
-                    (Path('.cursor/rules/python-tests.mdc'),
-                     module_path / 'static/.cursor/rules/python-tests.mdc'),
-                ])
-                instruction_pairs.extend([
-                    (Path('.github/instructions/python.instructions.md'),
-                     module_path / 'static/.github/instructions/python.instructions.md'),
-                    (Path('.github/instructions/python-tests.instructions.md'),
-                     module_path / 'static/.github/instructions/python-tests.instructions.md'),
+                pairs.extend([
+                    (Path('.claude/rules/python.md'), base / 'python.md'),
+                    (Path('.claude/rules/python-tests.md'), base / 'python-tests.md'),
                 ])
         case _:
             pass
-    return cursor_pairs, instruction_pairs
+    return pairs
 
 
 async def _sync_file_pairs(
@@ -83,8 +56,8 @@ async def _sync_file_pairs(
     else:
         for dest, src in pairs:
             aio_dest = anyio.Path(dest)
-            if (await aio_dest.exists() and src.exists()
-                    and await aio_dest.read_text() == src.read_text()):
+            if (await aio_dest.exists() and src.exists() and await
+                    aio_dest.read_text(encoding='utf-8') == src.read_text(encoding='utf-8')):
                 await aio_dest.unlink()
                 log.debug('Removed `%s` (matched would-be content).', dest)
         await remove_empty_dirs(dir_path, stop_at)
@@ -147,25 +120,21 @@ async def copy_static_files(settings: Settings, module_path: Path) -> None:
     module_path : Path
         Path to the :py:mod:`wiswa` package directory.
     """
-    cursor_pairs, instruction_pairs = _cursor_and_instruction_pairs(
+    rule_pairs = _claude_rule_pairs(
         module_path,
         settings['project_type'],
         stubs_only=settings['stubs_only'],
     )
-    await _sync_file_pairs(cursor_pairs,
-                           Path('.cursor/rules'),
-                           Path(),
-                           wanted=settings['want_cursor'])
-    await _sync_file_pairs(instruction_pairs,
-                           Path('.github/instructions'),
-                           Path('.github'),
-                           wanted=settings['want_copilot'])
+    await _sync_file_pairs(rule_pairs,
+                           Path('.claude/rules'),
+                           Path('.claude'),
+                           wanted=settings['want_ai'])
     await _sync_json_file(Path('.claude/settings.local.json'),
                           settings['claude_settings_local'],
-                          wanted=settings['want_claude'])
+                          wanted=settings['want_ai'])
     await _sync_json_file(Path('.claude/settings.local.json.dist'),
                           settings['claude_settings_local'],
-                          wanted=settings['want_claude'])
+                          wanted=settings['want_ai'])
     match settings['project_type']:
         case 'python':
             await copy_static_files_python(settings, module_path)

@@ -1,4 +1,4 @@
-"""Types."""
+"""Type definitions for Wiswa settings and related structures."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict
@@ -101,7 +101,7 @@ class PyProjectProject(TypedDict, total=False):
     description: str
     """A short description of the project."""
     license: str
-    """The license of the project."""
+    """The project licence."""
     name: str
     """The name of the project."""
     version: str
@@ -171,7 +171,7 @@ class SettingsSocialTextAndURI(TypedDict):
     text: str
     """The text shown in the badge."""
     uri: str
-    """URI."""
+    """The target URI for the badge link."""
 
 
 class SettingsSocial(TypedDict):
@@ -179,19 +179,19 @@ class SettingsSocial(TypedDict):
     bsky: str
     """The Bluesky handle for the project or its maintainer."""
     mastodon: SettingsSocialMastodon
-    """The Mastodon ID for the project or its maintainer."""
+    """Mastodon account for the project or its maintainer."""
     custom_badges: list[str]
     """Custom badges to include in the README."""
     youtube: SettingsSocialTextAndURI
-    """YouTube settings."""
+    """YouTube link for the README (display text and URI)."""
     patreon: str
-    """Patreon settings."""
+    """The Patreon username for the project or its maintainer."""
     cashapp: str
     """Cash App $Cashtag."""
     slashdot: str
     """The Slashdot username for the project or its maintainer."""
     calendly: SettingsSocialTextAndURI
-    """The Calendly username for the project or its maintainer."""
+    """Calendly link for the README (display text and URI)."""
     buymeacoffee: str
     """Buy Me a Coffee username."""
     libera_irc: str
@@ -301,7 +301,7 @@ class Settings(TypedDict):
     pyproject: PyProject
     """Parsed ``pyproject.toml``."""
     repository_uri: str
-    """The HTTP URI of the project's repository (on GitHub, etc)."""
+    """The HTTP URI of the project's repository (on GitHub, etc.)."""
     social: SettingsSocial
     """Social media settings."""
     stubs_only: bool
@@ -319,20 +319,16 @@ class Settings(TypedDict):
     """If the project is hosted on GitLab primarily."""
     vscode: VSCode
     """Visual Studio Code settings."""
-    want_claude: bool
-    """If the project should include ``.claude/settings.local.json``."""
-    want_claude_agents: bool
-    """If the project should include ``.claude/agents/`` and related files."""
+    want_ai: bool
+    """If the project should include ``AGENTS.md``, ``CLAUDE.md``, and the ``.claude/`` tree."""
+    uses_user_defaults: bool
+    """If the generated ``regen`` script should pass ``-u`` to merge user-level defaults."""
     want_codeql: bool
     """If the project should include ``.github/workflows/codeql.yml``."""
-    want_copilot: bool
-    """If the project should include ``.github/instructions`` dir and files."""
-    want_cursor: bool
-    """If the project should include ``.cursor`` dir and files."""
     want_gpg: bool
     """If Git commits and tags should be GPG-signed."""
     claude_settings_local: dict[str, Any]
-    """JSON object written to ``.claude/settings.local.json`` when ``want_claude`` is true."""
+    """JSON object written to ``.claude/settings.local.json`` when ``want_ai`` is true."""
     custom_project_badges: Sequence[CustomProjectBadge]
     """Custom project badges displayed before the social section in the README."""
     export_requirements: ExportRequirements
@@ -356,3 +352,4 @@ class Settings(TypedDict):
     yarn_version: str
     """The version of Yarn to use."""
     _readme_existed: bool
+    """Whether ``README.md`` existed before templating (used for badge updates)."""

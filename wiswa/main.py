@@ -1,4 +1,4 @@
-"""Main script."""
+"""Wiswa command-line interface."""
 from __future__ import annotations
 
 from datetime import timedelta
@@ -66,7 +66,7 @@ class _Spinner:
         if not self._enabled:
             return
         if self._task is None:
-            self._task = asyncio.get_event_loop().create_task(self._animate())
+            self._task = asyncio.get_running_loop().create_task(self._animate())
 
     async def stop(self) -> None:
         """Stop the spinner and clear the line."""
@@ -217,7 +217,7 @@ async def _main_async(file: Path,
               default=600,
               show_default=True,
               type=int,
-              help='Cache expiry time in seconds.')
+              help='Cache expiration time in seconds.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option('-J',
               '--jpath',
@@ -234,7 +234,7 @@ async def _main_async(file: Path,
 @click.option('-u',
               '--user-defaults',
               is_flag=True,
-              help='Use defaults.jsonnet file in user preferences directory.')
+              help='Merge defaults.jsonnet from the user preferences directory.')
 @click.option('--skip-github', is_flag=True, help='Skip configuring GitHub project.')
 @click.option('--skip-jsonnet', is_flag=True, help='Skip Jsonnet evaluation.')
 @click.option('--skip-postprocess', is_flag=True, help='Skip post-processing steps.')

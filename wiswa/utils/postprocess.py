@@ -1,4 +1,4 @@
-"""Post-processing steps after project generation."""
+"""Post-process a generated project (lock files, tooling, README badges, Yarn)."""
 from __future__ import annotations
 
 from collections.abc import Awaitable, Iterable, Iterator, Sequence
@@ -23,6 +23,34 @@ if TYPE_CHECKING:
 __all__ = ('post_process_steps',)
 
 log = logging.getLogger(__name__)
+
+_LEGACY_WISWA_AI_PATHS: tuple[str, ...] = (
+    '.cursor/permissions.json.dist',
+    '.cursor/rules/general.mdc',
+    '.cursor/rules/json-yaml.mdc',
+    '.cursor/rules/markdown.mdc',
+    '.cursor/rules/toml-ini.mdc',
+    '.cursor/rules/cpp.mdc',
+    '.cursor/rules/python.mdc',
+    '.cursor/rules/python-tests.mdc',
+    '.github/copilot-instructions.md',
+    '.github/instructions/general.instructions.md',
+    '.github/instructions/json-yaml.instructions.md',
+    '.github/instructions/markdown.instructions.md',
+    '.github/instructions/toml-ini.instructions.md',
+    '.github/instructions/cpp.instructions.md',
+    '.github/instructions/python.instructions.md',
+    '.github/instructions/python-tests.instructions.md',
+)
+
+
+async def _remove_legacy_wiswa_ai_files() -> None:
+    """Delete Cursor/Copilot instruction files emitted by older Wiswa releases."""
+    for relative in _LEGACY_WISWA_AI_PATHS:
+        path = anyio.Path(relative)
+        if await path.is_file():
+            await path.unlink()
+            log.debug('Removed legacy Wiswa AI file `%s`.', relative)
 
 
 async def _subprocess_log_run(*args: Any,
@@ -501,6 +529,7 @@ async def post_process_steps(settings: Settings,
         Called with the command string before each subprocess runs.
     """
     oc = on_command
+    await _remove_legacy_wiswa_ai_files()
     if settings['private']:
         await anyio.Path('.github/workflows/publish.yml').unlink(missing_ok=True)
     match settings['project_type']:
