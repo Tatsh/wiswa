@@ -14,6 +14,13 @@ import _jsonnet  # noqa: PLC2701
 import anyio
 import platformdirs
 
+from .versions import (
+    get_github_release_latest_tag,
+    get_latest_yarn_version,
+    get_npm_latest_package_version,
+    get_pypi_latest_package_version,
+)
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
@@ -34,11 +41,6 @@ _PROJECT_USES_USER_DEFAULTS = re.compile(r'uses_user_defaults\s*:\s*true\b')
 def _make_native_callbacks(
         session: AsyncSession | None = None
 ) -> dict[str, tuple[tuple[str, ...], Callable[..., Any]]]:
-    from .versions import (  # noqa: PLC0415, I001
-        get_github_release_latest_tag, get_latest_yarn_version, get_npm_latest_package_version,
-        get_pypi_latest_package_version,
-    )
-
     if session is None:
         return {
             'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
@@ -99,7 +101,6 @@ async def evaluate_jsonnet_file(jpathdir: Sequence[str],
     """
     native_callbacks = _make_native_callbacks(session)
     path_str = str(file)
-    t0 = time.perf_counter()
 
     def _evaluate() -> str:
         return _jsonnet.evaluate_file(path_str,
@@ -107,6 +108,7 @@ async def evaluate_jsonnet_file(jpathdir: Sequence[str],
                                       native_callbacks=native_callbacks,
                                       tla_codes={'settings': merged_settings})
 
+    t0 = time.perf_counter()
     result = await anyio.to_thread.run_sync(_evaluate)
     log.debug('Jsonnet evaluation of `%s` took %.3fs.', path_str, time.perf_counter() - t0)
     return result
