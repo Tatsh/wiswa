@@ -50,6 +50,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- With `--skip-postprocess`, Python projects still apply the same `pyproject.toml` and
+  `package.json` manifest edits as full post-processing (including pruning empty nested tables) so
+  Jsonnet output does not leave empty `[tool]` sections.
 - CLI `--skip-jsonnet` help text: it skips only `project.jsonnet` manifest output; evaluating merged
   settings from `.wiswa.jsonnet` still runs Jsonnet.
 - Default `github_username` in shipped Jsonnet defaults now resolves from the GitHub CLI (`gh`)

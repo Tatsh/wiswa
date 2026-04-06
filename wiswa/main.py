@@ -23,6 +23,7 @@ import niquests
 
 from .session import cached_session
 from .utils import (
+    apply_python_pyproject_manifest_edits,
     copy_static_files,
     create_py_typed_files,
     download_yarn,
@@ -35,7 +36,7 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Mapping
+    from collections.abc import Awaitable, Callable, Mapping
 
     from yaspin.core import Yaspin
 
@@ -117,6 +118,27 @@ def _handle_http_error(e: niquests.HTTPError) -> None:
         else:
             click.echo('Please wait a few minutes before trying again.', err=True)
     raise click.Abort
+
+
+async def _postprocess_or_normalize_python_manifests(
+    *,
+    skip_postprocess: bool,
+    loaded: Settings,
+    debug: bool,
+    session: niquests.AsyncSession | None,
+    spin_update: Callable[[str], None],
+) -> None:
+    if not skip_postprocess:
+        spin_update('Post-processing...')
+        await post_process_steps(
+            loaded,
+            debug=debug,
+            on_command=lambda cmd: spin_update(f'Running `{cmd}` ...'),
+            session=session,
+        )
+    elif loaded['project_type'] == 'python':
+        spin_update('Normalizing Python manifests...')
+        await apply_python_pyproject_manifest_edits(loaded)
 
 
 async def _main_async(
@@ -208,14 +230,11 @@ async def _main_async(
                     if loaded['project_type'] == 'python' and not loaded['stubs_only']:
                         copy_tasks.append(create_py_typed_files(loaded))
                     await asyncio.gather(*copy_tasks)
-                if not skip_postprocess:
-                    spin_update('Post-processing...')
-                    await post_process_steps(
-                        loaded,
-                        debug=debug,
-                        on_command=lambda cmd: spin_update(f'Running `{cmd}` ...'),
-                        session=session,
-                    )
+                await _postprocess_or_normalize_python_manifests(skip_postprocess=skip_postprocess,
+                                                                 loaded=loaded,
+                                                                 debug=debug,
+                                                                 session=session,
+                                                                 spin_update=spin_update)
                 if not skip_github:
                     spin_update('Configuring GitHub project settings...')
                     await setup_github_project(session, loaded)

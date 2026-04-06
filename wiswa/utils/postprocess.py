@@ -24,7 +24,8 @@ if TYPE_CHECKING:
 
     from wiswa.typing import ExportRequirements, Settings
 
-__all__ = ('post_process_steps', 'resolve_changelog_boilerplate_urls')
+__all__ = ('apply_python_pyproject_manifest_edits', 'post_process_steps',
+           'resolve_changelog_boilerplate_urls')
 
 log = logging.getLogger(__name__)
 
@@ -278,33 +279,32 @@ def _build_poetry_export_args(
     return tuple(args)
 
 
-async def _post_process_steps_python(settings: Settings,
-                                     *,
-                                     debug: bool = False,
-                                     on_command: Callable[[str], None] | None = None) -> None:
-    is_uv = settings['package_manager'] == 'uv'
-    quiet_arg = () if debug else ('--quiet',)
-    cleanup_tasks: list[Awaitable[None]] = []
-    if is_uv:
-        cleanup_tasks.append(anyio.Path('poetry.lock').unlink(missing_ok=True))
-    if not settings['want_tests']:
-        cleanup_tasks.extend((anyio.to_thread.run_sync(
-            lambda: __import__('shutil').rmtree('tests', ignore_errors=True)),
-                              anyio.Path('.github/workflows/tests.yml').unlink(missing_ok=True)))
-        if (not settings['vscode']['launch']
-                or (len(settings['vscode']['launch']['configurations']) == 1
-                    and settings['vscode']['launch']['configurations'][0]['name'] == 'Run tests')):
-            cleanup_tasks.append(anyio.Path('.vscode/launch.json').unlink(missing_ok=True))
-    if not settings['want_docs']:
-        cleanup_tasks.extend((anyio.to_thread.run_sync(
-            lambda: __import__('shutil').rmtree('docs', ignore_errors=True)),
-                              anyio.Path('.readthedocs.yaml').unlink(missing_ok=True)))
-    if not settings['want_codeql']:
-        cleanup_tasks.append(anyio.Path('.github/workflows/codeql.yml').unlink(missing_ok=True))
-    if cleanup_tasks:
-        await asyncio.gather(*cleanup_tasks)
+def _prune_empty_nested_dicts(node: dict[str, Any]) -> None:
+    keys_to_remove: list[str] = []
+    for key, value in list(node.items()):
+        if isinstance(value, dict):
+            _prune_empty_nested_dicts(value)
+            if not value:
+                keys_to_remove.append(key)
+    for key in keys_to_remove:
+        del node[key]
+
+
+async def apply_python_pyproject_manifest_edits(settings: Settings) -> None:
+    """
+    Apply the same ``pyproject.toml`` and ``package.json`` script edits as full post-processing.
+
+    Runs when post-processing is skipped so manifests stay consistent (no empty ``[tool]``
+    placeholders, dependency groups match flags, format scripts omit YAPF when disabled, etc.).
+
+    Parameters
+    ----------
+    settings : Settings
+        Merged project settings (must match the generated tree on disk).
+    """
     pyproject_content = tomlkit.loads(
         await anyio.Path('pyproject.toml').read_text(encoding='utf-8')).unwrap()
+    is_uv = settings['package_manager'] == 'uv'
     if not settings['want_docs']:
         if is_uv:
             pyproject_content.get('dependency-groups', {}).pop('docs', None)
@@ -341,12 +341,41 @@ async def _post_process_steps_python(settings: Settings,
         package_json_content['scripts']['format'] = (
             f'prettier -w . && {run_cmd} ruff format .'
             ' && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix')
+    _prune_empty_nested_dicts(pyproject_content)
     await asyncio.gather(
         anyio.Path('package.json').write_text(json.dumps(package_json_content,
                                                          indent=2,
                                                          sort_keys=True),
                                               encoding='utf-8'),
         anyio.Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8'))
+
+
+async def _post_process_steps_python(settings: Settings,
+                                     *,
+                                     debug: bool = False,
+                                     on_command: Callable[[str], None] | None = None) -> None:
+    is_uv = settings['package_manager'] == 'uv'
+    quiet_arg = () if debug else ('--quiet',)
+    cleanup_tasks: list[Awaitable[None]] = []
+    if is_uv:
+        cleanup_tasks.append(anyio.Path('poetry.lock').unlink(missing_ok=True))
+    if not settings['want_tests']:
+        cleanup_tasks.extend((anyio.to_thread.run_sync(
+            lambda: __import__('shutil').rmtree('tests', ignore_errors=True)),
+                              anyio.Path('.github/workflows/tests.yml').unlink(missing_ok=True)))
+        if (not settings['vscode']['launch']
+                or (len(settings['vscode']['launch']['configurations']) == 1
+                    and settings['vscode']['launch']['configurations'][0]['name'] == 'Run tests')):
+            cleanup_tasks.append(anyio.Path('.vscode/launch.json').unlink(missing_ok=True))
+    if not settings['want_docs']:
+        cleanup_tasks.extend((anyio.to_thread.run_sync(
+            lambda: __import__('shutil').rmtree('docs', ignore_errors=True)),
+                              anyio.Path('.readthedocs.yaml').unlink(missing_ok=True)))
+    if not settings['want_codeql']:
+        cleanup_tasks.append(anyio.Path('.github/workflows/codeql.yml').unlink(missing_ok=True))
+    if cleanup_tasks:
+        await asyncio.gather(*cleanup_tasks)
+    await apply_python_pyproject_manifest_edits(settings)
     oc = on_command
     if is_uv:
         await _subprocess_log_run(('uv', *quiet_arg, 'lock', '--upgrade'), on_command=oc)

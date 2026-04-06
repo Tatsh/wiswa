@@ -11,10 +11,12 @@ import subprocess
 
 from wiswa.utils.postprocess import (
     _maybe_revert_uv_lock_if_only_lockfile_changed,  # noqa: PLC2701
+    apply_python_pyproject_manifest_edits,
     post_process_steps,
 )
 import niquests
 import pytest
+import tomlkit
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -101,6 +103,34 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'using_beads': False,
     }
     return base | overrides
+
+
+async def test_apply_python_pyproject_manifest_edits_prunes_empty_tool_tables(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'pyproject.toml').write_text(
+        '[tool.commitizen]\n'
+        'name = "cz_path"\n'
+        'version_files = ["README.md"]\n'
+        '[tool.coverage]\nrun = {}\n'
+        '[tool.pytest]\nini_options = {}\n'
+        '[tool.yapf]\nbased_on_style = "pep8"\n'
+        '[tool.yapfignore]\nignore_patterns = []\n'
+        '[tool.ruff.lint]\nignore = []\n'
+        '[tool.poetry]\n'
+        '[dependency-groups]\n'
+        'docs = []\ntests = []\ndev = []\n',
+        encoding='utf-8',
+    )
+    (tmp_path / 'package.json').write_text(
+        '{"scripts": {"check-formatting": "x", "format": "y"}}',
+        encoding='utf-8',
+    )
+    settings = cast('Any', _make_settings(want_yapf=False))
+    await apply_python_pyproject_manifest_edits(settings)
+    root = tomlkit.loads((tmp_path / 'pyproject.toml').read_text(encoding='utf-8')).unwrap()
+    assert 'poetry' not in root.get('tool', {})
+    assert root['tool']
 
 
 def _setup_python_project(tmp_path: Path) -> None:

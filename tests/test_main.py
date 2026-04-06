@@ -713,6 +713,8 @@ def test_main_new_skip_flags(skip_flag: str, func_name: str, mocker: MockerFixtu
     mock_copy_static = mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
     mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
     mock_post_process = mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mock_apply_manifests = mocker.patch('wiswa.main.apply_python_pyproject_manifest_edits',
+                                        new_callable=AsyncMock)
     mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
 
     class DummyContextManager:
@@ -740,6 +742,10 @@ def test_main_new_skip_flags(skip_flag: str, func_name: str, mocker: MockerFixtu
         'post_process_steps': mock_post_process,
     }
     assert not mocks[func_name].called
+    if func_name == 'post_process_steps':
+        assert mock_apply_manifests.called
+    else:
+        assert not mock_apply_manifests.called
 
 
 def test_main_no_cache_flag(mocker: MockerFixture, tmp_path: Path) -> None:
