@@ -2,6 +2,7 @@ adoc
 aiofiles
 aiohttp
 anchore
+Ångström
 anyio
 appauthor
 appdir
@@ -63,6 +64,7 @@ devrelease
 djangorestframework
 djlint
 docstrings
+doctree
 doctrees
 donjayamanne
 dorny
@@ -100,11 +102,11 @@ getline
 ggdb
 gitdir
 githistory
-gpgsign
 glab
 globaltoc
 gmock
 gnucxx
+gpgsign
 henriiik
 hexliteralcase
 hookimpl
@@ -289,4 +291,3 @@ yaspin
 zainchen
 zengxingxin
 zeshuaro
-ångström
