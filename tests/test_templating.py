@@ -342,6 +342,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'using_gitlab': False,
         'vscode': _vscode_defaults(),
         'want_ai': False,
+        'using_beads': False,
         'uses_user_defaults': False,
         'want_codeql': False,
         'want_gpg': False,
