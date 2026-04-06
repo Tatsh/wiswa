@@ -38,32 +38,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     `pylock.toml` filename).
   - Backward-compatible alias `saves_requirements_txt` is preserved.
 - Wiswa CLI progress uses `yaspin` on stderr with weighted random CLI spinners (dots-style
-  animations are more likely than other styles), and shows a `Starting up.` message before
-  long-running work begins.
+  animations are more likely than other styles), shows a `Starting up.` message before long-running
+  work, ends progress labels with ellipses, and shows post-processing subprocess commands in the
+  progress line (shell command in backticks with a trailing ellipsis).
 - `clear_resolved_defaults_cache()` on `wiswa.mcp` and `clear_resolution_caches()` on
   `wiswa.utils.versions` for tests and long-lived processes that need fresh Jsonnet defaults or
   version-resolution caches.
-
-### Deprecated
-
-- `saves_requirements_txt` setting. Use `export_requirements` instead.
-
-### Changed
-
 - With `--skip-postprocess`, Python projects still apply the same `pyproject.toml` and
   `package.json` manifest edits as full post-processing (including pruning empty nested tables) so
   Jsonnet output does not leave empty `[tool]` sections.
-- CLI `--skip-jsonnet` help text: it skips only `project.jsonnet` manifest output; evaluating merged
-  settings from `.wiswa.jsonnet` still runs Jsonnet.
-- Default `github_username` in shipped Jsonnet defaults now resolves from the GitHub CLI (`gh`)
-  when authenticated, then from `remote.origin.url` in `.git/config` for GitHub remotes, before
-  falling back to `unknown`.
-  - `remote.origin.url` values are trimmed, and whitespace-only values are ignored.
-  - Duplicate git `config` paths reached via worktree layout (for example when `commondir` is `.`)
-    are de-duplicated after `Path.resolve()`.
-- Python: skip generating `tests/test_main.py` when `tests/` already contains other
-  `test_*.py` files (existing projects keep their own test layout).
-- Default `using_beads` is now `false` (it no longer follows `want_ai`).
+- Python: skip generating `tests/test_main.py` when `tests/` already contains other `test_*.py`
+  files (existing projects keep their own test layout).
+- Jsonnet `using_beads` (default `false`) for Beads-related defaults.
 - Post-processing rewrites existing `CHANGELOG.md` boilerplate links from GitHub when an HTTP
   session is available: Keep a Changelog uses the latest `olivierlacan/keep-a-changelog` release
   tag mapped to `keepachangelog.com/en/...`, and Semantic Versioning uses `semver/semver` mapped to
@@ -71,21 +57,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `https://semver.org/spec/v2.0.0.html` when there is no session or resolution fails.
 - New projects receive the same resolved Keep a Changelog and SemVer intro URLs when templates are
   rendered (`resolve_changelog_boilerplate_urls`), not only after post-processing.
-- CLI progress labels end with ellipses, and post-processing subprocess hints wrap the shell command
-  in backticks with a trailing ellipsis.
-- Post-processing `uv.lock` restore from `HEAD` runs its `git` subprocesses through the same
-  helper as other post-process commands, so the CLI shows those commands in the progress line
-  (backticks and trailing ellipsis) like other post-process steps, and subprocess output is
-  captured consistently.
-- `--quiet` (`-q`) now suppresses the final `Done.` line as well as the progress spinner; `--help`
-  and the man page describe this behaviour. Post-processing passes `--quiet` through to Ruff when
-  not in debug mode, Yarn install and format capture subprocess stdout/stderr, and failed command
-  errors use the shell command string.
-- Removed `-u` / `--user-defaults` from the Wiswa CLI. User-level `defaults.jsonnet` is merged only
-  when `.wiswa.jsonnet` contains the literal `uses_user_defaults: true` (regex scan, then a single
-  Jsonnet evaluation). Enabling that behaviour only inside user `defaults.jsonnet`, without the
-  literal in the project file, is not supported. The `yarn regen` script always invokes `wiswa`
-  without extra flags for this behaviour.
 - The Markdown Claude rule ships from `wiswa/templates/claude/rules/markdown.md.j2` instead of a
   static file under `wiswa/static/claude/rules/`. The GitHub Pages (Jekyll) / Liquid bullet is
   emitted only when `using_github` is true.
@@ -101,56 +72,78 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Poetry based on `package_manager` setting), `cspell`/`markdownlint-cli2`/`prettier` yarn scripts,
   C/C++ tools (`cmake`, `clang-format`, `vcpkg`), `WebFetch` domains, and temp file
   read/write permissions. `gh` and `glab` API permissions are now conditional on platform settings.
-- `get_github_release_latest_tag` no longer truncates action tags to the major version (e.g. `v7`
-  instead of `v7.0.0`), returning full semver tags instead. This fixes compatibility with
-  repositories like `astral-sh/setup-uv` that only publish immutable full version tags.
 - `get_github_release_latest_tag` writes successful tag results to a JSON file under the Wiswa user
   cache directory (via `platformdirs`) and falls back to that file when the GitHub API returns HTTP
   403 or 429 (for example rate limits without a token). Persistence failures are logged at debug
   level and do not block resolution.
-- Version resolution reads uv's user `uv.toml` via `platformdirs.user_config_path('uv')` instead of
-  assuming `~/.config` on all platforms. The HTTP session cache and user `defaults.jsonnet` paths use
-  `platformdirs` with application name `wiswa` and `appauthor=False`.
 - New runtime dependency: `platformdirs`.
 - Split QA workflows for all project types (Python, TypeScript, C/C++) into granular parallel jobs
   (ruff, mypy, format, eslint, prettier, markdownlint, and spelling) using native GitHub Actions path
   filters instead of `dorny/paths-filter`.
-- Added path filters to the TypeScript tests workflow.
-- All publish workflows (NPM, PyPI, LuaRocks, WinGet) now wait for QA and test workflows to
-  succeed before publishing.
-- NPM and LuaRocks publish workflows now create a draft GitHub release.
-- Python, TypeScript, and Lua projects now unconditionally get a release workflow that publishes the
-  draft GitHub release after all workflows succeed.
-- PyInstaller workflow template no longer excludes `windows-11-arm` from the build matrix based on
-  the `niquests` dependency. Windows ARM64 builds are now always included for non-private projects.
-- `uv lock` now runs with `--upgrade` during post-processing so all packages (including transitive
+- Path filters on the TypeScript tests workflow.
+- Publish workflows (NPM, PyPI, LuaRocks, WinGet) wait for QA and test workflows to succeed before
+  publishing.
+- NPM and LuaRocks publish workflows create a draft GitHub release.
+- Python, TypeScript, and Lua projects get a release workflow that publishes the draft GitHub
+  release after all workflows succeed.
+- `uv lock` runs with `--upgrade` during post-processing so all packages (including transitive
   dependencies) are resolved to their highest possible versions.
-- Poetry commands now receive `--quiet` when debug mode is off, matching the existing behaviour for
-  uv commands.
 - British English spelling rules in generated templates (Copilot `general.instructions.md`,
-  Cursor `general.mdc`, Claude `copy-editor.md`) are now conditional on the `cspell_language`
-  setting. When `cspell_language` is `en-US`, en-GB rules are excluded. Cursor `general.mdc` was
-  converted from a static file to a Jinja2 template, and `cspell_language` was added as a derived
-  Jsonnet field.
-- `gitlab_ci` in `defaults.libsonnet` now defaults to an empty object; `project.jsonnet` checks
-  non-emptiness instead of using `std.objectHas`, so users no longer need to define `gitlab_ci` when
+  Cursor `general.mdc`, Claude `copy-editor.md`) are conditional on the `cspell_language` setting.
+  When `cspell_language` is `en-US`, en-GB rules are excluded. Cursor `general.mdc` is a Jinja2
+  template, and `cspell_language` is a derived Jsonnet field.
+- `gitlab_ci` in `defaults.libsonnet` defaults to an empty object; `project.jsonnet` checks
+  non-emptiness instead of using `std.objectHas`, so users do not need to define `gitlab_ci` when
   `using_gitlab` is true.
-- Relaxed minimum versions for `fastmcp` (3.2.0 to 3.1.1), `niquests` (3.18.3 to 3.18.2), and
-  `ruff` (0.15.8 to 0.15.7).
-- Regenerated template layout now uses `claude/`, `cursor/`, and `github/` segments under
+- Regenerated template layout uses `claude/`, `cursor/`, and `github/` segments under
   `wiswa/templates/` instead of dotted directories (`.claude`, `.cursor`, `.github`) in the template
   tree.
 - Static AI language rules ship as Markdown under `wiswa/static/claude/rules/`; bundled Cursor
   `.mdc` rule copies under `wiswa/static/.cursor/rules/` are removed.
 - Post-processing removes legacy Cursor rule and GitHub Copilot instruction paths from generated
   projects when consolidating on the new layout.
-- `evaluate_merged_settings` now requires `-u` / `--user-defaults` on the `wiswa` CLI to load user
-  Jsonnet defaults (defaults are off without the flag).
+- Jsonnet `uses_user_defaults` (default `false`); user-level `defaults.jsonnet` merges when the
+  project file contains the literal `uses_user_defaults: true`.
+
+### Deprecated
+
+- `saves_requirements_txt` setting. Use `export_requirements` instead.
+
+### Removed
+
+- `-u` / `--user-defaults` CLI flags. User-level `defaults.jsonnet` merges when `.wiswa.jsonnet`
+  contains the literal `uses_user_defaults: true` (regex scan, then Jsonnet evaluation). Enabling
+  that behaviour only inside user `defaults.jsonnet`, without the literal in the project file, is
+  not supported.
+
+### Changed
+
 - Jsonnet defaults replace `want_claude` and `want_claude_agents` with `want_ai`, which gates
   `AGENTS.md`, `CLAUDE.md`, and the `.claude/` tree. Removed `want_copilot` and `want_cursor`; editor
-  artefacts now follow the consolidated template layout.
-- Added Jsonnet `uses_user_defaults` (default `false`) so generated `yarn regen` can opt into
-  passing `-u` / `--user-defaults`.
+  artefacts follow the consolidated template layout.
+- CLI `--skip-jsonnet` help text: it skips only `project.jsonnet` manifest output; evaluating merged
+  settings from `.wiswa.jsonnet` still runs Jsonnet (0.1.0 help said `Skip Jsonnet evaluation.`).
+- Default `github_username` in shipped Jsonnet defaults resolves from the GitHub CLI (`gh`) when
+  authenticated, then from `remote.origin.url` in `.git/config` for GitHub remotes, before falling
+  back to `unknown` (0.1.0 shipped a static `unknown` default).
+  - `remote.origin.url` values are trimmed, and whitespace-only values are ignored.
+  - Duplicate git `config` paths reached via worktree layout (for example when `commondir` is `.`)
+    are de-duplicated after `Path.resolve()`.
+- `--quiet` (`-q`) suppresses the final `Done.` line as well as the progress spinner; `--help` and
+  the man page describe this behaviour. Post-processing passes `--quiet` through to Ruff when not in
+  debug mode, Yarn install and format capture subprocess stdout/stderr, and failed command errors use
+  the shell command string.
+- `get_github_release_latest_tag` no longer truncates action tags to the major version (e.g. `v7`
+  instead of `v7.0.0`), returning full semver tags instead. This fixes compatibility with
+  repositories like `astral-sh/setup-uv` that only publish immutable full version tags.
+- Version resolution reads uv's user `uv.toml` via `platformdirs.user_config_path('uv')` instead of
+  assuming `~/.config` on all platforms. The HTTP session cache and user `defaults.jsonnet` paths use
+  `platformdirs` with application name `wiswa` and `appauthor=False`.
+- PyInstaller workflow template no longer excludes `windows-11-arm` from the build matrix based on
+  the `niquests` dependency. Windows ARM64 builds are always included for non-private projects.
+- Poetry commands receive `--quiet` when debug mode is off, matching uv commands.
+- Relaxed minimum versions for `fastmcp` (3.2.0 to 3.1.1), `niquests` (3.18.3 to 3.18.2), and
+  `ruff` (0.15.8 to 0.15.7).
 - Jsonnet defaults no longer define `copilot.intro`; generated `AGENTS.md` drops the optional
   Overview section from that field.
 - Regen agent no longer requires a `copilot` key in `.wiswa.jsonnet`.
