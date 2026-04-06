@@ -26,7 +26,7 @@ local utils = import 'utils.libsonnet';
   local github = if settings.using_github then pre_commit_configs.github else [],
   local cff = if settings.want_cff then pre_commit_configs.cff else [],
   local local_hooks = import 'defaults/pre-commit-config/local.libsonnet',
-  local cspell_hooks = if settings.cspell_pre_commit_hook then import 'defaults/pre-commit-config/cspell.libsonnet' else {},
+  local cspell_hooks = if settings.cspell_pre_commit_hook then [import 'defaults/pre-commit-config/cspell.libsonnet'] else [],
   local rtd = import 'defaults/readthedocs.libsonnet',
   local settings = self,
 
@@ -710,12 +710,12 @@ local utils = import 'utils.libsonnet';
      * ```
      */
     repos: [(import 'defaults/pre-commit-config/main.libsonnet').get(settings)] +
-           precommit_python_repos + precommit_c_cpp_repos + github + cff + [local_hooks.get(settings)] + [cspell_hooks],
+           precommit_python_repos + precommit_c_cpp_repos + github + cff + [local_hooks.get(settings)] + cspell_hooks,
   } + (if !settings.private then {
          ci: {
            skip: [
              'check-jsonschema',
-             'cspell',
+           ] + (if settings.cspell_pre_commit_hook then ['cspell'] else []) + [
              'detect-aws-credentials',
              'fix-formatting-markdown',
              'fix-formatting-prettier',

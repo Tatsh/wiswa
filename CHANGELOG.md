@@ -169,6 +169,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- With `cspell_pre_commit_hook` false, Jsonnet defaults no longer append an empty pre-commit
+  repository stanza or keep `cspell` in `ci.skip`; the cspell hook and skip entry are fully
+  omitted.
 - Incidental `uv.lock` restore from `HEAD` runs `git restore` / `git checkout` with
   `core.hooksPath` set to the null device so pre-commit and other hooks cannot fail the operation
   (for example when `.pre-commit-config.yaml` is unstaged).
