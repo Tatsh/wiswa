@@ -3,6 +3,7 @@ aiofiles
 aiohttp
 anchore
 anyio
+appauthor
 appdir
 appimage
 appinfo
@@ -183,6 +184,7 @@ pascalreitermann
 pathlib
 pavelzw
 pipx
+platformdirs
 plistlib
 proc
 prodvers
