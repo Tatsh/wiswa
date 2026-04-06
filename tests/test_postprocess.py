@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock
 
 from wiswa.utils.postprocess import post_process_steps
+import niquests
 import pytest
 
 if TYPE_CHECKING:
@@ -391,13 +392,82 @@ async def test_post_process_steps_changelog_urls_resolve_from_github(
     mocker.patch(
         'wiswa.utils.postprocess.get_github_release_latest_tag',
         new_callable=AsyncMock,
-        side_effect=['v1.1.1', 'v3.0.0'],
+        side_effect=['v1.1.1', '3.0.0'],
     )
     settings = cast('Any', _make_settings())
     await post_process_steps(settings, session=mocker.MagicMock())
     body = changelog.read_text(encoding='utf-8')
     assert 'https://semver.org/spec/v3.0.0.html' in body
     assert 'https://keepachangelog.com/en/1.1.1/' in body
+
+
+async def test_post_process_steps_changelog_keepachangelog_resolution_failure_fallback(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    (tmp_path / 'poetry.lock').write_text('lock')
+    changelog = tmp_path / 'CHANGELOG.md'
+    changelog.write_text(
+        '# Changelog\n\nThe format is based on [Keep a Changelog]'
+        '(https://keepachangelog.com/en/0.3.0/), and this project adheres to [Semantic Versioning]'
+        '(https://semver.org/spec/v0.0.0.html).\n',
+        encoding='utf-8',
+    )
+    _mock_subprocess(mocker)
+    mocker.patch(
+        'wiswa.utils.postprocess.get_github_release_latest_tag',
+        new_callable=AsyncMock,
+        side_effect=[niquests.RequestException('simulated'), 'v2.0.0'],
+    )
+    settings = cast('Any', _make_settings())
+    await post_process_steps(settings, session=mocker.MagicMock())
+    body = changelog.read_text(encoding='utf-8')
+    assert 'https://keepachangelog.com/en/1.1.0/' in body
+    assert 'https://semver.org/spec/v2.0.0.html' in body
+
+
+async def test_post_process_steps_changelog_semver_resolution_failure_fallback(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    (tmp_path / 'poetry.lock').write_text('lock')
+    changelog = tmp_path / 'CHANGELOG.md'
+    changelog.write_text(
+        '# Changelog\n\nThe format is based on [Keep a Changelog]'
+        '(https://keepachangelog.com/en/0.3.0/), and this project adheres to [Semantic Versioning]'
+        '(https://semver.org/spec/v0.0.0.html).\n',
+        encoding='utf-8',
+    )
+    _mock_subprocess(mocker)
+    mocker.patch(
+        'wiswa.utils.postprocess.get_github_release_latest_tag',
+        new_callable=AsyncMock,
+        side_effect=['v1.1.1', niquests.RequestException('simulated')],
+    )
+    settings = cast('Any', _make_settings())
+    await post_process_steps(settings, session=mocker.MagicMock())
+    body = changelog.read_text(encoding='utf-8')
+    assert 'https://keepachangelog.com/en/1.1.1/' in body
+    assert 'https://semver.org/spec/v2.0.0.html' in body
+
+
+async def test_post_process_steps_changelog_skips_rewrite_when_no_matching_links(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    (tmp_path / 'poetry.lock').write_text('lock')
+    changelog = tmp_path / 'CHANGELOG.md'
+    original = '# Changelog\n\nNo boilerplate hyperlinks here.\n'
+    changelog.write_text(original, encoding='utf-8')
+    _mock_subprocess(mocker)
+    mocker.patch(
+        'wiswa.utils.postprocess.get_github_release_latest_tag',
+        new_callable=AsyncMock,
+        side_effect=['v9.9.9', 'v9.9.9'],
+    )
+    settings = cast('Any', _make_settings())
+    await post_process_steps(settings, session=mocker.MagicMock())
+    assert changelog.read_text(encoding='utf-8') == original
 
 
 async def test_post_process_steps_python_no_tests_no_launch_vscode(tmp_path: Path,
