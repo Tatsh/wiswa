@@ -105,10 +105,14 @@ local utils = import 'utils.libsonnet';
     jobs: {
       spelling: {
         'runs-on': settings.qa_runs_on,
-        steps: [checkout] + yarn_steps + [
+        steps: [checkout] + [
           {
             name: 'Check spelling',
-            run: 'yarn check-spelling',
+            uses: 'streetsidesoftware/cspell-action@' + utils.githubLatestActionTag('streetsidesoftware', 'cspell-action'),
+            with: {
+              check_dot_files: true,
+              suggestions: true,
+            },
           },
         ],
       },
