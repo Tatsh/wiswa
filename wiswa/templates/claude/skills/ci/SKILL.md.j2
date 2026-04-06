@@ -72,11 +72,11 @@ If any changed source files are being committed, run the following agents **in o
   relevant commit. Follow `.claude/agents/changelog.md`, including its skip list.
 
   Files under `{{ settings.primary_module }}/`,
-{%- if settings.project_type == 'python' %} `tests/`, or version changes in `pyproject.toml`,
+{%- if settings.project_type == 'python' %} `tests/`, or version changes in `pyproject.toml`
 {%- elif settings.project_type == 'c' or settings.project_type == 'c++' %} `src/`, `include/`, or
-  dependency/version changes in `CMakeLists.txt` or `vcpkg.json`,
+  dependency/version changes in `CMakeLists.txt` or `vcpkg.json`
 {%- elif settings.project_type == 'typescript' %} `src/`, or dependency/version changes in
-  `package.json`,
+  `package.json`
 {%- else %} or dependency/version changes
 {%- endif %} are **candidates**
   for the changelog agent only when they **change what users see or
