@@ -15,6 +15,7 @@ local utils = import 'utils.libsonnet';
     },
   },
   shared_ignore+: ['/docs/_build*/'],
+  using_beads: false,
   prettierignore+: ['*.adoc', 'Doxyfile'],
   package_json+: {
     cspell+: {
