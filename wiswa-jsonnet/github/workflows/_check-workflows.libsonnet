@@ -24,7 +24,7 @@ local utils = import 'utils.libsonnet';
           for i in $(seq 1 30); do
             all_done=true
             for workflow in %(workflows)s; do
-              status=$(gh run list -w "$workflow" --commit "$sha" --json conclusion -q '.[0].conclusion')
+              status=$(gh run list --workflow "$workflow" --commit "$sha" --json conclusion --jq '.[0].conclusion')
               if [[ "$status" == 'failure' || "$status" == 'cancelled' ]]; then
                 echo "::error::Workflow '$workflow' ${status}."
                 exit 1

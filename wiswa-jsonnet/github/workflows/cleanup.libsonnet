@@ -12,7 +12,7 @@ function(settings) {
           },
           name: 'Delete old caches',
           run: |||
-            gh cache list --json id,createdAt -q '.[] | select((now - (.createdAt | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .key' | xargs -r -L1 gh cache delete
+            gh cache list --json id,createdAt --jq '.[] | select((now - (.createdAt | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .key' | xargs -r -L1 gh cache delete
           |||,
         },
         {
@@ -22,7 +22,7 @@ function(settings) {
           },
           name: 'Delete old artifacts',
           run: |||
-            gh api "repos/$REPO/actions/artifacts" --paginate -q '.artifacts[] | select((now - (.created_at | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .id' | xargs -r -I{} gh api -X DELETE "repos/$REPO/actions/artifacts/{}"
+            gh api "repos/$REPO/actions/artifacts" --paginate --jq '.artifacts[] | select((now - (.created_at | sub("\\.[0-9]+"; "") | fromdateiso8601)) > 43200) | .id' | xargs -r -I{} gh api --method DELETE "repos/$REPO/actions/artifacts/{}"
           |||,
         },
       ],

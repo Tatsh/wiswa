@@ -30,7 +30,7 @@ local utils = import 'utils.libsonnet';
         args:
           (if er.all_extras then ['--all-extras']
            else std.flatMap(function(e) ['--extras=%s' % e], er.extra))
-          + ['-f', er.format, '-o', er.output_filename]
+          + ['--format', er.format, '--output', er.output_filename]
           + (if std.length(with_groups) > 0 then ['--with=%s' % with_groups] else [])
           + (if er.only_dev then ['--only=dev'] else [])
           + std.flatMap(function(g) ['--only=%s' % g], er.only_group)

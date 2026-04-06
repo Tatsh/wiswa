@@ -14,11 +14,11 @@ function(settings)
                name: 'Fix pyproject.toml for older Poetry',
                run: |||
                  pipx install yq
-                 name=$(tomlq -r '.project.name' pyproject.toml)
-                 version=$(tomlq -r '.project.version' pyproject.toml)
-                 description=$(tomlq -r '.project.description' pyproject.toml)
-                 author_name=$(tomlq -r '.project.authors[0].name' pyproject.toml)
-                 author_email=$(tomlq -r '.project.authors[0].email' pyproject.toml)
+                 name=$(tomlq --raw-output '.project.name' pyproject.toml)
+                 version=$(tomlq --raw-output '.project.version' pyproject.toml)
+                 description=$(tomlq --raw-output '.project.description' pyproject.toml)
+                 author_name=$(tomlq --raw-output '.project.authors[0].name' pyproject.toml)
+                 author_email=$(tomlq --raw-output '.project.authors[0].email' pyproject.toml)
                  # Create temporary file with the new fields
                  cat > /tmp/poetry_fields.toml << EOF
                  authors = ["$author_name <$author_email>"]

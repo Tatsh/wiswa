@@ -82,7 +82,7 @@ function(settings)
             install_deps(),
             if settings.want_yapf then {
               name: 'Check formatting (YAPF)',
-              run: '%s yapf -prd .' % run_cmd,
+              run: '%s yapf --diff --parallel --recursive .' % run_cmd,
             } else {
               name: 'Check formatting (Ruff)',
               run: '%s ruff format --check .' % run_cmd,

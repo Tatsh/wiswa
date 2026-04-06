@@ -43,7 +43,7 @@ function(settings)
               sha="$HEAD_SHA"
               all_success=true
               for workflow in %(workflows)s; do
-                status=$(gh run list -w "$workflow" --commit "$sha" --json conclusion -q '.[0].conclusion')
+                status=$(gh run list --workflow "$workflow" --commit "$sha" --json conclusion --jq '.[0].conclusion')
                 if [[ "$status" == 'failure' || "$status" == 'cancelled' ]]; then
                   echo "::error::Workflow '$workflow' ${status}."
                   exit 1

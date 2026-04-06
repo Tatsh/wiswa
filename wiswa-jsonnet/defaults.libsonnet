@@ -1252,9 +1252,9 @@ local utils = import 'utils.libsonnet';
   } + {
     local run_cmd = if is_uv then 'uv run' else 'poetry run',
     scripts+: if settings.want_docs && settings.project_type == 'python' then {
-      'gen-docs': '%s sphinx-build -T -E -b html -d docs/_build/doctrees -D language=en docs docs/_build/html' % run_cmd,
+      'gen-docs': '%s sphinx-build --fresh-env --builder html --doctree-dir docs/_build/doctrees --define language=en docs docs/_build/html' % run_cmd,
     } + if settings.want_man && settings.project_type == 'python' then {
-      'gen-manpage': '%s sphinx-build -T -E -b man -d docs/_build/doctrees -D language=en docs man' % run_cmd,
+      'gen-manpage': '%s sphinx-build --fresh-env --builder man --doctree-dir docs/_build/doctrees --define language=en docs man' % run_cmd,
     } else {}
     else {},
   },

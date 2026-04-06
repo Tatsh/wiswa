@@ -31,7 +31,7 @@ function(settings)
           },
           {
             name: 'Update npm',
-            run: 'npm install -g npm@latest',
+            run: 'npm install --global npm@latest',
           },
           cache_yarn,
           {

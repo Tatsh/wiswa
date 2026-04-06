@@ -28,21 +28,22 @@ local utils = import 'utils.libsonnet';
     },
   ],
   local python_deps = { pyright: utils.latestNpmPackageVersionCaret('pyright') },
-  local dictionary_update = "rm -f .vscode/dictionary.txt && cspell --no-progress './**/*' './**/.*' 2>&1 | grep -oP '(?<=Unknown word \\()\\S+(?=\\))' | python -c \"import sys; print('\\n'.join(sorted(set(l.strip().lower() for l in sys.stdin if l.strip()))))\" > .vscode/dictionary.txt",
+  // tr arguments need to be quoted or Yarn will not handle it correctly.
+  local dictionary_update = "rm -f .vscode/dictionary.txt && cspell lint --no-progress --no-summary --unique --words-only | tr '[:upper:]' '[:lower:]' | sort -u > .vscode/dictionary.txt",
   local python_test_scripts(run_cmd) = {
     test: '%s pytest' % run_cmd,
     'test:cov': 'yarn test --cov . --cov-branch --cov-report html --cov-report term-missing:skip-covered',
   },
   local python_scripts(settings) = {
     local run_cmd = if settings.package_manager == 'uv' then 'uv run' else 'poetry run',
-    local fmt_check = if settings.want_yapf then '%s yapf -prd .' % run_cmd
+    local fmt_check = if settings.want_yapf then '%s yapf --diff --parallel --recursive .' % run_cmd
     else '%s ruff format --check .' % run_cmd,
-    local fmt_apply = if settings.want_yapf then '%s yapf -ri .' % run_cmd
+    local fmt_apply = if settings.want_yapf then '%s yapf --in-place --parallel --recursive .' % run_cmd
     else '%s ruff format .' % run_cmd,
-    'check-formatting': 'prettier -c . && %s && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % fmt_check,
-    'check-spelling': "cspell --no-progress './**/*'  './**/.*'",
+    'check-formatting': 'prettier --check . && %s && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % fmt_check,
+    'check-spelling': 'cspell --no-progress',
     'dict:update': dictionary_update,
-    format: 'prettier -w . && %s && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix' % fmt_apply,
+    format: 'prettier --write . && %s && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix' % fmt_apply,
     mypy: '%s mypy' % run_cmd,
     qa: 'yarn mypy . && yarn ruff . && yarn check-spelling && yarn check-formatting',
     regen: '%s wiswa' % run_cmd,
@@ -53,10 +54,10 @@ local utils = import 'utils.libsonnet';
   ) else {},
   local c_cpp_scripts(settings) = {
     build: 'cmake --preset=default -DBUILD_DOCS=ON && cmake --build build',
-    'check-formatting': 'clang-format -n %s && prettier -c . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % settings.clang_format_args,
+    'check-formatting': 'clang-format --dry-run %s && prettier --check . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % settings.clang_format_args,
     'check-spelling': 'cspell --no-progress .',
     'dict:update': dictionary_update,
-    format: 'clang-format -i %s && prettier -w . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix' % settings.clang_format_args,
+    format: 'clang-format --in-place %s && prettier --write . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix' % settings.clang_format_args,
     qa: 'yarn check-spelling && yarn check-formatting',
   },
   typescript_dev_deps(settings):: {
@@ -73,10 +74,10 @@ local utils = import 'utils.libsonnet';
     'ts-jest': utils.latestNpmPackageVersionCaret('ts-jest'),
   } else {},
   typescript_scripts(settings):: {
-    'check-formatting': 'prettier -c . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
-    'check-spelling': "cspell --no-progress './**/*'  './**/.*'",
+    'check-formatting': 'prettier --check . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
+    'check-spelling': 'cspell --no-progress',
     'dict:update': dictionary_update,
-    format: 'prettier -w . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix',
+    format: 'prettier --write . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix',
     qa: 'eslint && yarn check-spelling && yarn check-formatting',
   } + if settings.want_tests then { test: 'jest' } else {},
   local top = self,
@@ -107,7 +108,7 @@ local utils = import 'utils.libsonnet';
       ],
       enableFileTypes: { '*': true },
       enableGlobDot: true,
-      files: ['*'],
+      files: ['**'],
       ignorePaths: [
         '*.1',
         '*.har',
@@ -169,22 +170,11 @@ local utils = import 'utils.libsonnet';
       iniSpaceAroundEquals: true,
       jsonRecursiveSort: true,
       overrides: [
+        // This is here so package.json is not treated specially.
         {
-          files: ['package.json'],
+          files: ['*.json.dist', 'package.json'],
           options: {
             parser: 'json',
-          },
-        },
-        {
-          files: ['*.json.dist'],
-          options: {
-            parser: 'json',
-          },
-        },
-        {
-          files: ['*.md'],
-          options: {
-            parser: 'markdown',
           },
         },
       ] + prettier_c_cpp + prettier_cpp,
@@ -199,10 +189,10 @@ local utils = import 'utils.libsonnet';
       singleQuote: true,
     },
     scripts: {
-      'check-formatting': 'prettier -c . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
-      'check-spelling': "cspell --no-progress './**/*'  './**/.*'",
+      'check-formatting': 'prettier --check . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
+      'check-spelling': 'cspell --no-progress',
       'dict:update': dictionary_update,
-      format: 'prettier -w . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix',
+      format: 'prettier --write . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix',
     } + if settings.project_type == 'python' then python_scripts(settings)
     else if settings.project_type == 'c++' || settings.project_type == 'c' then c_cpp_scripts(settings)
     else if settings.project_type == 'typescript' then top.typescript_scripts(settings)

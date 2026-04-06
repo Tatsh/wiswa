@@ -34,7 +34,7 @@ local utils = import 'utils.libsonnet';
         steps: [checkout] + yarn_steps + [
           {
             name: 'Check formatting (Prettier)',
-            run: 'yarn prettier -c .',
+            run: 'yarn prettier --check .',
           },
         ],
       },
