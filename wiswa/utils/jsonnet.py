@@ -25,6 +25,7 @@ from .versions import (
     get_latest_yarn_version,
     get_npm_latest_package_version,
     get_pypi_latest_package_version,
+    resolve_npm_minimal_age_gate_minutes,
 )
 
 if TYPE_CHECKING:
@@ -166,7 +167,11 @@ def _default_github_username() -> str:
     return _UNKNOWN_GITHUB_USER
 
 
-def _make_native_callbacks(session: AsyncSession | None = None) -> dict[str, JsonnetNativeCallback]:
+def _make_native_callbacks(
+    session: AsyncSession | None = None,
+    merged_settings: dict[str, Any] | None = None,
+    project_settings_snippet: str | None = None,
+) -> dict[str, JsonnetNativeCallback]:
     github_cli_username_cb: JsonnetNativeCallback = (
         (),
         _default_github_username,
@@ -181,8 +186,12 @@ def _make_native_callbacks(session: AsyncSession | None = None) -> dict[str, Jso
     # inside anyio.to_thread.run_sync, so we use anyio.from_thread.run to schedule the async
     # work on the event loop.
 
-    def _sync_wrap(async_fn: Callable[..., Any], *args: Any) -> Any:  # pragma: no cover
-        return anyio.from_thread.run(async_fn, *args)
+    def _sync_wrap(async_fn: Callable[..., Any], *args: Any,
+                   **kwargs: Any) -> Any:  # pragma: no cover
+        return anyio.from_thread.run(partial(async_fn, *args, **kwargs))
+
+    npm_age_gate = resolve_npm_minimal_age_gate_minutes(settings=merged_settings,
+                                                        project_snippet=project_settings_snippet)
 
     gh_action = partial(get_github_release_latest_tag,
                         session,
@@ -196,11 +205,16 @@ def _make_native_callbacks(session: AsyncSession | None = None) -> dict[str, Jso
         'githubCliUsername': github_cli_username_cb,
         'githubLatestActionTag': (('o', 'r'), lambda o, r: _sync_wrap(gh_action, o, r)),
         'githubLatestReleaseTag': (
-            ('o', 'r'), lambda o, r: _sync_wrap(get_github_release_latest_tag, session, o, r)),
+            ('o', 'r', 'g'), lambda o, r, g=False: _sync_wrap(get_github_release_latest_tag,
+                                                              session,
+                                                              o,
+                                                              r,
+                                                              apply_npm_min_release_age=bool(g),
+                                                              npm_age_gate_minutes=npm_age_gate)),
         'githubLatestTag': (('o', 'r'), lambda o, r: _sync_wrap(gh_tag, o, r)),
         'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
-        'latestNpmPackageVersion': (
-            ('p',), lambda p: _sync_wrap(get_npm_latest_package_version, session, p)),
+        'latestNpmPackageVersion': (('p',), lambda p: _sync_wrap(
+            get_npm_latest_package_version, session, p, npm_age_gate_minutes=npm_age_gate)),
         'latestPypiPackageVersion': (
             ('p',), lambda p: _sync_wrap(get_pypi_latest_package_version, session, p)),
         'latestYarnVersion': ((), lambda: _sync_wrap(get_latest_yarn_version, session)),
@@ -232,7 +246,14 @@ async def evaluate_jsonnet_file(jpathdir: Sequence[str],
     str
         The evaluated Jsonnet output as a string.
     """
-    native_callbacks = _make_native_callbacks(session)
+    merged_dict: dict[str, Any] | None = None
+    try:
+        raw_merged = json.loads(merged_settings)
+        if isinstance(raw_merged, dict):
+            merged_dict = raw_merged
+    except json.JSONDecodeError:
+        merged_dict = None
+    native_callbacks = _make_native_callbacks(session, merged_settings=merged_dict)
     path_str = str(file)
 
     def _evaluate() -> str:
@@ -320,7 +341,9 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
     """
     user_defaults_jsonnet = (platformdirs.user_config_path('wiswa', appauthor=False) /
                              'defaults.jsonnet')
-    native_callbacks = _make_native_callbacks(session)
+    native_callbacks = _make_native_callbacks(session,
+                                              merged_settings=None,
+                                              project_settings_snippet=settings)
     defaults_path = anyio.Path(
         lib_path.resolve(strict=True) / 'defaults.libsonnet')  # noqa: ASYNC240
     defaults_text = await defaults_path.read_text()
@@ -378,7 +401,9 @@ async def resolve_defaults_only(jpathdir: Sequence[str],
     dict[str, Any]
         The resolved default settings.
     """
-    native_callbacks = _make_native_callbacks(session)
+    native_callbacks = _make_native_callbacks(session,
+                                              merged_settings=None,
+                                              project_settings_snippet=None)
     defaults_path = anyio.Path(
         lib_path.resolve(strict=True) / 'defaults.libsonnet')  # noqa: ASYNC240
     defaults_text = await defaults_path.read_text()

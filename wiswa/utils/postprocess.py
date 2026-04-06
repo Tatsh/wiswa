@@ -23,10 +23,13 @@ from .versions import get_github_release_latest_tag
 if TYPE_CHECKING:
     from wiswa.typing import ExportRequirements, Settings
 
-__all__ = ('apply_python_pyproject_manifest_edits', 'post_process_steps',
-           'resolve_changelog_boilerplate_urls')
+__all__ = ('apply_python_pyproject_manifest_edits', 'maybe_revert_uv_lock_if_only_lockfile_changed',
+           'post_process_steps', 'resolve_changelog_boilerplate_urls',
+           'uv_lock_diff_changes_only_exclude_newer')
 
 log = logging.getLogger(__name__)
+
+_GIT_CONFIG_NO_HOOKS = ('-c', f'core.hooksPath={os.devnull}')
 
 _FORMAT_DEFAULT_FILENAMES = {
     'cyclonedx1.5': 'cyclonedx.json',
@@ -190,14 +193,14 @@ def _clang_format_file_paths(clang_format_args: str) -> list[str]:
     return out
 
 
-async def _run_postprocess_format(settings: Settings, *, debug: bool,
-                                  on_command: Callable[[str], None] | None, env: dict[str,
-                                                                                      str]) -> None:
+async def _run_prettier_then_markdownlint_fix(*, debug: bool,
+                                              on_command: Callable[[str], None] | None,
+                                              env: dict[str, str]) -> None:
     """
-    Run Prettier, markdownlint-cli2, then language-specific formatters.
+    Run Prettier, then markdownlint-cli2 with a temporary config overlay.
 
     Prettier uses ``--log-level silent`` when not in debug mode. Markdownlint uses a temporary
-    config derived from ``package.json`` with ``showFound`` and ``noProgress`` set for
+    config derived from ``package.json`` with ``showFound`` and ``noProgress`` adjusted for
     post-processing output.
     """
     await _subprocess_log_run(('yarn', 'prettier', '--write', '--ignore-unknown',
@@ -234,6 +237,11 @@ async def _run_postprocess_format(settings: Settings, *, debug: bool,
                               check=False)
     await anyio.Path(tmp.name).unlink()
 
+
+async def _run_postprocess_language_formatters(settings: Settings, *, debug: bool,
+                                               on_command: Callable[[str], None] | None,
+                                               env: dict[str, str]) -> None:
+    """Run YAPF or Ruff (Python), or clang-format (C/C++), after Prettier and markdownlint."""
     if settings['project_type'] == 'python':
         is_uv = settings['package_manager'] == 'uv'
         quiet_uv_poetry: tuple[str, ...] = () if debug else ('--quiet',)
@@ -476,12 +484,8 @@ async def _post_process_steps_python(settings: Settings,
     oc = on_command
     if is_uv:
         await _subprocess_log_run(('uv', *quiet_arg, 'lock', '--upgrade'), on_command=oc)
-        groups = [
-            g for g in ('docs' if settings['want_docs'] else '',
-                        'tests' if settings['want_tests'] else '', 'dev') if g
-        ]
-        group_args = tuple(f'--group={g}' for g in groups)
-        await _subprocess_log_run(('uv', *quiet_arg, 'sync', *group_args), on_command=oc)
+        await _subprocess_log_run(('uv', *quiet_arg, 'sync', '--all-extras', '--all-groups'),
+                                  on_command=oc)
         await _subprocess_log_run(('uv', *quiet_arg, 'run', 'ruff', *quiet_arg, 'check', '--fix'),
                                   on_command=oc,
                                   check=False)
@@ -736,17 +740,46 @@ async def _check_readme_badges(settings: Settings) -> None:
     log.debug('Updated README.md badges.')
 
 
-async def _maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings,
-                                                         *,
-                                                         on_command: Callable[[str], None]
-                                                         | None = None) -> None:
+_RE_UV_LOCK_DIFF_EXCLUDE_NEWER_HUNK_LINE = re.compile(r'^[+-]\s*exclude-newer\s*=')
+
+
+def uv_lock_diff_changes_only_exclude_newer(diff_text: str) -> bool:
+    """Return whether unified diff hunks change only ``exclude-newer`` assignments."""
+    if not diff_text.strip():
+        return False
+    saw_exclude_newer_change = False
+    for line in diff_text.splitlines():
+        if line.startswith(('diff --git ', 'index ', '--- ', '+++ ', '@@', '\\')):
+            continue
+        if not line:
+            continue
+        marker = line[0]
+        if marker == ' ':
+            continue
+        if marker in '+-':
+            if not _RE_UV_LOCK_DIFF_EXCLUDE_NEWER_HUNK_LINE.match(line):
+                return False
+            saw_exclude_newer_change = True
+            continue
+        return False
+    return saw_exclude_newer_change
+
+
+async def maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings,
+                                                        *,
+                                                        on_command: Callable[[str], None]
+                                                        | None = None) -> None:
     """
-    Restore ``uv.lock`` from ``HEAD`` when it is the only tracked change.
+    Restore ``uv.lock`` from ``HEAD`` when drift is incidental resolution.
 
     ``uv lock --upgrade`` can refresh the lock without any edit to ``pyproject.toml`` (for example
-    when rolling ``exclude-newer`` cutoffs in the user ``uv.toml`` or when the index moves). If the
+    when rolling ``exclude-newer`` cut-offs in the user ``uv.toml`` or when the index moves). If the
     working tree differs from ``HEAD`` only in ``uv.lock``, put the lock file back so a run does
-    not leave an incidental lock diff.
+    not leave an incidental lock diff. The same applies when other tracked paths also differ, if
+    ``git diff --no-color -a HEAD -- uv.lock`` shows changes only on ``exclude-newer`` lines under
+    ``[options]`` (compare to ``HEAD``, matching ``git restore --source=HEAD``). ``git restore`` and
+    ``git checkout`` pass ``-c`` ``core.hooksPath=`` with the platform null device so hooks (for
+    example pre-commit) cannot block reverting the lock.
     """
     if settings['package_manager'] != 'uv':
         return
@@ -764,23 +797,28 @@ async def _maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings,
         p.strip().replace('\\', '/')
         for p in (out or b'').decode().splitlines() if p.strip()
     }
-    proc_ut, out_ut, _ = await _subprocess_log_run(
-        ('git', 'ls-files', '--others', '--exclude-standard', '-z'),
-        on_command=on_command,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.DEVNULL,
-        check=False,
-    )
-    if proc_ut.returncode != 0:
-        log.debug('git ls-files --others failed; skipping uv.lock restore.')
+    if 'uv.lock' not in diff_names:
         return
-    untracked = [p for p in (out_ut or b'').decode().split('\0') if p]
-    if untracked:
-        return
-    if diff_names != {'uv.lock'}:
+    if diff_names == {'uv.lock'}:
+        restore_uv_lock = True
+    else:
+        proc_uv, diff_uv, _ = await _subprocess_log_run(
+            ('git', 'diff', '--no-color', '-a', 'HEAD', '--', 'uv.lock'),
+            on_command=on_command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+            check=False,
+        )
+        if proc_uv.returncode != 0:
+            log.debug(
+                'git diff --no-color -a HEAD -- uv.lock failed; skipping extended uv.lock restore.')
+            return
+        restore_uv_lock = uv_lock_diff_changes_only_exclude_newer((diff_uv or b'').decode())
+    if not restore_uv_lock:
         return
     proc_restore, _, err = await _subprocess_log_run(
-        ('git', 'restore', '--source=HEAD', '--staged', '--worktree', '--', 'uv.lock'),
+        ('git', *_GIT_CONFIG_NO_HOOKS, 'restore', '--source=HEAD', '--staged', '--worktree', '--',
+         'uv.lock'),
         on_command=on_command,
         stdout=asyncio.subprocess.DEVNULL,
         stderr=asyncio.subprocess.PIPE,
@@ -790,7 +828,7 @@ async def _maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings,
         log.debug('git restore uv.lock failed (%s); trying git checkout.',
                   (err or b'').decode().strip())
         proc_co, _, err_co = await _subprocess_log_run(
-            ('git', 'checkout', 'HEAD', '--', 'uv.lock'),
+            ('git', *_GIT_CONFIG_NO_HOOKS, 'checkout', 'HEAD', '--', 'uv.lock'),
             on_command=on_command,
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.PIPE,
@@ -799,7 +837,7 @@ async def _maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings,
         if proc_co.returncode != 0:
             log.warning('Could not restore uv.lock from HEAD: %s', (err_co or b'').decode().strip())
             return
-    log.debug('Restored uv.lock from HEAD; it was the only file differing from HEAD.')
+    log.debug('Restored uv.lock from HEAD.')
 
 
 async def post_process_steps(settings: Settings,
@@ -824,7 +862,6 @@ async def post_process_steps(settings: Settings,
         Semantic Versioning are updated from ``olivierlacan/keep-a-changelog`` and ``semver/semver``
         respectively; otherwise pinned fallback URLs are used.
     """
-    await _remove_legacy_wiswa_ai_files()
     if settings['private']:
         await anyio.Path('.github/workflows/publish.yml').unlink(missing_ok=True)
     match settings['project_type']:
@@ -832,8 +869,10 @@ async def post_process_steps(settings: Settings,
             await _post_process_steps_python(settings, debug=debug, on_command=on_command)
         case _:
             log.warning('No post-processing steps for project type `%s`.', settings['project_type'])
-    await _check_readme_badges(settings)
-    await _refresh_changelog_reference_urls(session)
+    await asyncio.gather(
+        _check_readme_badges(settings),
+        _refresh_changelog_reference_urls(session),
+    )
     package_json = anyio.Path('package.json')
     await package_json.write_text(json.dumps(json.loads(await
                                                         package_json.read_text(encoding='utf-8')),
@@ -848,11 +887,18 @@ async def post_process_steps(settings: Settings,
                               on_command=on_command,
                               stderr=asyncio.subprocess.PIPE,
                               stdout=asyncio.subprocess.PIPE)
-    await _run_postprocess_format(settings, debug=debug, on_command=on_command, env=yarn_env)
-    await _subprocess_log_run(('yarn', 'dict:update'),
-                              env=yarn_env,
-                              on_command=on_command,
-                              stderr=asyncio.subprocess.PIPE,
-                              stdout=asyncio.subprocess.PIPE,
-                              check=False)
-    await _maybe_revert_uv_lock_if_only_lockfile_changed(settings, on_command=on_command)
+    await asyncio.gather(
+        _remove_legacy_wiswa_ai_files(),
+        _run_prettier_then_markdownlint_fix(debug=debug, on_command=on_command, env=yarn_env),
+        _run_postprocess_language_formatters(settings,
+                                             debug=debug,
+                                             on_command=on_command,
+                                             env=yarn_env),
+        _subprocess_log_run(('yarn', 'dict:update'),
+                            env=yarn_env,
+                            on_command=on_command,
+                            stderr=asyncio.subprocess.PIPE,
+                            stdout=asyncio.subprocess.PIPE,
+                            check=False),
+        maybe_revert_uv_lock_if_only_lockfile_changed(settings, on_command=on_command),
+    )

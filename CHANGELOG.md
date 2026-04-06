@@ -118,6 +118,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `npmMinimalAgeGate` for npm registry fetches and for GitHub `githubLatestReleaseTag` age
+  filtering now resolves in order: merged settings `yarnrc.npmMinimalAgeGate`, a numeric
+  `npmMinimalAgeGate` field in `.wiswa.jsonnet`, repository then home `.yarnrc.yml`,
+  `~/.npmrc` (`min-release-age` in days), then the 10080-minute default. Jsonnet natives use the
+  merge-aware and snippet-aware value.
 - Jsonnet defaults replace `want_claude` and `want_claude_agents` with `want_ai`, which gates
   `AGENTS.md`, `CLAUDE.md`, and the `.claude/` tree. Removed `want_copilot` and `want_cursor`; editor
   artefacts follow the consolidated template layout.
@@ -142,12 +147,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - PyInstaller workflow template no longer excludes `windows-11-arm` from the build matrix based on
   the `niquests` dependency. Windows ARM64 builds are always included for non-private projects.
 - Poetry commands receive `--quiet` when debug mode is off, matching uv commands.
-- Post-processing runs Prettier, markdownlint-cli2 (via a temporary config overlay), then
-  language-specific formatters, followed by `yarn dict:update`, instead of invoking the
-  `yarn format` script as a single step.
+- Post-processing still runs root `yarn` install before other Yarn steps, then runs concurrently:
+  legacy AI artefact cleanup, Prettier then markdownlint-cli2 (sequential inside one task), language
+  format (YAPF or Ruff, or clang-format), `yarn dict:update`, and incidental `uv.lock` revert when
+  applicable. After the project-type step, README badge refresh and changelog link refresh still run
+  concurrently.
 - C/C++ post-processing expands glob tokens in `clang_format_args` on disk before invoking
   `clang-format` (no shell). Restoring `uv.lock` from `HEAD` when it is the only drift now logs at
   debug level.
+- Post-processing also restores `uv.lock` from `HEAD` when other tracked paths differ, if
+  `git diff --no-color -a HEAD -- uv.lock` changes only the `exclude-newer` line under `[options]`
+  (for example a rolling cut-off in user `uv.toml` alongside real template edits). The same `HEAD`
+  baseline is used as `git restore --source=HEAD`; untracked files no longer block this step, and
+  the previous working-tree-vs-index diff could be empty after staging.
 - Generated `package.json` scripts, workflow templates, and agent instructions prefer long-form CLI
   flags (Prettier, YAPF, clang-format, GitHub CLI, Sphinx, npm global installs, Poetry export, and
   related tools) where applicable.
@@ -157,6 +169,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Incidental `uv.lock` restore from `HEAD` runs `git restore` / `git checkout` with
+  `core.hooksPath` set to the null device so pre-commit and other hooks cannot fail the operation
+  (for example when `.pre-commit-config.yaml` is unstaged).
 - Templates that render to empty content now auto-delete the output file instead of writing a
   near-empty file, using template-driven conditional rendering instead of hardcoded filtering.
 - The `gitlab_ci` field is now optional when `using_gitlab` is true, preventing a crash when

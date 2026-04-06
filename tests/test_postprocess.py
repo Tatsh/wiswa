@@ -7,12 +7,14 @@ from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock
 import asyncio
 import logging
+import os
 import subprocess
 
 from wiswa.utils.postprocess import (
-    _maybe_revert_uv_lock_if_only_lockfile_changed,  # noqa: PLC2701
     apply_python_pyproject_manifest_edits,
+    maybe_revert_uv_lock_if_only_lockfile_changed,
     post_process_steps,
+    uv_lock_diff_changes_only_exclude_newer,
 )
 import niquests
 import pytest
@@ -1562,7 +1564,81 @@ class _FakeAsyncSubprocess:
         return self._stdout, b''
 
 
-def _git_init_commit_uv_repo(tmp_path: Path) -> None:
+_MINIMAL_UV_LOCK = ('version = 1\n'
+                    'revision = 1\n'
+                    'requires-python = ">=3.10"\n'
+                    '\n'
+                    '[options]\n'
+                    'exclude-newer = "2025-01-01T00:00:00Z"\n'
+                    'exclude-newer-span = "P1W"\n'
+                    '\n'
+                    '[[package]]\n'
+                    'name = "w"\n'
+                    'version = "1.0.0"\n'
+                    'source = { registry = "https://pypi.org/simple" }\n')
+
+_UV_LOCK_DIFF_OK = ('diff --git a/uv.lock b/uv.lock\n'
+                    '--- a/uv.lock\n'
+                    '+++ b/uv.lock\n'
+                    '@@ -2,2 +2,2 @@\n'
+                    ' [options]\n'
+                    '-exclude-newer = "a"\n'
+                    '+exclude-newer = "b"\n'
+                    ' exclude-newer-span = "P1W"\n')
+
+_UV_LOCK_DIFF_WITH_BLANK_HUNK_LINE = ('diff --git a/uv.lock b/uv.lock\n'
+                                      '--- a/uv.lock\n'
+                                      '+++ b/uv.lock\n'
+                                      '@@ -2,3 +2,3 @@\n'
+                                      ' [options]\n'
+                                      '\n'
+                                      '-exclude-newer = "a"\n'
+                                      '+exclude-newer = "b"\n')
+
+_UV_LOCK_DIFF_BOGUS_HUNK = ('--- a/uv.lock\n'
+                            '+++ b/uv.lock\n'
+                            '@@ -1,1 +1,1 @@\n'
+                            'bogus\n')
+
+_UV_LOCK_DIFF_BAD_PLUS_LINE = ('--- a/uv.lock\n'
+                               '+++ b/uv.lock\n'
+                               '@@ -1,2 +1,2 @@\n'
+                               '-exclude-newer = "a"\n'
+                               '+version = "2"\n')
+
+
+def test_uv_lock_diff_changes_only_exclude_newer_empty() -> None:
+    assert uv_lock_diff_changes_only_exclude_newer('') is False
+
+
+def test_uv_lock_diff_changes_only_exclude_newer_whitespace_only() -> None:
+    assert uv_lock_diff_changes_only_exclude_newer('   \n  ') is False
+
+
+def test_uv_lock_diff_changes_only_exclude_newer_valid() -> None:
+    assert uv_lock_diff_changes_only_exclude_newer(_UV_LOCK_DIFF_OK) is True
+
+
+def test_uv_lock_diff_changes_only_exclude_newer_blank_line_in_hunk() -> None:
+    assert uv_lock_diff_changes_only_exclude_newer(_UV_LOCK_DIFF_WITH_BLANK_HUNK_LINE) is True
+
+
+def test_uv_lock_diff_changes_only_exclude_newer_bogus_hunk_line() -> None:
+    assert uv_lock_diff_changes_only_exclude_newer(_UV_LOCK_DIFF_BOGUS_HUNK) is False
+
+
+def test_uv_lock_diff_changes_only_exclude_newer_non_matching_plus() -> None:
+    assert uv_lock_diff_changes_only_exclude_newer(_UV_LOCK_DIFF_BAD_PLUS_LINE) is False
+
+
+def test_uv_lock_diff_changes_only_exclude_newer_headers_only() -> None:
+    assert uv_lock_diff_changes_only_exclude_newer('diff --git a/uv.lock b/uv.lock\n'
+                                                   'index 111..222 100644\n'
+                                                   '--- a/uv.lock\n'
+                                                   '+++ b/uv.lock\n') is False
+
+
+def _git_init_commit_uv_repo(tmp_path: Path, *, lock_text: str = 'committed-lock\n') -> None:
     git = which('git')
     assert git is not None
     subprocess.run([git, 'init'], check=True, cwd=tmp_path, capture_output=True)
@@ -1571,9 +1647,30 @@ def _git_init_commit_uv_repo(tmp_path: Path) -> None:
     subprocess.run([git, 'config', 'commit.gpgsign', 'false'], check=True, cwd=tmp_path)
     (tmp_path / 'pyproject.toml').write_text('[project]\nname = "x"\nversion = "0"\n',
                                              encoding='utf-8')
-    (tmp_path / 'uv.lock').write_text('committed-lock\n', encoding='utf-8')
+    (tmp_path / 'uv.lock').write_text(lock_text, encoding='utf-8')
     subprocess.run([git, 'add', 'pyproject.toml', 'uv.lock'], check=True, cwd=tmp_path)
     subprocess.run([git, 'commit', '-m', 'init'], check=True, cwd=tmp_path, capture_output=True)
+
+
+@pytest.mark.skipif(which('git') is None, reason='git not installed')
+def test_uv_lock_diff_changes_only_exclude_newer_real_git_diff(tmp_path: Path) -> None:
+    _git_init_commit_uv_repo(tmp_path, lock_text=_MINIMAL_UV_LOCK)
+    drifted = _MINIMAL_UV_LOCK.replace(
+        'exclude-newer = "2025-01-01T00:00:00Z"',
+        'exclude-newer = "2030-01-01T00:00:00Z"',
+    )
+    (tmp_path / 'uv.lock').write_text(drifted, encoding='utf-8')
+    git = which('git')
+    assert git is not None
+    diff = subprocess.run(
+        [git, 'diff', '--no-color', '-a', 'HEAD', '--', 'uv.lock'],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert diff.returncode == 0
+    assert uv_lock_diff_changes_only_exclude_newer(diff.stdout) is True
 
 
 @pytest.mark.skipif(which('git') is None, reason='git not installed')
@@ -1583,7 +1680,7 @@ async def test_maybe_revert_uv_lock_restores_when_only_lock_differs(
     _git_init_commit_uv_repo(tmp_path)
     (tmp_path / 'uv.lock').write_text('drifted-lock\n', encoding='utf-8')
     settings = cast('Any', _make_settings())
-    await _maybe_revert_uv_lock_if_only_lockfile_changed(settings)
+    await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
     assert (tmp_path / 'uv.lock').read_text(encoding='utf-8') == 'committed-lock\n'
 
 
@@ -1596,20 +1693,77 @@ async def test_maybe_revert_uv_lock_skips_when_pyproject_also_differs(
     (tmp_path / 'pyproject.toml').write_text('[project]\nname = "y"\nversion = "0"\n',
                                              encoding='utf-8')
     settings = cast('Any', _make_settings())
-    await _maybe_revert_uv_lock_if_only_lockfile_changed(settings)
+    await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
     assert (tmp_path / 'uv.lock').read_text(encoding='utf-8') == 'drifted-lock\n'
 
 
 @pytest.mark.skipif(which('git') is None, reason='git not installed')
-async def test_maybe_revert_uv_lock_skips_with_untracked_file(
+async def test_maybe_revert_uv_lock_restores_when_only_options_differ_and_other_files_differ(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    _git_init_commit_uv_repo(tmp_path, lock_text=_MINIMAL_UV_LOCK)
+    drifted = _MINIMAL_UV_LOCK.replace(
+        'exclude-newer = "2025-01-01T00:00:00Z"',
+        'exclude-newer = "2030-01-01T00:00:00Z"',
+    )
+    (tmp_path / 'uv.lock').write_text(drifted, encoding='utf-8')
+    (tmp_path / 'pyproject.toml').write_text('[project]\nname = "y"\nversion = "0"\n',
+                                             encoding='utf-8')
+    settings = cast('Any', _make_settings())
+    await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
+    assert (tmp_path / 'uv.lock').read_text(encoding='utf-8') == _MINIMAL_UV_LOCK
+
+
+@pytest.mark.skipif(which('git') is None, reason='git not installed')
+async def test_maybe_revert_uv_lock_skips_when_package_and_other_files_differ(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    _git_init_commit_uv_repo(tmp_path, lock_text=_MINIMAL_UV_LOCK)
+    drifted = _MINIMAL_UV_LOCK.replace('version = "1.0.0"', 'version = "2.0.0"')
+    (tmp_path / 'uv.lock').write_text(drifted, encoding='utf-8')
+    (tmp_path / 'pyproject.toml').write_text('[project]\nname = "y"\nversion = "0"\n',
+                                             encoding='utf-8')
+    settings = cast('Any', _make_settings())
+    await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
+    assert (tmp_path / 'uv.lock').read_text(encoding='utf-8') == drifted
+
+
+@pytest.mark.skipif(which('git') is None, reason='git not installed')
+async def test_maybe_revert_uv_lock_skips_when_only_span_differs_and_other_files_differ(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    _git_init_commit_uv_repo(tmp_path, lock_text=_MINIMAL_UV_LOCK)
+    drifted = _MINIMAL_UV_LOCK.replace('exclude-newer-span = "P1W"', 'exclude-newer-span = "P2W"')
+    (tmp_path / 'uv.lock').write_text(drifted, encoding='utf-8')
+    (tmp_path / 'pyproject.toml').write_text('[project]\nname = "y"\nversion = "0"\n',
+                                             encoding='utf-8')
+    settings = cast('Any', _make_settings())
+    await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
+    assert (tmp_path / 'uv.lock').read_text(encoding='utf-8') == drifted
+
+
+@pytest.mark.skipif(which('git') is None, reason='git not installed')
+async def test_maybe_revert_uv_lock_restores_despite_untracked_file(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     _git_init_commit_uv_repo(tmp_path)
     (tmp_path / 'uv.lock').write_text('drifted-lock\n', encoding='utf-8')
     (tmp_path / 'noise.txt').write_text('x', encoding='utf-8')
     settings = cast('Any', _make_settings())
-    await _maybe_revert_uv_lock_if_only_lockfile_changed(settings)
-    assert (tmp_path / 'uv.lock').read_text(encoding='utf-8') == 'drifted-lock\n'
+    await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
+    assert (tmp_path / 'uv.lock').read_text(encoding='utf-8') == 'committed-lock\n'
+
+
+@pytest.mark.skipif(which('git') is None, reason='git not installed')
+async def test_maybe_revert_uv_lock_skips_when_uv_lock_not_in_diff(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    _git_init_commit_uv_repo(tmp_path)
+    (tmp_path / 'pyproject.toml').write_text('[project]\nname = "z"\nversion = "0"\n',
+                                             encoding='utf-8')
+    settings = cast('Any', _make_settings())
+    await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
+    assert (tmp_path / 'uv.lock').read_text(encoding='utf-8') == 'committed-lock\n'
 
 
 @pytest.mark.skipif(which('git') is None, reason='git not installed')
@@ -1619,7 +1773,7 @@ async def test_maybe_revert_uv_lock_skips_for_poetry(tmp_path: Path,
     _git_init_commit_uv_repo(tmp_path)
     (tmp_path / 'uv.lock').write_text('drifted-lock\n', encoding='utf-8')
     settings = cast('Any', _make_settings(package_manager='poetry'))
-    await _maybe_revert_uv_lock_if_only_lockfile_changed(settings)
+    await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
     assert (tmp_path / 'uv.lock').read_text(encoding='utf-8') == 'drifted-lock\n'
 
 
@@ -1636,28 +1790,28 @@ async def test_maybe_revert_uv_lock_skips_when_git_diff_fails(tmp_path: Path,
         return _FakeAsyncSubprocess(1, b'')
 
     mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec', side_effect=fake_exec)
-    await _maybe_revert_uv_lock_if_only_lockfile_changed(settings)
+    await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
     assert (tmp_path / 'uv.lock').read_text(encoding='utf-8') == 'local\n'
 
 
-async def test_maybe_revert_uv_lock_skips_when_git_ls_files_fails(tmp_path: Path,
-                                                                  monkeypatch: pytest.MonkeyPatch,
-                                                                  mocker: MockerFixture) -> None:
+async def test_maybe_revert_uv_lock_skips_when_git_diff_uv_lock_fails(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / '.git').mkdir()
     (tmp_path / 'uv.lock').write_text('local\n', encoding='utf-8')
     settings = cast('Any', _make_settings())
-    calls: list[int] = []
+    calls: list[tuple[object, ...]] = []
 
     async def fake_exec(*args: object, **kwargs: object) -> _FakeAsyncSubprocess:
         await asyncio.sleep(0)
-        calls.append(1)
-        if len(calls) == 1:
-            return _FakeAsyncSubprocess(0, b'uv.lock\n')
+        calls.append(tuple(args))
+        n = len(calls)
+        if n == 1:
+            return _FakeAsyncSubprocess(0, b'uv.lock\npyproject.toml\n')
         return _FakeAsyncSubprocess(1, b'')
 
     mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec', side_effect=fake_exec)
-    await _maybe_revert_uv_lock_if_only_lockfile_changed(settings)
+    await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
     assert len(calls) == 2
     assert (tmp_path / 'uv.lock').read_text(encoding='utf-8') == 'local\n'
 
@@ -1678,19 +1832,22 @@ async def test_maybe_revert_uv_lock_restore_falls_back_to_checkout(tmp_path: Pat
         if n == 1:
             return _FakeAsyncSubprocess(0, b'uv.lock\n')
         if n == 2:
-            return _FakeAsyncSubprocess(0, b'')
-        if n == 3:
             return _FakeAsyncSubprocess(1, b'restore failed')
-        if n == 4:
+        if n == 3:
             return _FakeAsyncSubprocess(0, b'')
         return _FakeAsyncSubprocess(1, b'')
 
     mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec', side_effect=fake_exec)
-    await _maybe_revert_uv_lock_if_only_lockfile_changed(settings)
-    assert recorded[2][:6] == ('git', 'restore', '--source=HEAD', '--staged', '--worktree', '--')
+    await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
+    hooks = ('-c', f'core.hooksPath={os.devnull}')
+    assert recorded[1][0] == 'git'
+    assert tuple(recorded[1][1:3]) == hooks
+    assert recorded[1][3:8] == ('restore', '--source=HEAD', '--staged', '--worktree', '--')
+    assert recorded[1][8] == 'uv.lock'
+    assert recorded[2][0] == 'git'
+    assert tuple(recorded[2][1:3]) == hooks
+    assert recorded[2][3:6] == ('checkout', 'HEAD', '--')
     assert recorded[2][6] == 'uv.lock'
-    assert recorded[3][:4] == ('git', 'checkout', 'HEAD', '--')
-    assert recorded[3][4] == 'uv.lock'
 
 
 async def test_maybe_revert_uv_lock_logs_when_restore_and_checkout_fail(
@@ -1709,11 +1866,11 @@ async def test_maybe_revert_uv_lock_logs_when_restore_and_checkout_fail(
         if n == 1:
             return _FakeAsyncSubprocess(0, b'uv.lock\n')
         if n == 2:
-            return _FakeAsyncSubprocess(0, b'')
+            return _FakeAsyncSubprocess(1, b'restore failed')
         return _FakeAsyncSubprocess(1, b'both failed')
 
     mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec', side_effect=fake_exec)
     caplog.set_level(logging.WARNING)
-    await _maybe_revert_uv_lock_if_only_lockfile_changed(settings)
-    assert len(calls) == 4
+    await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
+    assert len(calls) == 3
     assert 'Could not restore uv.lock from HEAD' in caplog.text

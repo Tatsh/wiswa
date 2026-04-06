@@ -174,6 +174,25 @@ async def test_resolve_defaults_only(tmp_path: Path, mocker: MockerFixture) -> N
     assert result == {'project_type': 'python'}
 
 
+async def test_evaluate_jsonnet_file_merged_settings_invalid_json(mocker: MockerFixture) -> None:
+    mock_cb = mocker.patch('wiswa.utils.jsonnet._make_native_callbacks')
+    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet.evaluate_file.return_value = '"ok"'
+    mock_session = MagicMock()
+    await evaluate_jsonnet_file(['/lib'], MagicMock(), 'not valid json{{{', session=mock_session)
+    mock_cb.assert_called_once()
+    assert mock_cb.call_args.kwargs['merged_settings'] is None
+
+
+async def test_evaluate_jsonnet_file_merged_settings_json_not_object(mocker: MockerFixture) -> None:
+    mock_cb = mocker.patch('wiswa.utils.jsonnet._make_native_callbacks')
+    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet.evaluate_file.return_value = '"ok"'
+    await evaluate_jsonnet_file(['/lib'], MagicMock(), '[1, 2]', session=MagicMock())
+    mock_cb.assert_called_once()
+    assert mock_cb.call_args.kwargs['merged_settings'] is None
+
+
 async def test_evaluate_jsonnet_file_with_session(mocker: MockerFixture) -> None:
     mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{"key": "value"}'
@@ -213,7 +232,7 @@ async def test_native_callback_params_use_short_names(mocker: MockerFixture) -> 
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}', session=mock_session)
     native_callbacks = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']
     assert native_callbacks['githubLatestActionTag'][0] == ('o', 'r')
-    assert native_callbacks['githubLatestReleaseTag'][0] == ('o', 'r')
+    assert native_callbacks['githubLatestReleaseTag'][0] == ('o', 'r', 'g')
     assert native_callbacks['githubLatestTag'][0] == ('o', 'r')
     assert native_callbacks['latestNpmPackageVersion'][0] == ('p',)
     assert native_callbacks['latestPypiPackageVersion'][0] == ('p',)

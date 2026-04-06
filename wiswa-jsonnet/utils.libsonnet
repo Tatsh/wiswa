@@ -267,11 +267,16 @@
    *
    * @param owner The repository owner.
    * @param repo The repository name.
+   * @param npmMinReleaseAge When true, skip GitHub releases newer than the resolved
+   * ``npmMinimalAgeGate`` (minutes): merged settings ``yarnrc``, then ``.wiswa.jsonnet`` text,
+   * then repo or home ``.yarnrc.yml`` (minutes), then ``~/.npmrc`` ``min-release-age`` (days),
+   * then the 10080 default.
    * @returns The latest release tag (string).
-   * @pt string, string
+   * @pt string, string, boolean
    * @rv string
    */
-  githubLatestReleaseTag(owner, repo):: std.native('githubLatestReleaseTag')(owner, repo),
+  githubLatestReleaseTag(owner, repo, npmMinReleaseAge=false)::
+    std.native('githubLatestReleaseTag')(owner, repo, npmMinReleaseAge),
   /**
    * @brief Get the latest tag for a GitHub repository.
    *

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock
 import json
 import logging
+import math
 import stat
 
 from wiswa.utils.versions import (
@@ -17,6 +18,7 @@ from wiswa.utils.versions import (
     get_github_release_latest_tag,
     get_npm_latest_package_version,
     get_pypi_latest_package_version,
+    resolve_npm_minimal_age_gate_minutes,
 )
 import pytest
 
@@ -327,6 +329,494 @@ async def test_get_github_release_latest_tag_disk_cache_on_403_skip_releases(
     assert result == 'v3.1.0'
 
 
+async def test_get_github_release_latest_tag_npm_age_picks_older_published_release() -> None:
+    old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=14)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    new_pub = (datetime.now(tz=timezone.utc) - timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    releases = _make_response(ok=True,
+                              json_data=[
+                                  {
+                                      'tag_name': 'v2.0.0',
+                                      'draft': False,
+                                      'prerelease': False,
+                                      'published_at': new_pub,
+                                  },
+                                  {
+                                      'tag_name': 'v1.0.0',
+                                      'draft': False,
+                                      'prerelease': False,
+                                      'published_at': old_pub,
+                                  },
+                              ])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[releases])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'o',
+                                                 'r',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=10080)
+    assert result == 'v1.0.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_list_blocked_falls_back_latest() -> None:
+    blocked = _make_response(ok=False, status_code=403)
+    latest = _make_response(ok=True, json_data={'tag_name': 'v2.0.0'})
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[blocked, latest])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'x',
+                                                 'y',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=60)
+    assert result == 'v2.0.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_list_429() -> None:
+    blocked = _make_response(ok=False, status_code=429)
+    latest = _make_response(ok=True, json_data={'tag_name': 'v2.1.0'})
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[blocked, latest])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'x',
+                                                 'y',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=1)
+    assert result == 'v2.1.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_no_match_logs_and_falls_back(
+        caplog: pytest.LogCaptureFixture) -> None:
+    new_pub = (datetime.now(tz=timezone.utc) - timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    releases = _make_response(ok=True,
+                              json_data=[{
+                                  'tag_name': 'v5.0.0',
+                                  'draft': False,
+                                  'prerelease': False,
+                                  'published_at': new_pub,
+                              }])
+    latest = _make_response(ok=True, json_data={'tag_name': 'v5.0.0'})
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[releases, latest])
+    with caplog.at_level(logging.DEBUG):
+        result = await get_github_release_latest_tag(mock_session,
+                                                     'a',
+                                                     'b',
+                                                     apply_npm_min_release_age=True,
+                                                     npm_age_gate_minutes=10080)
+    assert result == 'v5.0.0'
+    assert 'falling back to latest tag logic' in caplog.text
+
+
+async def test_get_github_release_latest_tag_npm_age_skips_non_qualifying_releases() -> None:
+    old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=30)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    new_pub = (datetime.now(tz=timezone.utc) - timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    batch = [
+        'not-a-dict',
+        {
+            'draft': True,
+            'tag_name': 'v9.0.0',
+            'published_at': old_pub,
+        },
+        {
+            'prerelease': True,
+            'tag_name': 'v8.0.0',
+            'published_at': old_pub,
+        },
+        {
+            'tag_name': '',
+            'published_at': old_pub,
+        },
+        {
+            'tag_name': 'v7.0.0',
+            'published_at': 7,
+        },
+        {
+            'tag_name': 'v6.0.0',
+            'published_at': 'not-a-date',
+        },
+        {
+            'tag_name': 'v5.0.0',
+            'published_at': new_pub,
+        },
+        {
+            'tag_name': 'vvvv',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+        {
+            'tag_name': 'v2.0.0',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+    ]
+    releases = _make_response(ok=True, json_data=batch)
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[releases])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'o',
+                                                 'r',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=10080,
+                                                 allow_suffixes=False)
+    assert result == 'v2.0.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_non_list_batch_falls_back() -> None:
+    weird = _make_response(ok=True, json_data={'items': []})
+    latest = _make_response(ok=True, json_data={'tag_name': 'v1.2.3'})
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[weird, latest])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'o',
+                                                 'r',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=1)
+    assert result == 'v1.2.3'
+
+
+async def test_get_github_release_latest_tag_npm_age_http_not_ok_falls_back() -> None:
+    nok = _make_response(ok=False, status_code=404)
+    latest = _make_response(ok=True, json_data={'tag_name': 'v4.0.0'})
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[nok, latest])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'o',
+                                                 'r',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=5)
+    assert result == 'v4.0.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_empty_batch_falls_back() -> None:
+    empty = _make_response(ok=True, json_data=[])
+    latest = _make_response(ok=True, json_data={'tag_name': 'v0.0.1'})
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[empty, latest])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'o',
+                                                 'r',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=9)
+    assert result == 'v0.0.1'
+
+
+async def test_get_github_release_latest_tag_npm_age_second_release_page() -> None:
+    new_pub = (datetime.now(tz=timezone.utc) - timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=60)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    page1 = [{
+        'tag_name': f'v0.{i}.0',
+        'draft': False,
+        'prerelease': False,
+        'published_at': new_pub,
+    } for i in range(100)]
+    page2 = [{
+        'tag_name': 'v10.0.0',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub,
+    }]
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[
+        _make_response(ok=True, json_data=page1),
+        _make_response(ok=True, json_data=page2),
+    ])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'o',
+                                                 'r',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=10080)
+    assert result == 'v10.0.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_omits_minutes_uses_yarnrc(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_home = tmp_path / 'home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: fake_home)
+    monkeypatch.chdir(tmp_path)
+    (fake_home / '.yarnrc.yml').write_text('npmMinimalAgeGate: 10080\n', encoding='utf-8')
+    old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=14)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    releases = _make_response(ok=True,
+                              json_data=[{
+                                  'tag_name': 'v1.0.0',
+                                  'draft': False,
+                                  'prerelease': False,
+                                  'published_at': old_pub,
+                              }])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[releases])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'o',
+                                                 'r',
+                                                 apply_npm_min_release_age=True)
+    assert result == 'v1.0.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_google_yapf_old_release() -> None:
+    old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=14)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    batch = [{
+        'tag_name': 'v0.41.0',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub,
+    }]
+    releases = _make_response(ok=True, json_data=batch)
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[releases])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'google',
+                                                 'yapf',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=10080,
+                                                 allow_suffixes=True)
+    assert result == 'v0.41.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_google_yapf_no_digit_suffix() -> None:
+    old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=14)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    batch = [
+        {
+            'tag_name': 'v0.40.0-beta',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+        {
+            'tag_name': 'v0.40.0',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+    ]
+    releases = _make_response(ok=True, json_data=batch)
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[releases])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'google',
+                                                 'yapf',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=10080,
+                                                 allow_suffixes=False)
+    assert result == 'v0.40.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_prefers_highest_eligible_version() -> None:
+    old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    batch = [
+        {
+            'tag_name': 'v1.0.0',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+        {
+            'tag_name': 'v2.0.0',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+    ]
+    releases = _make_response(ok=True, json_data=batch)
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[releases])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'o',
+                                                 'r',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=10080,
+                                                 allow_suffixes=False)
+    assert result == 'v2.0.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_skips_invalid_and_prerelease_tags() -> None:
+    old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    batch = [
+        {
+            'tag_name': 'v!!!!',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+        {
+            'tag_name': 'v3.0.0rc1',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+        {
+            'tag_name': 'v3.0.0',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+    ]
+    releases = _make_response(ok=True, json_data=batch)
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[releases])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'o',
+                                                 'r',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=10080,
+                                                 allow_suffixes=False)
+    assert result == 'v3.0.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_partial_release_page() -> None:
+    old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    page_short = [{
+        'tag_name': 'v1.1.0',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub,
+    }]
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[_make_response(ok=True, json_data=page_short)])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'o',
+                                                 'r',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=10080)
+    assert result == 'v1.1.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_full_page_exhausts_without_short_read(
+        mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.utils.versions._GITHUB_RELEASES_PAGE_CAP', 1)
+    new_pub = (datetime.now(tz=timezone.utc) - timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    page1 = [{
+        'tag_name': f'v50.{i}.0',
+        'draft': False,
+        'prerelease': False,
+        'published_at': new_pub,
+    } for i in range(100)]
+    latest = _make_response(ok=True, json_data={'tag_name': 'v50.0.0'})
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[
+        _make_response(ok=True, json_data=page1),
+        latest,
+    ])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'o',
+                                                 'r',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=10080)
+    assert result == 'v50.0.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_invalid_semver_suffixes_allowed() -> None:
+    old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    batch = [
+        {
+            'tag_name': 'v!!!!',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+        {
+            'tag_name': 'v2.0.0',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+    ]
+    releases = _make_response(ok=True, json_data=batch)
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[releases])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'o',
+                                                 'r',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=10080,
+                                                 allow_suffixes=True)
+    assert result == 'v2.0.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_google_yapf_rejects_non_v_tag() -> None:
+    old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    batch = [
+        {
+            'tag_name': 'release-0.40',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+        {
+            'tag_name': 'v0.40.0',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+    ]
+    releases = _make_response(ok=True, json_data=batch)
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[releases])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'google',
+                                                 'yapf',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=10080,
+                                                 allow_suffixes=True)
+    assert result == 'v0.40.0'
+
+
+async def test_get_github_release_latest_tag_npm_age_skips_older_version_when_max_seen() -> None:
+    old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    batch = [
+        {
+            'tag_name': 'v3.0.0',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+        {
+            'tag_name': 'v2.0.0',
+            'draft': False,
+            'prerelease': False,
+            'published_at': old_pub,
+        },
+    ]
+    releases = _make_response(ok=True, json_data=batch)
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[releases])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'o',
+                                                 'r',
+                                                 apply_npm_min_release_age=True,
+                                                 npm_age_gate_minutes=10080,
+                                                 allow_suffixes=False)
+    assert result == 'v3.0.0'
+
+
+async def test_get_github_release_disk_store_memo_avoids_second_file_read(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    cache_dir = tmp_path / 'xdg-cache' / 'wiswa'
+    cache_dir.mkdir(parents=True)
+    store = {
+        'gh_aa/bb_False_True': 'v1.0.0',
+        'gh_cc/dd_False_True': 'v2.0.0',
+    }
+    (cache_dir / 'github_tag_cache.json').write_text(json.dumps(store) + '\n', encoding='utf-8')
+    reads: list[Path] = []
+    real_read = Path.read_text
+
+    def counting(self: Path, *a: Any, **kw: Any) -> str:
+        if self.name == 'github_tag_cache.json':
+            reads.append(self)
+        return real_read(self, *a, **kw)
+
+    monkeypatch.setattr(Path, 'read_text', counting)
+    blocked = _make_response(ok=False, status_code=403)
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[blocked, blocked, blocked, blocked])
+    one = await get_github_release_latest_tag(mock_session, 'aa', 'bb')
+    assert one == 'v1.0.0'
+    two = await get_github_release_latest_tag(mock_session, 'cc', 'dd')
+    assert two == 'v2.0.0'
+    assert len(reads) == 1
+
+
 async def test_get_pypi_latest_package_version_uv_toml_global_parses_timestamp(
         tmp_path: Path, mocker: MockerFixture) -> None:
     uv_dir = tmp_path / '.config' / 'uv'
@@ -439,6 +929,211 @@ async def test_get_pypi_uv_toml_read_os_error_falls_back_to_no_cutoff(
     mock_session.get = AsyncMock(return_value=_make_response(content=xml))
     result = await get_pypi_latest_package_version(mock_session, 'read-error-pkg')
     assert result == '2.0.0'
+
+
+def test_resolve_npm_minimal_age_gate_minutes_prefers_merged_settings() -> None:
+    assert resolve_npm_minimal_age_gate_minutes(settings={'yarnrc': {
+        'npmMinimalAgeGate': 42,
+    }}) == 42
+
+
+def test_resolve_npm_minimal_age_gate_minutes_settings_over_snippet() -> None:
+    assert resolve_npm_minimal_age_gate_minutes(settings={'yarnrc': {
+        'npmMinimalAgeGate': 55,
+    }},
+                                                project_snippet='npmMinimalAgeGate: 99\n') == 55
+
+
+def test_resolve_npm_minimal_age_gate_minutes_snippet_over_yarnrc_files(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / '.yarnrc.yml').write_text('npmMinimalAgeGate: 100\n', encoding='utf-8')
+    snippet = 'npmMinimalAgeGate: 200\n'
+    assert resolve_npm_minimal_age_gate_minutes(settings=None, project_snippet=snippet) == 200
+
+
+def test_resolve_npm_minimal_age_gate_minutes_project_yarnrc_before_home(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_home = tmp_path / 'home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: fake_home)
+    monkeypatch.chdir(tmp_path)
+    (fake_home / '.yarnrc.yml').write_text('npmMinimalAgeGate: 11\n', encoding='utf-8')
+    (tmp_path / '.yarnrc.yml').write_text('npmMinimalAgeGate: 22\n', encoding='utf-8')
+    assert resolve_npm_minimal_age_gate_minutes() == 22
+
+
+def test_resolve_npm_minimal_age_gate_minutes_npmrc_when_no_yarnrc(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_home = tmp_path / 'home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: fake_home)
+    monkeypatch.chdir(tmp_path)
+    (fake_home / '.npmrc').write_text('min-release-age=2\n', encoding='utf-8')
+    assert resolve_npm_minimal_age_gate_minutes() == 2 * 24 * 60
+
+
+def test_resolve_npm_minimal_age_gate_minutes_default_when_missing(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_home = tmp_path / 'home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: fake_home)
+    monkeypatch.chdir(tmp_path)
+    assert resolve_npm_minimal_age_gate_minutes() == 10080
+
+
+def test_resolve_npm_minimal_age_gate_minutes_settings_yarnrc_list_type(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / '.yarnrc.yml').write_text('npmMinimalAgeGate: 88\n', encoding='utf-8')
+    assert resolve_npm_minimal_age_gate_minutes(settings={'yarnrc': []}) == 88
+
+
+def test_resolve_npm_minimal_age_gate_minutes_settings_gate_string() -> None:
+    assert resolve_npm_minimal_age_gate_minutes(settings={'yarnrc': {
+        'npmMinimalAgeGate': '321',
+    }}) == 321
+
+
+def test_resolve_npm_minimal_age_gate_minutes_settings_non_numeric_skips_to_yarnrc(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / '.yarnrc.yml').write_text('npmMinimalAgeGate: 15\n', encoding='utf-8')
+    assert resolve_npm_minimal_age_gate_minutes(
+        settings={'yarnrc': {
+            'npmMinimalAgeGate': math.pi,
+        }}) == 15
+
+
+def test_resolve_npm_minimal_age_gate_minutes_snippet_without_key_reads_yarnrc(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / '.yarnrc.yml').write_text('npmMinimalAgeGate: 77\n', encoding='utf-8')
+    assert resolve_npm_minimal_age_gate_minutes(project_snippet='foo: 1\n') == 77
+
+
+def test_resolve_npm_minimal_age_gate_minutes_project_yarnrc_missing_gate_then_home(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_home = tmp_path / 'home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: fake_home)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / '.yarnrc.yml').write_text('# no gate\nplugins: []\n', encoding='utf-8')
+    (fake_home / '.yarnrc.yml').write_text('npmMinimalAgeGate: 9\n', encoding='utf-8')
+    assert resolve_npm_minimal_age_gate_minutes() == 9
+
+
+def test_resolve_npm_minimal_age_gate_minutes_malformed_cwd_yarnrc_then_home(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_home = tmp_path / 'home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: fake_home)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / '.yarnrc.yml').write_text('npmMinimalAgeGate: notint\n', encoding='utf-8')
+    (fake_home / '.yarnrc.yml').write_text('npmMinimalAgeGate: 33\n', encoding='utf-8')
+    assert resolve_npm_minimal_age_gate_minutes() == 33
+
+
+def test_resolve_npm_minimal_age_gate_minutes_cwd_yarnrc_oserror_then_home(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_home = tmp_path / 'home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: fake_home)
+    monkeypatch.chdir(tmp_path)
+    cwd_rc = tmp_path / '.yarnrc.yml'
+    cwd_rc.write_text('npmMinimalAgeGate: 1\n', encoding='utf-8')
+    (fake_home / '.yarnrc.yml').write_text('npmMinimalAgeGate: 44\n', encoding='utf-8')
+    real_read = Path.read_text
+
+    def patched(self: Path, *a: Any, **kw: Any) -> str:
+        if self.resolve() == cwd_rc.resolve():
+            msg = 'simulated read failure'
+            raise OSError(msg)
+        return real_read(self, *a, **kw)
+
+    monkeypatch.setattr(Path, 'read_text', patched)
+    assert resolve_npm_minimal_age_gate_minutes() == 44
+
+
+def test_resolve_npm_minimal_age_gate_minutes_npmrc_min_release_age_snake_key(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_home = tmp_path / 'home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: fake_home)
+    monkeypatch.chdir(tmp_path)
+    (fake_home / '.npmrc').write_text('# c\nmin_release_age=4\n', encoding='utf-8')
+    assert resolve_npm_minimal_age_gate_minutes() == 4 * 24 * 60
+
+
+def test_resolve_npm_minimal_age_gate_minutes_npmrc_skips_line_without_equals(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_home = tmp_path / 'home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: fake_home)
+    monkeypatch.chdir(tmp_path)
+    (fake_home / '.npmrc').write_text('foo\nmin-release-age=2\n', encoding='utf-8')
+    assert resolve_npm_minimal_age_gate_minutes() == 2 * 24 * 60
+
+
+def test_resolve_npm_minimal_age_gate_minutes_npmrc_invalid_days_then_default(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_home = tmp_path / 'home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: fake_home)
+    monkeypatch.chdir(tmp_path)
+    (fake_home / '.npmrc').write_text('min-release-age=notint\n', encoding='utf-8')
+    assert resolve_npm_minimal_age_gate_minutes() == 10080
+
+
+def test_resolve_npm_minimal_age_gate_minutes_npmrc_oserror_then_yarnrc(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_home = tmp_path / 'home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: fake_home)
+    monkeypatch.chdir(tmp_path)
+    npmrc = fake_home / '.npmrc'
+    npmrc.write_text('min-release-age=1\n', encoding='utf-8')
+    (tmp_path / '.yarnrc.yml').write_text('npmMinimalAgeGate: 12\n', encoding='utf-8')
+    real_read = Path.read_text
+
+    def patched(self: Path, *a: Any, **kw: Any) -> str:
+        if self.resolve() == npmrc.resolve():
+            msg = 'npmrc read failure'
+            raise OSError(msg)
+        return real_read(self, *a, **kw)
+
+    monkeypatch.setattr(Path, 'read_text', patched)
+    assert resolve_npm_minimal_age_gate_minutes() == 12
+
+
+def test_resolve_npm_minimal_age_gate_minutes_npmrc_without_min_release_reads_default(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_home = tmp_path / 'home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: fake_home)
+    monkeypatch.chdir(tmp_path)
+    (fake_home / '.npmrc').write_text('registry=https://registry.npmjs.org/\n', encoding='utf-8')
+    assert resolve_npm_minimal_age_gate_minutes() == 10080
+
+
+def test_resolve_npm_minimal_age_gate_minutes_npmrc_read_oserror_only(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_home = tmp_path / 'home'
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, 'home', lambda: fake_home)
+    monkeypatch.chdir(tmp_path)
+    npmrc = fake_home / '.npmrc'
+    npmrc.write_text('min-release-age=1\n', encoding='utf-8')
+    real_read = Path.read_text
+
+    def patched(self: Path, *a: Any, **kw: Any) -> str:
+        if self.resolve() == npmrc.resolve():
+            msg = 'npmrc read failure'
+            raise OSError(msg)
+        return real_read(self, *a, **kw)
+
+    monkeypatch.setattr(Path, 'read_text', patched)
+    assert resolve_npm_minimal_age_gate_minutes() == 10080
 
 
 # get_npm_latest_package_version tests
