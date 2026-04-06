@@ -748,6 +748,61 @@ def test_main_new_skip_flags(skip_flag: str, func_name: str, mocker: MockerFixtu
         assert not mock_apply_manifests.called
 
 
+def test_main_skip_postprocess_non_python_skips_manifest_normalization(
+        mocker: MockerFixture, tmp_path: Path) -> None:
+    runner = CliRunner()
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.setup_logging')
+    mocker.patch(
+        'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
+        return_value=(
+            {
+                'project_type': 'cpp',
+                'stubs_only': False,
+                'yarn_version': '1.0.0',
+            },
+            {
+                'project_type': 'cpp',
+                'stubs_only': False,
+                'yarn_version': '1.0.0',
+            },
+        ),
+    )
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mock_post_process = mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mock_apply_manifests = mocker.patch('wiswa.main.apply_python_pyproject_manifest_edits',
+                                        new_callable=AsyncMock)
+    mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
+
+    class DummyContextManager:
+        def __init__(self, value: object) -> None:
+            self.value: object = value
+
+        def __enter__(self) -> object:
+            return self.value
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: object,
+        ) -> None:
+            return None
+
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
+    mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
+    result = runner.invoke(main, ['--skip-postprocess', str(file_path)], catch_exceptions=False)
+    assert result.exit_code == 0
+    assert not mock_post_process.called
+    assert not mock_apply_manifests.called
+
+
 def test_main_no_cache_flag(mocker: MockerFixture, tmp_path: Path) -> None:
     runner = CliRunner()
     file_path = tmp_path / '.wiswa.jsonnet'

@@ -73,6 +73,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   rendered (`resolve_changelog_boilerplate_urls`), not only after post-processing.
 - CLI progress labels end with ellipses, and post-processing subprocess hints wrap the shell command
   in backticks with a trailing ellipsis.
+- Post-processing `uv.lock` restore from `HEAD` runs its `git` subprocesses through the same
+  helper as other post-process commands, so the CLI shows those commands in the progress line
+  (backticks and trailing ellipsis) like other post-process steps, and subprocess output is
+  captured consistently.
 - `--quiet` (`-q`) now suppresses the final `Done.` line as well as the progress spinner; `--help`
   and the man page describe this behaviour. Post-processing passes `--quiet` through to Ruff when
   not in debug mode, Yarn install and format capture subprocess stdout/stderr, and failed command

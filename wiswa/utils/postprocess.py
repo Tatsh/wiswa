@@ -1,7 +1,7 @@
 """Post-process a generated project (lock files, tooling, README badges, Yarn)."""
 from __future__ import annotations
 
-from collections.abc import Awaitable, Iterable, Iterator, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Iterator, Sequence
 from functools import cache
 from pathlib import Path
 from shlex import quote
@@ -20,8 +20,6 @@ import tomlkit
 from .versions import get_github_release_latest_tag
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from wiswa.typing import ExportRequirements, Settings
 
 __all__ = ('apply_python_pyproject_manifest_edits', 'post_process_steps',
@@ -154,9 +152,10 @@ async def _remove_legacy_wiswa_ai_files() -> None:
             log.debug('Removed legacy Wiswa AI file `%s`.', relative)
 
 
-async def _subprocess_log_run(*args: Any,
-                              on_command: Callable[[str], None] | None = None,
-                              **kwargs: Any) -> asyncio.subprocess.Process:
+async def _subprocess_log_run(
+        *args: Any,
+        on_command: Callable[[str], None] | None = None,
+        **kwargs: Any) -> tuple[asyncio.subprocess.Process, bytes | None, bytes | None]:
     assert isinstance(args[0], Iterable)
     cmd = list(args[0])
     cmd_str = ' '.join(quote(x) for x in cmd)
@@ -165,11 +164,11 @@ async def _subprocess_log_run(*args: Any,
         on_command(cmd_str)
     check = kwargs.pop('check', True)
     proc = await asyncio.create_subprocess_exec(*cmd, **kwargs)
-    await proc.communicate()
+    stdout, stderr = await proc.communicate()
     if check and proc.returncode != 0:
         msg = f'Command `{cmd_str}` returned non-zero exit status {proc.returncode}.'
         raise RuntimeError(msg)
-    return proc
+    return proc, stdout, stderr
 
 
 def _resolve_output_filename(er: ExportRequirements) -> str:
@@ -638,7 +637,10 @@ async def _check_readme_badges(settings: Settings) -> None:
     log.debug('Updated README.md badges.')
 
 
-async def _maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings) -> None:
+async def _maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings,
+                                                         *,
+                                                         on_command: Callable[[str], None]
+                                                         | None = None) -> None:
     """
     Restore ``uv.lock`` from ``HEAD`` when it is the only tracked change.
 
@@ -651,57 +653,52 @@ async def _maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings) -> 
         return
     if not await anyio.Path('.git').exists():
         return
-    proc = await asyncio.create_subprocess_exec('git',
-                                                'diff',
-                                                '--name-only',
-                                                'HEAD',
-                                                stdout=asyncio.subprocess.PIPE,
-                                                stderr=asyncio.subprocess.DEVNULL)
-    out, _ = await proc.communicate()
+    proc, out, _ = await _subprocess_log_run(('git', 'diff', '--name-only', 'HEAD'),
+                                             on_command=on_command,
+                                             stdout=asyncio.subprocess.PIPE,
+                                             stderr=asyncio.subprocess.DEVNULL,
+                                             check=False)
     if proc.returncode != 0:
         log.debug('git diff --name-only HEAD failed; skipping uv.lock restore.')
         return
-    diff_names = {p.strip().replace('\\', '/') for p in out.decode().splitlines() if p.strip()}
-    proc_ut = await asyncio.create_subprocess_exec('git',
-                                                   'ls-files',
-                                                   '--others',
-                                                   '--exclude-standard',
-                                                   '-z',
-                                                   stdout=asyncio.subprocess.PIPE,
-                                                   stderr=asyncio.subprocess.DEVNULL)
-    out_ut, _ = await proc_ut.communicate()
+    diff_names = {
+        p.strip().replace('\\', '/')
+        for p in (out or b'').decode().splitlines() if p.strip()
+    }
+    proc_ut, out_ut, _ = await _subprocess_log_run(
+        ('git', 'ls-files', '--others', '--exclude-standard', '-z'),
+        on_command=on_command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.DEVNULL,
+        check=False,
+    )
     if proc_ut.returncode != 0:
         log.debug('git ls-files --others failed; skipping uv.lock restore.')
         return
-    untracked = [p for p in out_ut.decode().split('\0') if p]
+    untracked = [p for p in (out_ut or b'').decode().split('\0') if p]
     if untracked:
         return
     if diff_names != {'uv.lock'}:
         return
-    proc_restore = await asyncio.create_subprocess_exec(
-        'git',
-        'restore',
-        '--source=HEAD',
-        '--staged',
-        '--worktree',
-        '--',
-        'uv.lock',
+    proc_restore, _, err = await _subprocess_log_run(
+        ('git', 'restore', '--source=HEAD', '--staged', '--worktree', '--', 'uv.lock'),
+        on_command=on_command,
         stdout=asyncio.subprocess.DEVNULL,
         stderr=asyncio.subprocess.PIPE,
+        check=False,
     )
-    _, err = await proc_restore.communicate()
     if proc_restore.returncode != 0:
-        log.debug('git restore uv.lock failed (%s); trying git checkout.', err.decode().strip())
-        proc_co = await asyncio.create_subprocess_exec('git',
-                                                       'checkout',
-                                                       'HEAD',
-                                                       '--',
-                                                       'uv.lock',
-                                                       stdout=asyncio.subprocess.DEVNULL,
-                                                       stderr=asyncio.subprocess.PIPE)
-        _, err_co = await proc_co.communicate()
+        log.debug('git restore uv.lock failed (%s); trying git checkout.',
+                  (err or b'').decode().strip())
+        proc_co, _, err_co = await _subprocess_log_run(
+            ('git', 'checkout', 'HEAD', '--', 'uv.lock'),
+            on_command=on_command,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE,
+            check=False,
+        )
         if proc_co.returncode != 0:
-            log.warning('Could not restore uv.lock from HEAD: %s', err_co.decode().strip())
+            log.warning('Could not restore uv.lock from HEAD: %s', (err_co or b'').decode().strip())
             return
     log.info('Restored uv.lock from HEAD; it was the only file differing from HEAD.')
 
@@ -758,4 +755,4 @@ async def post_process_steps(settings: Settings,
                               on_command=on_command,
                               stderr=asyncio.subprocess.PIPE,
                               stdout=asyncio.subprocess.PIPE)
-    await _maybe_revert_uv_lock_if_only_lockfile_changed(settings)
+    await _maybe_revert_uv_lock_if_only_lockfile_changed(settings, on_command=on_command)
