@@ -48,6 +48,7 @@ cpack
 ctes
 ctypes
 cutoff
+cutoffs
 cyclonedx
 dashcam
 dataclasses
@@ -99,6 +100,7 @@ getline
 ggdb
 gitdir
 githistory
+gpgsign
 glab
 globaltoc
 gmock
