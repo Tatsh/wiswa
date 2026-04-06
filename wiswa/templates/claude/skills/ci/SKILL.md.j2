@@ -78,7 +78,8 @@ If any changed source files are being committed, run the following agents **in o
 {%- elif settings.project_type == 'typescript' %} `src/`, or dependency/version changes in
   `package.json`,
 {%- else %} or dependency/version changes
-{%- endif %} are **candidates** for the changelog agent only when they **change what users see or
+{%- endif %} are **candidates**
+  for the changelog agent only when they **change what users see or
   how the software behaves**. Editing those paths is not sufficient on its own.
 
   **Skip the changelog agent** for workflows, CI config, `.claude/`, documentation-only churn,
