@@ -54,6 +54,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     are de-duplicated after `Path.resolve()`.
 - Python: skip generating `tests/test_main.py` when `tests/` already contains other
   `test_*.py` files (existing projects keep their own test layout).
+- Default `using_beads` is now `false` (it no longer follows `want_ai`).
 - Post-processing rewrites existing `CHANGELOG.md` boilerplate links from GitHub when an HTTP
   session is available: Keep a Changelog uses the latest `olivierlacan/keep-a-changelog` release
   tag mapped to `keepachangelog.com/en/...`, and Semantic Versioning uses `semver/semver` mapped to

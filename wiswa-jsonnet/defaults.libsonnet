@@ -414,7 +414,7 @@ local utils = import 'utils.libsonnet';
    * @brief If using beads with AI tooling. All this does is add the Beads instructions to ``AGENTS.md``.
    * @var boolean
    */
-  using_beads: self.want_ai,
+  using_beads: false,
   /**
    * @brief If user-level ``defaults.jsonnet`` is merged with project settings.
    * @details Wiswa reads a ``uses_user_defaults: true`` literal only from ``.wiswa.jsonnet`` to
