@@ -35,6 +35,9 @@ _PYPI_YANKED_RELEASES = {
 
 _cache: dict[str, str] = {}
 
+# In-memory snapshot of ``github_tag_cache.json``; one-element box avoids ``global``.
+_github_tag_disk_store_memo_box: list[dict[str, str] | None] = [None]
+
 _GITHUB_TAG_DISK_FILENAME = 'github_tag_cache.json'
 
 _NPM_AGE_GATE_DEFAULT_MINUTES = 10080
@@ -130,7 +133,7 @@ def _get_uv_config() -> tuple[datetime | None, dict[str, datetime]]:
 
 def clear_resolution_caches() -> None:
     """
-    Drop memoised HTTP version results and the parsed ``uv.toml`` cache.
+    Drop memoised HTTP version results, ``uv.toml`` cache, and in-memory GitHub tag disk snapshot.
 
     Does not remove the on-disk GitHub tag store under the user cache directory
     for ``wiswa`` (for example ``~/.cache/wiswa`` on Linux via ``platformdirs``);
@@ -141,6 +144,7 @@ def clear_resolution_caches() -> None:
     ``platformdirs``.
     """
     _cache.clear()
+    _github_tag_disk_store_memo_box[0] = None
     _get_uv_config.cache_clear()
 
 
@@ -353,18 +357,41 @@ async def download_yarn(session: niquests.AsyncSession, version: str) -> None:
 
 
 def _github_tag_disk_cache_path() -> Path:
+    """
+    Return the on-disk GitHub tag store path.
+
+    Not memoised: ``platformdirs`` respects runtime environment changes (for example
+    tests setting ``XDG_CACHE_HOME`` per case).
+    """
     return platformdirs.user_cache_path('wiswa', appauthor=False) / _GITHUB_TAG_DISK_FILENAME
 
 
 def _read_github_tag_disk_store() -> dict[str, str]:
+    """
+    Return the GitHub tag disk store, reading the file at most once per snapshot.
+
+    The same mapping object is reused until :func:`clear_resolution_caches` runs or
+    a persistence failure invalidates the snapshot, so callers that mutate the
+    dict (see :func:`_write_github_tag_disk_entry`) keep the cache aligned.
+    """
+    cached = _github_tag_disk_store_memo_box[0]
+    if cached is not None:
+        return cached
     path = _github_tag_disk_cache_path()
     try:
         raw = json.loads(path.read_text(encoding='utf-8'))
     except (OSError, json.JSONDecodeError, TypeError):
-        return {}
-    if not isinstance(raw, dict):
-        return {}
-    return {str(k): str(v) for k, v in raw.items() if isinstance(k, str) and isinstance(v, str)}
+        store: dict[str, str] = {}
+    else:
+        if not isinstance(raw, dict):
+            store = {}
+        else:
+            store = {
+                str(k): str(v)
+                for k, v in raw.items() if isinstance(k, str) and isinstance(v, str)
+            }
+    _github_tag_disk_store_memo_box[0] = store
+    return store
 
 
 def _write_github_tag_disk_entry(key: str, value: str) -> None:
@@ -378,6 +405,7 @@ def _write_github_tag_disk_entry(key: str, value: str) -> None:
         tmp.write_text(text, encoding='utf-8')
         tmp.replace(path)
     except OSError as exc:
+        _github_tag_disk_store_memo_box[0] = None
         log.debug('Could not persist GitHub tag cache: %s', exc)
 
 
