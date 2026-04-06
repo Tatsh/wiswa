@@ -59,6 +59,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   tag mapped to `keepachangelog.com/en/...`, and Semantic Versioning uses `semver/semver` mapped to
   `semver.org/spec/...`. Pinned fallbacks are `https://keepachangelog.com/en/1.1.1/` and
   `https://semver.org/spec/v2.0.0.html` when there is no session or resolution fails.
+- New projects receive the same resolved Keep a Changelog and SemVer intro URLs when templates are
+  rendered (`resolve_changelog_boilerplate_urls`), not only after post-processing.
 - CLI progress labels end with ellipses, and post-processing subprocess hints wrap the shell command
   in backticks with a trailing ellipsis.
 - `--quiet` (`-q`) now suppresses the final `Done.` line as well as the progress spinner; `--help`

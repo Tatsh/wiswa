@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     from wiswa.typing import ExportRequirements, Settings
 
-__all__ = ('post_process_steps',)
+__all__ = ('post_process_steps', 'resolve_changelog_boilerplate_urls')
 
 log = logging.getLogger(__name__)
 
@@ -57,8 +57,8 @@ _CHANGELOG_SEMVER_SPEC_FALLBACK_URL = 'https://semver.org/spec/v2.0.0.html'
 _RE_CHANGELOG_KEEP_A_CHANGELOG = re.compile(r'https://keepachangelog\.com/en/\d+\.\d+\.\d+/')
 _RE_CHANGELOG_SEMVER_SPEC = re.compile(r'https://semver\.org/spec/v\d+\.\d+\.\d+\.html')
 
-_GITHUB_TAG_RESOLUTION_EXC_TYPES = (KeyError, OSError, ValueError, niquests.JSONDecodeError,
-                                    niquests.RequestException)
+_GITHUB_TAG_RESOLUTION_EXC_TYPES = (KeyError, OSError, TypeError, ValueError,
+                                    niquests.JSONDecodeError, niquests.RequestException)
 
 
 @cache
@@ -108,6 +108,19 @@ async def _resolve_semver_spec_url(session: niquests.AsyncSession | None) -> str
         log.warning('SemVer spec tag from GitHub failed (%s); using fallback URL.', exc)
         return _CHANGELOG_SEMVER_SPEC_FALLBACK_URL
     return _semver_spec_documentation_url(tag)
+
+
+async def resolve_changelog_boilerplate_urls(
+        session: niquests.AsyncSession | None) -> tuple[str, str]:
+    """
+    Resolve Keep a Changelog and SemVer documentation URLs for generated boilerplate.
+
+    Uses the same GitHub tag resolution as :func:`post_process_steps` (with fallbacks
+    when ``session`` is ``None`` or the API fails).
+    """
+    keep = await _resolve_keep_a_changelog_url(session)
+    semver = await _resolve_semver_spec_url(session)
+    return keep, semver
 
 
 def _normalise_changelog_reference_urls(content: str, keep_a_changelog_url: str,

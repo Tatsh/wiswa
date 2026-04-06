@@ -3,15 +3,19 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, MagicMock
 import importlib.resources
 import logging
 import shutil
 
+from wiswa.utils.postprocess import resolve_changelog_boilerplate_urls
 from wiswa.utils.templating import write_templated_files
 import pytest
 import wiswa
+
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
 
 def _social_networks() -> dict[str, Any]:
@@ -820,6 +824,29 @@ async def test_write_templated_files_real_env_integration(tmp_path: Path,
     assert (out / 'LICENSE.txt').exists()
     assert (out / 'SECURITY.md').exists()
     assert (out / 'CHANGELOG.md').exists()
+    body = (out / 'CHANGELOG.md').read_text(encoding='utf-8')
+    keep_url, semver_url = await resolve_changelog_boilerplate_urls(None)
+    assert keep_url in body
+    assert semver_url in body
+
+
+async def test_write_templated_files_changelog_urls_use_resolved_boilerplate(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    mocker.patch(
+        'wiswa.utils.templating.resolve_changelog_boilerplate_urls',
+        new_callable=AsyncMock,
+        return_value=('https://keepachangelog.com/en/9.9.9/',
+                      'https://semver.org/spec/v9.9.9.html'),
+    )
+    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+        out = tmp_path / 'proj'
+        out.mkdir()
+        monkeypatch.chdir(out)
+        await write_templated_files(
+            module_path, cast('Any', _make_settings(project_type='generic', want_ai=False)))
+    body = (out / 'CHANGELOG.md').read_text(encoding='utf-8')
+    assert 'https://keepachangelog.com/en/9.9.9/' in body
+    assert 'https://semver.org/spec/v9.9.9.html' in body
 
 
 async def test_write_templated_files_real_env_skips_existing(

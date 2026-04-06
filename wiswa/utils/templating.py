@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 import asyncio
 import logging
 
@@ -16,6 +16,7 @@ import anyio
 import jinja2
 
 from .path import non_empty_file_exists, primary_module_to_path
+from .postprocess import resolve_changelog_boilerplate_urls
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -39,7 +40,8 @@ async def _write_rendered_template(template: jinja2.Template,
                                    output_file: Path | str,
                                    *,
                                    settings: Settings,
-                                   overwrite: bool = False) -> None:
+                                   overwrite: bool = False,
+                                   extra_context: dict[str, Any] | None = None) -> None:
     """Render one template to disk, or remove the output if the render is empty."""
     output_file = Path(output_file)
     if not overwrite and await non_empty_file_exists(output_file):
@@ -47,7 +49,10 @@ async def _write_rendered_template(template: jinja2.Template,
         return
     aio_output = anyio.Path(output_file)
     await aio_output.parent.mkdir(parents=True, exist_ok=True)
-    content = await template.render_async({'settings': settings})
+    context: dict[str, Any] = {'settings': settings}
+    if extra_context:
+        context.update(extra_context)
+    content = await template.render_async(context)
     stripped = content.strip()
     if not stripped:
         log.debug('Removed empty template output `%s`.', output_file)
@@ -78,11 +83,13 @@ def _template_env(module_path: Path,
     async def write_file(template: jinja2.Template,
                          output_file: Path | str,
                          *,
-                         overwrite: bool = False) -> None:
+                         overwrite: bool = False,
+                         extra_context: dict[str, Any] | None = None) -> None:
         await _write_rendered_template(template,
                                        output_file,
                                        settings=settings,
-                                       overwrite=overwrite)
+                                       overwrite=overwrite,
+                                       extra_context=extra_context)
 
     return _TemplateEnvTuple(env, templates_dir, resolve_template, write_file)
 
@@ -302,10 +309,20 @@ async def write_templated_files(module_path: Path,
     common_templates = (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', contributing_overwrite), *(
         (('LICENSE.txt.j2', not settings['private']),) if settings.get('license') == 'MIT' else
         ()), ('SECURITY.md.j2', True), ('CHANGELOG.md.j2', False), ('README.md.j2', False))
-    await asyncio.gather(*(write_file(resolve_template(templates_dir / template_name),
-                                      Path(template_name).with_suffix(''),
-                                      overwrite=overwrite)
-                           for template_name, overwrite in common_templates))
+    keep_url, semver_url = await resolve_changelog_boilerplate_urls(session)
+    changelog_context: dict[str, Any] = {
+        'changelog_keep_a_changelog_url': keep_url,
+        'changelog_semver_spec_url': semver_url,
+    }
+
+    async def _write_one_common(template_name: str, *, overwrite: bool) -> None:
+        extra = changelog_context if template_name == 'CHANGELOG.md.j2' else None
+        await write_file(resolve_template(templates_dir / template_name),
+                         Path(template_name).with_suffix(''),
+                         overwrite=overwrite,
+                         extra_context=extra)
+
+    await asyncio.gather(*(_write_one_common(tn, overwrite=ow) for tn, ow in common_templates))
     match settings['project_type']:
         case 'python':
             await _write_templated_files_python(settings, templates_dir, resolve_template,
