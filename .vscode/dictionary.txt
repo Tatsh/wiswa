@@ -36,8 +36,8 @@ chromewebstore
 codesign
 color
 colorlog
-commondir
 commitizen
+commondir
 conftest
 contenttypes
 contrib
@@ -265,8 +265,6 @@ vers
 virtualenv
 visualstudioexptteam
 vscodeintellicode
-worktree
-worktrees
 wayou
 werror
 wextra
@@ -275,6 +273,8 @@ wiswa
 wiswa's
 wmaurer
 wordwrap
+worktree
+worktrees
 wraparguments
 wrapcollections
 wrapparameters
