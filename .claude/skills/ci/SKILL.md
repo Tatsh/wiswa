@@ -43,9 +43,9 @@ agents **in order**:
   check if `CHANGELOG.md` was modified (`git diff CHANGELOG.md`). If it was, stage it with the
   relevant commit. Follow `.claude/agents/changelog.md`, including its skip list.
 
-  Files under `wiswa/` or `tests/`, or version changes in `pyproject.toml`, are **candidates** for
-  the changelog agent only when they **change what users see or how the software behaves**. Editing
-  those paths is not sufficient on its own.
+  Files under `wiswa/`, `tests/`, or version changes in `pyproject.toml`, are **candidates**
+  for the changelog agent only when they **change what users see or
+  how the software behaves**. Editing those paths is not sufficient on its own.
 
   **Skip the changelog agent** for workflows, CI config, `.claude/`, documentation-only churn,
   cruft or generator clean-up (for example replacing template placeholders such as `unknown` in
