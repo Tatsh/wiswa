@@ -305,4 +305,14 @@
    * @rv string
    */
   isodate():: std.native('isodate')(),
+  /**
+   * @brief GitHub login from the ``gh`` CLI when authenticated.
+   *
+   * Otherwise uses the owner in ``remote.origin.url`` from ``.git/config`` when that URL is on
+   * github.com. Otherwise ``unknown``.
+   *
+   * @returns The GitHub username (string).
+   * @rv string
+   */
+  githubCliUsername():: std.native('githubCliUsername')(),
 }

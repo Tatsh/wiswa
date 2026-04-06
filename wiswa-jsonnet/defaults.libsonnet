@@ -138,8 +138,11 @@ local utils = import 'utils.libsonnet';
    */
   supported_platforms: 'all',
 
-  /** @brief GitHub username. */
-  github_username: 'unknown',
+  /**
+   * @brief GitHub username (``gh`` when logged in, else owner from ``remote.origin`` in
+   * ``.git/config``, else ``unknown``).
+   */
+  github_username: utils.githubCliUsername(),
   /**
    * @brief Project name on GitHub.
    * @var string

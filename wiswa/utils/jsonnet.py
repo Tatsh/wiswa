@@ -5,9 +5,13 @@ from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from urllib.parse import urlparse
+import configparser
 import json
 import logging
 import re
+import shutil
+import subprocess as sp
 import time
 
 import _jsonnet  # noqa: PLC2701
@@ -23,7 +27,7 @@ from .versions import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Iterator, Sequence
 
     from niquests import AsyncSession
     from wiswa.typing import Settings
@@ -38,12 +42,138 @@ log = logging.getLogger(__name__)
 # in `.wiswa.jsonnet`) is not supported.
 _PROJECT_USES_USER_DEFAULTS = re.compile(r'uses_user_defaults\s*:\s*true\b')
 
+_GH_USERNAME_TIMEOUT_SEC = 10
+_UNKNOWN_GITHUB_USER = 'unknown'
+
+
+def _github_cli_username() -> str | None:
+    """Return the login for the current GitHub CLI authentication, or ``None``."""
+    gh_executable = shutil.which('gh')
+    if not gh_executable:
+        return None
+    try:
+        proc = sp.run(
+            [gh_executable, 'api', 'user', '--jq', '.login'],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=_GH_USERNAME_TIMEOUT_SEC,
+        )
+    except (OSError, sp.CalledProcessError, sp.TimeoutExpired):
+        return None
+    login = proc.stdout.strip()
+    return login or None
+
+
+def _github_owner_from_remote_url(url: str) -> str | None:
+    """Return the repository owner from *url* if it targets github.com."""
+    raw = url.strip()
+    if not raw:
+        return None
+    if raw.startswith('git@github.com:'):
+        rest = raw.removeprefix('git@github.com:')
+        segment = rest.split('/')[0]
+        return segment.removesuffix('.git') or None
+    for prefix in ('git://github.com/', 'ssh://git@github.com/'):
+        if raw.startswith(prefix):
+            rest = raw.removeprefix(prefix)
+            segment = rest.split('/')[0]
+            return segment.removesuffix('.git') or None
+    parsed = urlparse(raw)
+    host = (parsed.hostname or '').lower()
+    if host in {'github.com', 'www.github.com'}:
+        segments = [segment for segment in parsed.path.strip('/').split('/') if segment]
+        if segments:
+            return segments[0].removesuffix('.git')
+    return None
+
+
+def _iter_git_config_paths() -> Iterator[Path]:
+    """Local ``config`` paths for the current Git checkout (main and worktree common dir).
+
+    Yields
+    ------
+    Path
+        Path to a ``config`` file to try for ``remote.origin.url``.
+    """
+    git_entry = Path('.git')
+    if not git_entry.exists():
+        return
+    if git_entry.is_dir():
+        yield git_entry / 'config'
+        return
+    try:
+        content = git_entry.read_text(encoding='utf-8')
+    except OSError:
+        return
+    for line in content.splitlines():
+        line_stripped = line.strip()
+        if line_stripped.startswith('gitdir: '):
+            git_dir = Path(line_stripped.split(':', 1)[1].strip()).resolve()
+            yield git_dir / 'config'
+            commondir = git_dir / 'commondir'
+            if commondir.is_file():
+                try:
+                    common_git = (git_dir / commondir.read_text(encoding='utf-8').strip()).resolve()
+                except OSError:
+                    pass
+                else:
+                    yield common_git / 'config'
+            break
+
+
+def _origin_url_from_git_config_file(config_path: Path) -> str | None:
+    """Return ``remote.origin.url`` from *config_path* if present."""
+    parser = configparser.ConfigParser(interpolation=None)
+    parser.optionxform = str  # type: ignore[assignment]
+    try:
+        parser.read(config_path, encoding='utf-8')
+    except configparser.Error:
+        return None
+    section = 'remote "origin"'
+    if parser.has_section(section):
+        return parser.get(section, 'url', fallback=None)
+    return None
+
+
+def _github_username_from_git_origin() -> str | None:
+    """Return the GitHub owner from ``remote.origin.url`` in ``.git/config`` if available."""
+    seen: set[Path] = set()
+    for cfg in _iter_git_config_paths():
+        if not cfg.is_file():
+            continue
+        key = cfg.resolve()
+        if key in seen:
+            continue
+        seen.add(key)
+        url = _origin_url_from_git_config_file(cfg)
+        if not url:
+            continue
+        owner = _github_owner_from_remote_url(url)
+        if owner:
+            return owner
+    return None
+
+
+def _default_github_username() -> str:
+    """Prefer ``gh`` authentication; then ``remote.origin.url`` under ``.git``; else unknown."""
+    if login := _github_cli_username():
+        return login
+    if owner := _github_username_from_git_origin():
+        return owner
+    return _UNKNOWN_GITHUB_USER
+
 
 def _make_native_callbacks(
         session: AsyncSession | None = None
 ) -> dict[str, tuple[tuple[str, ...], Callable[..., Any]]]:
+    github_cli_username_cb: tuple[tuple[str, ...], Callable[..., Any]] = (
+        (),
+        _default_github_username,
+    )
     if session is None:
         return {
+            'githubCliUsername': github_cli_username_cb,
             'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
             'year': ((), lambda: datetime.now(tz=timezone.utc).year),
         }
@@ -63,6 +193,7 @@ def _make_native_callbacks(
     return {
         # The argument names here cannot conflict with a wrapping function.
         # f(arg):: std.native('f', arg) will fail if it's defined here as 'f': (('arg',), ...).
+        'githubCliUsername': github_cli_username_cb,
         'githubLatestActionTag': (('o', 'r'), lambda o, r: _sync_wrap(gh_action, o, r)),
         'githubLatestReleaseTag': (
             ('o', 'r'), lambda o, r: _sync_wrap(get_github_release_latest_tag, session, o, r)),

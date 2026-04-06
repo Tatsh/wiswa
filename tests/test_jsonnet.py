@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
+import subprocess as sp
 
 from wiswa.utils.jsonnet import (
     evaluate_jsonnet_file,
@@ -25,6 +26,8 @@ async def test_evaluate_jsonnet_file(mocker: MockerFixture) -> None:
     result = await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     assert result == '{"key": "value"}'
     mock_jsonnet.evaluate_file.assert_called_once()
+    native_callbacks = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']
+    assert 'githubCliUsername' in native_callbacks
 
 
 async def test_evaluate_jsonnet_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
@@ -186,6 +189,7 @@ async def test_evaluate_jsonnet_file_with_session(mocker: MockerFixture) -> None
     assert 'latestNpmPackageVersion' in native_callbacks
     assert 'latestPypiPackageVersion' in native_callbacks
     assert 'latestYarnVersion' in native_callbacks
+    assert 'githubCliUsername' in native_callbacks
     assert 'isodate' in native_callbacks
     assert 'year' in native_callbacks
 
@@ -214,9 +218,66 @@ async def test_native_callback_params_use_short_names(mocker: MockerFixture) -> 
     assert native_callbacks['githubLatestTag'][0] == ('o', 'r')
     assert native_callbacks['latestNpmPackageVersion'][0] == ('p',)
     assert native_callbacks['latestPypiPackageVersion'][0] == ('p',)
+    assert native_callbacks['githubCliUsername'][0] == ()
     assert native_callbacks['isodate'][0] == ()
     assert native_callbacks['latestYarnVersion'][0] == ()
     assert native_callbacks['year'][0] == ()
+
+
+async def test_github_cli_username_native_returns_login(mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
+    mock_run = mocker.patch('wiswa.utils.jsonnet.sp.run')
+    mock_run.return_value = mocker.MagicMock(stdout='gh_user_out\n')
+    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet.evaluate_file.return_value = '{}'
+    await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
+    callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
+    assert callback() == 'gh_user_out'
+    args, _kwargs = mock_run.call_args
+    assert list(args[0]) == ['/usr/bin/gh', 'api', 'user', '--jq', '.login']
+
+
+async def test_github_cli_username_native_returns_unknown_when_gh_missing(
+        mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
+    mock_run = mocker.patch('wiswa.utils.jsonnet.sp.run')
+    mock_run.side_effect = AssertionError('gh should not run when not on PATH')
+    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet.evaluate_file.return_value = '{}'
+    await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
+    callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
+    assert callback() == 'unknown'
+
+
+@pytest.mark.parametrize(
+    ('origin_url', 'expected_owner'),
+    [
+        ('git@github.com:some_owner/some_repo.git', 'some_owner'),
+        ('https://github.com/other_owner/x.git', 'other_owner'),
+    ],
+)
+async def test_github_username_native_falls_back_to_git_origin(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    origin_url: str,
+    expected_owner: str,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
+    mock_run = mocker.patch('wiswa.utils.jsonnet.sp.run')
+    mock_run.side_effect = sp.CalledProcessError(1, 'gh')
+    git_dir = tmp_path / '.git'
+    git_dir.mkdir()
+    (git_dir / 'config').write_text(
+        f'[remote "origin"]\n\turl = {origin_url}\n',
+        encoding='utf-8',
+    )
+    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet.evaluate_file.return_value = '{}'
+    await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
+    callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
+    assert callback() == expected_owner
 
 
 async def test_evaluate_merged_settings_established_pytest_modules(tmp_path: Path,
