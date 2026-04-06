@@ -411,6 +411,11 @@ local utils = import 'utils.libsonnet';
    */
   want_ai: true,
   /**
+   * @brief If using beads with AI tooling. All this does is add the Beads instructions to ``AGENTS.md``.
+   * @var boolean
+   */
+  using_beads: self.want_ai,
+  /**
    * @brief If user-level ``defaults.jsonnet`` is merged with project settings.
    * @details Wiswa reads a ``uses_user_defaults: true`` literal only from ``.wiswa.jsonnet`` to
    *     enable merging; the flag cannot be enabled from user ``defaults.jsonnet`` alone.
@@ -1136,12 +1141,12 @@ local utils = import 'utils.libsonnet';
                } + docs_section + tests_section,
              } + (if std.length(poetry_include) > 0 then { include: poetry_include } else {}),
              pyright+: {
-               include: ['./%s' % [r] for r in poetry_package_includes] + if settings.want_tests then [
-                 './tests',
-               ] else [],
-               pythonVersion: settings.supported_python_versions[0],
-             } + (if settings.stubs_only then { reportImplicitOverride: 'none' } else {})
-               + (if is_uv then { venv: '.venv', venvPath: '.' } else {}),
+                         include: ['./%s' % [r] for r in poetry_package_includes] + if settings.want_tests then [
+                           './tests',
+                         ] else [],
+                         pythonVersion: settings.supported_python_versions[0],
+                       } + (if settings.stubs_only then { reportImplicitOverride: 'none' } else {})
+                       + (if is_uv then { venv: '.venv', venvPath: '.' } else {}),
              ruff+: {
                lint+: if settings.stubs_only then {
                  ignore: std.set(pyproject.tool.ruff.lint.ignore + [

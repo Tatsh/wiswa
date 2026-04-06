@@ -77,9 +77,7 @@ function(settings)
         branches: [
           settings.default_branch,
         ],
-        paths: [
-          '**/*.py',
-          '**/*.pyi',
+        paths: ['%s/**' % mod for mod in settings.modules] + [
           '.github/workflows/tests.yml',
           'pyproject.toml',
           'uv.lock',
@@ -91,9 +89,7 @@ function(settings)
         branches: [
           settings.default_branch,
         ],
-        paths: [
-          '**/*.py',
-          '**/*.pyi',
+        paths: ['%s/**' % mod for mod in settings.modules] + [
           '.github/workflows/tests.yml',
           'pyproject.toml',
           'uv.lock',

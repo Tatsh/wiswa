@@ -257,8 +257,9 @@ name: 'PyInstaller'
     branches:
       - 'master'
     paths:
-      - '**/*.py'
-      - '**/*.pyi'
+{% for mod in settings.modules %}
+      - '{{ mod }}/**'
+{% endfor %}
       - '.github/workflows/pyinstaller.yml'
       - 'pyproject.toml'
       - 'uv.lock'

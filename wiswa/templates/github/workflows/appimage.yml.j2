@@ -95,8 +95,9 @@ name: 'AppImage'
     branches:
       - 'master'
     paths:
-      - '**/*.py'
-      - '**/*.pyi'
+{% for mod in settings.modules %}
+      - '{{ mod }}/**'
+{% endfor %}
       - '.github/workflows/appimage.yml'
       - 'pyproject.toml'
       - 'uv.lock'

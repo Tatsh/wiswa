@@ -74,9 +74,7 @@ function(settings)
         branches: [
           'master',
         ],
-        paths: [
-          '**/*.py',
-          '**/*.pyi',
+        paths: ['%s/**' % mod for mod in settings.modules] + [
           '.github/workflows/flatpak.yml',
           'pyproject.toml',
           'uv.lock',

@@ -11,36 +11,36 @@ function(settings)
             uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
         ] + (if !is_uv then [{
-                              name: 'Fix pyproject.toml for older Poetry',
-                              run: |||
-                                pipx install yq
-                                name=$(tomlq -r '.project.name' pyproject.toml)
-                                version=$(tomlq -r '.project.version' pyproject.toml)
-                                description=$(tomlq -r '.project.description' pyproject.toml)
-                                author_name=$(tomlq -r '.project.authors[0].name' pyproject.toml)
-                                author_email=$(tomlq -r '.project.authors[0].email' pyproject.toml)
-                                # Create temporary file with the new fields
-                                cat > /tmp/poetry_fields.toml << EOF
-                                authors = ["$author_name <$author_email>"]
-                                description = "$description"
-                                name = "$name"
-                                version = "$version"
-                                EOF
-                                # Insert the fields after [tool.poetry] line
-                                awk '
-                                  /^\[tool\.poetry\]$/ {
-                                    print
-                                    while ((getline line < "/tmp/poetry_fields.toml") > 0) {
-                                      print line
-                                    }
-                                    close("/tmp/poetry_fields.toml")
-                                    next
-                                  }
-                                  { print }
-                                ' pyproject.toml > /tmp/pyproject.toml.new
-                                mv /tmp/pyproject.toml.new pyproject.toml
-                              |||,
-                            }] else []) + [
+               name: 'Fix pyproject.toml for older Poetry',
+               run: |||
+                 pipx install yq
+                 name=$(tomlq -r '.project.name' pyproject.toml)
+                 version=$(tomlq -r '.project.version' pyproject.toml)
+                 description=$(tomlq -r '.project.description' pyproject.toml)
+                 author_name=$(tomlq -r '.project.authors[0].name' pyproject.toml)
+                 author_email=$(tomlq -r '.project.authors[0].email' pyproject.toml)
+                 # Create temporary file with the new fields
+                 cat > /tmp/poetry_fields.toml << EOF
+                 authors = ["$author_name <$author_email>"]
+                 description = "$description"
+                 name = "$name"
+                 version = "$version"
+                 EOF
+                 # Insert the fields after [tool.poetry] line
+                 awk '
+                   /^\[tool\.poetry\]$/ {
+                     print
+                     while ((getline line < "/tmp/poetry_fields.toml") > 0) {
+                       print line
+                     }
+                     close("/tmp/poetry_fields.toml")
+                     next
+                   }
+                   { print }
+                 ' pyproject.toml > /tmp/pyproject.toml.new
+                 mv /tmp/pyproject.toml.new pyproject.toml
+               |||,
+             }] else []) + [
           {
             name: 'Build Snap package',
             uses: 'snapcore/action-build@' + utils.githubLatestActionTag('snapcore', 'action-build'),
@@ -99,9 +99,7 @@ function(settings)
         branches: [
           'master',
         ],
-        paths: [
-          '**/*.py',
-          '**/*.pyi',
+        paths: ['%s/**' % mod for mod in settings.modules] + [
           '.github/workflows/snap.yml',
           'pyproject.toml',
           'snapcraft.yaml',
