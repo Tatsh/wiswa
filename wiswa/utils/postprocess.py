@@ -52,7 +52,7 @@ _LEGACY_WISWA_AI_PATHS = (
 )
 
 # Fallbacks for the standard CHANGELOG.md boilerplate when GitHub resolution is unavailable.
-_CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL = 'https://keepachangelog.com/en/1.1.0/'
+_CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL = 'https://keepachangelog.com/en/1.1.1/'
 _CHANGELOG_SEMVER_SPEC_FALLBACK_URL = 'https://semver.org/spec/v2.0.0.html'
 _RE_CHANGELOG_KEEP_A_CHANGELOG = re.compile(r'https://keepachangelog\.com/en/\d+\.\d+\.\d+/')
 _RE_CHANGELOG_SEMVER_SPEC = re.compile(r'https://semver\.org/spec/v\d+\.\d+\.\d+\.html')

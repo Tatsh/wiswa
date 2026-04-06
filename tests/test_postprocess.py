@@ -370,7 +370,7 @@ async def test_post_process_steps_updates_changelog_reference_urls(tmp_path: Pat
     settings = cast('Any', _make_settings())
     await post_process_steps(settings)
     body = changelog.read_text(encoding='utf-8')
-    assert 'https://keepachangelog.com/en/1.1.0/' in body
+    assert 'https://keepachangelog.com/en/1.1.1/' in body
     assert 'https://semver.org/spec/v2.0.0.html' in body
     assert 'keepachangelog.com/en/1.0.0' not in body
     assert 'semver.org/spec/v1.2.3.html' not in body
@@ -422,7 +422,7 @@ async def test_post_process_steps_changelog_keepachangelog_resolution_failure_fa
     settings = cast('Any', _make_settings())
     await post_process_steps(settings, session=mocker.MagicMock())
     body = changelog.read_text(encoding='utf-8')
-    assert 'https://keepachangelog.com/en/1.1.0/' in body
+    assert 'https://keepachangelog.com/en/1.1.1/' in body
     assert 'https://semver.org/spec/v2.0.0.html' in body
 
 

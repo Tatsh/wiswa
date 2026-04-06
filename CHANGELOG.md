@@ -4,7 +4,7 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.1/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
@@ -57,7 +57,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Post-processing rewrites existing `CHANGELOG.md` boilerplate links from GitHub when an HTTP
   session is available: Keep a Changelog uses the latest `olivierlacan/keep-a-changelog` release
   tag mapped to `keepachangelog.com/en/...`, and Semantic Versioning uses `semver/semver` mapped to
-  `semver.org/spec/...`. Pinned fallbacks are `https://keepachangelog.com/en/1.1.0/` and
+  `semver.org/spec/...`. Pinned fallbacks are `https://keepachangelog.com/en/1.1.1/` and
   `https://semver.org/spec/v2.0.0.html` when there is no session or resolution fails.
 - CLI progress labels end with ellipses, and post-processing subprocess hints wrap the shell command
   in backticks with a trailing ellipsis.
