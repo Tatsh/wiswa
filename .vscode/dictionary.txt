@@ -127,6 +127,7 @@ jquery
 jsonnet
 jsonschema
 kdeplasma
+keepachangelog
 kwargs
 lastexitcode
 launchable
@@ -172,6 +173,7 @@ nullptr
 numpy
 numpydoc
 objc
+olivierlacan
 onefile
 oneline
 paramdoc
