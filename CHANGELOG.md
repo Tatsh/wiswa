@@ -49,6 +49,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Default `github_username` in shipped Jsonnet defaults now resolves from the GitHub CLI (`gh`)
   when authenticated, then from `remote.origin.url` in `.git/config` for GitHub remotes, before
   falling back to `unknown`.
+  - `remote.origin.url` values are trimmed, and whitespace-only values are ignored.
+  - Duplicate git `config` paths reached via worktree layout (for example when `commondir` is `.`)
+    are de-duplicated after `Path.resolve()`.
 - Python: skip generating `tests/test_main.py` when `tests/` already contains other
   `test_*.py` files (existing projects keep their own test layout).
 - Post-processing rewrites existing `CHANGELOG.md` boilerplate links from GitHub when an HTTP

@@ -1,10 +1,11 @@
 """Evaluate Jsonnet for merged settings and generated project output."""
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 from urllib.parse import urlparse
 import configparser
 import json
@@ -27,10 +28,12 @@ from .versions import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Iterator, Sequence
 
     from niquests import AsyncSession
     from wiswa.typing import Settings
+
+JsonnetNativeCallback: TypeAlias = tuple[tuple[str, ...], Callable[..., Any]]
 
 __all__ = ('evaluate_jsonnet_file', 'evaluate_jsonnet_project', 'evaluate_merged_settings',
            'resolve_defaults_only')
@@ -66,20 +69,20 @@ def _github_cli_username() -> str | None:
 
 
 def _github_owner_from_remote_url(url: str) -> str | None:
-    """Return the repository owner from *url* if it targets github.com."""
-    raw = url.strip()
-    if not raw:
-        return None
-    if raw.startswith('git@github.com:'):
-        rest = raw.removeprefix('git@github.com:')
+    """Return the repository owner from *url* if it targets github.com.
+
+    *url* must be stripped and non-empty (callers skip blank ``remote.origin.url`` values).
+    """
+    if url.startswith('git@github.com:'):
+        rest = url.removeprefix('git@github.com:')
         segment = rest.split('/')[0]
         return segment.removesuffix('.git') or None
     for prefix in ('git://github.com/', 'ssh://git@github.com/'):
-        if raw.startswith(prefix):
-            rest = raw.removeprefix(prefix)
+        if url.startswith(prefix):
+            rest = url.removeprefix(prefix)
             segment = rest.split('/')[0]
             return segment.removesuffix('.git') or None
-    parsed = urlparse(raw)
+    parsed = urlparse(url)
     host = (parsed.hostname or '').lower()
     if host in {'github.com', 'www.github.com'}:
         segments = [segment for segment in parsed.path.strip('/').split('/') if segment]
@@ -146,7 +149,8 @@ def _github_username_from_git_origin() -> str | None:
         if key in seen:
             continue
         seen.add(key)
-        url = _origin_url_from_git_config_file(cfg)
+        url_raw = _origin_url_from_git_config_file(cfg)
+        url = (url_raw or '').strip()
         if not url:
             continue
         owner = _github_owner_from_remote_url(url)
@@ -164,10 +168,8 @@ def _default_github_username() -> str:
     return _UNKNOWN_GITHUB_USER
 
 
-def _make_native_callbacks(
-        session: AsyncSession | None = None
-) -> dict[str, tuple[tuple[str, ...], Callable[..., Any]]]:
-    github_cli_username_cb: tuple[tuple[str, ...], Callable[..., Any]] = (
+def _make_native_callbacks(session: AsyncSession | None = None) -> dict[str, JsonnetNativeCallback]:
+    github_cli_username_cb: JsonnetNativeCallback = (
         (),
         _default_github_username,
     )
@@ -224,7 +226,8 @@ async def evaluate_jsonnet_file(jpathdir: Sequence[str],
     merged_settings : str
         The merged settings as a JSON string.
     session : AsyncSession | None
-        Optional HTTP session for callbacks.
+        HTTP session for live package and release native callbacks, or ``None`` to use only
+        username and date native helpers.
 
     Returns
     -------
@@ -264,7 +267,8 @@ async def evaluate_jsonnet_project(lib_path: Path,
     merged_settings : str
         The merged settings as a JSON string.
     session : AsyncSession | None
-        Optional HTTP session for callbacks.
+        HTTP session for live package and release native callbacks, or ``None`` to use only
+        username and date native helpers.
     file : Path | None
         The path to the Jsonnet file to evaluate (defaults to ``project.jsonnet`` in the library).
     output_dir : Path | None
@@ -289,8 +293,8 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
     """
     Evaluate the merged settings using Jsonnet.
 
-    Merge order is built-in ``defaults.libsonnet``, user-level ``defaults.jsonnet``, then the
-    project file. The user-level file is read only when the project snippet contains the literal
+    The merge order is built-in ``defaults.libsonnet``, then user-level ``defaults.jsonnet``, then
+    the project file. The user-level file is read only when the project snippet contains the literal
     pattern ``uses_user_defaults: true`` (regex, not a full Jsonnet parse).
 
     Parameters
@@ -302,7 +306,8 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
     settings : str
         The project settings snippet (for example the contents of ``.wiswa.jsonnet``).
     session : AsyncSession | None
-        Optional HTTP session for callbacks.
+        HTTP session for live package and release native callbacks, or ``None`` to use only
+        username and date native helpers.
 
     Returns
     -------
@@ -366,7 +371,8 @@ async def resolve_defaults_only(jpathdir: Sequence[str],
     lib_path : Path
         The path to the Jsonnet library.
     session : AsyncSession | None
-        Optional HTTP session for callbacks.
+        HTTP session for live package and release native callbacks, or ``None`` to use only
+        username and date native helpers.
 
     Returns
     -------
