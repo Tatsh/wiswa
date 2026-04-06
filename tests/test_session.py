@@ -38,7 +38,8 @@ def test_cached_session_uses_user_cache_path(mocker: MockerFixture) -> None:
     mock_cache_path = mocker.patch('wiswa.session.platformdirs.user_cache_path')
     session = cached_session()
     assert isinstance(session, CachedAsyncSession)
-    assert session.cache_directory == mock_cache_path.return_value / 'wiswa/http'
+    assert session.cache_directory == mock_cache_path.return_value / 'http'
+    mock_cache_path.assert_called_once_with('wiswa', appauthor=False)
 
 
 def test_cached_session_no_cache_returns_plain_session(mocker: MockerFixture) -> None:

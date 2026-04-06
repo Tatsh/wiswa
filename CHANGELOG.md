@@ -88,6 +88,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `get_github_release_latest_tag` no longer truncates action tags to the major version (e.g. `v7`
   instead of `v7.0.0`), returning full semver tags instead. This fixes compatibility with
   repositories like `astral-sh/setup-uv` that only publish immutable full version tags.
+- `get_github_release_latest_tag` writes successful tag results to a JSON file under the Wiswa user
+  cache directory (via `platformdirs`) and falls back to that file when the GitHub API returns HTTP
+  403 or 429 (for example rate limits without a token). Persistence failures are logged at debug
+  level and do not block resolution.
+- Version resolution reads uv's user `uv.toml` via `platformdirs.user_config_path('uv')` instead of
+  assuming `~/.config` on all platforms. The HTTP session cache and user `defaults.jsonnet` paths use
+  `platformdirs` with application name `wiswa` and `appauthor=False`.
+- New runtime dependency: `platformdirs`.
 - Split QA workflows for all project types (Python, TypeScript, C/C++) into granular parallel jobs
   (ruff, mypy, format, eslint, prettier, markdownlint, and spelling) using native GitHub Actions path
   filters instead of `dorny/paths-filter`.

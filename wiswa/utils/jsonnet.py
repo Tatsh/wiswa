@@ -55,13 +55,11 @@ def _github_cli_username() -> str | None:
     if not gh_executable:
         return None
     try:
-        proc = sp.run(
-            [gh_executable, 'api', 'user', '--jq', '.login'],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=_GH_USERNAME_TIMEOUT_SEC,
-        )
+        proc = sp.run((gh_executable, 'api', 'user', '--jq', '.login'),
+                      check=True,
+                      capture_output=True,
+                      text=True,
+                      timeout=_GH_USERNAME_TIMEOUT_SEC)
     except (OSError, sp.CalledProcessError, sp.TimeoutExpired):
         return None
     login = proc.stdout.strip()
@@ -320,7 +318,8 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
         If the project snippet matches ``uses_user_defaults: true`` and the user defaults file does
         not exist.
     """
-    user_defaults_jsonnet = platformdirs.user_config_path('wiswa') / 'defaults.jsonnet'
+    user_defaults_jsonnet = (platformdirs.user_config_path('wiswa', appauthor=False) /
+                             'defaults.jsonnet')
     native_callbacks = _make_native_callbacks(session)
     defaults_path = anyio.Path(
         lib_path.resolve(strict=True) / 'defaults.libsonnet')  # noqa: ASYNC240

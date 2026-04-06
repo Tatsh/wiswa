@@ -1,4 +1,5 @@
 """Version fetching and Yarn download utilities."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -7,6 +8,7 @@ from functools import cache
 from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING, cast
+import json
 import logging
 import operator
 import re
@@ -15,20 +17,15 @@ from bs4 import BeautifulSoup as Soup, Tag
 from packaging.version import InvalidVersion, Version, parse as parse_version
 from wiswa.constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
 import anyio
+import platformdirs
 import tomlkit
 
 if TYPE_CHECKING:
     import niquests
 
-__all__ = (
-    'clear_resolution_caches',
-    'download_yarn',
-    'download_yarn_plugins',
-    'get_github_release_latest_tag',
-    'get_latest_yarn_version',
-    'get_npm_latest_package_version',
-    'get_pypi_latest_package_version',
-)
+__all__ = ('clear_resolution_caches', 'download_yarn', 'download_yarn_plugins',
+           'get_github_release_latest_tag', 'get_latest_yarn_version',
+           'get_npm_latest_package_version', 'get_pypi_latest_package_version')
 
 log = logging.getLogger(__name__)
 
@@ -37,6 +34,8 @@ _PYPI_YANKED_RELEASES = {
 }
 
 _cache: dict[str, str] = {}
+
+_GITHUB_TAG_DISK_FILENAME = 'github_tag_cache.json'
 
 _NPM_AGE_GATE_DEFAULT_MINUTES = 10080
 """Default npm minimum age gate in minutes (7 days)."""
@@ -57,7 +56,7 @@ def _parse_duration(value: str) -> timedelta | None:
     m = re.fullmatch(r'P(\d+)([DW])', value, re.IGNORECASE)
     if m:
         n = int(m.group(1))
-        return (timedelta(days=n) if m.group(2).upper() == 'D' else timedelta(weeks=n))
+        return timedelta(days=n) if m.group(2).upper() == 'D' else timedelta(weeks=n)
     m = re.fullmatch(r'P(\d+)DT(\d+)H', value, re.IGNORECASE)
     if m:
         return timedelta(days=int(m.group(1)), hours=int(m.group(2)))
@@ -99,14 +98,16 @@ def _parse_exclude_newer(value: str) -> datetime | None:
 @cache
 def _get_uv_config() -> tuple[datetime | None, dict[str, datetime]]:
     """
-    Read ``exclude-newer`` and ``exclude-newer-package`` from uv config.
+    Read ``exclude-newer`` and ``exclude-newer-package`` from uv's user ``uv.toml``.
+
+    The path is ``platformdirs.user_config_path('uv', appauthor=False) / 'uv.toml'``.
 
     Returns
     -------
     tuple[datetime | None, dict[str, datetime]]
         A global cutoff and a per-package mapping of cutoff datetimes.
     """
-    uv_toml = Path.home() / '.config' / 'uv' / 'uv.toml'
+    uv_toml = platformdirs.user_config_path('uv', appauthor=False) / 'uv.toml'
     if not uv_toml.exists():
         return None, {}
     try:
@@ -131,8 +132,13 @@ def clear_resolution_caches() -> None:
     """
     Drop memoised HTTP version results and the parsed ``uv.toml`` cache.
 
+    Does not remove the on-disk GitHub tag store under the user cache directory
+    for ``wiswa`` (for example ``~/.cache/wiswa`` on Linux via ``platformdirs``);
+    that file is only read when the API responds with 403 or 429.
+
     Intended for tests and for long-lived processes that need a fresh read of
-    ``~/.config/uv/uv.toml``.
+    uv's ``exclude-newer`` settings from the user ``uv.toml`` path resolved via
+    ``platformdirs``.
     """
     _cache.clear()
     _get_uv_config.cache_clear()
@@ -216,8 +222,8 @@ async def get_npm_latest_package_version(session: niquests.AsyncSession,
         result = str(max(candidates, key=operator.itemgetter(0))[0])
     else:
         result = latest_tag
-        log.debug('No npm version of %s passes the age gate of %d '
-                  'minutes; using latest: %s', package, _NPM_AGE_GATE_DEFAULT_MINUTES, result)
+        log.debug('No npm version of %s passes the age gate of %d minutes; using latest: %s',
+                  package, _NPM_AGE_GATE_DEFAULT_MINUTES, result)
     _cache[key] = result
     return result
 
@@ -227,9 +233,8 @@ async def get_pypi_latest_package_version(session: niquests.AsyncSession,
     """
     Get the latest version of a PyPI package.
 
-    Respects ``exclude-newer-package`` (per-package) and
-    ``exclude-newer`` (global) from ``~/.config/uv/uv.toml`` to filter
-    out versions published after the cutoff.
+    Respects ``exclude-newer-package`` (per-package) and ``exclude-newer`` (global) from uv's
+    user ``uv.toml`` (via ``platformdirs``) to filter out versions published after the cutoff.
 
     Parameters
     ----------
@@ -295,8 +300,8 @@ async def get_pypi_latest_package_version(session: niquests.AsyncSession,
         ]
         if unfiltered:
             candidates = unfiltered
-            log.debug('No PyPI version of %s passes exclude-newer; '
-                      'using latest unfiltered: %s', package, max(candidates))
+            log.debug('No PyPI version of %s passes exclude-newer; using latest unfiltered: %s',
+                      package, max(candidates))
     if not candidates:
         msg = f'No versions found for package `{package}`.'
         raise ValueError(msg)
@@ -347,12 +352,50 @@ async def download_yarn(session: niquests.AsyncSession, version: str) -> None:
     await anyio.to_thread.run_sync(lambda: Path(target).chmod(0o755))
 
 
-async def get_github_release_latest_tag(session: niquests.AsyncSession,
-                                        owner: str,
-                                        repo: str,
-                                        *,
-                                        skip_releases: bool = False,
-                                        allow_suffixes: bool = True) -> str:
+def _github_tag_disk_cache_path() -> Path:
+    return platformdirs.user_cache_path('wiswa', appauthor=False) / _GITHUB_TAG_DISK_FILENAME
+
+
+def _read_github_tag_disk_store() -> dict[str, str]:
+    path = _github_tag_disk_cache_path()
+    try:
+        raw = json.loads(path.read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError, TypeError):
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    return {str(k): str(v) for k, v in raw.items() if isinstance(k, str) and isinstance(v, str)}
+
+
+def _write_github_tag_disk_entry(key: str, value: str) -> None:
+    path = _github_tag_disk_cache_path()
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        store = _read_github_tag_disk_store()
+        store[key] = value
+        text = f'{json.dumps(store, indent=2, sort_keys=True)}\n'
+        tmp = path.with_suffix(f'{path.suffix}.tmp')
+        tmp.write_text(text, encoding='utf-8')
+        tmp.replace(path)
+    except OSError as exc:
+        log.debug('Could not persist GitHub tag cache: %s', exc)
+
+
+def _blocked_github_response_status(response: object) -> int | None:
+    code = getattr(response, 'status_code', None)
+    if isinstance(code, int) and code in {403, 429}:
+        return code
+    return None
+
+
+async def get_github_release_latest_tag(
+    session: niquests.AsyncSession,
+    owner: str,
+    repo: str,
+    *,
+    skip_releases: bool = False,
+    allow_suffixes: bool = True,
+) -> str:
     """
     Get the latest release tag from a GitHub repository.
 
@@ -383,14 +426,21 @@ async def get_github_release_latest_tag(session: niquests.AsyncSession,
     if key in _cache:
         return _cache[key]
     version: str | None = None
+    blocked_status: int | None = None
     if not skip_releases:
         resp = await session.get(f'https://api.github.com/repos/{owner}/{repo}/releases/latest',
                                  timeout=15)
+        gh_st = _blocked_github_response_status(resp)
+        if gh_st is not None:
+            blocked_status = gh_st
         if resp.ok:
             data = resp.json()
             version = data['tag_name']
     if not version:
         resp = await session.get(f'https://api.github.com/repos/{owner}/{repo}/tags', timeout=15)
+        gh_st = _blocked_github_response_status(resp)
+        if gh_st is not None:
+            blocked_status = gh_st
         if resp.ok:
             data = resp.json()
             tags = [x['name'] for x in data if 'name' in x]
@@ -401,7 +451,17 @@ async def get_github_release_latest_tag(session: niquests.AsyncSession,
                 else:
                     version = tags[0]
     if not version:
+        if blocked_status is not None:
+            disk_tag = _read_github_tag_disk_store().get(key)
+            if disk_tag:
+                log.warning(
+                    'Using disk-cached GitHub tag %s for %s/%s after HTTP %d '
+                    '(for example rate limiting or missing token).', disk_tag, owner, repo,
+                    blocked_status)
+                _cache[key] = disk_tag
+                return disk_tag
         msg = f'Could not get latest tag for {owner}/{repo}.'
         raise ValueError(msg)
     _cache[key] = version
+    _write_github_tag_disk_entry(key, version)
     return version

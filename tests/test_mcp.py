@@ -52,14 +52,14 @@ MOCK_DEFAULTS: dict[str, Any] = {
 
 
 @pytest.fixture(autouse=True)
-def _mock_defaults(mocker: MockerFixture) -> None:
+def mock_defaults(mocker: MockerFixture) -> None:
     mocker.patch('wiswa.mcp.resolve_defaults_only',
                  new_callable=AsyncMock,
                  return_value=MOCK_DEFAULTS)
 
 
 @pytest.fixture(autouse=True)
-def _clear_mcp_cache() -> Iterator[None]:
+def clear_mcp_cache() -> Iterator[None]:
     yield
     clear_resolved_defaults_cache()
 

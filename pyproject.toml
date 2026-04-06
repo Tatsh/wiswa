@@ -58,6 +58,7 @@ dependencies = [
   "keyring>=25.7.0",
   "lxml>=6.0.2",
   "niquests>=3.18.2",
+  "platformdirs>=4.3.6",
   "tomlkit>=0.14.0",
   "typing-extensions>=4.15.0",
   "yaspin>=3.4.0",

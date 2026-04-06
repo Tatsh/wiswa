@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
+import json
+import logging
 import stat
 
 from wiswa.utils.versions import (
@@ -18,14 +21,14 @@ from wiswa.utils.versions import (
 import pytest
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from pytest_mock import MockerFixture
 
 
 @pytest.fixture(autouse=True)
-def _clear_version_cache() -> None:
+def clear_version_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     clear_resolution_caches()
+    monkeypatch.setenv('XDG_CACHE_HOME', str(tmp_path / 'xdg-cache'))
+    monkeypatch.setenv('XDG_CONFIG_HOME', str(tmp_path / '.config'))
 
 
 def _make_response(
@@ -33,10 +36,15 @@ def _make_response(
     json_data: object = None,
     ok: bool = True,  # noqa: FBT001, FBT002
     content: bytes = b'',
+    status_code: int | None = None,
 ) -> MagicMock:
     """Create a mock niquests response."""
     resp = MagicMock()
     resp.ok = ok
+    if status_code is not None:
+        resp.status_code = status_code
+    else:
+        resp.status_code = 200 if ok else 404
     resp.text = text
     resp.json = MagicMock(return_value=json_data)
     resp.content = content
@@ -226,12 +234,104 @@ async def test_get_github_release_latest_tag_cache_hit() -> None:
     assert mock_session.get.call_count == 1
 
 
+async def test_get_github_release_latest_tag_persists_to_disk(tmp_path: Path) -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(
+        return_value=_make_response(ok=True, json_data={'tag_name': 'v2.2.2'}))
+    await get_github_release_latest_tag(mock_session, 'owner', 'persist_repo')
+    cache_file = tmp_path / 'xdg-cache' / 'wiswa' / 'github_tag_cache.json'
+    assert cache_file.is_file()
+    on_disk = json.loads(cache_file.read_text(encoding='utf-8'))
+    assert on_disk['gh_owner/persist_repo_False_True'] == 'v2.2.2'
+
+
+async def test_get_github_release_latest_tag_disk_cache_on_403(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    cache_dir = tmp_path / 'xdg-cache' / 'wiswa'
+    cache_dir.mkdir(parents=True)
+    key = 'gh_owner/rate_limited_False_True'
+    (cache_dir / 'github_tag_cache.json').write_text(json.dumps({key: 'v1.9.0'}, indent=2) + '\n',
+                                                     encoding='utf-8')
+    release_resp = _make_response(ok=False, json_data={}, status_code=403)
+    tags_resp = _make_response(ok=False, json_data={}, status_code=403)
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[release_resp, tags_resp])
+    with caplog.at_level(logging.WARNING):
+        result = await get_github_release_latest_tag(mock_session, 'owner', 'rate_limited')
+    assert result == 'v1.9.0'
+    assert 'disk-cached' in caplog.text
+
+
+async def test_get_github_release_latest_tag_corrupt_disk_store_overwritten(tmp_path: Path) -> None:
+    cache_dir = tmp_path / 'xdg-cache' / 'wiswa'
+    cache_dir.mkdir(parents=True)
+    (cache_dir / 'github_tag_cache.json').write_text('[1, 2]', encoding='utf-8')
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(
+        return_value=_make_response(ok=True, json_data={'tag_name': 'v8.8.8'}))
+    result = await get_github_release_latest_tag(mock_session, 'owner', 'fresh_repo')
+    assert result == 'v8.8.8'
+    data = json.loads((cache_dir / 'github_tag_cache.json').read_text(encoding='utf-8'))
+    assert data == {'gh_owner/fresh_repo_False_True': 'v8.8.8'}
+
+
+async def test_get_github_release_latest_tag_disk_write_oserror_logged(
+        tmp_path: Path, mocker: MockerFixture, caplog: pytest.LogCaptureFixture) -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(
+        return_value=_make_response(ok=True, json_data={'tag_name': 'v1.0.1'}))
+    real_replace = Path.replace
+
+    def boom_replace(self: Path, target: str | Path) -> Path:
+        if self.name.endswith('.tmp'):
+            msg = 'simulated replace failure'
+            raise OSError(msg)
+        return real_replace(self, target)
+
+    mocker.patch.object(Path, 'replace', boom_replace)
+    with caplog.at_level(logging.DEBUG):
+        result = await get_github_release_latest_tag(mock_session, 'owner', 'write_fail')
+    assert result == 'v1.0.1'
+    assert 'persist GitHub tag cache' in caplog.text
+
+
+async def test_get_github_release_latest_tag_403_missing_disk_entry_raises(tmp_path: Path) -> None:
+    cache_dir = tmp_path / 'xdg-cache' / 'wiswa'
+    cache_dir.mkdir(parents=True)
+    (cache_dir / 'github_tag_cache.json').write_text('{}\n', encoding='utf-8')
+    release_resp = _make_response(ok=False, json_data={}, status_code=403)
+    tags_resp = _make_response(ok=False, json_data={}, status_code=403)
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[release_resp, tags_resp])
+    with pytest.raises(ValueError, match='Could not get latest tag'):
+        await get_github_release_latest_tag(mock_session, 'owner', 'no_disk_entry')
+
+
+async def test_get_github_release_latest_tag_disk_cache_on_403_skip_releases(
+        tmp_path: Path) -> None:
+    cache_dir = tmp_path / 'xdg-cache' / 'wiswa'
+    cache_dir.mkdir(parents=True)
+    key = 'gh_owner/wf_only_True_False'
+    (cache_dir / 'github_tag_cache.json').write_text(json.dumps({key: 'v3.1.0'}) + '\n',
+                                                     encoding='utf-8')
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(
+        side_effect=[_make_response(ok=False, json_data=[], status_code=403)])
+    result = await get_github_release_latest_tag(mock_session,
+                                                 'owner',
+                                                 'wf_only',
+                                                 skip_releases=True,
+                                                 allow_suffixes=False)
+    assert result == 'v3.1.0'
+
+
 async def test_get_pypi_latest_package_version_uv_toml_global_parses_timestamp(
         tmp_path: Path, mocker: MockerFixture) -> None:
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('exclude-newer = "2025-01-15T12:00:00Z"\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0', 'Mon, 01 Jun 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -267,7 +367,6 @@ async def test_get_pypi_exclude_newer_duration_forms(
     line = (f'exclude-newer = {toml_value}\n'
             if use_bare_int else f'exclude-newer = "{toml_value}"\n')
     (uv_dir / 'uv.toml').write_text(line, encoding='utf-8')
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     fixed_now = datetime(2025, 8, 1, 12, 0, 0, tzinfo=timezone.utc)
     mocker.patch('wiswa.utils.versions.datetime', wraps=datetime)
     mocker.patch('wiswa.utils.versions.datetime.now', return_value=fixed_now)
@@ -286,7 +385,6 @@ async def test_get_pypi_latest_package_version_uv_toml_duration_exclude_newer(
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('exclude-newer = "P7D"\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     fixed_now = datetime(2025, 3, 15, 12, 0, 0, tzinfo=timezone.utc)
     mocker.patch('wiswa.utils.versions.datetime', wraps=datetime)
     mocker.patch('wiswa.utils.versions.datetime.now', return_value=fixed_now)
@@ -302,12 +400,9 @@ async def test_get_pypi_per_package_uv_toml_skips_invalid_timestamp(tmp_path: Pa
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text(
-        '[exclude-newer-package]\n'
-        'keep = "2025-02-01T00:00:00Z"\n'
-        'drop = "not-a-timestamp"\n',
+        '[exclude-newer-package]\nkeep = "2025-02-01T00:00:00Z"\ndrop = "not-a-timestamp"\n',
         encoding='utf-8',
     )
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0', 'Mon, 01 Mar 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -323,7 +418,6 @@ async def test_get_pypi_uv_toml_empty_behaves_like_no_config(tmp_path: Path,
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('', encoding='utf-8')
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([('1.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(content=xml))
@@ -336,7 +430,6 @@ async def test_get_pypi_uv_toml_read_os_error_falls_back_to_no_cutoff(
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('valid = true', encoding='utf-8')
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     mocker.patch('pathlib.Path.read_text', side_effect=OSError('Permission denied'))
     xml = _make_pypi_xml([
         ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
@@ -592,7 +685,6 @@ def _make_pypi_xml(versions: list[tuple[str, str]]) -> bytes:
 
 async def test_get_pypi_latest_package_version_no_cutoff(tmp_path: Path,
                                                          mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -608,7 +700,6 @@ async def test_get_pypi_latest_package_version_global_cutoff(tmp_path: Path,
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('exclude-newer = "2024-06-01T00:00:00Z"\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -628,7 +719,6 @@ async def test_get_pypi_latest_package_version_per_package_cutoff(tmp_path: Path
         '[exclude-newer-package]\nmy-pkg = "2024-06-01T00:00:00Z"\n',
         encoding='utf-8',
     )
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -644,7 +734,6 @@ async def test_get_pypi_latest_package_version_all_filtered_fallback(tmp_path: P
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('exclude-newer = "2020-01-01T00:00:00Z"\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -657,7 +746,6 @@ async def test_get_pypi_latest_package_version_all_filtered_fallback(tmp_path: P
 
 async def test_get_pypi_latest_package_version_no_items_raises(tmp_path: Path,
                                                                mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = b'<?xml version="1.0"?><rss><channel></channel></rss>'
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(content=xml))
@@ -667,7 +755,6 @@ async def test_get_pypi_latest_package_version_no_items_raises(tmp_path: Path,
 
 async def test_get_pypi_latest_package_version_skips_prerelease(tmp_path: Path,
                                                                 mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0a1', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -680,7 +767,6 @@ async def test_get_pypi_latest_package_version_skips_prerelease(tmp_path: Path,
 
 async def test_get_pypi_latest_package_version_skips_yanked(tmp_path: Path,
                                                             mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('8.3.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('8.2.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -693,7 +779,6 @@ async def test_get_pypi_latest_package_version_skips_yanked(tmp_path: Path,
 
 async def test_get_pypi_latest_package_version_cache_hit(tmp_path: Path,
                                                          mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(content=xml))
@@ -705,7 +790,6 @@ async def test_get_pypi_latest_package_version_cache_hit(tmp_path: Path,
 
 async def test_get_pypi_latest_package_version_only_prerelease_raises(
         tmp_path: Path, mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions.Path.home', return_value=tmp_path)
     xml = _make_pypi_xml([
         ('2.0.0a1', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('1.0.0rc1', 'Mon, 01 Jan 2024 00:00:00 GMT'),

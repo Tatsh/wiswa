@@ -9,7 +9,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-03-29T22:28:37.479692044Z"
+exclude-newer = "2026-03-30T01:23:05.735862824Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
@@ -3621,6 +3621,7 @@ dependencies = [
     { name = "keyring" },
     { name = "lxml" },
     { name = "niquests" },
+    { name = "platformdirs" },
     { name = "tomlkit" },
     { name = "typing-extensions" },
     { name = "yaspin" },
@@ -3671,6 +3672,7 @@ requires-dist = [
     { name = "keyring", specifier = ">=25.7.0" },
     { name = "lxml", specifier = ">=6.0.2" },
     { name = "niquests", specifier = ">=3.18.2" },
+    { name = "platformdirs", specifier = ">=4.3.6" },
     { name = "tomlkit", specifier = ">=0.14.0" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
     { name = "yaspin", specifier = ">=3.4.0" },

@@ -129,6 +129,5 @@ def cached_session(*,
     if no_cache:
         return niquests.AsyncSession()
     return CachedAsyncSession(
-        cache_dir=platformdirs.user_cache_path() / 'wiswa/http',
-        expire_after=expire_after,
-    )
+        cache_dir=platformdirs.user_cache_path('wiswa', appauthor=False) / 'http',
+        expire_after=expire_after)

@@ -37,7 +37,6 @@ local utils = import 'utils.libsonnet';
   python_deps+: {
     main+: {
       aiofiles: utils.latestPypiPackageVersionCaret('aiofiles'),
-      niquests: utils.latestPypiPackageVersionCaret('niquests'),
       anyio: utils.latestPypiPackageVersionCaret('anyio'),
       beautifulsoup4: utils.latestPypiPackageVersionCaret('beautifulsoup4'),
       fastmcp: utils.latestPypiPackageVersionCaret('fastmcp'),
@@ -45,6 +44,8 @@ local utils = import 'utils.libsonnet';
       jsonnet: utils.latestPypiPackageVersionCaret('jsonnet'),
       keyring: utils.latestPypiPackageVersionCaret('keyring'),
       lxml: utils.latestPypiPackageVersionCaret('lxml'),
+      niquests: utils.latestPypiPackageVersionCaret('niquests'),
+      platformdirs: utils.latestPypiPackageVersionCaret('platformdirs'),
       tomlkit: utils.latestPypiPackageVersionCaret('tomlkit'),
       yaspin: utils.latestPypiPackageVersionCaret('yaspin'),
     },
