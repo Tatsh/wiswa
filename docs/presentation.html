@@ -549,7 +549,12 @@
                     </p>
                   </li>
                   <li class="fragment">
-                    <p>The Cruft PyPI project is <strong>no longer maintained</strong></p>
+                    <p>
+                      <strong>Sparse PyPI releases</strong>&#8201;&#8212;&#8201;it is common for
+                      <strong>two years or more</strong> to pass between published versions; that
+                      cadence is too slow if you want generator tooling to track a fast-moving
+                      packaging and CI ecosystem
+                    </p>
                   </li>
                   <li class="fragment">
                     <p>Still inherits Cookiecutter&#8217;s Python-centric limitations</p>
@@ -584,7 +589,10 @@
               <div class="ulist">
                 <ul>
                   <li class="fragment">
-                    <p>Multi-language: Python, TypeScript, C, C++, Lua, and more</p>
+                    <p>
+                      Multi-language: Python, TypeScript, C, C++, Lua, Xcode, generic layouts, and
+                      more
+                    </p>
                   </li>
                   <li class="fragment">
                     <p>Programmable configuration with <strong>Jsonnet</strong></p>
@@ -863,7 +871,10 @@ python_deps+: {
             <h2>How It Works: Post-Processing</h2>
             <div class="slide-content">
               <div class="paragraph">
-                <p>Lock dependencies, run formatters (Ruff, Prettier), and lint.</p>
+                <p>
+                  Lock dependencies, then run the generated project&#8217;s format and QA scripts
+                  (for example <code>yarn format</code> and <code>yarn qa</code>).
+                </p>
               </div>
             </div>
           </section>
@@ -1053,13 +1064,17 @@ utils.latestYarnVersion()                      // "4.6.0"</code></pre>
                 </li>
                 <li class="fragment">
                   <p>
-                    Run <code>wiswa</code> to regenerate all managed files (<code
-                      >uses_user_defaults: true</code
-                    >
-                    merges user-level <code>defaults.jsonnet</code>)
+                    Run <code>wiswa</code> to regenerate all managed files (set
+                    <code>uses_user_defaults: true</code> to merge user-level
+                    <code>defaults.jsonnet</code>)
                   </p>
                 </li>
-                <li class="fragment"><p>Post-processing locks dependencies and formats code</p></li>
+                <li class="fragment">
+                  <p>
+                    Post-processing locks dependencies and runs <code>yarn format</code>,
+                    <code>yarn qa</code>, and related steps
+                  </p>
+                </li>
                 <li class="fragment">
                   <p>Review the <code>git diff</code></p>
                 </li>
@@ -1073,8 +1088,10 @@ utils.latestYarnVersion()                      // "4.6.0"</code></pre>
                 </div>
                 <div class="paragraph">
                   <p>
-                    No merge conflicts. Managed files are always overwritten.<br />
-                    Your source code, tests, and docs content are <strong>never touched</strong>.
+                    No merge conflicts. Managed files are always overwritten from templates and
+                    settings. Post-processing still runs <code>yarn format</code>,
+                    <code>yarn qa</code>, and similar; anything those scripts run with auto-fix
+                    <strong>will change</strong> sources when fixes apply.
                   </p>
                 </div>
               </div>
@@ -1162,7 +1179,7 @@ utils.latestYarnVersion()                      // "4.6.0"</code></pre>
                   </td>
                   <td class="tableblock halign-left valign-top">
                     <p class="tableblock">
-                      VS Code settings, launch configs, extensions, Cursor rules
+                      VS Code settings, launch configs, recommended extensions
                     </p>
                   </td>
                 </tr>
@@ -1171,7 +1188,10 @@ utils.latestYarnVersion()                      // "4.6.0"</code></pre>
                     <p class="tableblock"><strong>AI tooling</strong></p>
                   </td>
                   <td class="tableblock halign-left valign-top">
-                    <p class="tableblock">Claude Code agents, Copilot instructions</p>
+                    <p class="tableblock">
+                      <code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>.claude/</code> agents,
+                      rules, skills, local settings (optional)
+                    </p>
                   </td>
                 </tr>
                 <tr>
@@ -1188,7 +1208,8 @@ utils.latestYarnVersion()                      // "4.6.0"</code></pre>
                   </td>
                   <td class="tableblock halign-left valign-top">
                     <p class="tableblock">
-                      Auto-generated based on tools, platforms, and social media
+                      <code>README.md</code>; Sphinx <code>docs/badges.rst</code> (Python projects
+                      only, when docs are enabled)
                     </p>
                   </td>
                 </tr>
@@ -1247,10 +1268,12 @@ utils.latestYarnVersion()                      // "4.6.0"</code></pre>
                 </tr>
                 <tr>
                   <td class="tableblock halign-left valign-top">
-                    <p class="tableblock"><strong>Swift</strong></p>
+                    <p class="tableblock">
+                      <strong>Xcode</strong> (<code>project_type: 'xcode'</code>)
+                    </p>
                   </td>
                   <td class="tableblock halign-left valign-top">
-                    <p class="tableblock">clang-format, Xcode project configuration</p>
+                    <p class="tableblock">clang-format, Xcode-oriented defaults</p>
                   </td>
                 </tr>
                 <tr>
@@ -1348,9 +1371,11 @@ utils.latestYarnVersion()                      // "4.6.0"</code></pre>
                   ><code class="language-text hljs" data-noescape="true" data-lang="text">&gt; lookup_setting("pyproject.tool.ruff.line-length")
 
 {
-  "value": 100,
+  "key_path": "pyproject.tool.ruff.line-length",
+  "default_value": 100,
   "type": "number",
-  "override_snippet": "pyproject+: { tool+: { ruff+: { 'line-length': &lt;value&gt; } } }"
+  "override_snippet": "pyproject+: { tool+: { ruff+: { 'line-length': &lt;YOUR_VALUE&gt; } } }",
+  "notes": []
 }</code></pre>
                 </div>
               </div>
@@ -1408,7 +1433,7 @@ utils.latestYarnVersion()                      // "4.6.0"</code></pre>
                     ><code class="language-text hljs" data-noescape="true" data-lang="text">wiswa/
   main.py              -- async orchestrator
   mcp.py               -- FastMCP server
-  session.py           -- cached niquests client
+  session.py           -- filesystem-cached niquests session
   utils/
     jsonnet.py         -- Jsonnet eval + native callbacks
     versions.py        -- package version fetching
@@ -1439,7 +1464,9 @@ wiswa-jsonnet/
                   <p><strong>Regeneration-based</strong>: no merge conflicts, always up to date</p>
                 </li>
                 <li class="fragment">
-                  <p><strong>Multi-language</strong>: Python, TypeScript, C/C++, Lua, Xcode</p>
+                  <p>
+                    <strong>Multi-language</strong>: Python, TypeScript, C/C++, Lua, Xcode, generic
+                  </p>
                 </li>
                 <li class="fragment">
                   <p>
@@ -1465,7 +1492,8 @@ wiswa-jsonnet/
                 <div class="paragraph">
                   <p>
                     <a href="https://github.com/Tatsh/wiswa">github.com/Tatsh/wiswa</a><br />
-                    <a href="https://pypi.org/project/wiswa/">pypi.org/project/wiswa</a>
+                    <a href="https://pypi.org/project/wiswa/">pypi.org/project/wiswa</a><br />
+                    <a href="https://wiswa.readthedocs.org">wiswa.readthedocs.org</a>
                   </p>
                 </div>
               </div>

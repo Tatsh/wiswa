@@ -31,7 +31,9 @@
 [%step]
 * Built on top of Cookiecutter to add updates via patching
 * Patch-based updates lead to *merge conflicts* with local changes
-* The Cruft PyPI project is *no longer maintained*
+* *Sparse PyPI releases* -- it is common for *two years or more* to pass between
+  published versions; that cadence is too slow if you want generator tooling to
+  track a fast-moving packaging and CI ecosystem
 * Still inherits Cookiecutter's Python-centric limitations
 
 === Common Weaknesses
@@ -47,7 +49,7 @@
 A *declarative, regeneration-based* project generator
 
 [%step]
-* Multi-language: Python, TypeScript, C, C++, Lua, and more
+* Multi-language: Python, TypeScript, C, C++, Lua, Xcode, generic layouts, and more
 * Programmable configuration with *Jsonnet*
 * Automatic *latest version resolution* from PyPI, npm, GitHub
 * Deep *GitHub and GitLab integration*
@@ -194,7 +196,8 @@ a|
 
 === How It Works: Post-Processing
 
-Lock dependencies, run formatters (Ruff, Prettier), and lint.
+Lock dependencies, then run the generated project's format and QA scripts (for
+example `yarn format` and `yarn qa`).
 
 === How It Works: Repository Setup
 
@@ -291,7 +294,7 @@ utils.latestYarnVersion()                      // "4.6.0"
 [%step]
 . Make changes to `.wiswa.jsonnet` (or re-run to pick up new defaults)
 . Run `wiswa` to regenerate all managed files (set `uses_user_defaults: true` to merge user-level `defaults.jsonnet`)
-. Post-processing locks dependencies and formats code
+. Post-processing locks dependencies and runs `yarn format`, `yarn qa`, and related steps
 . Review the `git diff`
 . Commit
 
@@ -299,8 +302,10 @@ utils.latestYarnVersion()                      // "4.6.0"
 --
 *Key insight*: regeneration, not patching.
 
-No merge conflicts. Managed files are always overwritten. +
-Your source code, tests, and docs content are *never touched*.
+No merge conflicts. Managed files are always overwritten from templates and
+settings. Post-processing still runs `yarn format`, `yarn qa`, and similar;
+anything those scripts run with auto-fix *will change* sources when fixes
+apply.
 --
 
 == Bidirectional Sync
@@ -332,16 +337,16 @@ What if you change a managed file directly?
 | Sphinx + ReadTheDocs, GitHub Pages, CONTRIBUTING, SECURITY
 
 | *IDE*
-| VS Code settings, launch configs, extensions, Cursor rules
+| VS Code settings, launch configs, recommended extensions
 
 | *AI tooling*
-| Claude Code agents, Copilot instructions
+| `AGENTS.md`, `CLAUDE.md`, `.claude/` agents, rules, skills, local settings (optional)
 
 | *Distribution*
 | AppImage, PyInstaller, Snap, Flatpak, winget
 
 | *Badges*
-| Auto-generated based on tools, platforms, and social media
+| `README.md`; Sphinx `docs/badges.rst` (Python projects only, when docs are enabled)
 |===
 
 == Multi-Language Support
@@ -362,8 +367,8 @@ What if you change a managed file directly?
 | *Lua*
 | luacheck, Busted tests, LuaRocks publishing
 
-| *Swift*
-| clang-format, Xcode project configuration
+| *Xcode* (`project_type: 'xcode'`)
+| clang-format, Xcode-oriented defaults
 
 | *Generic*
 | package.json, Prettier, basic CI
@@ -406,9 +411,11 @@ Four tools available:
 > lookup_setting("pyproject.tool.ruff.line-length")
 
 {
-  "value": 100,
+  "key_path": "pyproject.tool.ruff.line-length",
+  "default_value": 100,
   "type": "number",
-  "override_snippet": "pyproject+: { tool+: { ruff+: { 'line-length': <value> } } }"
+  "override_snippet": "pyproject+: { tool+: { ruff+: { 'line-length': <YOUR_VALUE> } } }",
+  "notes": []
 }
 ----
 
@@ -431,7 +438,7 @@ AI assistants can explore and modify Wiswa configuration *programmatically*.
 wiswa/
   main.py              -- async orchestrator
   mcp.py               -- FastMCP server
-  session.py           -- cached niquests client
+  session.py           -- filesystem-cached niquests session
   utils/
     jsonnet.py         -- Jsonnet eval + native callbacks
     versions.py        -- package version fetching
@@ -449,7 +456,7 @@ wiswa-jsonnet/
 [%step]
 * *Declarative*: one `.wiswa.jsonnet` file describes your entire project setup
 * *Regeneration-based*: no merge conflicts, always up to date
-* *Multi-language*: Python, TypeScript, C/C++, Lua, Xcode
+* *Multi-language*: Python, TypeScript, C/C++, Lua, Xcode, generic
 * *Smart*: automatic version resolution, GitHub/GitLab API integration
 * *Extensible*: Jsonnet configuration, user defaults, MCP server
 * *AI-native*: MCP server, Claude Code agents, Copilot/Cursor instructions
@@ -457,5 +464,6 @@ wiswa-jsonnet/
 [.text-center]
 --
 https://github.com/Tatsh/wiswa[github.com/Tatsh/wiswa] +
-https://pypi.org/project/wiswa/[pypi.org/project/wiswa]
+https://pypi.org/project/wiswa/[pypi.org/project/wiswa] +
+https://wiswa.readthedocs.org[wiswa.readthedocs.org]
 --
