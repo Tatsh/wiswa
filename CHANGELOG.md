@@ -11,6 +11,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Post-processing restores `uv.lock` from `HEAD` when it is the only path differing from the
+  last commit (for example after `uv lock --upgrade` without any tracked manifest edit). This
+  avoids noisy lock-only diffs from ambient resolution (rolling `exclude-newer` cutoffs, index
+  churn, and similar).
 - `cspell_pre_commit_hook` setting (default `true`). When set to `false`, the cspell pre-commit
   hook is excluded from `.pre-commit-config.yaml`.
 - Version age gating for PyPI and npm package version fetching:
@@ -46,6 +50,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- CLI `--skip-jsonnet` help text: it skips only `project.jsonnet` manifest output; evaluating merged
+  settings from `.wiswa.jsonnet` still runs Jsonnet.
 - Default `github_username` in shipped Jsonnet defaults now resolves from the GitHub CLI (`gh`)
   when authenticated, then from `remote.origin.url` in `.git/config` for GitHub remotes, before
   falling back to `unknown`.

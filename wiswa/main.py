@@ -184,6 +184,8 @@ async def _main_async(
                     log.warning(
                         'pyproject.tool.poetry.*.dependencies is deprecated. '
                         'Move dependencies to python_deps.main/dev/docs/tests in .wiswa.jsonnet.')
+                # Skip only wiswa-jsonnet/project.jsonnet (manifest files). Merged settings from
+                # evaluate_merged_settings always run Jsonnet first.
                 if not skip_jsonnet:
                     spin_update('Evaluating Jsonnet. Please be patient...')
                     await evaluate_jsonnet_project(lib_path,
@@ -278,7 +280,12 @@ async def _main_async(
     help='Suppress the progress spinner and the final Done message.',
 )
 @click.option('--skip-github', is_flag=True, help='Skip configuring GitHub project.')
-@click.option('--skip-jsonnet', is_flag=True, help='Skip Jsonnet evaluation.')
+@click.option(
+    '--skip-jsonnet',
+    is_flag=True,
+    help=('Skip project.jsonnet output (for example pyproject.toml, package.json, and workflows). '
+          'Merged settings from .wiswa.jsonnet still use Jsonnet.'),
+)
 @click.option('--skip-postprocess', is_flag=True, help='Skip post-processing steps.')
 @click.option('--skip-static', is_flag=True, help='Skip copying static files.')
 @click.option('--skip-templates', is_flag=True, help='Skip Jinja2 template evaluation.')

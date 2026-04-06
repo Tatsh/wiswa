@@ -609,6 +609,74 @@ async def _check_readme_badges(settings: Settings) -> None:
     log.debug('Updated README.md badges.')
 
 
+async def _maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings) -> None:
+    """
+    Restore ``uv.lock`` from ``HEAD`` when it is the only tracked change.
+
+    ``uv lock --upgrade`` can refresh the lock without any edit to ``pyproject.toml`` (for example
+    when rolling ``exclude-newer`` cutoffs in the user ``uv.toml`` or when the index moves). If the
+    working tree differs from ``HEAD`` only in ``uv.lock``, put the lock file back so a run does
+    not leave an incidental lock diff.
+    """
+    if settings['package_manager'] != 'uv':
+        return
+    if not await anyio.Path('.git').exists():
+        return
+    proc = await asyncio.create_subprocess_exec('git',
+                                                'diff',
+                                                '--name-only',
+                                                'HEAD',
+                                                stdout=asyncio.subprocess.PIPE,
+                                                stderr=asyncio.subprocess.DEVNULL)
+    out, _ = await proc.communicate()
+    if proc.returncode != 0:
+        log.debug('git diff --name-only HEAD failed; skipping uv.lock restore.')
+        return
+    diff_names = {p.strip().replace('\\', '/') for p in out.decode().splitlines() if p.strip()}
+    proc_ut = await asyncio.create_subprocess_exec('git',
+                                                   'ls-files',
+                                                   '--others',
+                                                   '--exclude-standard',
+                                                   '-z',
+                                                   stdout=asyncio.subprocess.PIPE,
+                                                   stderr=asyncio.subprocess.DEVNULL)
+    out_ut, _ = await proc_ut.communicate()
+    if proc_ut.returncode != 0:
+        log.debug('git ls-files --others failed; skipping uv.lock restore.')
+        return
+    untracked = [p for p in out_ut.decode().split('\0') if p]
+    if untracked:
+        return
+    if diff_names != {'uv.lock'}:
+        return
+    proc_restore = await asyncio.create_subprocess_exec(
+        'git',
+        'restore',
+        '--source=HEAD',
+        '--staged',
+        '--worktree',
+        '--',
+        'uv.lock',
+        stdout=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    _, err = await proc_restore.communicate()
+    if proc_restore.returncode != 0:
+        log.debug('git restore uv.lock failed (%s); trying git checkout.', err.decode().strip())
+        proc_co = await asyncio.create_subprocess_exec('git',
+                                                       'checkout',
+                                                       'HEAD',
+                                                       '--',
+                                                       'uv.lock',
+                                                       stdout=asyncio.subprocess.DEVNULL,
+                                                       stderr=asyncio.subprocess.PIPE)
+        _, err_co = await proc_co.communicate()
+        if proc_co.returncode != 0:
+            log.warning('Could not restore uv.lock from HEAD: %s', err_co.decode().strip())
+            return
+    log.info('Restored uv.lock from HEAD; it was the only file differing from HEAD.')
+
+
 async def post_process_steps(settings: Settings,
                              *,
                              debug: bool = False,
@@ -661,3 +729,4 @@ async def post_process_steps(settings: Settings,
                               on_command=on_command,
                               stderr=asyncio.subprocess.PIPE,
                               stdout=asyncio.subprocess.PIPE)
+    await _maybe_revert_uv_lock_if_only_lockfile_changed(settings)

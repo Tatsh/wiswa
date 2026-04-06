@@ -54,7 +54,7 @@ Options:
   -o, --output-dir DIRECTORY      Output directory for generated files.
   -q, --quiet                     Suppress the progress spinner.
   --skip-github                   Skip configuring GitHub project.
-  --skip-jsonnet                  Skip Jsonnet evaluation.
+  --skip-jsonnet                  Skip project.jsonnet manifests; settings merge still runs.
   --skip-postprocess              Skip post-processing steps.
   --skip-static                   Skip copying static files.
   --skip-templates                Skip Jinja2 template evaluation.
