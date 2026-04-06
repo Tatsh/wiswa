@@ -88,6 +88,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         },
         'regenerate_yarn_lock': False,
         '_readme_existed': False,
+        '_has_established_pytest_modules': False,
         'want_ai': True,
     }
     return base | overrides

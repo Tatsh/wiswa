@@ -354,6 +354,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'version': '0.0.1',
         'yarn_version': '4',
         '_readme_existed': False,
+        '_has_established_pytest_modules': False,
         'codeowners': {},
         'using_readthedocs': False,
         'security_addendum': '',
@@ -589,6 +590,28 @@ async def test_write_templated_files_python_want_tests_and_main(
         )
     assert (out / 'tests/conftest.py').exists()
     assert (out / 'tests/test_main.py').exists()
+    assert (out / '.github/workflows/pyinstaller.yml').exists()
+    assert (out / '.github/workflows/appimage.yml').exists()
+
+
+async def test_write_templated_files_python_skips_test_main_when_established_tests(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+        out = await _run_write(
+            monkeypatch,
+            tmp_path,
+            module_path,
+            _make_settings(
+                want_tests=True,
+                want_main=True,
+                want_ai=False,
+                using_github=True,
+                supported_platforms='all',
+                _has_established_pytest_modules=True,
+            ),
+        )
+    assert (out / 'tests/conftest.py').exists()
+    assert not (out / 'tests/test_main.py').exists()
     assert (out / '.github/workflows/pyinstaller.yml').exists()
     assert (out / '.github/workflows/appimage.yml').exists()
 

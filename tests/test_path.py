@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from wiswa.utils.path import non_empty_file_exists, primary_module_to_path, remove_empty_dirs
+from wiswa.utils.path import (
+    non_empty_file_exists,
+    primary_module_to_path,
+    remove_empty_dirs,
+    tests_dir_has_pytest_modules_excluding_starter_main,
+)
 import pytest
 
 if TYPE_CHECKING:
@@ -88,3 +93,36 @@ async def test_non_empty_file_exists_whitespace_only(tmp_path: Path) -> None:
 async def test_non_empty_file_exists_missing(tmp_path: Path) -> None:
     f = tmp_path / 'missing.txt'
     assert await non_empty_file_exists(f) is False
+
+
+async def test_tests_dir_has_pytest_modules_no_tests_dir(tmp_path: Path,
+                                                         monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    assert await tests_dir_has_pytest_modules_excluding_starter_main() is False
+
+
+async def test_tests_dir_has_pytest_modules_nested(tmp_path: Path,
+                                                   monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    d = tmp_path / 'tests' / 'unit'
+    d.mkdir(parents=True)
+    (d / 'test_bar.py').write_text('# x\n')
+    assert await tests_dir_has_pytest_modules_excluding_starter_main() is True
+
+
+async def test_tests_dir_has_pytest_modules_only_starter(tmp_path: Path,
+                                                         monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    t = tmp_path / 'tests'
+    t.mkdir()
+    (t / 'test_main.py').write_text('# x\n')
+    assert await tests_dir_has_pytest_modules_excluding_starter_main() is False
+
+
+async def test_tests_dir_has_pytest_modules_conftest_only(tmp_path: Path,
+                                                          monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    t = tmp_path / 'tests'
+    t.mkdir()
+    (t / 'conftest.py').write_text('# x\n')
+    assert await tests_dir_has_pytest_modules_excluding_starter_main() is False

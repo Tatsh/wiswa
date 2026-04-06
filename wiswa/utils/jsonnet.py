@@ -14,6 +14,7 @@ import _jsonnet  # noqa: PLC2701
 import anyio
 import platformdirs
 
+from .path import tests_dir_has_pytest_modules_excluding_starter_main
 from .versions import (
     get_github_release_latest_tag,
     get_latest_yarn_version,
@@ -213,7 +214,12 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
     merged_json = await _eval_merge(user_defaults_text)
     merged_dict = json.loads(merged_json)
     readme_existed = await anyio.Path('README.md').exists()
-    return merged_json, (merged_dict | {'_readme_existed': readme_existed})
+    established_pytest = await tests_dir_has_pytest_modules_excluding_starter_main()
+    return merged_json, (merged_dict
+                         | {
+                             '_readme_existed': readme_existed,
+                             '_has_established_pytest_modules': established_pytest
+                         })
 
 
 async def resolve_defaults_only(jpathdir: Sequence[str],

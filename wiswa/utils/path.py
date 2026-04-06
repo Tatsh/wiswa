@@ -5,7 +5,8 @@ from pathlib import Path
 
 import anyio
 
-__all__ = ('non_empty_file_exists', 'primary_module_to_path', 'remove_empty_dirs')
+__all__ = ('non_empty_file_exists', 'primary_module_to_path', 'remove_empty_dirs',
+           'tests_dir_has_pytest_modules_excluding_starter_main')
 
 
 async def non_empty_file_exists(output_file: Path) -> bool:
@@ -53,6 +54,27 @@ def primary_module_to_path(primary_module: str) -> str:
             msg = f'Invalid primary_module (path traversal or empty segment): {primary_module!r}'
             raise ValueError(msg)
     return path_str
+
+
+async def tests_dir_has_pytest_modules_excluding_starter_main() -> bool:
+    """
+    Return whether ``tests/`` contains any ``test_*.py`` file other than ``test_main.py``.
+
+    Used to skip generating the starter ``tests/test_main.py`` when the project already has
+    pytest modules.
+
+    Returns
+    -------
+    bool
+        :py:data:`True` if at least one matching file exists, excluding ``tests/test_main.py`` only.
+    """
+    tests_root = anyio.Path('tests')
+    if not await tests_root.is_dir():
+        return False
+    async for path in tests_root.rglob('test_*.py'):
+        if path.name != 'test_main.py':
+            return True
+    return False
 
 
 async def remove_empty_dirs(path: Path, stop_at: Path | None = None) -> None:

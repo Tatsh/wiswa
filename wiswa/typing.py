@@ -358,3 +358,8 @@ class Settings(TypedDict):
     """The version of Yarn to use."""
     _readme_existed: bool
     """Whether ``README.md`` existed before templating (used for badge updates)."""
+    _has_established_pytest_modules: bool
+    """
+    Whether ``tests/`` already contained ``test_*.py`` files other than ``test_main.py`` before
+    templating (used to skip the starter ``tests/test_main.py``).
+    """

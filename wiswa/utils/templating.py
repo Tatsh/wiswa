@@ -128,7 +128,8 @@ async def _write_templated_files_python(settings: Settings, templates_dir: Path,
         tasks.append(
             write_file(resolve_template(templates_dir / 'tests/conftest.py.j2'),
                        'tests/conftest.py'))
-        if settings['want_main'] and not settings['has_multiple_entry_points']:
+        if (settings['want_main'] and not settings['has_multiple_entry_points']
+                and not settings['_has_established_pytest_modules']):
             tasks.append(
                 write_file(resolve_template(templates_dir / 'tests/test_main.py.j2'),
                            'tests/test_main.py'))

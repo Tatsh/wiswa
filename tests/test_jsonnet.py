@@ -80,7 +80,9 @@ async def test_evaluate_jsonnet_project_default_output_dir(tmp_path: Path,
     assert (tmp_path / 'generated.txt').read_text().strip() == 'gen content'
 
 
-async def test_evaluate_merged_settings(tmp_path: Path, mocker: MockerFixture) -> None:
+async def test_evaluate_merged_settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                        mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     (lib_path / 'defaults.libsonnet').write_text('{ project_type: "python" }')
@@ -92,6 +94,8 @@ async def test_evaluate_merged_settings(tmp_path: Path, mocker: MockerFixture) -
     assert result_str == '{"project_type": "python"}'
     assert result_dict['project_type'] == 'python'
     assert '_readme_existed' in result_dict
+    assert result_dict['_readme_existed'] is False
+    assert result_dict['_has_established_pytest_modules'] is False
 
 
 async def test_evaluate_merged_settings_user_defaults(tmp_path: Path,
@@ -213,3 +217,52 @@ async def test_native_callback_params_use_short_names(mocker: MockerFixture) -> 
     assert native_callbacks['isodate'][0] == ()
     assert native_callbacks['latestYarnVersion'][0] == ()
     assert native_callbacks['year'][0] == ()
+
+
+async def test_evaluate_merged_settings_established_pytest_modules(tmp_path: Path,
+                                                                   monkeypatch: pytest.MonkeyPatch,
+                                                                   mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    lib_path = tmp_path / 'lib'
+    lib_path.mkdir()
+    (lib_path / 'defaults.libsonnet').write_text('{ project_type: "python" }')
+    (tmp_path / 'tests').mkdir()
+    (tmp_path / 'tests' / 'test_foo.py').write_text('# x\n')
+    mocker.patch('wiswa.utils.jsonnet._jsonnet.evaluate_snippet',
+                 return_value='{"project_type": "python"}')
+    mocker.patch('wiswa.utils.jsonnet.platformdirs.user_config_path',
+                 return_value=tmp_path / 'config')
+    _result_str, result_dict = await evaluate_merged_settings([str(lib_path)], lib_path, '{}')
+    assert result_dict['_has_established_pytest_modules'] is True
+
+
+async def test_evaluate_merged_settings_only_test_main_not_established(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    lib_path = tmp_path / 'lib'
+    lib_path.mkdir()
+    (lib_path / 'defaults.libsonnet').write_text('{ project_type: "python" }')
+    (tmp_path / 'tests').mkdir()
+    (tmp_path / 'tests' / 'test_main.py').write_text('# x\n')
+    mocker.patch('wiswa.utils.jsonnet._jsonnet.evaluate_snippet',
+                 return_value='{"project_type": "python"}')
+    mocker.patch('wiswa.utils.jsonnet.platformdirs.user_config_path',
+                 return_value=tmp_path / 'config')
+    _result_str, result_dict = await evaluate_merged_settings([str(lib_path)], lib_path, '{}')
+    assert result_dict['_has_established_pytest_modules'] is False
+
+
+async def test_evaluate_merged_settings_conftest_only_not_established(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    lib_path = tmp_path / 'lib'
+    lib_path.mkdir()
+    (lib_path / 'defaults.libsonnet').write_text('{ project_type: "python" }')
+    (tmp_path / 'tests').mkdir()
+    (tmp_path / 'tests' / 'conftest.py').write_text('# x\n')
+    mocker.patch('wiswa.utils.jsonnet._jsonnet.evaluate_snippet',
+                 return_value='{"project_type": "python"}')
+    mocker.patch('wiswa.utils.jsonnet.platformdirs.user_config_path',
+                 return_value=tmp_path / 'config')
+    _result_str, result_dict = await evaluate_merged_settings([str(lib_path)], lib_path, '{}')
+    assert result_dict['_has_established_pytest_modules'] is False
