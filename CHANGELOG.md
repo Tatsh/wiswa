@@ -142,8 +142,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - PyInstaller workflow template no longer excludes `windows-11-arm` from the build matrix based on
   the `niquests` dependency. Windows ARM64 builds are always included for non-private projects.
 - Poetry commands receive `--quiet` when debug mode is off, matching uv commands.
-- Relaxed minimum versions for `fastmcp` (3.2.0 to 3.1.1), `niquests` (3.18.3 to 3.18.2), and
-  `ruff` (0.15.8 to 0.15.7).
+- Post-processing runs Prettier, markdownlint-cli2 (via a temporary config overlay), then
+  language-specific formatters, followed by `yarn dict:update`, instead of invoking the
+  `yarn format` script as a single step.
+- C/C++ post-processing expands glob tokens in `clang_format_args` on disk before invoking
+  `clang-format` (no shell). Restoring `uv.lock` from `HEAD` when it is the only drift now logs at
+  debug level.
+- Generated `package.json` scripts, workflow templates, and agent instructions prefer long-form CLI
+  flags (Prettier, YAPF, clang-format, GitHub CLI, Sphinx, npm global installs, Poetry export, and
+  related tools) where applicable.
 - Jsonnet defaults no longer define `copilot.intro`; generated `AGENTS.md` drops the optional
   Overview section from that field.
 - Regen agent no longer requires a `copilot` key in `.wiswa.jsonnet`.

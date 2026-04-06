@@ -98,11 +98,11 @@ async def test_cached_async_session_cache_hit(tmp_path: Path, mocker: MockerFixt
     }),
                           encoding='utf-8')
     parent_request = mocker.patch.object(niquests.AsyncSession, 'request', return_value=None)
-    resp = await session.request('GET', 'https://example.com/data')
+    response = await session.request('GET', 'https://example.com/data')
     parent_request.assert_not_called()
-    assert resp.status_code == 200
-    assert resp.text == 'cached body'
-    assert resp.headers['X-Custom'] == 'val'
+    assert response.status_code == 200
+    assert response.text == 'cached body'
+    assert response.headers['X-Custom'] == 'val'
 
 
 async def test_cached_async_session_cache_expired(tmp_path: Path, mocker: MockerFixture) -> None:

@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import re
+import tempfile
 
 import anyio
 import niquests
@@ -171,6 +172,101 @@ async def _subprocess_log_run(
     return proc, stdout, stderr
 
 
+def _clang_format_file_paths(clang_format_args: str) -> list[str]:
+    """Expand glob tokens in ``clang_format_args`` into paths for ``clang-format`` (no shell)."""
+    root = Path()
+    seen: set[str] = set()
+    out: list[str] = []
+    for token in clang_format_args.split():
+        matches = sorted(str(p) for p in root.glob(token))
+        if matches:
+            for p in matches:
+                if p not in seen:
+                    seen.add(p)
+                    out.append(p)
+        elif token not in seen:
+            seen.add(token)
+            out.append(token)
+    return out
+
+
+async def _run_postprocess_format(settings: Settings, *, debug: bool,
+                                  on_command: Callable[[str], None] | None, env: dict[str,
+                                                                                      str]) -> None:
+    """
+    Run Prettier, markdownlint-cli2, then language-specific formatters.
+
+    Prettier uses ``--log-level silent`` when not in debug mode. Markdownlint uses a temporary
+    config derived from ``package.json`` with ``showFound`` and ``noProgress`` set for
+    post-processing output.
+    """
+    await _subprocess_log_run(('yarn', 'prettier', '--write', '--ignore-unknown',
+                               *(('--log-level', 'silent') if not debug else ()), '.'),
+                              env=env,
+                              on_command=on_command,
+                              stderr=asyncio.subprocess.PIPE,
+                              stdout=asyncio.subprocess.PIPE,
+                              check=False)
+    with tempfile.NamedTemporaryFile(mode='w',
+                                     encoding='utf-8',
+                                     prefix='wiswa-markdownlint-',
+                                     suffix='.json',
+                                     delete=False) as tmp:
+        pkg = json.loads(await anyio.Path('package.json').read_text(encoding='utf-8'))
+        json.dump(
+            {
+                'markdownlint-cli2':
+                    dict(pkg.get('markdownlint-cli2', {})) | {
+                        'showFound': False,
+                        'noProgress': False
+                    }
+            },
+            tmp,
+            indent=2)
+        tmp.write('\n')
+        tmp.flush()
+    await _subprocess_log_run(('yarn', 'markdownlint-cli2', '--config', tmp.name, '--configPointer',
+                               '/markdownlint-cli2', '--fix'),
+                              env=env,
+                              on_command=on_command,
+                              stderr=asyncio.subprocess.PIPE,
+                              stdout=asyncio.subprocess.PIPE,
+                              check=False)
+    await anyio.Path(tmp.name).unlink()
+
+    if settings['project_type'] == 'python':
+        is_uv = settings['package_manager'] == 'uv'
+        quiet_uv_poetry: tuple[str, ...] = () if debug else ('--quiet',)
+        run_cmd: tuple[str, ...] = (('uv', *quiet_uv_poetry, 'run') if is_uv else
+                                    ('poetry', *quiet_uv_poetry, 'run'))
+        if settings['want_yapf']:
+            await _subprocess_log_run(
+                (*run_cmd, 'yapf', '--in-place', '--parallel', '--recursive', '.'),
+                env=env,
+                on_command=on_command,
+                stderr=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                check=False)
+        else:
+            await _subprocess_log_run((*run_cmd, 'ruff', 'format', *(() if debug else
+                                                                     ('--quiet',)), '.'),
+                                      env=env,
+                                      on_command=on_command,
+                                      stderr=asyncio.subprocess.PIPE,
+                                      stdout=asyncio.subprocess.PIPE,
+                                      check=False)
+    elif settings['project_type'] in {'c', 'c++'}:
+        if paths := _clang_format_file_paths(
+                str(settings.get('clang_format_args', 'src/*.cpp src/*.h'))):
+            await _subprocess_log_run(('clang-format', *(('--verbose',) if debug else
+                                                         ()), '--in-place', *paths),
+                                      env=env,
+                                      on_command=on_command,
+                                      stderr=asyncio.subprocess.PIPE,
+                                      stdout=asyncio.subprocess.PIPE,
+                                      check=False)
+
+
 def _resolve_output_filename(er: ExportRequirements) -> str:
     if explicit := er.get('output_filename', ''):
         return explicit
@@ -255,8 +351,8 @@ def _build_poetry_export_args(
         args.append('--all-extras')
     else:
         args.extend(f'--extras={extra}' for extra in er.get('extra', []))
-    args.extend(('-f', er.get('format', 'requirements.txt')))
-    args.extend(('-o', _resolve_output_filename(er)))
+    args.extend(('--format', er.get('format', 'requirements.txt')))
+    args.extend(('--output', _resolve_output_filename(er)))
     group_list: list[str] = []
     if not er.get('no_dev', False):
         group_list.append('dev')
@@ -329,17 +425,19 @@ async def apply_python_pyproject_manifest_edits(settings: Settings) -> None:
         del pyproject_content['tool']['pytest']
     run_cmd = 'uv run' if is_uv else 'poetry run'
     package_json_content = json.loads(await anyio.Path('package.json').read_text(encoding='utf-8'))
+    ml_check = ('yarn markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2')
+    ml_fix = f'{ml_check} --fix'
+    prettier_w = 'yarn prettier --write --ignore-unknown'
+    prettier_c = 'yarn prettier --check . --ignore-unknown'
     if not settings['want_yapf']:
         del pyproject_content['tool']['yapf']
         del pyproject_content['tool']['yapfignore']
         pyproject_content['tool']['ruff']['lint']['ignore'] = sorted(
             pyproject_content['tool']['ruff']['lint']['ignore'] + ['Q000', 'Q003'])
         package_json_content['scripts']['check-formatting'] = (
-            f'prettier -c . && {run_cmd} ruff format --check .'
-            ' && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2')
+            f'{prettier_c} && {ml_check} && {run_cmd} ruff format --check .')
         package_json_content['scripts']['format'] = (
-            f'prettier -w . && {run_cmd} ruff format .'
-            ' && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix')
+            f'{prettier_w} && {ml_fix} && {run_cmd} ruff format .')
     _prune_empty_nested_dicts(pyproject_content)
     await asyncio.gather(
         anyio.Path('package.json').write_text(json.dumps(package_json_content,
@@ -562,6 +660,7 @@ def _social_badges(settings: Settings) -> Iterator[str]:
         url = urllib_quote('https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile/?',
                            safe='',
                            errors='strict') + urlencode({
+                               # cspell disable-next-line
                                'actor': 'did:plc:uq42idtvuccnmtl57nsucz72',
                                'query': '$.followersCount'
                            })
@@ -700,7 +799,7 @@ async def _maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings,
         if proc_co.returncode != 0:
             log.warning('Could not restore uv.lock from HEAD: %s', (err_co or b'').decode().strip())
             return
-    log.info('Restored uv.lock from HEAD; it was the only file differing from HEAD.')
+    log.debug('Restored uv.lock from HEAD; it was the only file differing from HEAD.')
 
 
 async def post_process_steps(settings: Settings,
@@ -749,10 +848,11 @@ async def post_process_steps(settings: Settings,
                               on_command=on_command,
                               stderr=asyncio.subprocess.PIPE,
                               stdout=asyncio.subprocess.PIPE)
-    await _subprocess_log_run(('yarn', 'format'),
-                              check=False,
+    await _run_postprocess_format(settings, debug=debug, on_command=on_command, env=yarn_env)
+    await _subprocess_log_run(('yarn', 'dict:update'),
                               env=yarn_env,
                               on_command=on_command,
                               stderr=asyncio.subprocess.PIPE,
-                              stdout=asyncio.subprocess.PIPE)
+                              stdout=asyncio.subprocess.PIPE,
+                              check=False)
     await _maybe_revert_uv_lock_if_only_lockfile_changed(settings, on_command=on_command)

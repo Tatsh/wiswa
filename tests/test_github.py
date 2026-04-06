@@ -30,12 +30,12 @@ def _make_settings(**overrides: Any) -> Settings:
 
 
 def _make_resp(status: int = 200, json_data: Any = None) -> MagicMock:
-    resp = MagicMock()
-    resp.status_code = status
-    resp.ok = 200 <= status < 400
-    resp.raise_for_status = MagicMock(return_value=resp)
-    resp.json = MagicMock(return_value=json_data if json_data is not None else [])
-    return resp
+    response = MagicMock()
+    response.status_code = status
+    response.ok = 200 <= status < 400
+    response.raise_for_status = MagicMock(return_value=response)
+    response.json = MagicMock(return_value=json_data if json_data is not None else [])
+    return response
 
 
 def _mock_github_session(mocker: MockerFixture) -> MagicMock:

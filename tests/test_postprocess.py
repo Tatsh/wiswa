@@ -155,11 +155,12 @@ def _setup_python_project(tmp_path: Path) -> None:
 
 
 def _mock_subprocess(mocker: MockerFixture) -> AsyncMock:
-    mock_proc = AsyncMock()
-    mock_proc.communicate = AsyncMock(return_value=(b'', b''))
-    mock_proc.returncode = 0
-    mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec', return_value=mock_proc)
-    return mock_proc
+    mock_process = AsyncMock()
+    mock_process.communicate = AsyncMock(return_value=(b'', b''))
+    mock_process.returncode = 0
+    mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec',
+                 return_value=mock_process)
+    return mock_process
 
 
 async def test_post_process_steps_python_uv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
@@ -1031,10 +1032,57 @@ async def test_post_process_steps_yarn_env_has_corepack_flag(tmp_path: Path,
     settings = cast('Any', _make_settings())
     await post_process_steps(settings)
     yarn_calls = [c for c in mock_create.call_args_list if c.args and c.args[0] == 'yarn']
-    assert len(yarn_calls) == 2
+    assert len(yarn_calls) == 4
     for call in yarn_calls:
         env = call.kwargs.get('env', {})
         assert env.get('COREPACK_ENABLE_DOWNLOAD_PROMPT') == '0'
+
+
+async def test_post_process_steps_clang_format_expands_globs_and_literals(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
+    src = tmp_path / 'src'
+    src.mkdir()
+    (src / 'x.cpp').write_text('int x;\n', encoding='utf-8')
+    mock_proc = AsyncMock()
+    mock_proc.communicate = AsyncMock(return_value=(b'', b''))
+    mock_proc.returncode = 0
+    mock_create = mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec',
+                               return_value=mock_proc)
+    settings = cast(
+        'Any',
+        _make_settings(
+            project_type='c',
+            clang_format_args=('src/*.cpp src/x.cpp orphaned.hpp orphaned.hpp'),
+            _readme_existed=False,
+        ),
+    )
+    await post_process_steps(settings)
+    clang = [c for c in mock_create.call_args_list if c.args and c.args[0] == 'clang-format']
+    assert len(clang) == 1
+    cmd = clang[0].args
+    assert '--in-place' in cmd
+    assert cmd.count('src/x.cpp') == 1
+    assert cmd.count('orphaned.hpp') == 1
+
+
+async def test_post_process_steps_clang_format_skipped_when_no_paths(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
+    mock_proc = AsyncMock()
+    mock_proc.communicate = AsyncMock(return_value=(b'', b''))
+    mock_proc.returncode = 0
+    mock_create = mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec',
+                               return_value=mock_proc)
+    settings = cast(
+        'Any',
+        _make_settings(project_type='c++', clang_format_args='', _readme_existed=False),
+    )
+    await post_process_steps(settings)
+    clang = [c for c in mock_create.call_args_list if c.args and c.args[0] == 'clang-format']
+    assert clang == []
 
 
 async def test_post_process_steps_badges_no_codeql_no_tests(tmp_path: Path,
@@ -1329,8 +1377,8 @@ async def test_post_process_steps_poetry_export_defaults(tmp_path: Path,
     await post_process_steps(settings, on_command=commands.append)
     cmd = _get_export_cmd(commands, tool='poetry')
     assert cmd is not None
-    assert '-f requirements.txt' in cmd
-    assert '-o requirements.txt' in cmd
+    assert '--format requirements.txt' in cmd
+    assert '--output requirements.txt' in cmd
     assert '--with=dev' in cmd
 
 

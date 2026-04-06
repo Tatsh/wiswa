@@ -165,9 +165,9 @@ async def get_latest_yarn_version(session: niquests.AsyncSession) -> str:  # pra
     key = 'yarn_latest'
     if key in _cache:
         return _cache[key]
-    resp = await session.get('https://repo.yarnpkg.com/tags', timeout=15)
-    resp.raise_for_status()
-    data = resp.json()
+    response = await session.get('https://repo.yarnpkg.com/tags', timeout=15)
+    response.raise_for_status()
+    data = response.json()
     result = cast('str', data['latest']['stable'])
     _cache[key] = result
     return result

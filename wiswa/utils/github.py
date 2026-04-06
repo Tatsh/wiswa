@@ -241,8 +241,8 @@ async def setup_github_project(session: niquests.AsyncSession, settings: Setting
 
         await asyncio.gather(*(_upsert_ruleset(rs) for rs in _DESIRED_RULESETS))
         if not settings.get('private', False):
-            pages_resp = await session.get(f'{host}/repos/{repo_name}/pages')
-            if pages_resp.status_code != HTTPStatus.OK:
+            pages_response = await session.get(f'{host}/repos/{repo_name}/pages')
+            if pages_response.status_code != HTTPStatus.OK:
                 (await
                  session.post(f'{host}/repos/{repo_name}/pages',
                               json={'source': {

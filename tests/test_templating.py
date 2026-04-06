@@ -295,10 +295,10 @@ def _docs_conf_defaults() -> dict[str, Any]:
 
 def _stub_github_api_session() -> MagicMock:
     session = MagicMock()
-    resp = MagicMock()
-    resp.ok = True
-    resp.json = MagicMock(return_value=[{'name': 'v4.1.2'}])
-    session.get = AsyncMock(return_value=resp)
+    response = MagicMock()
+    response.ok = True
+    response.json = MagicMock(return_value=[{'name': 'v4.1.2'}])
+    session.get = AsyncMock(return_value=response)
     return session
 
 

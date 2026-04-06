@@ -39,17 +39,17 @@ def _make_response(
     status_code: int | None = None,
 ) -> MagicMock:
     """Create a mock niquests response."""
-    resp = MagicMock()
-    resp.ok = ok
+    response = MagicMock()
+    response.ok = ok
     if status_code is not None:
-        resp.status_code = status_code
+        response.status_code = status_code
     else:
-        resp.status_code = 200 if ok else 404
-    resp.text = text
-    resp.json = MagicMock(return_value=json_data)
-    resp.content = content
-    resp.raise_for_status = MagicMock(return_value=resp)
-    return resp
+        response.status_code = 200 if ok else 404
+    response.text = text
+    response.json = MagicMock(return_value=json_data)
+    response.content = content
+    response.raise_for_status = MagicMock(return_value=response)
+    return response
 
 
 async def test_download_yarn_plugins(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
