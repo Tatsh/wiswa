@@ -351,6 +351,54 @@ async def test_post_process_steps_readme_removed(tmp_path: Path, monkeypatch: py
     await post_process_steps(settings)
 
 
+async def test_post_process_steps_updates_changelog_reference_urls(tmp_path: Path,
+                                                                   monkeypatch: pytest.MonkeyPatch,
+                                                                   mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    (tmp_path / 'poetry.lock').write_text('lock')
+    changelog = tmp_path / 'CHANGELOG.md'
+    changelog.write_text(
+        '# Changelog\n\nThe format is based on [Keep a Changelog]'
+        '(https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning]'
+        '(https://semver.org/spec/v1.2.3.html).\n',
+        encoding='utf-8',
+    )
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings())
+    await post_process_steps(settings)
+    body = changelog.read_text(encoding='utf-8')
+    assert 'https://keepachangelog.com/en/1.1.0/' in body
+    assert 'https://semver.org/spec/v2.0.0.html' in body
+    assert 'keepachangelog.com/en/1.0.0' not in body
+    assert 'semver.org/spec/v1.2.3.html' not in body
+
+
+async def test_post_process_steps_changelog_urls_resolve_from_github(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    (tmp_path / 'poetry.lock').write_text('lock')
+    changelog = tmp_path / 'CHANGELOG.md'
+    changelog.write_text(
+        '# Changelog\n\nThe format is based on [Keep a Changelog]'
+        '(https://keepachangelog.com/en/0.3.0/), and this project adheres to [Semantic Versioning]'
+        '(https://semver.org/spec/v0.0.0.html).\n',
+        encoding='utf-8',
+    )
+    _mock_subprocess(mocker)
+    mocker.patch(
+        'wiswa.utils.postprocess.get_github_release_latest_tag',
+        new_callable=AsyncMock,
+        side_effect=['v1.1.1', 'v3.0.0'],
+    )
+    settings = cast('Any', _make_settings())
+    await post_process_steps(settings, session=mocker.MagicMock())
+    body = changelog.read_text(encoding='utf-8')
+    assert 'https://semver.org/spec/v3.0.0.html' in body
+    assert 'https://keepachangelog.com/en/1.1.1/' in body
+
+
 async def test_post_process_steps_python_no_tests_no_launch_vscode(tmp_path: Path,
                                                                    monkeypatch: pytest.MonkeyPatch,
                                                                    mocker: MockerFixture) -> None:

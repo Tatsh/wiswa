@@ -212,6 +212,7 @@ async def _main_async(
                         loaded,
                         debug=debug,
                         on_command=lambda cmd: spin_update(f'Running `{cmd}` ...'),
+                        session=session,
                     )
                 if not skip_github:
                     spin_update('Configuring GitHub project settings...')

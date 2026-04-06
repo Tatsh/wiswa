@@ -11,9 +11,13 @@ import asyncio
 import json
 import logging
 import os
+import re
 
 import anyio
+import niquests
 import tomlkit
+
+from .versions import get_github_release_latest_tag
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -46,6 +50,85 @@ _LEGACY_WISWA_AI_PATHS = (
     '.github/instructions/python.instructions.md',
     '.github/instructions/python-tests.instructions.md',
 )
+
+# Fallbacks for the standard CHANGELOG.md boilerplate when GitHub resolution is unavailable.
+_CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL = 'https://keepachangelog.com/en/1.1.0/'
+_CHANGELOG_SEMVER_SPEC_FALLBACK_URL = 'https://semver.org/spec/v2.0.0.html'
+_RE_CHANGELOG_KEEP_A_CHANGELOG = re.compile(r'https://keepachangelog\.com/en/\d+\.\d+\.\d+/')
+_RE_CHANGELOG_SEMVER_SPEC = re.compile(r'https://semver\.org/spec/v\d+\.\d+\.\d+\.html')
+
+_GITHUB_TAG_RESOLUTION_EXC_TYPES = (KeyError, OSError, ValueError, niquests.JSONDecodeError,
+                                    niquests.RequestException)
+
+
+@cache
+def _keep_a_changelog_documentation_url(release_tag: str) -> str:
+    """Map a GitHub release tag to the keepachangelog.com language-version URL."""
+    without_v = release_tag.strip().removeprefix('v')
+    return f'https://keepachangelog.com/en/{without_v}/'
+
+
+@cache
+def _semver_spec_documentation_url(release_tag: str) -> str:
+    """Map a GitHub release tag (for example ``v2.0.0``) to the semver.org spec page URL."""
+    tag = release_tag.strip()
+    if not tag.startswith('v'):
+        tag = f'v{tag}'
+    return f'https://semver.org/spec/{tag}.html'
+
+
+async def _resolve_keep_a_changelog_url(session: niquests.AsyncSession | None) -> str:
+    """
+    Resolve the Keep a Changelog spec URL from the latest tag on GitHub.
+
+    Repository: ``olivierlacan/keep-a-changelog``. Falls back to a pinned URL when there is no
+    session or GitHub resolution fails.
+    """
+    if session is None:
+        return _CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL
+    try:
+        tag = await get_github_release_latest_tag(session, 'olivierlacan', 'keep-a-changelog')
+    except _GITHUB_TAG_RESOLUTION_EXC_TYPES as exc:
+        log.warning('Keep a Changelog version from GitHub failed (%s); using fallback URL.', exc)
+        return _CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL
+    return _keep_a_changelog_documentation_url(tag)
+
+
+async def _resolve_semver_spec_url(session: niquests.AsyncSession | None) -> str:
+    """
+    Resolve the SemVer specification page URL using the latest tag from ``semver/semver``.
+
+    Falls back to a pinned URL when there is no session or GitHub resolution fails.
+    """
+    if session is None:
+        return _CHANGELOG_SEMVER_SPEC_FALLBACK_URL
+    try:
+        tag = await get_github_release_latest_tag(session, 'semver', 'semver')
+    except _GITHUB_TAG_RESOLUTION_EXC_TYPES as exc:
+        log.warning('SemVer spec tag from GitHub failed (%s); using fallback URL.', exc)
+        return _CHANGELOG_SEMVER_SPEC_FALLBACK_URL
+    return _semver_spec_documentation_url(tag)
+
+
+def _normalise_changelog_reference_urls(content: str, keep_a_changelog_url: str,
+                                        semver_spec_url: str) -> str:
+    """Rewrite Keep a Changelog and SemVer spec links to the resolved documentation URLs."""
+    step1 = _RE_CHANGELOG_KEEP_A_CHANGELOG.sub(keep_a_changelog_url, content)
+    return _RE_CHANGELOG_SEMVER_SPEC.sub(semver_spec_url, step1)
+
+
+async def _refresh_changelog_reference_urls(session: niquests.AsyncSession | None) -> None:
+    changelog = anyio.Path('CHANGELOG.md')
+    if not await changelog.is_file():
+        return
+    keep_url = await _resolve_keep_a_changelog_url(session)
+    semver_url = await _resolve_semver_spec_url(session)
+    text = await changelog.read_text(encoding='utf-8')
+    updated = _normalise_changelog_reference_urls(text, keep_url, semver_url)
+    if updated == text:
+        return
+    await changelog.write_text(updated, encoding='utf-8')
+    log.debug('Updated CHANGELOG.md Keep a Changelog and Semantic Versioning links.')
 
 
 async def _remove_legacy_wiswa_ai_files() -> None:
@@ -516,7 +599,8 @@ async def _check_readme_badges(settings: Settings) -> None:
 async def post_process_steps(settings: Settings,
                              *,
                              debug: bool = False,
-                             on_command: Callable[[str], None] | None = None) -> None:
+                             on_command: Callable[[str], None] | None = None,
+                             session: niquests.AsyncSession | None = None) -> None:
     """
     Run post-processing steps after project generation.
 
@@ -529,6 +613,10 @@ async def post_process_steps(settings: Settings,
         ``--quiet``.
     on_command : Callable[[str], None] | None
         Called with the command string before each subprocess runs.
+    session : niquests.AsyncSession | None
+        Optional HTTP session. When set, ``CHANGELOG.md`` boilerplate links for Keep a Changelog and
+        Semantic Versioning are updated from ``olivierlacan/keep-a-changelog`` and ``semver/semver``
+        respectively; otherwise pinned fallback URLs are used.
     """
     await _remove_legacy_wiswa_ai_files()
     if settings['private']:
@@ -539,6 +627,7 @@ async def post_process_steps(settings: Settings,
         case _:
             log.warning('No post-processing steps for project type `%s`.', settings['project_type'])
     await _check_readme_badges(settings)
+    await _refresh_changelog_reference_urls(session)
     package_json = anyio.Path('package.json')
     await package_json.write_text(json.dumps(json.loads(await
                                                         package_json.read_text(encoding='utf-8')),
@@ -549,13 +638,13 @@ async def post_process_steps(settings: Settings,
         await anyio.Path('yarn.lock').unlink(missing_ok=True)
     yarn_env = os.environ | {'COREPACK_ENABLE_DOWNLOAD_PROMPT': '0'}
     await _subprocess_log_run(('yarn',),
-                              on_command=on_command,
                               env=yarn_env,
-                              stdout=asyncio.subprocess.PIPE,
-                              stderr=asyncio.subprocess.PIPE)
-    await _subprocess_log_run(('yarn', 'format'),
                               on_command=on_command,
+                              stderr=asyncio.subprocess.PIPE,
+                              stdout=asyncio.subprocess.PIPE)
+    await _subprocess_log_run(('yarn', 'format'),
                               check=False,
                               env=yarn_env,
-                              stdout=asyncio.subprocess.PIPE,
-                              stderr=asyncio.subprocess.PIPE)
+                              on_command=on_command,
+                              stderr=asyncio.subprocess.PIPE,
+                              stdout=asyncio.subprocess.PIPE)
