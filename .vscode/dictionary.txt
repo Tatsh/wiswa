@@ -264,6 +264,7 @@ virtualenv
 visualstudioexptteam
 vscodeintellicode
 worktree
+worktrees
 wayou
 werror
 wextra
