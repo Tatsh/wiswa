@@ -33,6 +33,7 @@ cashtag
 cdrommsf
 certreq
 charliermarsh
+chdir
 chromewebstore
 codesign
 color

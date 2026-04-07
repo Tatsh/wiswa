@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Pytest autouse fixture `recover_stale_process_cwd` resets the process working directory when it
+  no longer exists (fixing `FileNotFoundError` from `monkeypatch.chdir` under aggressive `tmp_path`
+  retention). Included in this repository and in the generated `tests/conftest.py` template.
+
 ### Changed
 
 - README and Sphinx docs recommend a global Wiswa install (`uv tool` or `pipx`) or adding Wiswa as
