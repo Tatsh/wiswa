@@ -9,7 +9,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-03-31T03:33:53.984603751Z"
+exclude-newer = "2026-03-31T03:49:42.081460524Z"
 exclude-newer-span = "P1W"
 
 [[package]]
@@ -3604,7 +3604,7 @@ wheels = [
 
 [[package]]
 name = "wiswa"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },

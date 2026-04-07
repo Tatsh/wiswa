@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-06
+
 ### Added
 
 - Post-processing restores `uv.lock` from `HEAD` when it is the only path differing from the
@@ -276,6 +278,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First version.
 
-[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Tatsh/wiswa/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Tatsh/wiswa/compare/v0.0.1...v0.1.0
 [0.0.1]: https://github.com/Tatsh/wiswa/releases/tag/v0.0.1

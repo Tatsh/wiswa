@@ -28,9 +28,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "WISWA" "1" "Apr 05, 2026" "0.1.0" "wiswa"
+.TH "WISWA" "1" "Apr 07, 2026" "0.2.0" "wiswa"
 .SH NAME
-wiswa \- wiswa v0.1.0
+wiswa \- wiswa v0.2.0
 .SH WISWA
 .sp
 Entry point for the Wiswa CLI.
@@ -89,7 +89,7 @@ Skip configuring GitHub project.
 .INDENT 0.0
 .TP
 .B \-\-skip\-jsonnet
-Skip Jsonnet evaluation.
+Skip project.jsonnet output (for example pyproject.toml, package.json, and workflows). Merged settings from .wiswa.jsonnet still use Jsonnet.
 .UNINDENT
 .INDENT 0.0
 .TP

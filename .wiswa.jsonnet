@@ -6,7 +6,7 @@ local utils = import 'utils.libsonnet';
   want_djlint: true,
   want_main: true,
   project_name: 'wiswa',
-  version: '0.1.0',
+  version: '0.2.0',
   description: 'A highly opinionated way to generate and maintain projects with Jsonnet.',
   keywords: ['command line', 'jsonnet', 'project generator', 'project management', 'scaffolding'],
   github+: {
