@@ -118,6 +118,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Generated VS Code extension defaults for Python: uv projects recommend
+  `ms-python.vscode-python-envs` instead of `donjayamanne.python-environment-manager`; Poetry
+  projects keep the environment manager and Poetry extensions and list `ms-python.vscode-python-envs`
+  under `unwantedRecommendations` only in that layout.
+- Wiswa raises the `fastmcp` dependency floor to `>=3.2.0`.
 - `npmMinimalAgeGate` for npm registry fetches and for GitHub `githubLatestReleaseTag` age
   filtering now resolves in order: merged settings `yarnrc.npmMinimalAgeGate`, a numeric
   `npmMinimalAgeGate` field in `.wiswa.jsonnet`, repository then home `.yarnrc.yml`,

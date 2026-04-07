@@ -6,11 +6,13 @@
 {
   local python_recommendations(settings) = [
     'charliermarsh.ruff',
-    'donjayamanne.python-environment-manager',
     'ms-python.mypy-type-checker',
     'ms-python.vscode-pylance',
     'samuelcolvin.jinjahtml',
-  ] + if settings.package_manager == 'uv' then [] else ['zeshuaro.vscode-python-poetry'],
+  ] + if settings.package_manager == 'uv' then ['ms-python.vscode-python-envs'] else [
+    'donjayamanne.python-environment-manager',
+    'zeshuaro.vscode-python-poetry',
+  ],
   local python_unwanted_recommendations = ['ms-python.vscode-python-envs'],
   /**
    * Get the extension recommendations based on the project settings.
@@ -72,6 +74,7 @@
       'zengxingxin.sort-js-object-keys',
     ] + (if settings.project_type == 'python' then python_recommendations(settings)
          else []) + (if settings.project_type == 'python' && settings.want_yapf then ['eeyore.yapf'] else [])),
-    unwantedRecommendations: if settings.project_type == 'python' then python_unwanted_recommendations else [],
+    unwantedRecommendations: (if settings.project_type == 'python' && settings.package_manager == 'poetry' then
+                                python_unwanted_recommendations else []),
   },
 }
