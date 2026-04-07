@@ -31,9 +31,23 @@ A highly opinionated way to generate projects with Jsonnet.
 
 ## Installation
 
+We recommend a **global** install so `wiswa` and `wiswa-mcp` are on your `PATH`
+from any working directory:
+
 ```shell
-pip install wiswa
+uv tool install wiswa
 ```
+
+Or with pipx:
+
+```shell
+pipx install wiswa
+```
+
+If you prefer not to install globally, add Wiswa as a **development dependency**
+of your project—for example `uv add --group dev wiswa`, or list `wiswa` under
+`dependency-groups.dev` in `pyproject.toml` and install inside the project
+virtual environment with your usual workflow.
 
 ## Usage
 

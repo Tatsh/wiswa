@@ -9,14 +9,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- README and Sphinx docs recommend a global Wiswa install (`uv tool` or `pipx`) or adding Wiswa as
+  a project development dependency.
+
+### Removed
+
+- Unused runtime dependency `aiofiles`.
+
 ## [0.2.0] - 2026-04-06
 
 ### Added
 
-- Post-processing restores `uv.lock` from `HEAD` when it is the only path differing from the
-  last commit (for example after `uv lock --upgrade` without any tracked manifest edit). This
-  avoids noisy lock-only diffs from ambient resolution (rolling `exclude-newer` cutoffs, index
-  churn, and similar).
+- Post-processing restores `uv.lock` from `HEAD` when it is the only path differing from the last
+  commit (for example after `uv lock --upgrade` without any tracked manifest edit). This avoids
+  noisy lock-only diffs from ambient resolution (rolling `exclude-newer` cutoffs, index churn, and
+  similar).
 - `cspell_pre_commit_hook` setting (default `true`). When set to `false`, the cspell pre-commit
   hook is excluded from `.pre-commit-config.yaml`.
 - Version age gating for PyPI and npm package version fetching:
@@ -53,8 +62,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   files (existing projects keep their own test layout).
 - Jsonnet `using_beads` (default `false`) for Beads-related defaults.
 - Post-processing rewrites existing `CHANGELOG.md` boilerplate links from GitHub when an HTTP
-  session is available: Keep a Changelog uses the latest `olivierlacan/keep-a-changelog` release
-  tag mapped to `keepachangelog.com/en/...`, and Semantic Versioning uses `semver/semver` mapped to
+  session is available: Keep a Changelog uses the latest `olivierlacan/keep-a-changelog` release tag
+  mapped to `keepachangelog.com/en/...`, and Semantic Versioning uses `semver/semver` mapped to
   `semver.org/spec/...`. Pinned fallbacks are `https://keepachangelog.com/en/1.1.1/` and
   `https://semver.org/spec/v2.0.0.html` when there is no session or resolution fails.
 - New projects receive the same resolved Keep a Changelog and SemVer intro URLs when templates are
@@ -68,11 +77,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Coverage `omit` lists now include `**/*.j2` in generated `pyproject.toml` defaults so Jinja
   templates are not measured as Python.
 - Generated Sphinx `conf.py` now uses the standard-library `tomllib` module instead of `tomlkit`
-  when the project's minimum Python version is 3.11 or higher. The `tomlkit` docs dependency is
-  only included for projects that still support Python < 3.11.
+  when the project's minimum Python version is 3.11 or higher. The `tomlkit` docs dependency is only
+  included for projects that still support Python < 3.11.
 - Expanded default Claude Code permissions in `defaults.libsonnet`: package manager commands (uv or
-  Poetry based on `package_manager` setting), `cspell`/`markdownlint-cli2`/`prettier` yarn scripts,
-  C/C++ tools (`cmake`, `clang-format`, `vcpkg`), `WebFetch` domains, and temp file
+  Poetry based on `package_manager` setting), `cspell` / `markdownlint-cli2` / `prettier` yarn
+  scripts, C/C++ tools (`cmake`, `clang-format`, `vcpkg`), `WebFetch` domains, and temp file
   read/write permissions. `gh` and `glab` API permissions are now conditional on platform settings.
 - `get_github_release_latest_tag` writes successful tag results to a JSON file under the Wiswa user
   cache directory (via `platformdirs`) and falls back to that file when the GitHub API returns HTTP
@@ -80,8 +89,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   level and do not block resolution.
 - New runtime dependency: `platformdirs`.
 - Split QA workflows for all project types (Python, TypeScript, C/C++) into granular parallel jobs
-  (ruff, mypy, format, eslint, prettier, markdownlint, and spelling) using native GitHub Actions path
-  filters instead of `dorny/paths-filter`.
+  (ruff, mypy, format, eslint, prettier, markdownlint, and spelling) using native GitHub Actions
+  path filters instead of `dorny/paths-filter`.
 - Path filters on the TypeScript tests workflow.
 - Publish workflows (NPM, PyPI, LuaRocks, WinGet) wait for QA and test workflows to succeed before
   publishing.
@@ -90,16 +99,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   release after all workflows succeed.
 - `uv lock` runs with `--upgrade` during post-processing so all packages (including transitive
   dependencies) are resolved to their highest possible versions.
-- British English spelling rules in generated templates (Copilot `general.instructions.md`,
-  Cursor `general.mdc`, Claude `copy-editor.md`) are conditional on the `cspell_language` setting.
-  When `cspell_language` is `en-US`, en-GB rules are excluded. Cursor `general.mdc` is a Jinja2
+- British English spelling rules in generated templates (Copilot `general.instructions.md`, Cursor
+  `general.mdc`, Claude `copy-editor.md`) are conditional on the `cspell_language` setting. When
+  `cspell_language` is `en-US`, en-GB rules are excluded. Cursor `general.mdc` is a Jinja2
   template, and `cspell_language` is a derived Jsonnet field.
 - `gitlab_ci` in `defaults.libsonnet` defaults to an empty object; `project.jsonnet` checks
   non-emptiness instead of using `std.objectHas`, so users do not need to define `gitlab_ci` when
   `using_gitlab` is true.
 - Regenerated template layout uses `claude/`, `cursor/`, and `github/` segments under
-  `wiswa/templates/` instead of dotted directories (`.claude`, `.cursor`, `.github`) in the template
-  tree.
+  `wiswa/templates/` instead of dotted directories (`.claude`, `.cursor`, `.github`) in the
+  template tree.
 - Static AI language rules ship as Markdown under `wiswa/static/claude/rules/`; bundled Cursor
   `.mdc` rule copies under `wiswa/static/.cursor/rules/` are removed.
 - Post-processing removes legacy Cursor rule and GitHub Copilot instruction paths from generated
@@ -122,17 +131,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Generated VS Code extension defaults for Python: uv projects recommend
   `ms-python.vscode-python-envs` instead of `donjayamanne.python-environment-manager`; Poetry
-  projects keep the environment manager and Poetry extensions and list `ms-python.vscode-python-envs`
-  under `unwantedRecommendations` only in that layout.
+  projects keep the environment manager and Poetry extensions and list
+  `ms-python.vscode-python-envs` under `unwantedRecommendations` only in that layout.
 - Wiswa raises the `fastmcp` dependency floor to `>=3.2.0`.
-- `npmMinimalAgeGate` for npm registry fetches and for GitHub `githubLatestReleaseTag` age
-  filtering now resolves in order: merged settings `yarnrc.npmMinimalAgeGate`, a numeric
-  `npmMinimalAgeGate` field in `.wiswa.jsonnet`, repository then home `.yarnrc.yml`,
-  `~/.npmrc` (`min-release-age` in days), then the 10080-minute default. Jsonnet natives use the
-  merge-aware and snippet-aware value.
+- `npmMinimalAgeGate` for npm registry fetches and for GitHub `githubLatestReleaseTag` age filtering
+  now resolves in order: merged settings `yarnrc.npmMinimalAgeGate`, a numeric `npmMinimalAgeGate`
+  field in `.wiswa.jsonnet`, repository then home `.yarnrc.yml`, `~/.npmrc` (`min-release-age` in
+  days), then the 10080-minute default. Jsonnet natives use the merge-aware and snippet-aware value.
 - Jsonnet defaults replace `want_claude` and `want_claude_agents` with `want_ai`, which gates
-  `AGENTS.md`, `CLAUDE.md`, and the `.claude/` tree. Removed `want_copilot` and `want_cursor`; editor
-  artefacts follow the consolidated template layout.
+  `AGENTS.md`, `CLAUDE.md`, and the `.claude/` tree. Removed `want_copilot` and `want_cursor`;
+  editor artefacts follow the consolidated template layout.
 - CLI `--skip-jsonnet` help text: it skips only `project.jsonnet` manifest output; evaluating merged
   settings from `.wiswa.jsonnet` still runs Jsonnet (0.1.0 help said `Skip Jsonnet evaluation.`).
 - Default `github_username` in shipped Jsonnet defaults resolves from the GitHub CLI (`gh`) when
@@ -143,14 +151,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     are de-duplicated after `Path.resolve()`.
 - `--quiet` (`-q`) suppresses the final `Done.` line as well as the progress spinner; `--help` and
   the man page describe this behaviour. Post-processing passes `--quiet` through to Ruff when not in
-  debug mode, Yarn install and format capture subprocess stdout/stderr, and failed command errors use
-  the shell command string.
+  debug mode, Yarn install and format capture subprocess stdout/stderr, and failed command errors
+  use the shell command string.
 - `get_github_release_latest_tag` no longer truncates action tags to the major version (e.g. `v7`
   instead of `v7.0.0`), returning full semver tags instead. This fixes compatibility with
   repositories like `astral-sh/setup-uv` that only publish immutable full version tags.
 - Version resolution reads uv's user `uv.toml` via `platformdirs.user_config_path('uv')` instead of
-  assuming `~/.config` on all platforms. The HTTP session cache and user `defaults.jsonnet` paths use
-  `platformdirs` with application name `wiswa` and `appauthor=False`.
+  assuming `~/.config` on all platforms. The HTTP session cache and user `defaults.jsonnet` paths
+  use `platformdirs` with application name `wiswa` and `appauthor=False`.
 - PyInstaller workflow template no longer excludes `windows-11-arm` from the build matrix based on
   the `niquests` dependency. Windows ARM64 builds are always included for non-private projects.
 - Poetry commands receive `--quiet` when debug mode is off, matching uv commands.
@@ -179,9 +187,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - With `cspell_pre_commit_hook` false, Jsonnet defaults no longer append an empty pre-commit
   repository stanza or keep `cspell` in `ci.skip`; the cspell hook and skip entry are fully
   omitted.
-- Incidental `uv.lock` restore from `HEAD` runs `git restore` / `git checkout` with
-  `core.hooksPath` set to the null device so pre-commit and other hooks cannot fail the operation
-  (for example when `.pre-commit-config.yaml` is unstaged).
+- Incidental `uv.lock` restore from `HEAD` runs `git restore` / `git checkout` with `core.hooksPath`
+  set to the null device so pre-commit and other hooks cannot fail the operation (for example when
+  `.pre-commit-config.yaml` is unstaged).
 - Templates that render to empty content now auto-delete the output file instead of writing a
   near-empty file, using template-driven conditional rendering instead of hardcoded filtering.
 - The `gitlab_ci` field is now optional when `using_gitlab` is true, preventing a crash when

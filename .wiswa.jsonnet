@@ -36,7 +36,6 @@ local utils = import 'utils.libsonnet';
   },
   python_deps+: {
     main+: {
-      aiofiles: utils.latestPypiPackageVersionCaret('aiofiles'),
       anyio: utils.latestPypiPackageVersionCaret('anyio'),
       beautifulsoup4: utils.latestPypiPackageVersionCaret('beautifulsoup4'),
       fastmcp: utils.latestPypiPackageVersionCaret('fastmcp'),
