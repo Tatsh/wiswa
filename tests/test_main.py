@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from click.testing import CliRunner
 from wiswa.main import main
+import click
 import niquests
 import pytest
 
@@ -684,6 +685,121 @@ def test_main_generic_exception_debug_surfaces_original(mocker: MockerFixture,
     file_path, _ = _setup_main_mocks(mocker, tmp_path, side_effect=error)
     runner = CliRunner()
     with pytest.raises(TypeError, match='unexpected error'):
+        runner.invoke(main, ['--debug', str(file_path)], catch_exceptions=False)
+
+
+def test_main_inner_click_abort_propagates(mocker: MockerFixture, tmp_path: Path) -> None:
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.setup_logging')
+    mocker.patch(
+        'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
+        return_value=(
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+            {
+                'project_type': 'python',
+                'stubs_only': False,
+                'yarn_version': '1.0.0'
+            },
+        ),
+    )
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    mocker.patch(
+        'wiswa.main.setup_github_project',
+        new_callable=AsyncMock,
+        side_effect=click.Abort(),
+    )
+
+    class DummyContextManager:
+        def __init__(self, value: object) -> None:
+            self.value: object = value
+
+        def __enter__(self) -> object:
+            return self.value
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: object,
+        ) -> None:
+            return None
+
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
+    mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
+    runner = CliRunner()
+    result = runner.invoke(main, [str(file_path)])
+    assert result.exit_code != 0
+    assert 'Aborted!' in result.output
+
+
+def test_main_anyio_run_keyboard_interrupt(mocker: MockerFixture, tmp_path: Path) -> None:
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.anyio.run', side_effect=KeyboardInterrupt)
+    runner = CliRunner()
+    result = runner.invoke(main, [str(file_path)])
+    assert result.exit_code != 0
+
+
+def test_main_anyio_run_system_exit(mocker: MockerFixture, tmp_path: Path) -> None:
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+
+    def _exit(_: object = None) -> None:
+        raise SystemExit(4)
+
+    mocker.patch('wiswa.main.anyio.run', side_effect=_exit)
+    runner = CliRunner()
+    result = runner.invoke(main, [str(file_path)])
+    assert result.exit_code == 4
+
+
+def test_main_anyio_run_outer_failure(mocker: MockerFixture, tmp_path: Path) -> None:
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.anyio.run', side_effect=RuntimeError('outer failure'))
+    runner = CliRunner()
+    result = runner.invoke(main, [str(file_path)])
+    assert result.exit_code != 0
+    assert 'Failed.' in result.output
+    assert 'outer failure' in result.output
+    assert 'Aborted!' in result.output
+
+
+def test_main_anyio_run_outer_failure_empty_message(mocker: MockerFixture, tmp_path: Path) -> None:
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+
+    class _SilentError(Exception):
+        def __str__(self) -> str:
+            return ''
+
+    mocker.patch('wiswa.main.anyio.run', side_effect=_SilentError())
+    runner = CliRunner()
+    result = runner.invoke(main, [str(file_path)])
+    assert result.exit_code != 0
+    assert 'Failed.' in result.output
+    assert '_SilentError' in result.output
+
+
+def test_main_anyio_run_outer_failure_debug(mocker: MockerFixture, tmp_path: Path) -> None:
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.anyio.run', side_effect=OSError(5, 'device not ready'))
+    runner = CliRunner()
+    with pytest.raises(OSError, match='device not ready'):
         runner.invoke(main, ['--debug', str(file_path)], catch_exceptions=False)
 
 

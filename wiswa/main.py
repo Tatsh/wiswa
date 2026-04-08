@@ -264,6 +264,8 @@ async def _main_async(
         await spin_stop()
         click.echo(click.style('Failed.', fg='red'), err=True)
         _handle_http_error(e)
+    except click.Abort:
+        raise
     except RuntimeError as e:
         await spin_stop()
         click.echo(click.style('Failed.', fg='red'), err=True)
@@ -278,8 +280,6 @@ async def _main_async(
             )
         log.debug('RuntimeError', exc_info=e)
         _reraise_or_abort(e, debug=debug)
-    except click.Abort:
-        raise
     except Exception as e:
         await spin_stop()
         click.echo(click.style('Failed.', fg='red'), err=True)

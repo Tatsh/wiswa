@@ -11,6 +11,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- CLI: handle `click.Abort` before `RuntimeError` in the async main path (`click.Abort` subclasses
+  `RuntimeError`, so aborts were previously treated as runtime failures).
 - Pytest autouse fixture `recover_stale_process_cwd` resets the process working directory when it
   no longer exists (fixing `FileNotFoundError` from `monkeypatch.chdir` under aggressive `tmp_path`
   retention). Included in this repository and in the generated `tests/conftest.py` template.
