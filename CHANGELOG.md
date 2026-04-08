@@ -17,6 +17,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Jsonnet merge with `uses_user_defaults: true` treats a missing user-level `defaults.jsonnet` as an
+  empty object instead of failing with `FileNotFoundError`.
 - README and Sphinx docs recommend a global Wiswa install (`uv tool` or `pipx`) or adding Wiswa as
   a project development dependency.
 

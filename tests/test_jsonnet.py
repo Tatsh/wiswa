@@ -121,8 +121,8 @@ async def test_evaluate_merged_settings_user_defaults(tmp_path: Path,
     assert mock_eval.call_args[1]['tla_codes']['settings'] == settings
 
 
-async def test_evaluate_merged_settings_user_defaults_missing_raises(tmp_path: Path,
-                                                                     mocker: MockerFixture) -> None:
+async def test_evaluate_merged_settings_user_defaults_missing_uses_empty(
+        tmp_path: Path, mocker: MockerFixture) -> None:
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     (lib_path / 'defaults.libsonnet').write_text('{}')
@@ -130,9 +130,9 @@ async def test_evaluate_merged_settings_user_defaults_missing_raises(tmp_path: P
     config_path.mkdir()
     mocker.patch('wiswa.utils.jsonnet.platformdirs.user_config_path', return_value=config_path)
     mock_eval = mocker.patch('wiswa.utils.jsonnet._jsonnet.evaluate_snippet', return_value='{}')
-    with pytest.raises(FileNotFoundError):
-        await evaluate_merged_settings([str(lib_path)], lib_path, '{ uses_user_defaults: true }\n')
-    mock_eval.assert_not_called()
+    await evaluate_merged_settings([str(lib_path)], lib_path, '{ uses_user_defaults: true }\n')
+    mock_eval.assert_called_once()
+    assert mock_eval.call_args[1]['tla_codes']['user_defaults'] == '{}'
 
 
 async def test_evaluate_merged_settings_single_pass_when_user_defaults_disabled(

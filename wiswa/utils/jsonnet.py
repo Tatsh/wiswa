@@ -332,12 +332,6 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
     -------
     tuple[str, Settings]
         The evaluated merged settings as a JSON string and as a Settings object.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the project snippet matches ``uses_user_defaults: true`` and the user defaults file does
-        not exist.
     """
     user_defaults_jsonnet = (platformdirs.user_config_path('wiswa', appauthor=False) /
                              'defaults.jsonnet')
@@ -350,9 +344,8 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
     user_defaults_text = '{}'
     if _PROJECT_USES_USER_DEFAULTS.search(settings):
         aio_user = anyio.Path(user_defaults_jsonnet)
-        if not await aio_user.exists():
-            raise FileNotFoundError(user_defaults_jsonnet)
-        user_defaults_text = await aio_user.read_text(encoding='utf-8')
+        if await aio_user.exists():
+            user_defaults_text = await aio_user.read_text(encoding='utf-8')
 
     async def _eval_merge(user_overlay: str) -> str:
         t0 = time.perf_counter()
