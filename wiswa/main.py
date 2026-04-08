@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import timedelta
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NoReturn
 import asyncio
 import importlib.resources
 import logging
@@ -97,6 +97,28 @@ def _has_legacy_poetry_deps(settings: Settings) -> bool:
         return True
     return any(group.get('dependencies')
                for group in poetry.get('group', {}).values())  # type: ignore[attr-defined]
+
+
+def _reraise_or_abort(exc: BaseException, *, debug: bool) -> NoReturn:
+    """
+    Re-raise *exc* when debugging, otherwise surface a chain-free ``click.Abort``.
+
+    Parameters
+    ----------
+    exc : BaseException
+        The failure to re-raise or fold into an abort.
+    debug : bool
+        When true, re-raise *exc* so a full traceback is shown.
+
+    Raises
+    ------
+    click.Abort
+        When *debug* is false, raised with ``from None`` to avoid chained context
+        in stderr output.
+    """
+    if debug:
+        raise exc
+    raise click.Abort from None
 
 
 def _handle_http_error(e: niquests.HTTPError) -> None:
@@ -255,12 +277,14 @@ async def _main_async(
                 err=True,
             )
         log.debug('RuntimeError', exc_info=e)
-        raise click.Abort from e
+        _reraise_or_abort(e, debug=debug)
+    except click.Abort:
+        raise
     except Exception as e:
         await spin_stop()
         click.echo(click.style('Failed.', fg='red'), err=True)
         log.debug('Unhandled exception', exc_info=e)
-        raise click.Abort from e
+        _reraise_or_abort(e, debug=debug)
     else:
         await spin_stop()
         if not quiet:
@@ -330,7 +354,18 @@ def main(
     skip_templates: bool = False,
     skip_yarn: bool = False,
 ) -> None:
-    """Entry point for the Wiswa CLI."""
+    """
+    Entry point for the Wiswa CLI.
+
+    Raises
+    ------
+    click.Abort
+        On failure when ``--debug`` is not set, after printing a short message.
+    KeyboardInterrupt
+        Propagated when the user interrupts the process.
+    SystemExit
+        Propagated for explicit interpreter exit.
+    """
     async def _run() -> None:
         await _main_async(
             file,
@@ -348,4 +383,19 @@ def main(
             skip_yarn=skip_yarn,
         )
 
-    anyio.run(_run)
+    try:
+        anyio.run(_run)
+    except click.Abort:
+        raise
+    except KeyboardInterrupt:
+        raise
+    except SystemExit:
+        raise
+    except Exception as exc:
+        if debug:
+            raise
+        log.debug('Uncaught exception', exc_info=exc)
+        click.echo(click.style('Failed.', fg='red'), err=True)
+        detail = str(exc).strip() or type(exc).__name__
+        click.echo(detail, err=True)
+        raise click.Abort from None

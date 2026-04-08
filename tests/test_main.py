@@ -656,6 +656,7 @@ def test_main_runtime_error(mocker: MockerFixture, tmp_path: Path) -> None:
     result = runner.invoke(main, [str(file_path)])
     assert result.exit_code != 0
     assert 'Something went wrong' in result.output
+    assert 'traceback' not in result.output.lower()
 
 
 def test_main_runtime_error_could_not_get_latest_tag(mocker: MockerFixture, tmp_path: Path) -> None:
@@ -674,6 +675,16 @@ def test_main_generic_exception(mocker: MockerFixture, tmp_path: Path) -> None:
     result = runner.invoke(main, [str(file_path)])
     assert result.exit_code != 0
     assert 'Aborted!' in result.output
+    assert 'traceback' not in result.output.lower()
+
+
+def test_main_generic_exception_debug_surfaces_original(mocker: MockerFixture,
+                                                        tmp_path: Path) -> None:
+    error = TypeError('unexpected error')
+    file_path, _ = _setup_main_mocks(mocker, tmp_path, side_effect=error)
+    runner = CliRunner()
+    with pytest.raises(TypeError, match='unexpected error'):
+        runner.invoke(main, ['--debug', str(file_path)], catch_exceptions=False)
 
 
 @pytest.mark.parametrize(

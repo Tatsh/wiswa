@@ -17,6 +17,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- CLI: without `--debug`, failures end with a short message and `click.Abort` raised with
+  `from None` so Python does not print chained exception context or a full traceback; with
+  `--debug`, the original exception is re-raised for a normal traceback.
 - Jsonnet merge with `uses_user_defaults: true` treats a missing user-level `defaults.jsonnet` as an
   empty object instead of failing with `FileNotFoundError`.
 - README and Sphinx docs recommend a global Wiswa install (`uv tool` or `pipx`) or adding Wiswa as
