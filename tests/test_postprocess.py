@@ -293,6 +293,8 @@ async def test_post_process_steps_python_no_yapf(tmp_path: Path, monkeypatch: py
     import json
 
     pkg = json.loads((tmp_path / 'package.json').read_text(encoding='utf-8'))
+    assert 'yarn prettier --check --ignore-unknown .' in pkg['scripts']['check-formatting']
+    assert 'yarn prettier --write --ignore-unknown .' in pkg['scripts']['format']
     assert 'ruff format' in pkg['scripts']['check-formatting']
     assert 'ruff format' in pkg['scripts']['format']
 

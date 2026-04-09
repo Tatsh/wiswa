@@ -49,6 +49,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Post-processing emits Prettier `format` / `check-formatting` commands with `--ignore-unknown`
+  before the path (and an explicit `.` target) when rewriting `package.json` after dropping YAPF.
 - CLI: handle `click.Abort` before `RuntimeError` in the async main path (`click.Abort` subclasses
   `RuntimeError`, so aborts were previously treated as runtime failures).
 - Pytest autouse fixture `recover_stale_process_cwd` resets the process working directory when it

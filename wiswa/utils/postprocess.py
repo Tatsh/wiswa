@@ -433,10 +433,10 @@ async def apply_python_pyproject_manifest_edits(settings: Settings) -> None:
         del pyproject_content['tool']['pytest']
     run_cmd = 'uv run' if is_uv else 'poetry run'
     package_json_content = json.loads(await anyio.Path('package.json').read_text(encoding='utf-8'))
-    ml_check = ('yarn markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2')
+    ml_check = 'yarn markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2'
     ml_fix = f'{ml_check} --fix'
-    prettier_w = 'yarn prettier --write --ignore-unknown'
-    prettier_c = 'yarn prettier --check . --ignore-unknown'
+    prettier_w = 'yarn prettier --write --ignore-unknown .'
+    prettier_c = 'yarn prettier --check --ignore-unknown .'
     if not settings['want_yapf']:
         del pyproject_content['tool']['yapf']
         del pyproject_content['tool']['yapfignore']
