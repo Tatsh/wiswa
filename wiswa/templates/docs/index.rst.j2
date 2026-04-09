@@ -9,14 +9,14 @@
 Commands
 --------
 
-.. click:: {{ settings.primary_module }}.main:main
+.. click:: {{ settings.primary_module_qualified | default(settings.primary_module) }}.main:main
    :prog: {{ settings.directory_name }}
    :nested: full
 {% endif %}
 
 .. only:: html
 
-   .. automodule:: {{ settings.primary_module }}.utils
+   .. automodule:: {{ settings.primary_module_qualified | default(settings.primary_module) }}.utils
       :members:
 
    Indices and tables

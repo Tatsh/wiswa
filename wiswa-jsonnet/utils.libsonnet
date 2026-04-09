@@ -5,6 +5,14 @@
  */
 {
   /**
+   * @brief Map a dotted Python import name to a filesystem path (slashes between segments).
+   * @param module Import name (e.g. ``vendor.product.service``).
+   * @returns Relative POSIX path segments (e.g. ``vendor/product/service``).
+   */
+  moduleImportToPath(module)::
+    std.join('/', std.split(module, '.')),
+
+  /**
    * @brief Check if a PEP 508 dependency array contains a given package name.
    * @param deps An array of PEP 508 dependency strings (e.g. `["django>=5.2", "click>=8.0"]`).
    * @param name The package name to search for.

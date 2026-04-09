@@ -18,23 +18,24 @@ function(want_main, want_yapf, stubs_only, project_name, want_coveralls, want_sq
     commitizen: ver('commitizen'),
     mypy: ver('mypy'),
     ruff: ver('ruff'),
+    ty: ver('ty'),
   } + cz_path_dep + (
     if want_yapf then { yapf: ver('yapf') } else {}
   ) + (if want_sqlfluff then { sqlfluff: ver('sqlfluff') } else {}),
   local needs_tomlkit = std.parseInt(std.split(min_python_version, '.')[1]) < 11,
   docs: {
-    'autodoc-pydantic': ver('autodoc-pydantic'),
-    doc8: ver('doc8'),
-    docutils: '<0.22',
-    'enum-tools': { extras: ['sphinx'], version: ver('enum-tools') },
-    esbonio: ver('esbonio'),
-    numpydoc: ver('numpydoc'),
-    'restructuredtext-lint': ver('restructuredtext-lint'),
-    sphinx: [{ version: ver('sphinx'), python: '>=3.13' }],
-    'sphinx-datatables': ver('sphinx-datatables'),
-    'sphinx-immaterial': ver('sphinx-immaterial'),
-  } + (if needs_tomlkit then { tomlkit: ver('tomlkit') } else {})
-    + (if want_main then { 'sphinx-click': ver('sphinx-click') } else {}),
+          'autodoc-pydantic': ver('autodoc-pydantic'),
+          doc8: ver('doc8'),
+          docutils: '<0.22',
+          'enum-tools': { extras: ['sphinx'], version: ver('enum-tools') },
+          esbonio: ver('esbonio'),
+          numpydoc: ver('numpydoc'),
+          'restructuredtext-lint': ver('restructuredtext-lint'),
+          sphinx: [{ version: ver('sphinx'), python: '>=3.13' }],
+          'sphinx-datatables': ver('sphinx-datatables'),
+          'sphinx-immaterial': ver('sphinx-immaterial'),
+        } + (if needs_tomlkit then { tomlkit: ver('tomlkit') } else {})
+        + (if want_main then { 'sphinx-click': ver('sphinx-click') } else {}),
   tests: {
     mock: ver('mock'),
     pytest: ver('pytest'),

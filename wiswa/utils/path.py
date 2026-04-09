@@ -35,7 +35,8 @@ def primary_module_to_path(primary_module: str) -> str:
     Parameters
     ----------
     primary_module : str
-        A dotted module name (e.g. ``'wiswa.utils'``).
+        Dotted import path (e.g. ``'wiswa.utils'``), or the single top-level directory name with no
+        dots when that path is a PEP 420 namespace root.
 
     Returns
     -------

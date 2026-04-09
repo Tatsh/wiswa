@@ -128,9 +128,10 @@ async def _write_templated_files_python(settings: Settings, templates_dir: Path,
                                         write_file: Callable[..., Awaitable[None]]) -> None:
     tasks: list[Awaitable[None]] = []
     if not settings['stubs_only']:
+        qualified_path = primary_module_to_path(settings['primary_module_qualified'])
         tasks.append(
             write_file(resolve_template(templates_dir / '_module_/__init__.py.j2'),
-                       f'{primary_module_to_path(settings["primary_module"])}/__init__.py'))
+                       f'{qualified_path}/__init__.py'))
     if settings['want_tests']:
         tasks.append(
             write_file(resolve_template(templates_dir / 'tests/conftest.py.j2'),

@@ -185,7 +185,7 @@ local utils = import 'utils.libsonnet';
    * @brief Array of modules (Python packages) in the project.
    * @var string[]
    */
-  modules: [self.primary_module],
+  modules: [self.primary_module_qualified],
   /** @brief PyInstaller configuration. */
   pyinstaller: {
     /**
@@ -977,8 +977,21 @@ local utils = import 'utils.libsonnet';
   supported_python_versions: ['3.%d' % i for i in std.range(10, 14)],
   /** @brief If true, add upper boundary to Python version requirement. */
   python_dep_upper_boundary: false,
-  /** @brief Primary module name (Python package). */
+  /**
+   * @brief Import name for the Python tree Wiswa manages (dots become nested directories).
+   *
+   * For PEP 420 namespace layouts, set this to the top-level namespace directory only (no dots)
+   * and set ``primary_module_qualified`` to the full dotted import path.
+   */
   primary_module: std.strReplace(self.project_name, '-', '_'),
+  /**
+   * @brief Fully qualified import name for the on-disk package (dots between segments).
+   *
+   * Defaults to ``primary_module``. Namespace-style layouts are inferred when this value differs
+   * from ``primary_module`` and contains at least one ``.`` (e.g. ``vendor`` and
+   * ``vendor.product.service``).
+   */
+  primary_module_qualified: self.primary_module,
   /**
    * @brief Python dependencies in Poetry-style syntax.
    *
@@ -1021,7 +1034,10 @@ local utils = import 'utils.libsonnet';
   },
   /** @brief Python project configuration (`pyproject.toml`). */
   pyproject: pyproject {
-    local primary_module_path = std.join('/', std.split(settings.primary_module, '.')),
+    local primary_module_qualified_path = std.join('/', std.split(settings.primary_module_qualified, '.')),
+    local hatch_wheel_top_level_only =
+      settings.primary_module_qualified != settings.primary_module
+      && std.length(std.findSubstr('.', settings.primary_module_qualified)) > 0,
     local poetry_package_includes = std.set([std.split(m, '.')[0] for m in settings.modules]),
     local python_req = if settings.python_dep_upper_boundary then ('>=%s,<3.%d' % [
                                                                      settings.supported_python_versions[0],
@@ -1055,7 +1071,9 @@ local utils = import 'utils.libsonnet';
       name: settings.project_name,
       version: settings.version,
       license: settings.license,
-      scripts: if settings.want_main then { [settings.project_name]: '%s.main:main' % settings.primary_module } else {},
+      scripts: if settings.want_main then {
+                 [settings.project_name]: '%s.main:main' % settings.primary_module_qualified,
+               } else {},
       urls: {
         homepage: settings.homepage,
         documentation: settings.documentation_uri,
@@ -1092,10 +1110,12 @@ local utils = import 'utils.libsonnet';
     tool+: {
              commitizen+: {
                remove_path_prefixes: std.set(pyproject.tool.commitizen.remove_path_prefixes + [
-                 primary_module_path,
+                 primary_module_qualified_path,
                ]),
                version_files: std.set(pyproject.tool.commitizen.version_files +
-                                      ['%s/__init__.py' % primary_module_path] +
+                                      (if !settings.stubs_only then [
+                                         '%s/__init__.py' % primary_module_qualified_path,
+                                       ] else []) +
                                       (if !settings.stubs_only then [
                                          'docs/badges.rst',
                                          'docs/index.rst',
@@ -1110,12 +1130,12 @@ local utils = import 'utils.libsonnet';
              coverage+: {
                report+: {
                  omit: std.set(pyproject.tool.coverage.report.omit + (
-                   if settings.want_main then ['__main__.py'] else []
+                   if settings.want_main then ['%s/__main__.py' % primary_module_qualified_path] else []
                  )),
                },
                run+: {
                  omit: std.set(pyproject.tool.coverage.run.omit + (
-                   if settings.want_main then ['__main__.py'] else []
+                   if settings.want_main then ['%s/__main__.py' % primary_module_qualified_path] else []
                  )),
                },
              },
@@ -1161,7 +1181,9 @@ local utils = import 'utils.libsonnet';
                    'TID252',
                  ]),
                } else (if settings.want_main then {
-                         'per-file-ignores': { 'main.py': ['PLR0913'] },
+                         'per-file-ignores': {
+                           ['%s/main.py' % primary_module_qualified_path]: ['PLR0913'],
+                         },
                        }
                        else {}),
                'target-version': 'py3%s' % settings.supported_python_versions[0][2:],
@@ -1169,8 +1191,15 @@ local utils = import 'utils.libsonnet';
              [if is_uv && (settings.stubs_only || std.strReplace(settings.project_name, '-', '_') != settings.primary_module) then 'hatch']: {
                build: {
                  targets: {
+                   sdist: {
+                     include: std.set([std.split(m, '.')[0] for m in settings.modules]) +
+                              (if settings.want_tests then ['tests'] else []),
+                   },
                    wheel: {
-                     packages: if settings.stubs_only then [settings.project_name] else settings.modules,
+                     packages: if hatch_wheel_top_level_only then
+                       std.set([std.split(m, '.')[0] for m in settings.modules])
+                     else
+                       [utils.moduleImportToPath(m) for m in settings.modules],
                    },
                  },
                },

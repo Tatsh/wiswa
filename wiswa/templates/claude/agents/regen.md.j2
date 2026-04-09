@@ -87,7 +87,7 @@ and verify nothing is broken before committing.
 
 ## Rules
 
-- Never modify source code under `{{ settings.primary_module }}/`
+- Never modify source code under `{{ (settings.primary_module_qualified | default(settings.primary_module)) | replace('.', '/') }}/`
 {%- if settings.project_type == 'python' %} or `tests/`{% endif %}. This agent only updates
   managed/generated files.
 - If Wiswa fails, stop and report the error.

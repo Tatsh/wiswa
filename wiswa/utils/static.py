@@ -86,7 +86,7 @@ async def copy_static_files_python(settings: Settings, module_path: Path) -> Non
     """Copy static files to the current directory."""
     async def copy_file(filename: str) -> None:
         static_path = module_path / 'static' / filename
-        module_path_str = primary_module_to_path(settings['primary_module'])
+        module_path_str = primary_module_to_path(settings['primary_module_qualified'])
         output_file = Path(module_path_str) / filename
         if await non_empty_file_exists(output_file):
             log.debug('Skipping `%s`.', output_file)

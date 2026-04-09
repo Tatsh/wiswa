@@ -30,14 +30,14 @@ conventions defined in the rule files under `.claude/rules/`.
   @click.option('-d', '--debug', is_flag=True)
   def my_command(debug: bool = False) -> None:
       """Do something."""
-      setup_logging(debug=debug, loggers={'{{ settings.primary_module }}': {}})
+      setup_logging(debug=debug, loggers={'{{ settings.primary_module_qualified | default(settings.primary_module) }}': {}})
   ```
 
   Additional third-party loggers can be added as needed:
 
   ```python
   setup_logging(debug=debug, loggers={
-      '{{ settings.primary_module }}': {},
+      '{{ settings.primary_module_qualified | default(settings.primary_module) }}': {},
       'urllib3': {},
       'soupsieve': {},
   })
@@ -209,12 +209,12 @@ text, not Sphinx references. Use `soup : bs4.Tag` not `` soup : :py:class:`~bs4.
 In descriptive prose within docstrings, use Sphinx cross-references when referring to other types,
 modules, or functions:
 
-- `` :py:mod:`{{ settings.primary_module }}.string` `` for modules
-- `` :py:func:`{{ settings.primary_module }}.string.slugify` `` for functions
-- `` :py:class:`{{ settings.primary_module }}.typing.ProbeDict` `` for classes
+- `` :py:mod:`{{ settings.primary_module_qualified | default(settings.primary_module) }}.string` `` for modules
+- `` :py:func:`{{ settings.primary_module_qualified | default(settings.primary_module) }}.string.slugify` `` for functions
+- `` :py:class:`{{ settings.primary_module_qualified | default(settings.primary_module) }}.typing.ProbeDict` `` for classes
 - `` :py:meth:`MyClass.my_method` `` for methods
 - Use `~` to shorten the displayed name:
-  `` :py:func:`~{{ settings.primary_module }}.string.slugify` `` renders as `slugify`
+  `` :py:func:`~{{ settings.primary_module_qualified | default(settings.primary_module) }}.string.slugify` `` renders as `slugify`
 - This applies to third-party types as well: `` :py:class:`~pathlib.Path` ``,
   `` :py:func:`~json.dumps` ``, `` :py:class:`~click.Context` ``, etc.
 

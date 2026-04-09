@@ -320,6 +320,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
             'devDependencies': {}
         },
         'primary_module': 'mymod',
+        'primary_module_qualified': 'mymod',
         'private': False,
         'project_name': 'testproject',
         'project_type': 'python',
@@ -631,6 +632,19 @@ async def test_write_templated_files_python_stubs_only(tmp_path: Path,
             _make_settings(stubs_only=True, want_tests=False, want_ai=False),
         )
     assert not (out / 'mymod/__init__.py').exists()
+
+
+async def test_write_templated_files_python_implicit_namespace_writes_qualified_init(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+        out = await _run_write(
+            monkeypatch, tmp_path, module_path,
+            _make_settings(primary_module='vendor',
+                           primary_module_qualified='vendor.product.service',
+                           want_tests=False,
+                           want_ai=False))
+    assert not (out / 'vendor/__init__.py').exists()
+    assert (out / 'vendor/product/service/__init__.py').exists()
 
 
 async def test_write_templated_files_python_windows_only(tmp_path: Path,

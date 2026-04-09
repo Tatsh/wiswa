@@ -23,16 +23,17 @@ changed files, not the entire project.
 You must skip any agents that are not relevant to the changed files (e.g. if no Click command files
 changed, skip the click-auditor).
 
+{% set pkg_path = (settings.primary_module_qualified | default(settings.primary_module)) | replace('.', '/') %}
 {% if settings.project_type == 'python' %}
 
 ### When Python code is being committed
 
-If any changed files are under `{{ settings.primary_module }}/` or `tests/`, run the following
+If any changed files are under `{{ pkg_path }}/` or `tests/`, run the following
 agents **in order**:
 
 1. **python-moderniser** - upgrade to modern Python features.
 1. **click-auditor** - validate Click command consistency. **Only run if files under
-   `{{ settings.primary_module }}/commands/` changed.**
+   `{{ pkg_path }}/commands/` changed.**
 1. **docstring-fixer** - fix missing or incomplete docstrings.
 1. **copy-editor** - fix prose in comments, docstrings, and strings.
 1. **test-writer** - generate/update tests for new/changed code. **Skip if the only changes are in
@@ -71,7 +72,7 @@ If any changed source files are being committed, run the following agents **in o
   check if `CHANGELOG.md` was modified (`git diff CHANGELOG.md`). If it was, stage it with the
   relevant commit. Follow `.claude/agents/changelog.md`, including its skip list.
 
-  Files under `{{ settings.primary_module }}/`,
+  Files under `{{ pkg_path }}/`,
 {%- if settings.project_type == 'python' %} `tests/`, or version changes in `pyproject.toml`
 {%- elif settings.project_type == 'c' or settings.project_type == 'c++' %} `src/`, `include/`, or
   dependency/version changes in `CMakeLists.txt` or `vcpkg.json`
@@ -100,8 +101,8 @@ file in a commit:
 - `CHANGELOG.md`
 - `.vscode/dictionary.txt`
 
-For example, if a commit contains `{{ settings.primary_module }}/
-{%- if settings.project_type == 'python' %}commands/main.py`,
+For example, if a commit contains `
+{%- if settings.project_type == 'python' %}{{ pkg_path }}/commands/main.py`,
 `tests/test_main_command.py`
 {%- elif settings.project_type == 'c' or settings.project_type == 'c++' %}src/main.cpp`
 {%- elif settings.project_type == 'typescript' %}src/index.ts`
@@ -177,17 +178,17 @@ Closes: #123
 
 ### Component prefix rules
 {% if settings.project_type == 'python' %}
-For Python files, strip the `{{ settings.primary_module }}/` prefix and replace `/` with `.` (like module imports).
+For Python files, strip the `{{ pkg_path }}/` prefix and replace `/` with `.` (like module imports).
 
-- Python file `{{ settings.primary_module }}/media.py` → `media:`.
-- Multiple files under `{{ settings.primary_module }}/commands/` → `commands:`.
-- Single command file `{{ settings.primary_module }}/commands/admin.py` → `commands.admin:`.
+- Python file `{{ pkg_path }}/media.py` → `media:`.
+- Multiple files under `{{ pkg_path }}/commands/` → `commands:`.
+- Single command file `{{ pkg_path }}/commands/admin.py` → `commands.admin:`.
 {% elif settings.project_type == 'c' or settings.project_type == 'c++' %}
 For source files, strip the `src/` prefix and use the file name (without extension) as the
 component.
 
 - Source file `src/main.cpp` → `main:`.
-- Header file `include/{{ settings.primary_module }}/util.h` → `util:`.
+- Header file `include/{{ (settings.primary_module_qualified | default(settings.primary_module)) | replace('.', '/') }}/util.h` → `util:`.
 - Multiple files under `src/` → `src:`.
 {% elif settings.project_type == 'typescript' %}
 For TypeScript files, strip the `src/` prefix and use the file name (without extension) as the

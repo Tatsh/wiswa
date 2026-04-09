@@ -99,7 +99,7 @@ function(settings)
         branches: [
           'master',
         ],
-        paths: ['%s/**' % mod for mod in settings.modules] + [
+        paths: ['%s/**' % utils.moduleImportToPath(mod) for mod in settings.modules] + [
           '.github/workflows/snap.yml',
           'pyproject.toml',
           'snapcraft.yaml',

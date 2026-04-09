@@ -22,6 +22,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'want_main': False,
         'has_multiple_entry_points': False,
         'primary_module': 'mymod',
+        'primary_module_qualified': 'mymod',
     }
     base |= overrides
     return base

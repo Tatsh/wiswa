@@ -287,7 +287,19 @@ class Settings(TypedDict):
     package_json: PackageJSON
     """Parsed ``package.json``."""
     primary_module: str
-    """The primary module."""
+    """
+    Import name for the layout Wiswa manages; dots denote nested packages on disk.
+
+    For a PEP 420 namespace root, use a single top-level segment here and set
+    ``primary_module_qualified`` to the full dotted import path.
+    """
+    primary_module_qualified: str
+    """
+    Fully qualified import name for the on-disk package (e.g. ``vendor.product.service``).
+
+    Defaults to the same value as ``primary_module``. A namespace-style layout (namespace root plus
+    a deeper package) is inferred when this differs from ``primary_module`` and contains a dot.
+    """
     private: bool
     """If the project is private."""
     project_name: str

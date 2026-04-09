@@ -9,16 +9,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed
+### Added
 
-- CLI: handle `click.Abort` before `RuntimeError` in the async main path (`click.Abort` subclasses
-  `RuntimeError`, so aborts were previously treated as runtime failures).
-- Pytest autouse fixture `recover_stale_process_cwd` resets the process working directory when it
-  no longer exists (fixing `FileNotFoundError` from `monkeypatch.chdir` under aggressive `tmp_path`
-  retention). Included in this repository and in the generated `tests/conftest.py` template.
+- Jsonnet `primary_module_qualified` (defaults to `primary_module`): full dotted import path for the
+  on-disk package, with `primary_module` as the namespace root when they differ.
+- Jsonnet `utils.moduleImportToPath` for turning dotted import names into POSIX path segments.
+- VS Code default `files.associations` mapping `*.json.dist` to the JSON language id.
 
 ### Changed
 
+- Default `modules` uses `primary_module_qualified` so packaging and CI path filters follow the real
+  package tree; workflow `paths` globs use slashes, not dots.
+- Hatch defaults: `sdist` `include` lists unique top-level package directories (for example `aps`,
+  plus `tests` when enabled); `wheel` `packages` use filesystem paths, and namespace-style projects
+  (`primary_module_qualified` ≠ `primary_module` with a dotted qualified name) list only those
+  top-level directories in `packages` (for example `["aps"]`).
+- Commitizen `remove_path_prefixes` and `__init__.py` `version_files` entries use the qualified
+  package path; generated coverage and Ruff paths target `__main__.py` and `main.py` under that
+  tree.
+- Wiswa places templated `__init__.py`, `py.typed`, and static `main.py` / `__main__.py` under
+  `primary_module_qualified`; post-processing picks the man page stem from the last segment of the
+  qualified name.
+- Generated Claude agent docs, the CI skill template, Sphinx `index.rst`, and `tests/test_main.py`
+  use the qualified name for imports and slash-separated paths for directories.
 - CLI: without `--debug`, failures end with a short message and `click.Abort` raised with
   `from None` so Python does not print chained exception context or a full traceback; with
   `--debug`, the original exception is re-raised for a normal traceback.
@@ -29,7 +42,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
+- Jsonnet `primary_module_implicit_namespace`; namespace-style layout is inferred when
+  `primary_module_qualified` differs from `primary_module` and contains a dot (documented on
+  `primary_module` and `primary_module_qualified`).
 - Unused runtime dependency `aiofiles`.
+
+### Fixed
+
+- CLI: handle `click.Abort` before `RuntimeError` in the async main path (`click.Abort` subclasses
+  `RuntimeError`, so aborts were previously treated as runtime failures).
+- Pytest autouse fixture `recover_stale_process_cwd` resets the process working directory when it
+  no longer exists (fixing `FileNotFoundError` from `monkeypatch.chdir` under aggressive `tmp_path`
+  retention). Included in this repository and in the generated `tests/conftest.py` template.
 
 ## [0.2.0] - 2026-04-06
 

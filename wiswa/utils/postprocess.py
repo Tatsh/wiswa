@@ -421,9 +421,9 @@ async def apply_python_pyproject_manifest_edits(settings: Settings) -> None:
             pyproject_content['tool']['commitizen']['version_files'] = sorted(
                 {*pyproject_content['tool']['commitizen']['version_files'], *man_pages})
         else:
-            module = settings['primary_module']
+            module_tail = settings['primary_module_qualified'].split('.')[-1]
             pyproject_content['tool']['commitizen']['version_files'] = sorted(
-                {*pyproject_content['tool']['commitizen']['version_files'], f'man/{module}.1'})
+                {*pyproject_content['tool']['commitizen']['version_files'], f'man/{module_tail}.1'})
     if not settings['want_tests']:
         del pyproject_content['tool']['coverage']
         if is_uv:

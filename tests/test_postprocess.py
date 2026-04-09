@@ -43,6 +43,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'project_name': 'myproject',
         'pypi_project_name': 'myproject',
         'primary_module': 'mymod',
+        'primary_module_qualified': 'mymod',
         'version': '0.0.1',
         'default_branch': 'master',
         'repository_uri': 'https://github.com/testuser/myproject',
