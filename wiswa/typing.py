@@ -354,6 +354,8 @@ class Settings(TypedDict):
     """Configuration for exporting requirements from the lock file."""
     want_docs: bool
     """If the project will generate documentation."""
+    sphinx_fail_on_warning: bool
+    """If Sphinx runs should treat warnings as errors."""
     want_main: bool
     """If the project will have a script entry point."""
     want_man: bool

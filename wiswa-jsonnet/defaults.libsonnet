@@ -537,6 +537,12 @@ local utils = import 'utils.libsonnet';
   want_gpg: true,
   /** @brief If the project will generate documentation. */
   want_docs: true,
+  /**
+   * @brief If Sphinx runs should treat warnings as errors (``yarn gen-docs``, ``yarn gen-manpage``,
+   *     and ReadTheDocs ``sphinx.fail_on_warning``).
+   * @var boolean
+   */
+  sphinx_fail_on_warning: true,
   /** @brief If ``yarn.lock`` should be deleted before running Yarn during post-processing. */
   regenerate_yarn_lock: true,
   /** @brief If the project should have a main module (for CLI). */
@@ -744,6 +750,9 @@ local utils = import 'utils.libsonnet';
           'UV_PROJECT_ENVIRONMENT="$READTHEDOCS_VIRTUALENV_PATH" uv sync --group docs --inexact --all-extras --no-dev',
         ] else rtd.build.jobs.post_install,
       },
+    },
+    sphinx+: {
+      fail_on_warning: settings.sphinx_fail_on_warning,
     },
   },
 
@@ -1281,10 +1290,11 @@ local utils = import 'utils.libsonnet';
     version: settings.version,
   } + {
     local run_cmd = if is_uv then 'uv run' else 'poetry run',
+    local sphinx_fail_flag = if settings.sphinx_fail_on_warning then ' --fail-on-warning' else '',
     scripts+: if settings.want_docs && settings.project_type == 'python' then {
-      'gen-docs': '%s sphinx-build --fresh-env --builder html --doctree-dir docs/_build/doctrees --define language=en docs docs/_build/html' % run_cmd,
+      'gen-docs': '%s sphinx-build --fresh-env%s --builder html --doctree-dir docs/_build/doctrees --define language=en docs docs/_build/html' % [run_cmd, sphinx_fail_flag],
     } + if settings.want_man && settings.project_type == 'python' then {
-      'gen-manpage': '%s sphinx-build --fresh-env --builder man --doctree-dir docs/_build/doctrees --define language=en docs man' % run_cmd,
+      'gen-manpage': '%s sphinx-build --fresh-env%s --builder man --doctree-dir docs/_build/doctrees --define language=en docs man' % [run_cmd, sphinx_fail_flag],
     } else {}
     else {},
   },

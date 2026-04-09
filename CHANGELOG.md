@@ -15,6 +15,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   on-disk package, with `primary_module` as the namespace root when they differ.
 - Jsonnet `utils.moduleImportToPath` for turning dotted import names into POSIX path segments.
 - VS Code default `files.associations` mapping `*.json.dist` to the JSON language id.
+- Jsonnet `sphinx_fail_on_warning` (default `true`): when set, generated `yarn gen-docs` and
+  `yarn gen-manpage` scripts include `sphinx-build --fail-on-warning`, and ReadTheDocs
+  `sphinx.fail_on_warning` matches; exposed on `Settings`.
 
 ### Changed
 
