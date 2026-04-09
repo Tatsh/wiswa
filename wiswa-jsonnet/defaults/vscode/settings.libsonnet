@@ -96,6 +96,9 @@
     'editor.rulers': [settings.line_width],
     'editor.tabSize': settings.tab_size,
     'editor.wordWrapColumn': settings.line_width,
+    'files.associations': {
+      '*.json.dist': 'json',
+    },
     'files.insertFinalNewline': true,
     'files.trimFinalNewlines': true,
     'files.trimTrailingWhitespace': true,
