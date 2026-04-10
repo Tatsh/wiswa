@@ -44,6 +44,7 @@ name: 'Flatpak'
     paths:
       - 'wiswa/**'
       - '.github/workflows/flatpak.yml'
+      - 'sh.tat.wiswa.yml'
       - 'pyproject.toml'
       - 'uv.lock'
       - 'poetry.lock'

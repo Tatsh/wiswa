@@ -76,6 +76,7 @@ function(settings)
         ],
         paths: ['%s/**' % utils.moduleImportToPath(mod) for mod in settings.modules] + [
           '.github/workflows/flatpak.yml',
+          '%s.yml' % settings.publishing.flathub,
           'pyproject.toml',
           'uv.lock',
           'poetry.lock',

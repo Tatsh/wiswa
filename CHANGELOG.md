@@ -25,6 +25,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Generated Flatpak workflow `push.paths` includes the Flatpak manifest (`{flathub}.yml`) so edits to
+  the manifest trigger CI without touching Python sources.
 - Default Jekyll `pages_config` excludes `CHANGELOG.md` so GitHub Pages does not treat it as site
   content; merge with `exclude+:` still appends project-specific paths.
 - Default `modules` uses `primary_module_qualified` so packaging and CI path filters follow the real
