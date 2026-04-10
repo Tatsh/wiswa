@@ -35,7 +35,10 @@ local utils = import 'utils.libsonnet';
   /**
    * @brief Custom package index sources.
    *
-   * Each entry is an object with ``name``, ``url``, and optional ``priority`` fields.
+   * Each entry is an object with ``name``, ``url``, optional ``priority``, and optional
+   * ``publish-url`` (uv only: upload endpoint for ``uv publish``, distinct from the PEP 503
+   * ``url``). The snake_case alias ``publish_url`` is accepted and emitted as ``publish-url`` in
+   * ``pyproject.toml``.
    * Translated to ``[[tool.poetry.source]]`` for Poetry or ``[[tool.uv.index]]`` for uv.
    * Entries without a ``url`` (e.g. ``{name: 'PyPI', priority: 'primary'}``) are kept for
    * Poetry but omitted for uv.
@@ -1197,7 +1200,7 @@ local utils = import 'utils.libsonnet';
                        else {}),
                'target-version': 'py3%s' % settings.supported_python_versions[0][2:],
              },
-             [if is_uv && (settings.stubs_only || std.strReplace(settings.project_name, '-', '_') != settings.primary_module) then 'hatch']: {
+             [if is_uv then 'hatch']: {
                build: {
                  targets: {
                    sdist: {
@@ -1219,6 +1222,9 @@ local utils = import 'utils.libsonnet';
                                  uv+: {
                                    index: [
                                      { name: s.name, url: s.url }
+                                     + (if std.objectHas(s, 'publish-url') then { 'publish-url': s['publish-url'] }
+                                        else if std.objectHas(s, 'publish_url') then { 'publish-url': s.publish_url }
+                                        else {})
                                      + (if std.objectHas(s, 'priority') && s.priority == 'default' then { default: true } else {})
                                      for s in settings.package_sources
                                      if std.objectHas(s, 'url')
@@ -1473,8 +1479,14 @@ local utils = import 'utils.libsonnet';
       {
         name: settings.project_name,
         buildsystem: 'simple',
-        'build-commands': [
-          'pip3 install --no-index --find-links=. --prefix=/app .',
+        'build-options': {
+          network: true,
+        },
+        'build-commands': if settings.package_manager == 'uv' then [
+          'pip3 install uv',
+          'python3 -m uv pip install --prefix=/app .',
+        ] else [
+          'pip3 install --prefix=/app .',
         ],
         sources: [
           {

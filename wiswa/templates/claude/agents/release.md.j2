@@ -26,10 +26,6 @@ checks, bump the version, and push.
 1. **Launch agents in parallel** before bumping:
    - **copy-editor** - to fix prose in the changelog entries.
    - **qa-fixer** - to format and fix any lint/spelling issues.
-{% if settings.project_type == 'python' and settings.want_man %}
-
-1. **Generate man pages.** Run `yarn gen-manpage` and then `git add man/`.
-{% endif %}
 
 1. **Run `pre-commit run -a`** to ensure all hooks pass. Fix any issues before proceeding.
 
@@ -43,6 +39,10 @@ checks, bump the version, and push.
 {% if settings.project_type == 'python' and settings.package_manager == 'uv' %}
 
 1. **Run `uv lock`** to update `uv.lock` with the new version.
+{% endif %}
+{% if settings.project_type == 'python' and settings.want_man %}
+
+1. **Generate man pages.** Run `yarn gen-manpage` and then `git add man/`.
 {% endif %}
 
 1. **Commit the version bump.** Stage all changed files and commit with

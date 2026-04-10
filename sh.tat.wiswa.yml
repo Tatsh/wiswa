@@ -7,7 +7,10 @@ finish-args:
   - '--socket=wayland'
 modules:
   - build-commands:
-      - 'pip3 install --no-index --find-links=. --prefix=/app .'
+      - 'pip3 install uv'
+      - 'python3 -m uv pip install --prefix=/app .'
+    build-options:
+      network: true
     buildsystem: 'simple'
     name: 'wiswa'
     sources:

@@ -131,6 +131,9 @@ omit = [
 [tool.doc8]
 max-line-length = 100
 
+[tool.hatch.build.targets.sdist]
+include = ["wiswa", "tests"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["wiswa", "wiswa-jsonnet"]
 

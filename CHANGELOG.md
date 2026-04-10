@@ -11,6 +11,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `package_sources` entries may set `publish-url` (or Jsonnet `publish_url`) for uv projects;
+  Wiswa copies them into `[[tool.uv.index]]` for `uv publish` alongside the PEP 503 `url`.
 - Jsonnet `primary_module_qualified` (defaults to `primary_module`): full dotted import path for the
   on-disk package, with `primary_module` as the namespace root when they differ.
 - Jsonnet `utils.moduleImportToPath` for turning dotted import names into POSIX path segments.
@@ -23,6 +25,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Default Jekyll `pages_config` excludes `CHANGELOG.md` so GitHub Pages does not treat it as site
+  content; merge with `exclude+:` still appends project-specific paths.
 - Default `modules` uses `primary_module_qualified` so packaging and CI path filters follow the real
   package tree; workflow `paths` globs use slashes, not dots.
 - Hatch defaults: `sdist` `include` lists unique top-level package directories (for example `aps`,
@@ -76,6 +80,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   second custom-badge loop uses `{% endfor -%}`, the spare newline after Prettier is removed, and the
   blank line between Bluesky and Mastodon `{% if %}` blocks is dropped so spacing matches other
   badges.
+- Flatpak manifest for uv projects: enable network during the module build, `pip3 install uv`,
+  then `python3 -m uv pip install --prefix=/app .` so PEP 517 build dependencies (for example
+  hatchling) resolve from PyPI. Poetry projects use `pip3 install --prefix=/app .` with network; the
+  previous `pip3 install --no-index --find-links=.` line could not install hatchling builds.
+- Jsonnet always emits `tool.hatch.build.targets` for uv-managed projects. It was previously skipped
+  when `primary_module` matched the hyphen-normalised `project_name` (for example `yapf-gitlab` →
+  `yapf_gitlab`), so only `stubs_only` or a customised `primary_module` received Hatch sdist/wheel
+  settings.
 
 ## [0.2.0] - 2026-04-06
 

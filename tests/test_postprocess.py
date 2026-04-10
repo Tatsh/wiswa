@@ -406,6 +406,28 @@ async def test_post_process_steps_readme_badges_replace_delimited_region_only(
     assert start < stop
 
 
+async def test_post_process_steps_readme_badges_unclosed_start_falls_back_to_legacy(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture,
+        caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG, logger='wiswa.utils.postprocess')
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    readme = tmp_path / 'README.md'
+    readme.write_text(
+        '# My Project\n\n'
+        '<!-- WISWA-GENERATED-README:START -->\n'
+        '[![old badge](http://example.com)]\n\n'
+        'Content here.\n',
+        encoding='utf-8',
+    )
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings(_readme_existed=True))
+    await post_process_steps(settings)
+    assert 'without a matching' in caplog.text
+    content = readme.read_text(encoding='utf-8')
+    assert 'WISWA-GENERATED-README:STOP' in content
+
+
 async def test_post_process_steps_checks_readme_badges_even_if_flag_false(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
