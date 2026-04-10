@@ -25,6 +25,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- CLI: `wiswa` command help shows a single-line imperative summary instead of a multi-line
+  description with a `Raises` section (Click command docstrings stay one line).
 - Generated Flatpak workflow names the bundle, GitHub Actions artifact, attestation subject, and
   draft release attachment as `{flathub}-{version}-{arch}.flatpak`, using the Flathub app id
   (`publishing.flathub`) as-is, with `version` from `pyproject.toml`, instead of a single

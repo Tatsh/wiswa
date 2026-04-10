@@ -362,18 +362,8 @@ def main(
     skip_templates: bool = False,
     skip_yarn: bool = False,
 ) -> None:
-    """
-    Entry point for the Wiswa CLI.
+    """Generate and maintain projects with Jsonnet in a highly opinionated way."""  # noqa: DOC501
 
-    Raises
-    ------
-    click.Abort
-        On failure when ``--debug`` is not set, after printing a short message.
-    KeyboardInterrupt
-        Propagated when the user interrupts the process.
-    SystemExit
-        Propagated for explicit interpreter exit.
-    """
     async def _run() -> None:
         await _main_async(
             file,
