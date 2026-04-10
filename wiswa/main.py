@@ -362,7 +362,7 @@ def main(
     skip_templates: bool = False,
     skip_yarn: bool = False,
 ) -> None:
-    """Generate and maintain projects with Jsonnet in a highly opinionated way."""  # noqa: DOC501
+    """Generate and maintain projects with Jsonnet."""  # noqa: DOC501
 
     async def _run() -> None:
         await _main_async(
