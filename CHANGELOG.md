@@ -80,10 +80,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   second custom-badge loop uses `{% endfor -%}`, the spare newline after Prettier is removed, and the
   blank line between Bluesky and Mastodon `{% if %}` blocks is dropped so spacing matches other
   badges.
-- Flatpak manifest for uv projects: enable network during the module build, `pip3 install uv`,
-  then `python3 -m uv pip install --prefix=/app .` so PEP 517 build dependencies (for example
-  hatchling) resolve from PyPI. Poetry projects use `pip3 install --prefix=/app .` with network; the
-  previous `pip3 install --no-index --find-links=.` line could not install hatchling builds.
+- Flatpak manifest: use `build-options.build-args: ['--share=network']` so `flatpak-builder` allows
+  PyPI during the module build (the `network: true` key is not a valid `BuilderOptions` field and
+  was ignored). Uv projects run `pip3 install uv` then `python3 -m uv pip install --prefix=/app .`;
+  Poetry projects use `pip3 install --prefix=/app .`.
 - Jsonnet always emits `tool.hatch.build.targets` for uv-managed projects. It was previously skipped
   when `primary_module` matched the hyphen-normalised `project_name` (for example `yapf-gitlab` →
   `yapf_gitlab`), so only `stubs_only` or a customised `primary_module` received Hatch sdist/wheel

@@ -1480,7 +1480,7 @@ local utils = import 'utils.libsonnet';
         name: settings.project_name,
         buildsystem: 'simple',
         'build-options': {
-          network: true,
+          'build-args': ['--share=network'],
         },
         'build-commands': if settings.package_manager == 'uv' then [
           'pip3 install uv',
