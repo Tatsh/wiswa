@@ -1,7 +1,6 @@
 local utils = import 'utils.libsonnet';
 
 function(settings)
-  local bundle_name = '%s.flatpak' % settings.project_name;
   {
     jobs: {
       build: {
@@ -14,6 +13,15 @@ function(settings)
           {
             uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
+          {
+            name: 'Set Flatpak bundle filename',
+            id: 'flatpak_bundle',
+            run: |||
+              version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+              echo "version=${version}" >> "$GITHUB_OUTPUT"
+              echo "filename=%s-${version}-${{ matrix.system.arch }}.flatpak" >> "$GITHUB_OUTPUT"
+            ||| % settings.project_name,
+          },
         ] + [
           {
             name: 'Build Flatpak',
@@ -21,7 +29,7 @@ function(settings)
                   utils.githubLatestActionTag('flatpak', 'flatpak-github-actions'),
             with: {
               arch: '${{ matrix.system.arch }}',
-              bundle: bundle_name,
+              bundle: '${{ steps.flatpak_bundle.outputs.filename }}',
               'manifest-path': '%s.yml' % settings.publishing.flathub,
             },
           },
@@ -30,15 +38,15 @@ function(settings)
             uses: 'actions/upload-artifact@' + utils.githubLatestActionTag('actions', 'upload-artifact'),
             with: {
               'if-no-files-found': 'error',
-              name: '%s-flatpak-${{ matrix.system.arch }}' % settings.project_name,
-              path: bundle_name,
+              name: '%s-${{ steps.flatpak_bundle.outputs.version }}-${{ matrix.system.arch }}' % settings.project_name,
+              path: '${{ steps.flatpak_bundle.outputs.filename }}',
             },
           },
           {
             name: 'Attest',
             uses: 'actions/attest@' + utils.githubLatestActionTag('actions', 'attest'),
             with: {
-              'subject-path': bundle_name,
+              'subject-path': '${{ steps.flatpak_bundle.outputs.filename }}',
             },
           },
           {
@@ -48,7 +56,7 @@ function(settings)
             with: {
               draft: true,
               fail_on_unmatched_files: true,
-              files: bundle_name,
+              files: '${{ steps.flatpak_bundle.outputs.filename }}',
             },
           },
         ],

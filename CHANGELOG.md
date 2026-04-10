@@ -25,6 +25,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Generated Flatpak workflow names the bundle, GitHub Actions artifact, attestation subject, and
+  draft release attachment as `{project_name}-{version}-{arch}.flatpak` (version from
+  `pyproject.toml`), instead of a single `{project_name}.flatpak` for every arch and build.
 - Generated Flatpak workflow `push.paths` includes the Flatpak manifest (`{flathub}.yml`) so edits to
   the manifest trigger CI without touching Python sources.
 - Default Jekyll `pages_config` excludes `CHANGELOG.md` so GitHub Pages does not treat it as site
