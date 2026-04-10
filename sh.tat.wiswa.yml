@@ -1,0 +1,18 @@
+app-id: 'sh.tat.wiswa'
+command: 'wiswa'
+finish-args:
+  - '--share=ipc'
+  - '--share=network'
+  - '--socket=fallback-x11'
+  - '--socket=wayland'
+modules:
+  - build-commands:
+      - 'pip3 install --no-index --find-links=. --prefix=/app .'
+    buildsystem: 'simple'
+    name: 'wiswa'
+    sources:
+      - path: '.'
+        type: 'dir'
+runtime: 'org.freedesktop.Platform'
+runtime-version: '24.08'
+sdk: 'org.freedesktop.Sdk'

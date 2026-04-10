@@ -53,7 +53,7 @@ local utils = import 'utils.libsonnet';
       '.github/workflows/publish-winget.yml': utils.manifestYaml(winget_publish(settings)),
     } else {}
   ) + (
-    if settings.want_flatpak && settings.project_type == 'python' then {
+    if utils.wantFlatpakOutputs(settings) && settings.project_type == 'python' then {
       '.github/workflows/flatpak.yml': utils.manifestYaml(flatpak_python(settings)),
     } else {}
   ) + (

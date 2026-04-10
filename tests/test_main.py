@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from click.testing import CliRunner
 from wiswa.main import main
+from wiswa.utils import FlatpakConfigurationError
 import click
 import niquests
 import pytest
@@ -667,6 +668,40 @@ def test_main_runtime_error_could_not_get_latest_tag(mocker: MockerFixture, tmp_
     result = runner.invoke(main, [str(file_path)])
     assert result.exit_code != 0
     assert 'rate limiting' in result.output.lower() or 'GitHub API' in result.output
+
+
+def test_main_flatpak_configuration_error(mocker: MockerFixture, tmp_path: Path) -> None:
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.setup_logging')
+    mocker.patch(
+        'wiswa.main.evaluate_merged_settings',
+        new_callable=AsyncMock,
+        side_effect=FlatpakConfigurationError,
+    )
+
+    class DummyContextManager:
+        def __init__(self, value: object) -> None:
+            self.value: object = value
+
+        def __enter__(self) -> object:
+            return self.value
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: object,
+        ) -> None:
+            return None
+
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
+    mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
+    runner = CliRunner()
+    result = runner.invoke(main, [str(file_path)])
+    assert result.exit_code != 0
+    assert 'publishing.flathub' in result.output
+    assert 'org.example.MyApp' in result.output
 
 
 def test_main_generic_exception(mocker: MockerFixture, tmp_path: Path) -> None:

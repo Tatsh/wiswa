@@ -3,6 +3,8 @@
  * @namespace cz
  * @brief Default configuration for commitizen.
  */
+local utils = import 'utils.libsonnet';
+
 {
   /**
    * @brief Get commitizen configuration.
@@ -19,7 +21,7 @@
     ] else [],
     local man = if settings.want_man then ['man/%s.1' % settings.project_name] else [],
     local snap = if settings.want_snap then ['snapcraft.yaml'] else [],
-    local flatpak = if settings.want_flatpak then ['%s.yml' % settings.publishing.flathub] else [],
+    local flatpak = if utils.wantFlatpakOutputs(settings) then ['%s.yml' % settings.publishing.flathub] else [],
     commitizen: {
       name: 'cz_path',
       remove_path_prefixes: ['include', 'src'],

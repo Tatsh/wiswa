@@ -72,6 +72,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   retention). Included in this repository and in the generated `tests/conftest.py` template.
 - `docs/badges.rst` template no longer inserts an extra blank line between `.. image::` blocks when
   optional badges are omitted (for example private projects without Downloads or Stargazers).
+- `docs/badges.rst` template no longer stacks extra blank lines before Bluesky/Mastodon badges: the
+  second custom-badge loop uses `{% endfor -%}`, the spare newline after Prettier is removed, and the
+  blank line between Bluesky and Mastodon `{% if %}` blocks is dropped so spacing matches other
+  badges.
 
 ## [0.2.0] - 2026-04-06
 

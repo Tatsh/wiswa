@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 import subprocess as sp
 
 from wiswa.utils.jsonnet import (
+    FlatpakConfigurationError,
     evaluate_jsonnet_file,
     evaluate_jsonnet_project,
     evaluate_merged_settings,
@@ -98,6 +99,43 @@ async def test_evaluate_merged_settings(tmp_path: Path, monkeypatch: pytest.Monk
     assert '_readme_existed' in result_dict
     assert result_dict['_readme_existed'] is False
     assert result_dict['_has_established_pytest_modules'] is False
+
+
+async def test_evaluate_merged_settings_flatpak_without_app_id(tmp_path: Path,
+                                                               monkeypatch: pytest.MonkeyPatch,
+                                                               mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    lib_path = tmp_path / 'lib'
+    lib_path.mkdir()
+    (lib_path / 'defaults.libsonnet').write_text('{ project_type: "python" }')
+    mocker.patch(
+        'wiswa.utils.jsonnet._jsonnet.evaluate_snippet',
+        return_value='{"want_flatpak": true, "publishing": {"flathub": ""}}',
+    )
+    mocker.patch('wiswa.utils.jsonnet.platformdirs.user_config_path',
+                 return_value=tmp_path / 'config')
+    with pytest.raises(FlatpakConfigurationError, match=r'publishing\.flathub'):
+        await evaluate_merged_settings([str(lib_path)], lib_path, '{}')
+
+
+async def test_evaluate_merged_settings_flatpak_with_app_id(tmp_path: Path,
+                                                            monkeypatch: pytest.MonkeyPatch,
+                                                            mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    lib_path = tmp_path / 'lib'
+    lib_path.mkdir()
+    (lib_path / 'defaults.libsonnet').write_text('{ project_type: "python" }')
+    mocker.patch(
+        'wiswa.utils.jsonnet._jsonnet.evaluate_snippet',
+        return_value=('{"want_flatpak": true, "publishing": {"flathub": "org.example.App"}, '
+                      '"project_type": "python"}'),
+    )
+    mocker.patch('wiswa.utils.jsonnet.platformdirs.user_config_path',
+                 return_value=tmp_path / 'config')
+    _s, result_dict = await evaluate_merged_settings([str(lib_path)], lib_path, '{}')
+    publishing = result_dict.get('publishing')
+    assert isinstance(publishing, dict)
+    assert publishing.get('flathub') == 'org.example.App'
 
 
 async def test_evaluate_merged_settings_user_defaults(tmp_path: Path,

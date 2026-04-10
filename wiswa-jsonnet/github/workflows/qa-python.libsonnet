@@ -4,6 +4,8 @@ local utils = import 'utils.libsonnet';
 function(settings)
   local is_uv = settings.package_manager == 'uv';
   local run_cmd = if is_uv then 'uv run' else 'poetry run';
+  local latest_python =
+    settings.supported_python_versions[std.length(settings.supported_python_versions) - 1];
   local python_paths = [
     '**/*.py',
     '**/*.pyi',
@@ -28,7 +30,7 @@ function(settings)
       run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.qa.apt_packages),
     },
   ] else [];
-  local python_setup(version='3.13', matrix=false) = {
+  local python_setup(version='3.14', matrix=false) = {
     name: if matrix then 'Set up Python ${{ matrix.python-version }}' else 'Set up Python',
     uses: 'actions/setup-python@' + utils.githubLatestActionTag('actions', 'setup-python'),
     with: {
@@ -62,18 +64,13 @@ function(settings)
         mypy: {
           'runs-on': settings.qa_runs_on,
           steps: [common.checkout] + uv_setup_steps + apt_steps + [
-            python_setup(matrix=true),
+            python_setup(version=latest_python),
             install_deps(include_tests=settings.want_tests),
             {
               name: 'Lint with mypy',
               run: '%s mypy .' % run_cmd,
             },
           ],
-          strategy: {
-            matrix: {
-              'python-version': settings.supported_python_versions,
-            },
-          },
         },
         format: {
           'runs-on': settings.qa_runs_on,

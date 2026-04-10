@@ -51,7 +51,7 @@ dependencies = [
   "anyio>=4.13.0",
   "bascom>=0.1.2",
   "beautifulsoup4>=4.14.3",
-  "click>=8.3.1",
+  "click>=8.3.2",
   "fastmcp>=3.2.0",
   "jinja2>=3.1.6",
   "jsonnet>=0.22.0",
@@ -97,6 +97,7 @@ version_files = [
   "docs/index.rst",
   "man/wiswa.1",
   "package.json",
+  "sh.tat.wiswa.yml",
   "snapcraft.yaml",
   "wiswa/__init__.py",
 ]

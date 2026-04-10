@@ -36,8 +36,30 @@ if TYPE_CHECKING:
 
 JsonnetNativeCallback: TypeAlias = tuple[tuple[str, ...], Callable[..., Any]]
 
-__all__ = ('evaluate_jsonnet_file', 'evaluate_jsonnet_project', 'evaluate_merged_settings',
-           'resolve_defaults_only')
+__all__ = ('FlatpakConfigurationError', 'evaluate_jsonnet_file', 'evaluate_jsonnet_project',
+           'evaluate_merged_settings', 'resolve_defaults_only')
+
+_FLATPAK_APP_ID_HELP = (
+    'want_flatpak is true but publishing.flathub (Flatpak app ID) is not set. '
+    'Set publishing.flathub to a reverse-DNS id (for example org.example.MyApp).')
+
+
+class FlatpakConfigurationError(ValueError):
+    """Raised when ``want_flatpak`` is true but ``publishing.flathub`` is missing or blank."""
+    def __init__(self) -> None:
+        super().__init__(_FLATPAK_APP_ID_HELP)
+
+
+def _validate_flatpak_app_id(settings: dict[str, Any]) -> None:
+    if not settings.get('want_flatpak'):
+        return
+    publishing = settings.get('publishing')
+    if not isinstance(publishing, dict):
+        raise FlatpakConfigurationError
+    flathub = publishing.get('flathub', '')
+    if not isinstance(flathub, str) or not flathub.strip():
+        raise FlatpakConfigurationError
+
 
 log = logging.getLogger(__name__)
 
@@ -364,6 +386,7 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
 
     merged_json = await _eval_merge(user_defaults_text)
     merged_dict = json.loads(merged_json)
+    _validate_flatpak_app_id(merged_dict)
     readme_existed = await anyio.Path('README.md').exists()
     established_pytest = await tests_dir_has_pytest_modules_excluding_starter_main()
     return merged_json, (merged_dict

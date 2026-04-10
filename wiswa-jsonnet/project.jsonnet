@@ -52,7 +52,7 @@ function(settings)
   local snap_items = if settings.want_snap then {
     'snapcraft.yaml': utils.manifestYaml(settings.snapcraft),
   } else {};
-  local flatpak_items = if settings.want_flatpak then {
+  local flatpak_items = if utils.wantFlatpakOutputs(settings) then {
     ['%s.yml' % settings.publishing.flathub]: utils.manifestYaml(settings.flatpak),
   } else {};
   {

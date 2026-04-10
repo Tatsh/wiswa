@@ -23,6 +23,7 @@ import niquests
 
 from .session import cached_session
 from .utils import (
+    FlatpakConfigurationError,
     apply_python_pyproject_manifest_edits,
     copy_static_files,
     create_py_typed_files,
@@ -163,7 +164,7 @@ async def _postprocess_or_normalize_python_manifests(
         await apply_python_pyproject_manifest_edits(loaded)
 
 
-async def _main_async(
+async def _main_async(  # noqa: C901
     file: Path,
     jpath: tuple[str, ...] = (),
     *,
@@ -266,6 +267,12 @@ async def _main_async(
         _handle_http_error(e)
     except click.Abort:
         raise
+    except FlatpakConfigurationError as e:
+        await spin_stop()
+        click.echo(click.style('Failed.', fg='red'), err=True)
+        click.echo(str(e), err=True)
+        log.debug('FlatpakConfigurationError', exc_info=e)
+        _reraise_or_abort(e, debug=debug)
     except RuntimeError as e:
         await spin_stop()
         click.echo(click.style('Failed.', fg='red'), err=True)
@@ -274,8 +281,9 @@ async def _main_async(
         click.echo(first_line, err=True)
         if 'Could not get latest tag' in msg:
             click.echo(
-                'This is usually caused by GitHub API rate limiting. '
-                'Wait a few minutes and try again.',
+                'This is often GitHub API rate limiting or a repository without semver tags or '
+                'releases. Wait and retry, set GITHUB_TOKEN, or check the upstream repo publishes '
+                'tags.',
                 err=True,
             )
         log.debug('RuntimeError', exc_info=e)

@@ -13,7 +13,7 @@ function(settings)
     (if settings.want_tests then ['Tests'] else []) +
     (if !settings.private then ['Publish'] else []) +
     (if has_appimage then ['AppImage'] else []) +
-    (if settings.want_flatpak then ['Flatpak'] else []) +
+    (if utils.wantFlatpakOutputs(settings) then ['Flatpak'] else []) +
     (if has_pyinstaller then ['PyInstaller'] else []) +
     (if settings.want_snap then ['Snap'] else [])
   );

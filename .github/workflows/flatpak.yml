@@ -1,48 +1,50 @@
 jobs:
   build:
+    container:
+      image: 'ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08'
+      options: '--privileged'
     runs-on: '${{ matrix.system.image }}'
     steps:
       - uses: 'actions/checkout@v6.0.2'
-      - id: 'build'
-        name: 'Build Snap package'
-        uses: 'snapcore/action-build@v1.3.0'
+      - name: 'Build Flatpak'
+        uses: 'flatpak/flatpak-github-actions/flatpak-builder@v6.7'
         with:
-          snapcraft-args: 'pack'
-          snapcraft-channel: 'latest/stable'
+          arch: '${{ matrix.system.arch }}'
+          bundle: 'wiswa.flatpak'
+          manifest-path: 'sh.tat.wiswa.yml'
       - name: 'Upload Artifacts'
         uses: 'actions/upload-artifact@v7.0.1'
         with:
           if-no-files-found: 'error'
-          name: 'wiswa-snap-${{ matrix.system.arch }}'
-          path: '*.snap'
+          name: 'wiswa-flatpak-${{ matrix.system.arch }}'
+          path: 'wiswa.flatpak'
       - name: 'Attest'
         uses: 'actions/attest@v4.1.0'
         with:
-          subject-path: '*.snap'
+          subject-path: 'wiswa.flatpak'
       - if: "github.ref_type == 'tag'"
         name: 'Upload package'
         uses: 'softprops/action-gh-release@v2.6.1'
         with:
           draft: true
           fail_on_unmatched_files: true
-          files: '*.snap'
+          files: 'wiswa.flatpak'
     strategy:
       matrix:
         system:
-          - arch: 'amd64'
-            image: 'ubuntu-24.04'
-          - arch: 'arm64'
+          - arch: 'x86_64'
+            image: 'ubuntu-latest'
+          - arch: 'aarch64'
             image: 'ubuntu-24.04-arm'
-name: 'Snap'
+name: 'Flatpak'
 'on':
   push:
     branches:
       - 'master'
     paths:
       - 'wiswa/**'
-      - '.github/workflows/snap.yml'
+      - '.github/workflows/flatpak.yml'
       - 'pyproject.toml'
-      - 'snapcraft.yaml'
       - 'uv.lock'
       - 'poetry.lock'
     tags:

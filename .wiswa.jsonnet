@@ -5,6 +5,8 @@ local utils = import 'utils.libsonnet';
   uses_user_defaults: true,
   want_djlint: true,
   want_main: true,
+  want_flatpak: true,
+  publishing+: { flathub: 'sh.tat.wiswa' },
   project_name: 'wiswa',
   version: '0.2.0',
   description: 'A highly opinionated way to generate and maintain projects with Jsonnet.',

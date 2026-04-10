@@ -328,4 +328,10 @@
    * @rv string
    */
   githubCliUsername():: std.native('githubCliUsername')(),
+  /**
+   * @brief True when Flatpak manifest and workflows should be emitted (``want_flatpak`` and a
+   *     non-empty Flathub app ID in ``publishing.flathub``).
+   */
+  wantFlatpakOutputs(settings)::
+    settings.want_flatpak && std.length(std.stripChars(settings.publishing.flathub, ' \t\n\r')) > 0,
 }

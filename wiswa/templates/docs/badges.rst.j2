@@ -166,7 +166,6 @@
       'https://img.shields.io/badge/Prettier-black?logo=prettier',
       'https://prettier.io/',
       'Prettier') }}
-
 {% for badge in settings.custom_project_badges | sort(attribute='priority') %}
 {% if (badge.priority | default(0)) >= 0 %}
 {% set parsed = badge.anchor | parse_md_badge %}
@@ -174,8 +173,7 @@
 {{ rst_badge(parsed.image, badge.href, parsed.alt) }}
 {% endif %}
 {% endif %}
-{% endfor %}
-
+{% endfor -%}
 {# cspell:ignore Ddid Aplc Dsocial Dbluesky -#}
 {% if settings.social and settings.social.bsky %}
 {{ rst_badge(
@@ -187,7 +185,6 @@
       'https://bsky.app/profile/' ~ settings.social.bsky ~ '.bsky.social',
       'Follow @' ~ settings.social.bsky) }}
 {% endif %}
-
 {% if settings.social and settings.social.mastodon and settings.social.mastodon.id and settings.social.mastodon.domain %}
 {{ rst_badge(
       'https://img.shields.io/mastodon/follow/' ~ settings.social.mastodon.id ~ '?domain='

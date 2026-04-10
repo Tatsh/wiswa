@@ -17,8 +17,8 @@ function(settings)
         ] + [
           {
             name: 'Build Flatpak',
-            uses: 'flathub-infra/flatpak-github-actions/flatpak-builder@' +
-                  utils.githubLatestActionTag('flathub-infra', 'flatpak-github-actions'),
+            uses: 'flatpak/flatpak-github-actions/flatpak-builder@' +
+                  utils.githubLatestActionTag('flatpak', 'flatpak-github-actions'),
             with: {
               arch: '${{ matrix.system.arch }}',
               bundle: bundle_name,

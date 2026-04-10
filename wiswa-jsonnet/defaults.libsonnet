@@ -1132,7 +1132,7 @@ local utils = import 'utils.libsonnet';
                                       (if settings.want_snap then [
                                          'snapcraft.yaml',
                                        ] else []) +
-                                      (if settings.want_flatpak then [
+                                      (if utils.wantFlatpakOutputs(settings) then [
                                          '%s.yml' % settings.publishing.flathub,
                                        ] else [])),
              },
