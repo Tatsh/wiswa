@@ -18,6 +18,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Jsonnet `sphinx_fail_on_warning` (default `true`): when set, generated `yarn gen-docs` and
   `yarn gen-manpage` scripts include `sphinx-build --fail-on-warning`, and ReadTheDocs
   `sphinx.fail_on_warning` matches; exposed on `Settings`.
+- README template marks the generated badge block with `<!-- WISWA-GENERATED-README:START -->` and
+  `<!-- WISWA-GENERATED-README:STOP -->` so post-processing replaces only that region.
 
 ### Changed
 
@@ -42,6 +44,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   empty object instead of failing with `FileNotFoundError`.
 - README and Sphinx docs recommend a global Wiswa install (`uv tool` or `pipx`) or adding Wiswa as
   a project development dependency.
+- Generated README and Sphinx `docs/badges.rst` badge order and shields match post-processing:
+  Dependabot after CI badges; `want_codeql`, `want_tests`, and privacy flags gate CodeQL, Tests, and
+  Coveralls; documentation badge honours `want_docs`; Python badges include uv/Poetry, optional
+  PyPI badges for common dependencies, pytest when tests are enabled and not stubs-only, Ruff,
+  Downloads, Stargazers, `pre-commit`, and Prettier; custom project badges list negative priority
+  entries first.
+- Post-process README Python badges: removed pydocstyle; pytest, `pre-commit`, and Prettier shields
+  match the Sphinx templates (including label text and targets).
 
 ### Removed
 
@@ -49,6 +59,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `primary_module_qualified` differs from `primary_module` and contains a dot (documented on
   `primary_module` and `primary_module_qualified`).
 - Unused runtime dependency `aiofiles`.
+- Pydocstyle badge from generated README and Sphinx HTML badge lists.
 
 ### Fixed
 
@@ -59,6 +70,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Pytest autouse fixture `recover_stale_process_cwd` resets the process working directory when it
   no longer exists (fixing `FileNotFoundError` from `monkeypatch.chdir` under aggressive `tmp_path`
   retention). Included in this repository and in the generated `tests/conftest.py` template.
+- `docs/badges.rst` template no longer inserts an extra blank line between `.. image::` blocks when
+  optional badges are omitted (for example private projects without Downloads or Stargazers).
 
 ## [0.2.0] - 2026-04-06
 
