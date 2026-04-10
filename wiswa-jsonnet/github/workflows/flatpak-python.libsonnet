@@ -20,7 +20,7 @@ function(settings)
               version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
               echo "version=${version}" >> "$GITHUB_OUTPUT"
               echo "filename=%s-${version}-${{ matrix.system.arch }}.flatpak" >> "$GITHUB_OUTPUT"
-            ||| % settings.project_name,
+            ||| % settings.publishing.flathub,
           },
         ] + [
           {
@@ -38,7 +38,7 @@ function(settings)
             uses: 'actions/upload-artifact@' + utils.githubLatestActionTag('actions', 'upload-artifact'),
             with: {
               'if-no-files-found': 'error',
-              name: '%s-${{ steps.flatpak_bundle.outputs.version }}-${{ matrix.system.arch }}' % settings.project_name,
+              name: '%s-${{ steps.flatpak_bundle.outputs.version }}-${{ matrix.system.arch }}' % settings.publishing.flathub,
               path: '${{ steps.flatpak_bundle.outputs.filename }}',
             },
           },
