@@ -29,6 +29,9 @@ __all__ = ('apply_python_pyproject_manifest_edits', 'maybe_revert_uv_lock_if_onl
 
 log = logging.getLogger(__name__)
 
+_README_GENERATED_START = '<!-- WISWA-GENERATED-README:START -->'
+_README_GENERATED_STOP = '<!-- WISWA-GENERATED-README:STOP -->'
+
 _GIT_CONFIG_NO_HOOKS = ('-c', f'core.hooksPath={os.devnull}')
 
 _FORMAT_DEFAULT_FILENAMES = {
@@ -556,16 +559,17 @@ def _github_badges(settings: Settings) -> Iterator[str]:
     if settings['want_tests']:
         yield (f'[![Tests]({repo_uri}/actions/workflows/tests.yml/badge.svg)]'
                f'({repo_uri}/actions/workflows/tests.yml)')
-        yield (f'[![Coverage Status](https://coveralls.io/repos/github/{gh}/{name}/badge.svg?'
-               f'branch=master)](https://coveralls.io/github/{gh}/{name}?branch={branch})')
+        if not settings['private']:
+            yield (f'[![Coverage Status](https://coveralls.io/repos/github/{gh}/{name}/badge.svg?'
+                   f'branch=master)](https://coveralls.io/github/{gh}/{name}?branch={branch})')
     yield _simple_icons_badge('Dependabot', 'dependabot', 'Dependabot-enabled', 'blue',
                               'https://github.com/dependabot')
 
 
 def _docs_badges(settings: Settings) -> Iterator[str]:
-    if not settings['want_docs']:
+    if not settings['want_docs'] or settings['private']:
         return
-    if settings['project_type'] == 'python' and not settings['private']:
+    if settings['project_type'] == 'python':
         yield (
             f"[![Documentation Status](https://readthedocs.org/projects/{settings['project_name']}"
             f"/badge/?version=latest)]({settings['documentation_uri']}/?badge=latest)")
@@ -590,16 +594,16 @@ def _python_tool_badges(settings: Settings) -> Iterator[str]:
                                   'https://python-poetry.org')
     dep_names = set(settings['python_deps']['main'])
     name_mapping = {'jinja': 'Jinja', 'pydantic': 'Pydantic', 'sqlalchemy': 'SQLAlchemy'}
-    yield from (_simple_icons_badge(name_mapping.get(package, package), package,
-                                    name_mapping.get(package, package), 'black',
-                                    f'https://pypi.org/project/{package}/')
-                for package in ('numpy', 'jinja', 'pandas', 'pydantic', 'scrapy', 'sqlalchemy')
-                if package in dep_names)
+    if not settings['private']:
+        yield from (_simple_icons_badge(name_mapping.get(package, package), package,
+                                        name_mapping.get(package, package), 'black',
+                                        f'https://pypi.org/project/{package}/')
+                    for package in ('numpy', 'jinja', 'pandas', 'pydantic', 'scrapy', 'sqlalchemy')
+                    if package in dep_names)
     if not settings['stubs_only'] and settings['want_tests']:
-        yield _simple_icons_badge('pydocstyle', 'pydocstyle', 'pydocstyle-enabled', 'AD4CD3',
-                                  'https://www.pydocstyle.org/')
-        yield _simple_icons_badge('pytest', 'pytest', 'pytest-enabled', 'CFB97D',
-                                  'https://docs.pytest.org')
+        yield (
+            '[![pytest](https://img.shields.io/badge/pytest-zz?logo=Pytest&labelColor=black&color=black)]'
+            '(https://docs.pytest.org/en/stable/)')
     yield ('[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com'
            '/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)')
     if not settings['private']:
@@ -610,15 +614,20 @@ def _python_tool_badges(settings: Settings) -> Iterator[str]:
 def _typescript_badges(settings: Settings) -> list[str]:
     if settings['project_type'] != 'typescript':
         return []
+    npm_badges: tuple[str, ...] = ()
+    if not settings['private']:
+        npm_badges = (
+            *(_simple_icons_badge(dep, dep.replace('-', ''), dep, 'black',
+                                  f'https://www.npmjs.com/package/{dep}')
+              for dep in ('bootstrap', 'react', 'sass', 'semantic-ui-react', 'sass', 'tailwindcss')
+              if dep in settings['package_json'].get('dependencies', {})),
+            *(_simple_icons_badge(dev_dep, dev_dep.replace('-', ''), dev_dep, 'black',
+                                  f'https://www.npmjs.com/package/{dev_dep}')
+              for dev_dep in ('eslint', 'jest')
+              if dev_dep in settings['package_json']['devDependencies']),
+        )
     return sorted(
-        (*(_simple_icons_badge(dep, dep.replace('-', ''), dep, 'black',
-                               f'https://www.npmjs.com/package/{dep}')
-           for dep in ('bootstrap', 'react', 'sass', 'semantic-ui-react', 'sass', 'tailwindcss')
-           if dep in settings['package_json'].get('dependencies', {})),
-         *(_simple_icons_badge(dev_dep, dev_dep.replace('-', ''), dev_dep, 'black',
-                               f'https://www.npmjs.com/package/{dev_dep}')
-           for dev_dep in ('eslint', 'jest')
-           if dev_dep in settings['package_json']['devDependencies']),
+        (*npm_badges,
          _simple_icons_badge('TypeScript', 'typescript', 'TypeScript', 'black',
                              'https://www.typescriptlang.org/'),
          _simple_icons_badge('Yarn', 'yarn', 'Yarn', '4c335c', 'https://yarnpkg.com/'),
@@ -629,17 +638,16 @@ def _typescript_badges(settings: Settings) -> list[str]:
 def _misc_badges(settings: Settings) -> Iterator[str]:
     if Path('Dockerfile').exists():
         yield _simple_icons_badge('Docker', 'docker', 'Docker', 'black', 'https://www.docker.com/')
-    if settings['using_github']:
+    if settings['using_github'] and not settings['private']:
         gh = settings['github']['username']
         name = settings['project_name']
         yield (f'[![Stargazers](https://img.shields.io/github/stars/{gh}/{name}'
                f'?logo=github&style=flat)](https://github.com/{gh}/{name}/stargazers)')
-    yield _simple_icons_badge('pre-commit', 'pre-commit', 'pre--commit-enabled', 'brightgreen',
+    yield _simple_icons_badge('pre-commit', 'pre-commit', 'pre--commit', 'brightgreen',
                               'https://pre-commit.com/')
     if (settings['project_type'] in {'c', 'c++'} and Path('CMakeLists.txt').exists()):
         yield _simple_icons_badge('CMake', 'cmake', 'CMake', '6E6E6E', 'https://cmake.org/')
-    yield _simple_icons_badge('Prettier', 'prettier', 'Prettier-enabled', 'black',
-                              'https://prettier.io/')
+    yield _simple_icons_badge('Prettier', 'prettier', 'Prettier', 'black', 'https://prettier.io/')
 
 
 def _social_badges(settings: Settings) -> Iterator[str]:
@@ -708,8 +716,29 @@ def _custom_project_badges(settings: Settings, *, negative: bool = False) -> Ite
             yield f"{b['anchor']}({b['href']})"
 
 
-async def _replace_badge_section(readme: anyio.Path, lines: Sequence[str], expected: Sequence[str],
-                                 social_expected: Sequence[str]) -> None:
+def _readme_badge_delimiter_indices(lines: Sequence[str]) -> tuple[int, int] | None:
+    """Return ``(start, stop)`` line indices for the Wiswa README badge region, or ``None``."""
+    start_i: int | None = None
+    for i, raw in enumerate(lines):
+        if raw.strip() == _README_GENERATED_START:
+            start_i = i
+            break
+    if start_i is None:
+        return None
+    for j in range(start_i + 1, len(lines)):
+        if lines[j].strip() == _README_GENERATED_STOP:
+            return (start_i, j)
+    log.debug('README.md has %s without a matching %s; using legacy badge detection.',
+              _README_GENERATED_START, _README_GENERATED_STOP)
+    return None
+
+
+async def _replace_badge_section_legacy(
+    readme: anyio.Path,
+    lines: Sequence[str],
+    expected: Sequence[str],
+    social_expected: Sequence[str],
+) -> None:
     start_idx = next((i for i, line in enumerate(lines) if line.startswith('#')), 0) + 1
     while start_idx < len(lines) and not lines[start_idx].strip():
         start_idx += 1
@@ -717,19 +746,29 @@ async def _replace_badge_section(readme: anyio.Path, lines: Sequence[str], expec
     while end_idx < len(lines) and (lines[end_idx].startswith('[![') or
                                     lines[end_idx].startswith('![') or not lines[end_idx].strip()):
         end_idx += 1
-    await readme.write_text('\n'.join(
-        (*lines[:start_idx], '', *expected, '', *social_expected, '', *lines[end_idx:])),
-                            encoding='utf-8')
+    new_text = '\n'.join((*lines[:start_idx], '', _README_GENERATED_START, '', *expected, '',
+                          *social_expected, '', _README_GENERATED_STOP, '', *lines[end_idx:]))
+    await readme.write_text(new_text, encoding='utf-8')
+
+
+async def _replace_badge_section(readme: anyio.Path, lines: Sequence[str], expected: Sequence[str],
+                                 social_expected: Sequence[str]) -> None:
+    if (region := _readme_badge_delimiter_indices(lines)) is not None:
+        start_i, stop_i = region
+        prefix = lines[:start_i]
+        suffix = lines[stop_i + 1:]
+        new_text = '\n'.join((*prefix, _README_GENERATED_START, '', *expected, '', *social_expected,
+                              '', _README_GENERATED_STOP, *suffix))
+        await readme.write_text(new_text, encoding='utf-8')
+        return
+    await _replace_badge_section_legacy(readme, lines, expected, social_expected)
 
 
 async def _check_readme_badges(settings: Settings) -> None:
     log.debug('Checking README.md badges.')
-    if not settings['_readme_existed']:
-        log.debug('README.md did not exist before templating; skipping badge check.')
-        return
     readme = anyio.Path('README.md')
     if not await readme.exists():
-        log.debug('README.md was removed; skipping badge check.')
+        log.debug('README.md is missing; skipping badge check.')
         return
     await _replace_badge_section(
         readme, (await readme.read_text(encoding='utf-8')).split('\n'),

@@ -376,6 +376,51 @@ async def test_post_process_steps_checks_readme_badges(tmp_path: Path,
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert '# My Project' in content
+    assert 'WISWA-GENERATED-README:START' in content
+    assert 'WISWA-GENERATED-README:STOP' in content
+
+
+async def test_post_process_steps_readme_badges_replace_delimited_region_only(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    readme = tmp_path / 'README.md'
+    readme.write_text(
+        '# My Project\n\n'
+        '<!-- WISWA-GENERATED-README:START -->\n'
+        '[![stale](http://example.com/stale)]\n'
+        '<!-- WISWA-GENERATED-README:STOP -->\n\n'
+        'Keep this paragraph.\n',
+        encoding='utf-8',
+    )
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings(_readme_existed=True))
+    await post_process_steps(settings)
+    content = readme.read_text(encoding='utf-8')
+    assert 'stale' not in content
+    assert 'Keep this paragraph.' in content
+    assert content.count('<!-- WISWA-GENERATED-README:START -->') == 1
+    assert content.count('<!-- WISWA-GENERATED-README:STOP -->') == 1
+    start = content.index('<!-- WISWA-GENERATED-README:START -->')
+    stop = content.index('<!-- WISWA-GENERATED-README:STOP -->')
+    assert start < stop
+
+
+async def test_post_process_steps_checks_readme_badges_even_if_flag_false(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    readme = tmp_path / 'README.md'
+    readme.write_text('# My Project\n\n[![old badge](http://example.com)]\n\nContent here.\n',
+                      encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings(_readme_existed=False))
+    await post_process_steps(settings)
+    content = readme.read_text(encoding='utf-8')
+    assert 'old badge' not in content
+    assert '# My Project' in content
+    assert 'WISWA-GENERATED-README:START' in content
+    assert 'WISWA-GENERATED-README:STOP' in content
 
 
 async def test_post_process_steps_readme_not_existed(tmp_path: Path,
@@ -668,6 +713,29 @@ async def test_post_process_steps_badges_docs_github_pages(tmp_path: Path,
     assert 'GitHub Pages' in content
 
 
+async def test_post_process_steps_badges_private_skips_github_pages(tmp_path: Path,
+                                                                    monkeypatch: pytest.MonkeyPatch,
+                                                                    mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(
+            _readme_existed=True,
+            want_docs=True,
+            private=True,
+            project_type='c++',
+            using_github=True,
+        ),
+    )
+    await post_process_steps(settings)
+    content = readme.read_text(encoding='utf-8')
+    assert 'GitHub Pages' not in content
+
+
 async def test_post_process_steps_badges_python_poetry_django(tmp_path: Path,
                                                               monkeypatch: pytest.MonkeyPatch,
                                                               mocker: MockerFixture) -> None:
@@ -705,7 +773,35 @@ async def test_post_process_steps_badges_private_project(tmp_path: Path,
     settings = cast('Any', _make_settings(_readme_existed=True, private=True))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
-    assert 'pypi' not in content.lower() or 'Downloads' not in content
+    lower = content.lower()
+    assert 'pypi.org/project' not in lower
+    assert 'pepy.tech' not in lower
+    assert 'readthedocs.org' not in lower
+    assert 'coveralls.io' not in lower
+    assert 'img.shields.io/pypi/' not in lower
+    assert '/stargazers)' not in lower
+
+
+async def test_post_process_steps_badges_private_python_skips_numpy_pypi_badge(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(
+            _readme_existed=True,
+            private=True,
+            python_deps={'main': {
+                'numpy': '>=1',
+            }},
+        ),
+    )
+    await post_process_steps(settings)
+    content = readme.read_text(encoding='utf-8')
+    assert 'pypi.org/project/numpy' not in content.lower()
 
 
 async def test_post_process_steps_badges_typescript_project(tmp_path: Path,
@@ -736,6 +832,38 @@ async def test_post_process_steps_badges_typescript_project(tmp_path: Path,
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'TypeScript' in content
+
+
+async def test_post_process_steps_badges_typescript_private_skips_npm_badges(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(
+            project_type='typescript',
+            _readme_existed=True,
+            private=True,
+            package_json={
+                'dependencies': {
+                    'react': '^18',
+                    'next': '^14',
+                },
+                'devDependencies': {
+                    'eslint': '^8',
+                    'jest': '^29',
+                },
+            },
+        ),
+    )
+    await post_process_steps(settings)
+    content = readme.read_text(encoding='utf-8')
+    assert 'npmjs.com' not in content
+    assert 'TypeScript' in content
+    assert 'Next.js' in content
 
 
 async def test_post_process_steps_badges_dockerfile_exists(tmp_path: Path,
@@ -851,9 +979,9 @@ async def test_post_process_steps_python_uv_with_deps(tmp_path: Path,
     assert 'Jinja' in content or 'jinja' in content
 
 
-async def test_post_process_steps_stubs_only_no_pydocstyle(tmp_path: Path,
-                                                           monkeypatch: pytest.MonkeyPatch,
-                                                           mocker: MockerFixture) -> None:
+async def test_post_process_steps_stubs_only_skips_pytest_badge(tmp_path: Path,
+                                                                monkeypatch: pytest.MonkeyPatch,
+                                                                mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
@@ -862,7 +990,7 @@ async def test_post_process_steps_stubs_only_no_pydocstyle(tmp_path: Path,
     settings = cast('Any', _make_settings(_readme_existed=True, stubs_only=True, want_tests=True))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
-    assert 'pydocstyle' not in content
+    assert 'img.shields.io/badge/pytest-zz' not in content
 
 
 async def test_post_process_steps_on_command_callback(tmp_path: Path,

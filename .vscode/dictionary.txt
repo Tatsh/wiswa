@@ -190,6 +190,7 @@ paramdoc
 pascalreitermann
 pathlib
 pavelzw
+pepy
 pipx
 platformdirs
 plistlib
@@ -219,6 +220,7 @@ samuelcolvin
 sass
 savestepsize
 schemafile
+scrapy
 sdist
 sectigo
 setattr
@@ -230,6 +232,7 @@ snapcraft
 softprops
 soupsieve
 sphinxcontrib
+sqlalchemy
 sqlfluff
 srcs
 startswith

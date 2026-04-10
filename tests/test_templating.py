@@ -567,6 +567,71 @@ async def test_write_templated_files_python_want_docs(tmp_path: Path,
     assert (out / 'docs/badges.rst').exists()
 
 
+async def test_write_templated_files_python_private_badges_rst_omits_public_registries(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+        out = await _run_write(
+            monkeypatch,
+            tmp_path,
+            module_path,
+            _make_settings(
+                want_docs=True,
+                want_tests=True,
+                want_ai=False,
+                private=True,
+                using_github=True,
+            ),
+        )
+    text = (out / 'docs/badges.rst').read_text(encoding='utf-8')
+    lower = text.lower()
+    assert 'pypi.org/project' not in lower
+    assert 'pepy.tech' not in lower
+    assert 'readthedocs.org' not in lower
+    assert 'coveralls.io' not in lower
+    after_only = text.split('.. only:: html', maxsplit=1)[1]
+    assert after_only.startswith('\n\n   ')
+    assert not after_only.startswith('\n\n\n')
+    assert 'docs.astral.sh/uv' in lower
+
+
+async def test_write_templated_files_docs_badges_rst_includes_poetry_when_not_uv(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+        out = await _run_write(
+            monkeypatch,
+            tmp_path,
+            module_path,
+            _make_settings(want_docs=True,
+                           want_tests=False,
+                           want_ai=False,
+                           package_manager='poetry'),
+        )
+    text = (out / 'docs/badges.rst').read_text(encoding='utf-8').lower()
+    assert 'python-poetry.org' in text
+    assert 'docs.astral.sh/uv' not in text
+
+
+async def test_write_templated_files_docs_badges_rst_regenerated_when_stale(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+        out = await _run_write(
+            monkeypatch,
+            tmp_path,
+            module_path,
+            _make_settings(want_docs=True, want_tests=False, want_ai=False),
+        )
+    badges = out / 'docs/badges.rst'
+    badges.write_text('.. STALE-BADGES-MARKER\n', encoding='utf-8')
+    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+        monkeypatch.chdir(out)
+        await write_templated_files(
+            module_path, cast('Any', _make_settings(want_docs=True, want_tests=False,
+                                                    want_ai=False)))
+    text = badges.read_text(encoding='utf-8')
+    assert 'STALE-BADGES-MARKER' not in text
+    assert '.. only:: html' in text
+
+
 async def test_write_templated_files_python_no_docs(tmp_path: Path,
                                                     monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:

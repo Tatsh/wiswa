@@ -373,7 +373,11 @@ class Settings(TypedDict):
     yarn_version: str
     """The version of Yarn to use."""
     _readme_existed: bool
-    """Whether ``README.md`` existed before templating (used for badge updates)."""
+    """
+    Whether ``README.md`` existed before the current Wiswa run (informational).
+
+    README badge refresh runs whenever ``README.md`` is present after templating.
+    """
     _has_established_pytest_modules: bool
     """
     Whether ``tests/`` already contained ``test_*.py`` files other than ``test_main.py`` before

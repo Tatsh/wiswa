@@ -1,92 +1,197 @@
+{% macro rst_badge(url, target, alt) %}
+   .. image:: {{ url }}
+      :target: {{ target }}
+      :alt: {{ alt }}
+{% endmacro %}
 .. only:: html
 
-   .. image:: https://img.shields.io/pypi/pyversions/{{ settings.project_name }}.svg?color=blue&logo=python&logoColor=white
-      :target: https://www.python.org/
-      :alt: Python versions
-
-   .. image:: https://img.shields.io/pypi/v/{{ settings.project_name }}
-      :target: https://pypi.org/project/{{ settings.project_name }}/
-      :alt: PyPI - Version
-
-{% if settings.using_github %}
-   .. image:: https://img.shields.io/github/v/tag/{{ settings.github.username }}/{{ settings.project_name }}
-      :target: https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/tags
-      :alt: GitHub tag (with filter)
-
-   .. image:: https://img.shields.io/github/license/{{ settings.github.username }}/{{ settings.project_name }}
-      :target: https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/blob/master/LICENSE.txt
-      :alt: License
-
-   .. image:: https://img.shields.io/github/commits-since/{{ settings.github.username }}/{{ settings.project_name }}/v{{ settings.version }}/master
-      :target: https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/compare/v{{ settings.version }}...master
-      :alt: GitHub commits since latest release (by SemVer including pre-releases)
-
-   .. image:: https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/actions/workflows/codeql.yml/badge.svg
-      :target: https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/actions/workflows/codeql.yml
-      :alt: CodeQL
-
-   .. image:: https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/actions/workflows/qa.yml/badge.svg
-      :target: https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/actions/workflows/qa.yml
-      :alt: QA
-
-   .. image:: https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/actions/workflows/tests.yml/badge.svg
-      :target: https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/actions/workflows/tests.yml
-      :alt: Tests
-
-   .. image:: https://coveralls.io/repos/github/{{ settings.github.username }}/{{ settings.project_name }}/badge.svg?branch=master
-      :target: https://coveralls.io/github/{{ settings.github.username }}/{{ settings.project_name }}?branch=master
-      :alt: Coverage Status
-{% endif %}
-
-   .. image:: https://readthedocs.org/projects/{{ settings.project_name }}/badge/?version=latest
-      :target: https://{{ settings.project_name }}.readthedocs.org/?badge=latest
-      :alt: Documentation Status
-
-   .. image:: https://www.mypy-lang.org/static/mypy_badge.svg
-      :target: https://mypy-lang.org/
-      :alt: mypy
-
-   .. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
-      :target: https://github.com/pre-commit/pre-commit
-      :alt: pre-commit
-
-   .. image:: https://img.shields.io/badge/pydocstyle-enabled-AD4CD3
-      :target: https://www.pydocstyle.org/en/stable/
-      :alt: pydocstyle
-
-{% if settings.want_tests %}
-   .. image:: https://img.shields.io/badge/pytest-zz?logo=Pytest&labelColor=black&color=black
-      :target: https://docs.pytest.org/en/stable/
-      :alt: pytest
-{% endif %}
-
-   .. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
-      :target: https://github.com/astral-sh/ruff
-      :alt: Ruff
-
-   .. image:: https://static.pepy.tech/badge/{{ settings.project_name }}/month
-      :target: https://pepy.tech/project/{{ settings.project_name }}
-      :alt: Downloads
-
-   .. image:: https://img.shields.io/github/stars/{{ settings.github.username }}/{{ settings.project_name }}?logo=github&style=flat
-      :target: https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/stargazers
-      :alt: Stargazers
-
 {% for badge in settings.custom_project_badges | sort(attribute='priority') %}
+{% if (badge.priority | default(0)) < 0 %}
 {% set parsed = badge.anchor | parse_md_badge %}
 {% if parsed.image %}
-   .. image:: {{ parsed.image }}
-      :target: {{ badge.href }}
-      :alt: {{ parsed.alt }}
-
+{{ rst_badge(parsed.image, badge.href, parsed.alt) }}
+{% endif %}
 {% endif %}
 {% endfor %}
-   .. image:: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fpublic.api.bsky.app%2Fxrpc%2Fapp.bsky.actor.getProfile%2F%3Factor%3Ddid%3Aplc%3Auq42idtvuccnmtl57nsucz72%26query%3D%24.followersCount%26style%3Dsocial%26logo%3Dbluesky%26label%3DFollow%2520%40{{ settings.github.username }}&query=%24.followersCount&style=social&logo=bluesky&label=Follow%20%40{{ settings.github.username }}
-      :target: https://bsky.app/profile/{{ settings.github.username }}.bsky.social
-      :alt: Follow @{{ settings.github.username }}
+{% if not settings.private %}
+{{ rst_badge(
+      'https://img.shields.io/pypi/pyversions/' ~ settings.project_name
+      ~ '.svg?color=blue&logo=python&logoColor=white',
+      'https://www.python.org/',
+      'Python versions') }}
+{{ rst_badge(
+      'https://img.shields.io/pypi/v/' ~ settings.project_name,
+      'https://pypi.org/project/' ~ settings.project_name ~ '/',
+      'PyPI - Version') }}
+{% endif %}
+{% if settings.using_github %}
+{{ rst_badge(
+      'https://img.shields.io/github/v/tag/' ~ settings.github.username ~ '/' ~ settings.project_name,
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name ~ '/tags',
+      'GitHub tag (with filter)') }}
+{{ rst_badge(
+      'https://img.shields.io/github/license/' ~ settings.github.username ~ '/' ~ settings.project_name,
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      ~ '/blob/master/LICENSE.txt',
+      'License') }}
+{{ rst_badge(
+      'https://img.shields.io/github/commits-since/' ~ settings.github.username ~ '/'
+      ~ settings.project_name ~ '/v' ~ settings.version ~ '/master',
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      ~ '/compare/v' ~ settings.version ~ '...master',
+      'GitHub commits since latest release (by SemVer including pre-releases)') }}
+{% if settings.want_codeql %}
+{{ rst_badge(
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      ~ '/actions/workflows/codeql.yml/badge.svg',
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      ~ '/actions/workflows/codeql.yml',
+      'CodeQL') }}
+{% endif %}
+{{ rst_badge(
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      ~ '/actions/workflows/qa.yml/badge.svg',
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      ~ '/actions/workflows/qa.yml',
+      'QA') }}
+{% if settings.want_tests %}
+{{ rst_badge(
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      ~ '/actions/workflows/tests.yml/badge.svg',
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      ~ '/actions/workflows/tests.yml',
+      'Tests') }}
+{% if not settings.private %}
+{{ rst_badge(
+      'https://coveralls.io/repos/github/' ~ settings.github.username ~ '/'
+      ~ settings.project_name ~ '/badge.svg?branch=master',
+      'https://coveralls.io/github/' ~ settings.github.username ~ '/'
+      ~ settings.project_name ~ '?branch=master',
+      'Coverage Status') }}
+{% endif %}
+{% endif %}
+{{ rst_badge(
+      'https://img.shields.io/badge/Dependabot-enabled-blue?logo=dependabot',
+      'https://github.com/dependabot',
+      'Dependabot') }}
+{% endif %}
+{% if settings.want_docs and not settings.private %}
+{{ rst_badge(
+      'https://readthedocs.org/projects/' ~ settings.project_name ~ '/badge/?version=latest',
+      'https://' ~ settings.project_name ~ '.readthedocs.org/?badge=latest',
+      'Documentation Status') }}
+{% endif %}
+{{ rst_badge(
+      'https://www.mypy-lang.org/static/mypy_badge.svg',
+      'https://mypy-lang.org/',
+      'mypy') }}
+{% if settings.package_manager == 'uv' %}
+{{ rst_badge(
+      'https://img.shields.io/badge/uv-261230?logo=astral',
+      'https://docs.astral.sh/uv/',
+      'uv') }}
+{% else %}
+{{ rst_badge(
+      'https://img.shields.io/badge/Poetry-242d3e?logo=poetry',
+      'https://python-poetry.org/',
+      'Poetry') }}
+{% endif %}
+{% set main_deps = settings.python_deps.main | default({}) %}
+{% if not settings.private %}
+{% if 'numpy' in main_deps %}
+{{ rst_badge(
+      'https://img.shields.io/badge/numpy-black?logo=numpy',
+      'https://pypi.org/project/numpy/',
+      'numpy') }}
+{% endif %}
+{% if 'jinja' in main_deps %}
+{{ rst_badge(
+      'https://img.shields.io/badge/Jinja-black?logo=jinja',
+      'https://pypi.org/project/jinja/',
+      'Jinja') }}
+{% endif %}
+{% if 'pandas' in main_deps %}
+{{ rst_badge(
+      'https://img.shields.io/badge/pandas-black?logo=pandas',
+      'https://pypi.org/project/pandas/',
+      'pandas') }}
+{% endif %}
+{% if 'pydantic' in main_deps %}
+{{ rst_badge(
+      'https://img.shields.io/badge/Pydantic-black?logo=pydantic',
+      'https://pypi.org/project/pydantic/',
+      'Pydantic') }}
+{% endif %}
+{% if 'scrapy' in main_deps %}
+{{ rst_badge(
+      'https://img.shields.io/badge/scrapy-black?logo=scrapy',
+      'https://pypi.org/project/scrapy/',
+      'scrapy') }}
+{% endif %}
+{% if 'sqlalchemy' in main_deps %}
+{{ rst_badge(
+      'https://img.shields.io/badge/SQLAlchemy-black?logo=sqlalchemy',
+      'https://pypi.org/project/sqlalchemy/',
+      'SQLAlchemy') }}
+{% endif %}
+{% endif %}
+{% if settings.want_tests and not settings.stubs_only %}
+{{ rst_badge(
+      'https://img.shields.io/badge/pytest-zz?logo=Pytest&labelColor=black&color=black',
+      'https://docs.pytest.org/en/stable/',
+      'pytest') }}
+{% endif %}
+{{ rst_badge(
+      'https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json',
+      'https://github.com/astral-sh/ruff',
+      'Ruff') }}
+{% if not settings.private %}
+{{ rst_badge(
+      'https://static.pepy.tech/badge/' ~ settings.project_name ~ '/month',
+      'https://pepy.tech/project/' ~ settings.project_name,
+      'Downloads') }}
+{% endif %}
+{% if settings.using_github and not settings.private %}
+{{ rst_badge(
+      'https://img.shields.io/github/stars/' ~ settings.github.username ~ '/'
+      ~ settings.project_name ~ '?logo=github&style=flat',
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name ~ '/stargazers',
+      'Stargazers') }}
+{% endif %}
+{{ rst_badge(
+      'https://img.shields.io/badge/pre--commit-brightgreen?logo=pre-commit&logoColor=white',
+      'https://pre-commit.com/',
+      'pre-commit') }}
+{{ rst_badge(
+      'https://img.shields.io/badge/Prettier-black?logo=prettier',
+      'https://prettier.io/',
+      'Prettier') }}
+
+{% for badge in settings.custom_project_badges | sort(attribute='priority') %}
+{% if (badge.priority | default(0)) >= 0 %}
+{% set parsed = badge.anchor | parse_md_badge %}
+{% if parsed.image %}
+{{ rst_badge(parsed.image, badge.href, parsed.alt) }}
+{% endif %}
+{% endif %}
+{% endfor %}
+
+{# cspell:ignore Ddid Aplc Dsocial Dbluesky -#}
+{% if settings.social and settings.social.bsky %}
+{{ rst_badge(
+      'https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fpublic.api.bsky.app%2Fxrpc%2F'
+      ~ 'app.bsky.actor.getProfile%2F%3Factor%3Ddid%3Aplc%3Auq42idtvuccnmtl57nsucz72%26query%3D%24'
+      ~ '.followersCount%26style%3Dsocial%26logo%3Dbluesky%26label%3DFollow%2520%40'
+      ~ settings.social.bsky ~ '&query=%24.followersCount&style=social&logo=bluesky&label=Follow%20%40'
+      ~ settings.social.bsky,
+      'https://bsky.app/profile/' ~ settings.social.bsky ~ '.bsky.social',
+      'Follow @' ~ settings.social.bsky) }}
+{% endif %}
 
 {% if settings.social and settings.social.mastodon and settings.social.mastodon.id and settings.social.mastodon.domain %}
-   .. image:: https://img.shields.io/mastodon/follow/{{ settings.social.mastodon.id }}?domain={{ settings.social.mastodon.domain }}&style=social
-      :target: https://{{ settings.social.mastodon.domain }}/@{{ settings.github.username }}
-      :alt: Mastodon Follow
+{{ rst_badge(
+      'https://img.shields.io/mastodon/follow/' ~ settings.social.mastodon.id ~ '?domain='
+      ~ settings.social.mastodon.domain ~ '&style=social',
+      'https://' ~ settings.social.mastodon.domain ~ '/@' ~ settings.github.username,
+      'Mastodon Follow') }}
 {% endif %}

@@ -142,12 +142,15 @@ async def _write_templated_files_python(settings: Settings, templates_dir: Path,
                 write_file(resolve_template(templates_dir / 'tests/test_main.py.j2'),
                            'tests/test_main.py'))
     if settings['want_docs']:
+        doc_outputs = (
+            (templates_dir / 'docs/conf.py.j2', False),
+            (templates_dir / 'docs/index.rst.j2', False),
+            (templates_dir / 'docs/badges.rst.j2', True),
+        )
         tasks.extend(
             write_file(resolve_template(file_path),
-                       file_path.relative_to(templates_dir).with_suffix(''))
-            for file_path in (templates_dir / 'docs/conf.py.j2',
-                              templates_dir / 'docs/index.rst.j2',
-                              templates_dir / 'docs/badges.rst.j2'))
+                       file_path.relative_to(templates_dir).with_suffix(''),
+                       overwrite=overwrite) for file_path, overwrite in doc_outputs)
     if ((settings['want_main'] or settings['has_multiple_entry_points'])
             and settings['using_github']):
         if (settings['supported_platforms'] == 'all' or 'windows' in settings['supported_platforms']
