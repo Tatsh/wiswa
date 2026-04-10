@@ -7,8 +7,8 @@ finish-args:
   - '--socket=wayland'
 modules:
   - build-commands:
-      - 'pip3 install uv'
-      - 'python3 -m uv pip install --prefix=/app .'
+      - 'pip3 install --prefix=/app uv'
+      - '/app/bin/uv pip install --prefix=/app .'
     build-options:
       build-args:
         - '--share=network'

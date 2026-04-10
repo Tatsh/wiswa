@@ -1483,8 +1483,8 @@ local utils = import 'utils.libsonnet';
           'build-args': ['--share=network'],
         },
         'build-commands': if settings.package_manager == 'uv' then [
-          'pip3 install uv',
-          'python3 -m uv pip install --prefix=/app .',
+          'pip3 install --prefix=/app uv',
+          '/app/bin/uv pip install --prefix=/app .',
         ] else [
           'pip3 install --prefix=/app .',
         ],
