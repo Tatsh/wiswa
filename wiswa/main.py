@@ -383,11 +383,7 @@ def main(
 
     try:
         anyio.run(_run)
-    except click.Abort:
-        raise
-    except KeyboardInterrupt:
-        raise
-    except SystemExit:
+    except (click.Abort, KeyboardInterrupt, SystemExit):
         raise
     except Exception as exc:
         if debug:
