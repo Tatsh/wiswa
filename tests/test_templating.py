@@ -424,6 +424,7 @@ async def test_write_templated_files_claude_agents_wanted(tmp_path: Path,
     out = await _run_write(monkeypatch, tmp_path, module_path, _make_settings(want_ai=True))
     assert (out / '.claude/rules/general.md').exists()
     assert (out / '.claude/rules/markdown.md').exists()
+    assert (out / '.claude/rules/python.md').exists()
     markdown_rule = (out / '.claude/rules/markdown.md').read_text(encoding='utf-8')
     assert 'GitHub Pages' not in markdown_rule
     assert (out / '.claude/agents/regen.md').exists()
@@ -435,12 +436,8 @@ async def test_write_templated_files_claude_agents_wanted(tmp_path: Path,
 async def test_write_templated_files_markdown_rule_includes_github_pages_when_using_github(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     module_path = _copy_wiswa_package(tmp_path)
-    out = await _run_write(
-        monkeypatch,
-        tmp_path,
-        module_path,
-        _make_settings(want_ai=True, using_github=True),
-    )
+    out = await _run_write(monkeypatch, tmp_path, module_path,
+                           _make_settings(want_ai=True, using_github=True))
     markdown_rule = (out / '.claude/rules/markdown.md').read_text(encoding='utf-8')
     assert 'GitHub Pages' in markdown_rule
     assert 'Jekyll' in markdown_rule
@@ -556,12 +553,8 @@ async def test_write_templated_files_contributing_no_overwrite_matching(
 async def test_write_templated_files_python_want_docs(tmp_path: Path,
                                                       monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
-        out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(want_docs=True, want_tests=False, want_ai=False),
-        )
+        out = await _run_write(monkeypatch, tmp_path, module_path,
+                               _make_settings(want_docs=True, want_tests=False, want_ai=False))
     assert (out / 'docs/conf.py').exists()
     assert (out / 'docs/index.rst').exists()
     assert (out / 'docs/badges.rst').exists()
@@ -571,17 +564,12 @@ async def test_write_templated_files_python_private_badges_rst_omits_public_regi
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(
-                want_docs=True,
-                want_tests=True,
-                want_ai=False,
-                private=True,
-                using_github=True,
-            ),
-        )
+            monkeypatch, tmp_path, module_path,
+            _make_settings(want_docs=True,
+                           want_tests=True,
+                           want_ai=False,
+                           private=True,
+                           using_github=True))
     text = (out / 'docs/badges.rst').read_text(encoding='utf-8')
     lower = text.lower()
     assert 'pypi.org/project' not in lower
@@ -598,14 +586,11 @@ async def test_write_templated_files_docs_badges_rst_includes_poetry_when_not_uv
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
+            monkeypatch, tmp_path, module_path,
             _make_settings(want_docs=True,
                            want_tests=False,
                            want_ai=False,
-                           package_manager='poetry'),
-        )
+                           package_manager='poetry'))
     text = (out / 'docs/badges.rst').read_text(encoding='utf-8').lower()
     assert 'python-poetry.org' in text
     assert 'docs.astral.sh/uv' not in text
@@ -614,12 +599,8 @@ async def test_write_templated_files_docs_badges_rst_includes_poetry_when_not_uv
 async def test_write_templated_files_docs_badges_rst_regenerated_when_stale(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
-        out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(want_docs=True, want_tests=False, want_ai=False),
-        )
+        out = await _run_write(monkeypatch, tmp_path, module_path,
+                               _make_settings(want_docs=True, want_tests=False, want_ai=False))
     badges = out / 'docs/badges.rst'
     badges.write_text('.. STALE-BADGES-MARKER\n', encoding='utf-8')
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
@@ -635,12 +616,8 @@ async def test_write_templated_files_docs_badges_rst_regenerated_when_stale(
 async def test_write_templated_files_python_no_docs(tmp_path: Path,
                                                     monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
-        out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(want_docs=False, want_tests=False, want_ai=False),
-        )
+        out = await _run_write(monkeypatch, tmp_path, module_path,
+                               _make_settings(want_docs=False, want_tests=False, want_ai=False))
     assert not (out / 'docs').exists()
 
 
@@ -648,17 +625,12 @@ async def test_write_templated_files_python_want_tests_and_main(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(
-                want_tests=True,
-                want_main=True,
-                want_ai=False,
-                using_github=True,
-                supported_platforms='all',
-            ),
-        )
+            monkeypatch, tmp_path, module_path,
+            _make_settings(want_tests=True,
+                           want_main=True,
+                           want_ai=False,
+                           using_github=True,
+                           supported_platforms='all'))
     assert (out / 'tests/conftest.py').exists()
     assert (out / 'tests/test_main.py').exists()
     assert (out / '.github/workflows/pyinstaller.yml').exists()
@@ -669,18 +641,13 @@ async def test_write_templated_files_python_skips_test_main_when_established_tes
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(
-                want_tests=True,
-                want_main=True,
-                want_ai=False,
-                using_github=True,
-                supported_platforms='all',
-                _has_established_pytest_modules=True,
-            ),
-        )
+            monkeypatch, tmp_path, module_path,
+            _make_settings(want_tests=True,
+                           want_main=True,
+                           want_ai=False,
+                           using_github=True,
+                           supported_platforms='all',
+                           _has_established_pytest_modules=True))
     assert (out / 'tests/conftest.py').exists()
     assert not (out / 'tests/test_main.py').exists()
     assert (out / '.github/workflows/pyinstaller.yml').exists()
@@ -690,12 +657,8 @@ async def test_write_templated_files_python_skips_test_main_when_established_tes
 async def test_write_templated_files_python_stubs_only(tmp_path: Path,
                                                        monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
-        out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(stubs_only=True, want_tests=False, want_ai=False),
-        )
+        out = await _run_write(monkeypatch, tmp_path, module_path,
+                               _make_settings(stubs_only=True, want_tests=False, want_ai=False))
     assert not (out / 'mymod/__init__.py').exists()
 
 
@@ -716,16 +679,11 @@ async def test_write_templated_files_python_windows_only(tmp_path: Path,
                                                          monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(
-                want_main=True,
-                want_ai=False,
-                using_github=True,
-                supported_platforms=['windows'],
-            ),
-        )
+            monkeypatch, tmp_path, module_path,
+            _make_settings(want_main=True,
+                           want_ai=False,
+                           using_github=True,
+                           supported_platforms=['windows']))
     assert (out / '.github/workflows/pyinstaller.yml').exists()
     assert not (out / '.github/workflows/appimage.yml').exists()
 
@@ -734,16 +692,11 @@ async def test_write_templated_files_python_linux_only(tmp_path: Path,
                                                        monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(
-                want_main=True,
-                want_ai=False,
-                using_github=True,
-                supported_platforms=['linux'],
-            ),
-        )
+            monkeypatch, tmp_path, module_path,
+            _make_settings(want_main=True,
+                           want_ai=False,
+                           using_github=True,
+                           supported_platforms=['linux']))
     assert (out / '.github/workflows/appimage.yml').exists()
     assert not (out / '.github/workflows/pyinstaller.yml').exists()
 
@@ -752,17 +705,12 @@ async def test_write_templated_files_python_multiple_entry_points(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(
-                want_main=False,
-                has_multiple_entry_points=True,
-                want_ai=False,
-                using_github=True,
-                supported_platforms='all',
-            ),
-        )
+            monkeypatch, tmp_path, module_path,
+            _make_settings(want_main=False,
+                           has_multiple_entry_points=True,
+                           want_ai=False,
+                           using_github=True,
+                           supported_platforms='all'))
     assert (out / '.github/workflows/pyinstaller.yml').exists()
     assert (out / '.github/workflows/appimage.yml').exists()
 
@@ -770,12 +718,8 @@ async def test_write_templated_files_python_multiple_entry_points(
 async def test_write_templated_files_cpp_want_main_writes_files(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
-        out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(project_type='c++', want_main=True, want_ai=False),
-        )
+        out = await _run_write(monkeypatch, tmp_path, module_path,
+                               _make_settings(project_type='c++', want_main=True, want_ai=False))
     assert (out / 'CMakeLists.txt').exists()
     assert (out / 'src/CMakeLists.txt').exists()
     assert (out / 'src/main.cpp').exists()
@@ -784,12 +728,8 @@ async def test_write_templated_files_cpp_want_main_writes_files(
 async def test_write_templated_files_cpp_no_main(tmp_path: Path,
                                                  monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
-        out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(project_type='c++', want_main=False, want_ai=False),
-        )
+        out = await _run_write(monkeypatch, tmp_path, module_path,
+                               _make_settings(project_type='c++', want_main=False, want_ai=False))
     assert (out / 'CMakeLists.txt').exists()
     assert not (out / 'src/main.cpp').exists()
 
@@ -797,12 +737,8 @@ async def test_write_templated_files_cpp_no_main(tmp_path: Path,
 async def test_write_templated_files_c_want_main_writes_files(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
-        out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(project_type='c', want_main=True, want_ai=False),
-        )
+        out = await _run_write(monkeypatch, tmp_path, module_path,
+                               _make_settings(project_type='c', want_main=True, want_ai=False))
     assert (out / 'CMakeLists.txt').exists()
     assert (out / 'src/CMakeLists.txt').exists()
     assert (out / 'src/main.c').exists()
@@ -811,12 +747,8 @@ async def test_write_templated_files_c_want_main_writes_files(
 async def test_write_templated_files_c_no_main(tmp_path: Path,
                                                monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
-        out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(project_type='c', want_main=False, want_ai=False),
-        )
+        out = await _run_write(monkeypatch, tmp_path, module_path,
+                               _make_settings(project_type='c', want_main=False, want_ai=False))
     assert not (out / 'src/main.c').exists()
 
 
@@ -833,16 +765,11 @@ async def test_write_templated_files_ts_stubs_only(tmp_path: Path,
                                                    monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(
-                project_type='typescript',
-                stubs_only=True,
-                want_tests=False,
-                want_ai=False,
-            ),
-        )
+            monkeypatch, tmp_path, module_path,
+            _make_settings(project_type='typescript',
+                           stubs_only=True,
+                           want_tests=False,
+                           want_ai=False))
     assert not (out / 'src/index.ts').exists()
 
 
@@ -850,16 +777,11 @@ async def test_write_templated_files_ts_with_tests(tmp_path: Path,
                                                    monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(
-                project_type='typescript',
-                stubs_only=False,
-                want_tests=True,
-                want_ai=False,
-            ),
-        )
+            monkeypatch, tmp_path, module_path,
+            _make_settings(project_type='typescript',
+                           stubs_only=False,
+                           want_tests=True,
+                           want_ai=False))
     assert (out / 'src/index.ts').exists()
     assert (out / 'jest.config.ts').exists()
     assert (out / 'eslint.config.mjs').exists()
@@ -895,12 +817,8 @@ async def test_write_templated_files_contributing_no_overwrite_no_match(
 async def test_write_templated_files_real_env_integration(tmp_path: Path,
                                                           monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
-        out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(project_type='generic', want_ai=True),
-        )
+        out = await _run_write(monkeypatch, tmp_path, module_path,
+                               _make_settings(project_type='generic', want_ai=True))
     assert (out / 'LICENSE.txt').exists()
     assert (out / 'SECURITY.md').exists()
     assert (out / 'CHANGELOG.md').exists()
@@ -912,12 +830,10 @@ async def test_write_templated_files_real_env_integration(tmp_path: Path,
 
 async def test_write_templated_files_changelog_urls_use_resolved_boilerplate(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
-    mocker.patch(
-        'wiswa.utils.templating.resolve_changelog_boilerplate_urls',
-        new_callable=AsyncMock,
-        return_value=('https://keepachangelog.com/en/9.9.9/',
-                      'https://semver.org/spec/v9.9.9.html'),
-    )
+    mocker.patch('wiswa.utils.templating.resolve_changelog_boilerplate_urls',
+                 new_callable=AsyncMock,
+                 return_value=('https://keepachangelog.com/en/9.9.9/',
+                               'https://semver.org/spec/v9.9.9.html'))
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = tmp_path / 'proj'
         out.mkdir()
@@ -950,41 +866,38 @@ async def test_write_templated_files_real_env_with_session(tmp_path: Path,
         out = tmp_path / 'proj'
         out.mkdir()
         monkeypatch.chdir(out)
-        await write_templated_files(
-            module_path,
-            cast('Any', _make_settings(project_type='generic', want_ai=False)),
-            session=mock_session,
-        )
+        await write_templated_files(module_path,
+                                    cast('Any', _make_settings(project_type='generic',
+                                                               want_ai=False)),
+                                    session=mock_session)
     mock_session.assert_not_called()
 
 
 async def test_write_templated_files_claude_agents_skip_python_only_for_non_python(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     module_path = _copy_wiswa_package(tmp_path)
-    out = await _run_write(
-        monkeypatch,
-        tmp_path,
-        module_path,
-        _make_settings(project_type='c++', want_ai=True),
-    )
+    out = await _run_write(monkeypatch, tmp_path, module_path,
+                           _make_settings(project_type='c++', want_ai=True))
     assert not (out / '.claude/agents/python-expert.md').exists()
+    assert not (out / '.claude/rules/python.md').exists()
     assert (out / '.claude/agents/qa-fixer.md').exists()
+
+
+async def test_write_templated_files_claude_skips_python_rule_when_stubs_only(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    module_path = _copy_wiswa_package(tmp_path)
+    out = await _run_write(monkeypatch, tmp_path, module_path,
+                           _make_settings(want_ai=True, stubs_only=True))
+    assert not (out / '.claude/rules/python.md').exists()
+    assert (out / '.claude/rules/general.md').exists()
 
 
 async def test_write_templated_files_claude_agents_ci_agent_without_vcs(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """ShellCheck agent template is empty when neither GitHub nor GitLab is enabled."""
     module_path = _copy_wiswa_package(tmp_path)
-    out = await _run_write(
-        monkeypatch,
-        tmp_path,
-        module_path,
-        _make_settings(
-            want_ai=True,
-            using_github=False,
-            using_gitlab=False,
-        ),
-    )
+    out = await _run_write(monkeypatch, tmp_path, module_path,
+                           _make_settings(want_ai=True, using_github=False, using_gitlab=False))
     assert not (out / '.claude/agents/workflow-shellcheck.md').exists()
     assert (out / '.claude/agents/qa-fixer.md').exists()
 
@@ -992,16 +905,8 @@ async def test_write_templated_files_claude_agents_ci_agent_without_vcs(
 async def test_write_templated_files_python_want_tests_no_main(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
-        out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(
-                want_tests=True,
-                want_main=False,
-                want_ai=False,
-            ),
-        )
+        out = await _run_write(monkeypatch, tmp_path, module_path,
+                               _make_settings(want_tests=True, want_main=False, want_ai=False))
     assert (out / 'tests/conftest.py').exists()
     assert not (out / 'tests/test_main.py').exists()
 
@@ -1009,24 +914,16 @@ async def test_write_templated_files_python_want_tests_no_main(
 async def test_write_templated_files_non_mit_skips_license(tmp_path: Path,
                                                            monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
-        out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(license='GPL-3.0', want_ai=False),
-        )
+        out = await _run_write(monkeypatch, tmp_path, module_path,
+                               _make_settings(license='GPL-3.0', want_ai=False))
     assert not (out / 'LICENSE.txt').exists()
 
 
 async def test_write_templated_files_mit_writes_license(tmp_path: Path,
                                                         monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
-        out = await _run_write(
-            monkeypatch,
-            tmp_path,
-            module_path,
-            _make_settings(license='MIT', want_ai=False),
-        )
+        out = await _run_write(monkeypatch, tmp_path, module_path,
+                               _make_settings(license='MIT', want_ai=False))
     assert (out / 'LICENSE.txt').exists()
 
 

@@ -25,6 +25,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Bundled `.claude/rules/python.md` is emitted from
+  `wiswa/templates/claude/rules/python.md.j2` instead of `wiswa/static/claude/rules/python.md`;
+  YAPF-related bullets follow `want_yapf`, and the rule is still omitted for stubs-only or
+  non-Python projects.
 - CLI: `wiswa` command help shows a single-line imperative summary instead of a multi-line
   description with a `Raises` section (Click command docstrings stay one line).
 - Generated Flatpak workflow names the bundle, GitHub Actions artifact, attestation subject, and

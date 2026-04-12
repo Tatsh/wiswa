@@ -32,22 +32,14 @@ def _claude_rule_pairs(module_path: Path, project_type: str, *,
             pairs.append((Path('.claude/rules/cpp.md'), base / 'cpp.md'))
         case 'python':
             if not stubs_only:
-                pairs.extend([
-                    (Path('.claude/rules/python.md'), base / 'python.md'),
-                    (Path('.claude/rules/python-tests.md'), base / 'python-tests.md'),
-                ])
+                pairs.append((Path('.claude/rules/python-tests.md'), base / 'python-tests.md'))
         case _:
             pass
     return pairs
 
 
-async def _sync_file_pairs(
-    pairs: Sequence[tuple[Path, Path]],
-    dir_path: Path,
-    stop_at: Path,
-    *,
-    wanted: bool,
-) -> None:
+async def _sync_file_pairs(pairs: Sequence[tuple[Path, Path]], dir_path: Path, stop_at: Path, *,
+                           wanted: bool) -> None:
     if wanted:
         await anyio.Path(dir_path).mkdir(parents=True, exist_ok=True)
         for dest, src in pairs:
@@ -113,11 +105,9 @@ async def copy_static_files(settings: Settings, module_path: Path) -> None:
     module_path : Path
         Path to the :py:mod:`wiswa` package directory.
     """
-    rule_pairs = _claude_rule_pairs(
-        module_path,
-        settings['project_type'],
-        stubs_only=settings['stubs_only'],
-    )
+    rule_pairs = _claude_rule_pairs(module_path,
+                                    settings['project_type'],
+                                    stubs_only=settings['stubs_only'])
     await _sync_file_pairs(rule_pairs,
                            Path('.claude/rules'),
                            Path('.claude'),

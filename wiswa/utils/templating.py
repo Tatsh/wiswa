@@ -142,11 +142,9 @@ async def _write_templated_files_python(settings: Settings, templates_dir: Path,
                 write_file(resolve_template(templates_dir / 'tests/test_main.py.j2'),
                            'tests/test_main.py'))
     if settings['want_docs']:
-        doc_outputs = (
-            (templates_dir / 'docs/conf.py.j2', False),
-            (templates_dir / 'docs/index.rst.j2', False),
-            (templates_dir / 'docs/badges.rst.j2', True),
-        )
+        doc_outputs = ((templates_dir / 'docs/conf.py.j2',
+                        False), (templates_dir / 'docs/index.rst.j2', False),
+                       (templates_dir / 'docs/badges.rst.j2', True))
         tasks.extend(
             write_file(resolve_template(file_path),
                        file_path.relative_to(templates_dir).with_suffix(''),
@@ -189,6 +187,8 @@ _PYTHON_ONLY_AGENTS = frozenset({
     'test-writer',
 })
 
+_PYTHON_RULE_TEMPLATE = 'python.md.j2'
+
 
 async def _cleanup_claude_when_disabled(settings: Settings, module_path: Path,
                                         session: AsyncSession | None) -> None:
@@ -213,6 +213,8 @@ async def _cleanup_claude_when_disabled(settings: Settings, module_path: Path,
         rule_templates: list[Path] = [Path(fp) async for fp in rules_aio.glob('*.md.j2')]
         for file_path in sorted(rule_templates):
             output = Path('.claude/rules') / file_path.name.removesuffix('.j2')
+            if file_path.name == _PYTHON_RULE_TEMPLATE and settings['project_type'] != 'python':
+                continue
             await try_unlink_template(file_path, output)
     agents_aio = anyio.Path(templates_dir / 'claude/agents')
     if await agents_aio.is_dir():
@@ -247,7 +249,11 @@ async def _write_templated_files_claude(settings: Settings, templates_dir: Path,
         rule_templates: list[Path] = [Path(fp) async for fp in rules_aio.glob('*.md.j2')]
         for file_path in sorted(rule_templates):
             output = Path('.claude/rules') / file_path.name.removesuffix('.j2')
-            tasks.append(write_file(resolve_template(file_path), output, overwrite=True))
+            if (file_path.name == _PYTHON_RULE_TEMPLATE
+                    and (settings['project_type'] != 'python' or settings['stubs_only'])):
+                await anyio.Path(output).unlink(missing_ok=True)
+            else:
+                tasks.append(write_file(resolve_template(file_path), output, overwrite=True))
     agents_aio = anyio.Path(templates_dir / 'claude/agents')
     if await agents_aio.is_dir():
         agent_templates: list[Path] = [Path(fp) async for fp in agents_aio.iterdir()]

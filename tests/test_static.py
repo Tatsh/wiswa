@@ -35,8 +35,7 @@ def _setup_module_path(tmp_path: Path) -> Path:
     rules_dir.mkdir(parents=True, exist_ok=True)
     for name in ('json-yaml', 'toml-ini'):
         (rules_dir / f'{name}.md').write_text(f'{name} rules content')
-    for name in ('python', 'python-tests'):
-        (rules_dir / f'{name}.md').write_text(f'{name} rules')
+    (rules_dir / 'python-tests.md').write_text('python-tests rules')
     return module_path
 
 
@@ -47,7 +46,7 @@ async def test_copy_static_files_creates_claude_rules_and_settings(
     settings = cast('Any', _make_settings(claude_settings_local={'x': 1}))
     await copy_static_files(settings, module_path)
     assert (tmp_path / '.claude/rules/json-yaml.md').exists()
-    assert (tmp_path / '.claude/rules/python.md').exists()
+    assert (tmp_path / '.claude/rules/python-tests.md').exists()
     assert (tmp_path / '.claude/settings.local.json').exists()
     assert '"x": 1' in (tmp_path / '.claude/settings.local.json').read_text()
 
@@ -135,13 +134,10 @@ async def test_copy_static_files_python_copies_main_files(tmp_path: Path,
     (static_dir / 'main.py').write_text('# main')
     settings = cast(
         'Any',
-        _make_settings(
-            want_main=True,
-            has_multiple_entry_points=False,
-            stubs_only=False,
-            primary_module='mymod',
-        ),
-    )
+        _make_settings(want_main=True,
+                       has_multiple_entry_points=False,
+                       stubs_only=False,
+                       primary_module='mymod'))
     await copy_static_files_python(settings, tmp_path / 'pkg')
     assert (tmp_path / 'mymod/__main__.py').exists()
     assert (tmp_path / 'mymod/main.py').exists()
@@ -158,13 +154,10 @@ async def test_copy_static_files_python_skips_existing_non_empty(
     (tmp_path / 'mymod/__main__.py').write_text('existing content')
     settings = cast(
         'Any',
-        _make_settings(
-            want_main=True,
-            has_multiple_entry_points=False,
-            stubs_only=False,
-            primary_module='mymod',
-        ),
-    )
+        _make_settings(want_main=True,
+                       has_multiple_entry_points=False,
+                       stubs_only=False,
+                       primary_module='mymod'))
     await copy_static_files_python(settings, tmp_path / 'pkg')
     assert (tmp_path / 'mymod/__main__.py').read_text() == 'existing content'
 
