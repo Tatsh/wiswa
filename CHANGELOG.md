@@ -11,6 +11,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- GitLab remote project setup (`python-gitlab`): Jsonnet defaults live in `defaults/gitlab.libsonnet`
+  and merge with `gitlab+:` overrides; `using_gitlab` detects GitLab hosts from `repository_uri`.
+- CLI `--skip-remote` to skip GitHub or GitLab API configuration (replaces `--skip-github` /
+  `--skip-gitlab`).
+- Host-scoped keyring services for API tokens: `wiswa-github:<hostname>` (legacy `tmu-github-api`),
+  `wiswa-gitlab:<hostname>` with legacy `wiswa-gitlab-api`; documented in README and
+  `docs/remote-api-tokens.rst`.
+- `RemoteHostConflictError` when merged settings set both `using_github` and `using_gitlab`.
 - `package_sources` entries may set `publish-url` (or Jsonnet `publish_url`) for uv projects;
   Wiswa copies them into `[[tool.uv.index]]` for `uv publish` alongside the PEP 503 `url`.
 - Jsonnet `primary_module_qualified` (defaults to `primary_module`): full dotted import path for the
@@ -25,6 +33,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- CONTRIBUTING explains that `man/wiswa.1` and other `man/` output must come from `yarn gen-manpage`,
+  not manual edits.
 - Bundled `.claude/rules/python.md` is emitted from
   `wiswa/templates/claude/rules/python.md.j2` instead of `wiswa/static/claude/rules/python.md`;
   YAPF-related bullets follow `want_yapf`, and the rule is still omitted for stubs-only or
