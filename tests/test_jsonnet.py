@@ -10,11 +10,13 @@ import subprocess as sp
 
 from wiswa.utils.jsonnet import (
     FlatpakConfigurationError,
+    RemoteHostConflictError,
     evaluate_jsonnet_file,
     evaluate_jsonnet_project,
     evaluate_merged_settings,
     resolve_defaults_only,
     validate_flatpak_app_id,
+    validate_remote_host_flags,
 )
 import pytest
 
@@ -99,6 +101,17 @@ def test_validate_flatpak_app_id_empty_flathub_raises() -> None:
 def test_validate_flatpak_app_id_publishing_not_dict_raises() -> None:
     with pytest.raises(FlatpakConfigurationError, match=r'publishing\.flathub'):
         validate_flatpak_app_id({'want_flatpak': True, 'publishing': None})
+
+
+def test_validate_remote_host_flags_accepts_mutually_exclusive() -> None:
+    validate_remote_host_flags({'using_github': True})
+    validate_remote_host_flags({'using_gitlab': True})
+    validate_remote_host_flags({})
+
+
+def test_validate_remote_host_flags_raises_when_both_hosts() -> None:
+    with pytest.raises(RemoteHostConflictError, match='using_github and using_gitlab'):
+        validate_remote_host_flags({'using_github': True, 'using_gitlab': True})
 
 
 def _patch_evaluate_merged_settings_mocks(

@@ -308,6 +308,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'description': 'A test project.',
         'documentation_uri': 'https://example.com/docs',
         'github': _github_defaults(),
+        'gitlab': {},
         'github_username': 'test',
         'github_project_name': 'testproject',
         'has_multiple_entry_points': False,

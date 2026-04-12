@@ -84,6 +84,53 @@ async def test_setup_github_project_skips_when_no_token(mocker: MockerFixture) -
     session.patch.assert_not_called()
 
 
+async def test_setup_github_project_keyring_tries_host_scoped_before_legacy(
+        mocker: MockerFixture) -> None:
+    calls: list[tuple[str, str]] = []
+
+    def _fake_get_password(service: str, username: str) -> str | None:
+        calls.append((service, username))
+        if service == 'wiswa-github:github.com':
+            return 'ghp_host'
+        return None
+
+    mocker.patch('wiswa.utils.github.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.github.keyring.get_password', side_effect=_fake_get_password)
+    session = MagicMock()
+    default_resp = _make_resp()
+    session.headers = MagicMock()
+    session.patch = AsyncMock(return_value=default_resp)
+    session.get = AsyncMock(return_value=default_resp)
+    session.put = AsyncMock(return_value=default_resp)
+    session.post = AsyncMock(return_value=default_resp)
+    await setup_github_project(session, _make_settings())
+    assert calls[0][0] == 'wiswa-github:github.com'
+    assert len(calls) == 1
+
+
+async def test_setup_github_project_keyring_falls_back_to_legacy(mocker: MockerFixture) -> None:
+    calls: list[tuple[str, str]] = []
+
+    def _fake_get_password(service: str, username: str) -> str | None:
+        calls.append((service, username))
+        if service == 'tmu-github-api':
+            return 'ghp_legacy'
+        return None
+
+    mocker.patch('wiswa.utils.github.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.github.keyring.get_password', side_effect=_fake_get_password)
+    session = MagicMock()
+    default_resp = _make_resp()
+    session.headers = MagicMock()
+    session.patch = AsyncMock(return_value=default_resp)
+    session.get = AsyncMock(return_value=default_resp)
+    session.put = AsyncMock(return_value=default_resp)
+    session.post = AsyncMock(return_value=default_resp)
+    await setup_github_project(session, _make_settings())
+    assert calls[0][0] == 'wiswa-github:github.com'
+    assert calls[1][0] == 'tmu-github-api'
+
+
 async def test_setup_github_project_enables_security_features(mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
     await setup_github_project(session, _make_settings())
