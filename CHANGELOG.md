@@ -15,9 +15,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and merge with `gitlab+:` overrides; `using_gitlab` detects GitLab hosts from `repository_uri`.
 - CLI `--skip-remote` to skip GitHub or GitLab API configuration (replaces `--skip-github` /
   `--skip-gitlab`).
-- Host-scoped keyring services for API tokens: `wiswa-github:<hostname>` (legacy `tmu-github-api`),
-  `wiswa-gitlab:<hostname>` with legacy `wiswa-gitlab-api`; documented in README and
-  `docs/remote-api-tokens.rst`.
+- Host-scoped keyring services for API tokens: `wiswa-github:<hostname>` and
+  `wiswa-gitlab:<hostname>`; documented in README and `docs/remote-api-tokens.rst`.
 - `RemoteHostConflictError` when merged settings set both `using_github` and `using_gitlab`.
 - `package_sources` entries may set `publish-url` (or Jsonnet `publish_url`) for uv projects;
   Wiswa copies them into `[[tool.uv.index]]` for `uv publish` alongside the PEP 503 `url`.
