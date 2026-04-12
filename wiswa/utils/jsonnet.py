@@ -36,12 +36,23 @@ if TYPE_CHECKING:
 
 JsonnetNativeCallback: TypeAlias = tuple[tuple[str, ...], Callable[..., Any]]
 
-__all__ = ('FlatpakConfigurationError', 'evaluate_jsonnet_file', 'evaluate_jsonnet_project',
-           'evaluate_merged_settings', 'resolve_defaults_only', 'validate_flatpak_app_id')
+__all__ = ('FlatpakConfigurationError', 'RemoteHostConflictError', 'evaluate_jsonnet_file',
+           'evaluate_jsonnet_project', 'evaluate_merged_settings', 'resolve_defaults_only',
+           'validate_flatpak_app_id', 'validate_remote_host_flags')
 
 _FLATPAK_APP_ID_HELP = (
     'want_flatpak is true but publishing.flathub (Flatpak app ID) is not set. '
     'Set publishing.flathub to a reverse-DNS id (for example org.example.MyApp).')
+
+_REMOTE_HOST_CONFLICT_HELP = (
+    'using_github and using_gitlab cannot both be true. Adjust .wiswa.jsonnet '
+    '(or repository_uri and using_* overrides) so only one remote host applies.')
+
+
+class RemoteHostConflictError(ValueError):
+    """Raised when both ``using_github`` and ``using_gitlab`` are true."""
+    def __init__(self) -> None:
+        super().__init__(_REMOTE_HOST_CONFLICT_HELP)
 
 
 class FlatpakConfigurationError(ValueError):
@@ -66,6 +77,18 @@ def validate_flatpak_app_id(settings: dict[str, Any]) -> None:
     flathub = publishing.get('flathub', '')
     if not isinstance(flathub, str) or not flathub.strip():
         raise FlatpakConfigurationError
+
+
+def validate_remote_host_flags(settings: dict[str, Any]) -> None:
+    """Reject merged settings when both GitHub and GitLab remotes are selected.
+
+    Raises
+    ------
+    RemoteHostConflictError
+        If ``using_github`` and ``using_gitlab`` are both true.
+    """
+    if settings.get('using_github') and settings.get('using_gitlab'):
+        raise RemoteHostConflictError
 
 
 log = logging.getLogger(__name__)
@@ -390,6 +413,7 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
     merged_json = await _eval_merge(user_defaults_text)
     merged_dict = json.loads(merged_json)
     validate_flatpak_app_id(merged_dict)
+    validate_remote_host_flags(merged_dict)
     readme_existed = await anyio.Path('README.md').exists()
     established_pytest = await tests_dir_has_pytest_modules_excluding_starter_main()
     return merged_json, (merged_dict
@@ -439,4 +463,5 @@ async def resolve_defaults_only(jpathdir: Sequence[str],
         }))
     log.debug('Jsonnet evaluation (defaults only) took %.3fs.', time.perf_counter() - t0)
     result: dict[str, Any] = json.loads(s)
+    validate_remote_host_flags(result)
     return result

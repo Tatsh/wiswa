@@ -6,11 +6,12 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
-__all__ = ('CustomProjectBadge', 'ExportRequirements', 'PackageJSON', 'PackageManager',
-           'ProjectType', 'PyProject', 'PyProjectBuildSystem', 'PyProjectProject', 'PyProjectTool',
-           'PyProjectToolCommitizen', 'PyProjectToolPoetry', 'PyProjectToolPoetryPackage',
-           'PythonDeps', 'Settings', 'SettingsGitHub', 'SettingsSocial', 'SettingsSocialMastodon',
-           'SettingsSocialTextAndURI', 'VSCode', 'VSCodeLaunch', 'VSCodeLaunchConfiguration')
+__all__ = ('CustomProjectBadge', 'ExportRequirements', 'GitlabRemoteSettings', 'PackageJSON',
+           'PackageManager', 'ProjectType', 'PyProject', 'PyProjectBuildSystem', 'PyProjectProject',
+           'PyProjectTool', 'PyProjectToolCommitizen', 'PyProjectToolPoetry',
+           'PyProjectToolPoetryPackage', 'PythonDeps', 'Settings', 'SettingsGitHub',
+           'SettingsSocial', 'SettingsSocialMastodon', 'SettingsSocialTextAndURI', 'VSCode',
+           'VSCodeLaunch', 'VSCodeLaunchConfiguration')
 
 PackageManager: TypeAlias = Literal['poetry', 'uv']
 """
@@ -149,6 +150,19 @@ class PythonDeps(TypedDict, total=False):
     """Documentation dependencies."""
     tests: Mapping[str, Any]
     """Test dependencies."""
+
+
+class GitlabRemoteSettings(TypedDict, total=False):
+    """GitLab API tables from merged settings (see ``defaults/gitlab.libsonnet``)."""
+
+    project_settings: dict[str, Any]
+    """Project attributes for ``python-gitlab`` (from merged ``gitlab.project_settings``)."""
+    push_rules: dict[str, Any]
+    """Push rules payload (from merged ``gitlab.push_rules``)."""
+    project_approvals: dict[str, Any]
+    """Merge request approval settings (from merged ``gitlab.project_approvals``)."""
+    default_branch_protection: dict[str, Any]
+    """Protected default branch PATCH body (from merged ``gitlab.default_branch_protection``)."""
 
 
 class SettingsGitHub(TypedDict):
@@ -295,6 +309,8 @@ class Settings(TypedDict):
     """The HTTP URI of the project's documentation."""
     github: SettingsGitHub
     """GitHub settings."""
+    gitlab: GitlabRemoteSettings
+    """GitLab remote project tables (merged in Jsonnet; see ``defaults/gitlab.libsonnet``)."""
     has_multiple_entry_points: bool
     """If the project has multiple entry points (CLI commands)."""
     homepage: str

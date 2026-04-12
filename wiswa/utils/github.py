@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
+from urllib.parse import urlparse
 import asyncio
 import getpass
 import logging
@@ -19,6 +20,36 @@ if TYPE_CHECKING:
 __all__ = ('setup_github_project',)
 
 log = logging.getLogger(__name__)
+
+_GITHUB_LEGACY_KEYRING_SERVICE = 'tmu-github-api'
+
+
+def _repository_uri_hostname(uri: str) -> str:
+    return urlparse(uri).hostname or ''
+
+
+def _get_github_token(settings: Settings) -> str | None:
+    """
+    Resolve a GitHub API token from the keyring.
+
+    Tries ``wiswa-github:<hostname>`` (hostname from ``repository_uri``), then the legacy
+    service ``tmu-github-api``. Both use the current OS username as the keyring username.
+
+    Returns
+    -------
+    str | None
+        The token, or ``None`` if unavailable.
+    """
+    host = _repository_uri_hostname(settings['repository_uri']) or 'github.com'
+    user = getpass.getuser()
+    try:
+        token = keyring.get_password(f'wiswa-github:{host}', user)
+        if token:
+            return token
+        return keyring.get_password(_GITHUB_LEGACY_KEYRING_SERVICE, user)
+    except keyring.errors.NoKeyringError:
+        log.warning('No keyring backend available.')
+        return None
 
 
 def _get_repo_config(settings: Settings) -> dict[str, Any]:
@@ -69,16 +100,13 @@ def _get_repo_config(settings: Settings) -> dict[str, Any]:
     }
 
 
-async def _setup_github_session(
-        session: niquests.AsyncSession) -> tuple[niquests.AsyncSession, str] | None:
-    try:
-        token = await anyio.to_thread.run_sync(
-            lambda: keyring.get_password('tmu-github-api', getpass.getuser()))
-    except keyring.errors.NoKeyringError:
-        log.warning('No keyring backend available.')
-        return None
+async def _setup_github_session(session: niquests.AsyncSession,
+                                settings: Settings) -> tuple[niquests.AsyncSession, str] | None:
+    token = await anyio.to_thread.run_sync(lambda: _get_github_token(settings))
     if not token:
-        log.warning('No GitHub token.')
+        gh_host = _repository_uri_hostname(settings['repository_uri']) or 'github.com'
+        log.warning('No GitHub token (set keyring %s or legacy %s for user %r).',
+                    f'wiswa-github:{gh_host}', _GITHUB_LEGACY_KEYRING_SERVICE, getpass.getuser())
         return None
     session.headers.update({
         'Accept': 'application/vnd.github+json',
@@ -203,6 +231,9 @@ async def setup_github_project(session: niquests.AsyncSession, settings: Setting
     """
     Configure the GitHub repository (topics, rulesets, security, Pages).
 
+    API authentication uses the keyring (see README): ``wiswa-github:<hostname>``, then legacy
+    ``tmu-github-api``.
+
     Parameters
     ----------
     session : niquests.AsyncSession
@@ -214,7 +245,7 @@ async def setup_github_project(session: niquests.AsyncSession, settings: Setting
         log.debug('Not running GitHub setup.')
         return
 
-    session_data = await _setup_github_session(session)
+    session_data = await _setup_github_session(session, settings)
     if not session_data:
         return
 
