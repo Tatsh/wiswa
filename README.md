@@ -88,13 +88,12 @@ example GitHub.com, GitHub Enterprise, or self-managed GitLab) keep separate cre
 
 Keyring entries use the usual **service name** and **username** fields (for example as shown by
 `secret-tool` on Linux or Keychain Access on macOS). The **username** is normally your OS login
-name (`whoami`), except where noted for legacy entries.
+name (`whoami`).
 
 ### GitHub
 
-1. **Preferred:** service `wiswa-github:<hostname>`, username your OS user. The hostname is taken
-   from `repository_uri` (for example `github.com` for `https://github.com/org/repo`).
-2. **Legacy:** service `tmu-github-api`, username your OS user (supported for existing setups).
+1. Service `wiswa-github:<hostname>`, username your OS user. The hostname is taken from
+   `repository_uri` (for example `github.com` for `https://github.com/org/repo`).
 
 Example (hostname `github.com`, OS user `alice`):
 
@@ -110,7 +109,6 @@ python -m keyring set 'wiswa-github:github.com' alice
    `wiswa-gitlab:gitlab.com`).
 3. Same service with **username** equal to the hostname is also checked (for older or alternate
    storage patterns).
-4. **Legacy:** service `wiswa-gitlab-api`, username the repository hostname, then your OS user.
 
 Example for `gitlab.com`:
 
