@@ -268,13 +268,190 @@ async def test_setup_github_project_skips_pages_when_private(mocker: MockerFixtu
 
 
 async def test_setup_github_project_handles_http_error(mocker: MockerFixture) -> None:
+    import json
+
     import niquests
 
     session = _mock_github_session(mocker)
     error_resp = _make_resp(200)
-    error_resp.raise_for_status.side_effect = niquests.HTTPError(response=MagicMock(
-        status_code=400))
+    gh_response = MagicMock()
+    gh_response.status_code = 400
+    message = 'Problems parsing JSON'
+    gh_response.text = json.dumps({'message': message})
+    gh_response.json = MagicMock(return_value={'message': message})
+    error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
     session.patch = AsyncMock(return_value=error_resp)
     mock_log = mocker.patch('wiswa.utils.github.log')
     await setup_github_project(session, _make_settings())
     mock_log.warning.assert_called_once()
+    args = mock_log.warning.call_args[0]
+    assert 'GitHub setup step failed' in args[0]
+    assert args[1] == 'repository settings'
+    assert args[2] == f'HTTP 400 — {message}'
+
+
+async def test_setup_github_project_http_error_json_message_not_truncated(
+        mocker: MockerFixture) -> None:
+    import json
+
+    import niquests
+
+    session = _mock_github_session(mocker)
+    error_resp = _make_resp(200)
+    gh_response = MagicMock()
+    gh_response.status_code = 422
+    long_message = 'x' * 600
+    gh_response.text = json.dumps({'message': long_message})
+    gh_response.json = MagicMock(return_value={'message': long_message})
+    error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
+    session.patch = AsyncMock(return_value=error_resp)
+    mock_log = mocker.patch('wiswa.utils.github.log')
+    await setup_github_project(session, _make_settings())
+    args = mock_log.warning.call_args[0]
+    assert args[2] == f'HTTP 422 — {long_message}'
+
+
+async def test_setup_github_project_http_error_no_response_uses_exception_text(
+        mocker: MockerFixture) -> None:
+    import niquests
+
+    session = _mock_github_session(mocker)
+    session.patch = AsyncMock(side_effect=niquests.HTTPError('connection reset'))
+    mock_log = mocker.patch('wiswa.utils.github.log')
+    await setup_github_project(session, _make_settings())
+    args = mock_log.warning.call_args[0]
+    assert args[2] == 'connection reset'
+
+
+async def test_setup_github_project_http_error_empty_exception_string_uses_type_name(
+        mocker: MockerFixture) -> None:
+    import niquests
+
+    session = _mock_github_session(mocker)
+    session.patch = AsyncMock(side_effect=niquests.HTTPError('   '))
+    mock_log = mocker.patch('wiswa.utils.github.log')
+    await setup_github_project(session, _make_settings())
+    args = mock_log.warning.call_args[0]
+    assert args[2] == 'HTTPError'
+
+
+async def test_setup_github_project_http_error_no_status_truncates_plain_body(
+        mocker: MockerFixture) -> None:
+    import niquests
+
+    # Log body max in wiswa.utils.github (500 chars before "...")
+    body_max = 500
+    session = _mock_github_session(mocker)
+    error_resp = _make_resp(200)
+    gh_response = MagicMock()
+    gh_response.status_code = None
+    plain = 'x' * (body_max + 50)
+    gh_response.text = plain
+    error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
+    session.patch = AsyncMock(return_value=error_resp)
+    mock_log = mocker.patch('wiswa.utils.github.log')
+    await setup_github_project(session, _make_settings())
+    args = mock_log.warning.call_args[0]
+    msg = args[2]
+    assert msg.startswith('HTTPError — ')
+    assert '...' in msg
+    assert len(msg) < len(plain) + 30
+
+
+async def test_setup_github_project_http_error_json_decode_falls_back_truncated(
+        mocker: MockerFixture) -> None:
+    import niquests
+
+    body_max = 500
+    session = _mock_github_session(mocker)
+    error_resp = _make_resp(200)
+    gh_response = MagicMock()
+    gh_response.status_code = 400
+    padding = 'y' * (body_max + 10)
+    gh_response.text = '{"message": "x" ' + padding
+    gh_response.json = MagicMock(side_effect=ValueError)
+    error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
+    session.patch = AsyncMock(return_value=error_resp)
+    mock_log = mocker.patch('wiswa.utils.github.log')
+    await setup_github_project(session, _make_settings())
+    args = mock_log.warning.call_args[0]
+    msg = args[2]
+    assert msg.startswith('HTTP 400')
+    assert '...' in msg
+    assert len(msg.split('HTTP 400 — ', 1)[1]) <= body_max + 5
+
+
+async def test_setup_github_project_http_error_non_string_message_in_json(
+        mocker: MockerFixture) -> None:
+    import json
+
+    import niquests
+
+    session = _mock_github_session(mocker)
+    error_resp = _make_resp(200)
+    gh_response = MagicMock()
+    gh_response.status_code = 400
+    gh_response.text = json.dumps({'message': 42})
+    gh_response.json = MagicMock(return_value={'message': 42})
+    error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
+    session.patch = AsyncMock(return_value=error_resp)
+    mock_log = mocker.patch('wiswa.utils.github.log')
+    await setup_github_project(session, _make_settings())
+    args = mock_log.warning.call_args[0]
+    assert '42' in args[2]
+
+
+async def test_setup_github_project_http_error_json_not_callable_uses_raw_body(
+        mocker: MockerFixture) -> None:
+    import json
+
+    import niquests
+
+    session = _mock_github_session(mocker)
+    error_resp = _make_resp(200)
+    gh_response = MagicMock()
+    gh_response.status_code = 400
+    payload = {'message': 'ignored'}
+    gh_response.text = json.dumps(payload)
+    gh_response.json = None
+    error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
+    session.patch = AsyncMock(return_value=error_resp)
+    mock_log = mocker.patch('wiswa.utils.github.log')
+    await setup_github_project(session, _make_settings())
+    args = mock_log.warning.call_args[0]
+    out = args[2]
+    assert json.dumps(payload) in out or '"message"' in out
+
+
+async def test_setup_github_project_http_error_whitespace_body_returns_status_only(
+        mocker: MockerFixture) -> None:
+    import niquests
+
+    session = _mock_github_session(mocker)
+    error_resp = _make_resp(200)
+    gh_response = MagicMock()
+    gh_response.status_code = 400
+    gh_response.text = '   \n\t  '
+    error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
+    session.patch = AsyncMock(return_value=error_resp)
+    mock_log = mocker.patch('wiswa.utils.github.log')
+    await setup_github_project(session, _make_settings())
+    args = mock_log.warning.call_args[0]
+    assert args[2] == 'HTTP 400'
+
+
+async def test_setup_github_project_http_error_text_not_str_returns_status_only(
+        mocker: MockerFixture) -> None:
+    import niquests
+
+    session = _mock_github_session(mocker)
+    error_resp = _make_resp(200)
+    gh_response = MagicMock()
+    gh_response.status_code = 400
+    gh_response.text = None
+    error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
+    session.patch = AsyncMock(return_value=error_resp)
+    mock_log = mocker.patch('wiswa.utils.github.log')
+    await setup_github_project(session, _make_settings())
+    args = mock_log.warning.call_args[0]
+    assert args[2] == 'HTTP 400'

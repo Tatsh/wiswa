@@ -4,7 +4,6 @@ from __future__ import annotations
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
-import asyncio
 import getpass
 import logging
 
@@ -20,6 +19,48 @@ if TYPE_CHECKING:
 __all__ = ('setup_github_project',)
 
 log = logging.getLogger(__name__)
+
+_HTTP_ERROR_BODY_LOG_MAX = 500
+
+
+def _http_error_message(exc: niquests.HTTPError) -> str:
+    resp = getattr(exc, 'response', None)
+    code = getattr(resp, 'status_code', None) if resp is not None else None
+    if code is not None:
+        base = f'HTTP {code}'
+    else:
+        text = str(exc).strip()
+        base = text or type(exc).__name__
+    if resp is None:
+        return base
+
+    raw_text = getattr(resp, 'text', None)
+    if isinstance(raw_text, str) and '"message":' in raw_text:
+        json_fn = getattr(resp, 'json', None)
+        if callable(json_fn):
+            try:
+                data = json_fn()
+            except (ValueError, TypeError, OSError):
+                data = None
+            if isinstance(data, dict):
+                msg = data.get('message')
+                if isinstance(msg, str) and msg.strip():
+                    return f'{base} — {msg.strip()}'
+
+    if isinstance(raw_text, str):
+        snippet = raw_text.strip()
+        if snippet:
+            if len(snippet) > _HTTP_ERROR_BODY_LOG_MAX:
+                snippet = f'{snippet[:_HTTP_ERROR_BODY_LOG_MAX - 3]}...'
+            return f'{base} — {snippet}'
+    return base
+
+
+async def _append_on_http_error(step: str, awaitable: Awaitable[None]) -> None:
+    try:
+        await awaitable
+    except niquests.HTTPError as e:
+        log.warning('GitHub setup step failed: %s (%s)', step, _http_error_message(e))
 
 
 def _repository_uri_hostname(uri: str) -> str:
@@ -117,22 +158,40 @@ async def _setup_github_session(session: niquests.AsyncSession,
 
 async def _configure_github_repo(session: niquests.AsyncSession, host: str, repo_name: str,
                                  settings: Settings) -> None:
-    (await session.patch(f'{host}/repos/{repo_name}',
-                         json=_get_repo_config(settings))).raise_for_status()
+    async def _patch_repo() -> None:
+        r = await session.patch(f'{host}/repos/{repo_name}', json=_get_repo_config(settings))
+        r.raise_for_status()
 
-    async def _put(url: str, **kwargs: Any) -> None:
-        (await session.put(url, **kwargs)).raise_for_status()
+    await _append_on_http_error('repository settings', _patch_repo())
 
-    put_tasks: list[Awaitable[None]] = [
-        _put(f'{host}/repos/{repo_name}/topics',
-             json={'names': [x.replace(' ', '-') for x in settings['keywords']]}),
-        *(_put(f'{host}/repos/{repo_name}/{ep}')
-          for ep in ('automated-security-fixes', 'private-vulnerability-reporting',
-                     'vulnerability-alerts')),
-    ]
+    async def _put_topics() -> None:
+        r = await session.put(
+            f'{host}/repos/{repo_name}/topics',
+            json={'names': [x.replace(' ', '-') for x in settings['keywords']]},
+        )
+        r.raise_for_status()
+
+    await _append_on_http_error('repository topics', _put_topics())
+
+    for ep in (
+            'automated-security-fixes',
+            'private-vulnerability-reporting',
+            'vulnerability-alerts',
+    ):
+
+        async def _put_security(endpoint: str = ep) -> None:
+            r = await session.put(f'{host}/repos/{repo_name}/{endpoint}')
+            r.raise_for_status()
+
+        await _append_on_http_error(f'repository {ep}', _put_security())
+
     if settings['github']['immutable_releases']:
-        put_tasks.append(_put(f'{host}/repos/{repo_name}/immutable-releases'))
-    await asyncio.gather(*put_tasks)
+
+        async def _put_immutable() -> None:
+            r = await session.put(f'{host}/repos/{repo_name}/immutable-releases')
+            r.raise_for_status()
+
+        await _append_on_http_error('immutable releases', _put_immutable())
 
 
 _DESIRED_RULESETS: list[dict[str, Any]] = [{
@@ -232,6 +291,9 @@ async def setup_github_project(session: niquests.AsyncSession, settings: Setting
 
     API authentication uses the keyring (see README): ``wiswa-github:<hostname>``.
 
+    HTTP failures on individual steps do not stop the rest; each failure is logged
+    at warning with a short message (no traceback).
+
     Parameters
     ----------
     session : niquests.AsyncSession
@@ -251,33 +313,45 @@ async def setup_github_project(session: niquests.AsyncSession, settings: Setting
     suffix = settings['repository_uri'].split('/')[-1]
     repo_name = f"{settings['repository_uri'].split('/')[-2]}/{suffix}"
 
-    try:
-        await _configure_github_repo(session, host, repo_name, settings)
+    await _configure_github_repo(session, host, repo_name, settings)
+
+    rulesets_state: dict[str, Any] = {'existing': {}}
+
+    async def _fetch_rulesets() -> None:
         r = await session.get(f'{host}/repos/{repo_name}/rulesets', expire_after=0)
         r.raise_for_status()
-        rulesets = r.json()
-        existing: dict[str, int] = {x['name']: x['id'] for x in rulesets}
-        rulesets_url = f'{host}/repos/{repo_name}/rulesets'
+        rulesets_state['existing'] = {x['name']: x['id'] for x in r.json()}
 
-        async def _upsert_ruleset(ruleset: dict[str, Any]) -> None:
-            name = ruleset['name']
-            log.debug('Processing ruleset "%s".', name)
-            if name in existing:
-                (await session.put(f'{rulesets_url}/{existing[name]}',
-                                   json=ruleset)).raise_for_status()
-            else:
-                (await session.post(rulesets_url, json=ruleset)).raise_for_status()
+    await _append_on_http_error('list rulesets', _fetch_rulesets())
+    existing: dict[str, int] = rulesets_state['existing']
+    rulesets_url = f'{host}/repos/{repo_name}/rulesets'
 
-        await asyncio.gather(*(_upsert_ruleset(rs) for rs in _DESIRED_RULESETS))
-        if not settings.get('private', False):
+    async def _upsert_ruleset(ruleset: dict[str, Any]) -> None:
+        name = ruleset['name']
+        log.debug('Processing ruleset "%s".', name)
+        if name in existing:
+            r = await session.put(f'{rulesets_url}/{existing[name]}', json=ruleset)
+            r.raise_for_status()
+        else:
+            r = await session.post(rulesets_url, json=ruleset)
+            r.raise_for_status()
+
+    for rs in _DESIRED_RULESETS:
+        await _append_on_http_error(f'upsert ruleset {rs["name"]!r}', _upsert_ruleset(rs))
+
+    if not settings.get('private', False):
+
+        async def _configure_pages() -> None:
             pages_response = await session.get(f'{host}/repos/{repo_name}/pages')
-            if pages_response.status_code != HTTPStatus.OK:
-                (await
-                 session.post(f'{host}/repos/{repo_name}/pages',
-                              json={'source': {
-                                  'branch': settings['default_branch'],
-                                  'path': '/'
-                              }})).raise_for_status()
-    except niquests.HTTPError as e:
-        log.warning('Caught error updating repo: %s.', e)
-        log.debug('%r', e)
+            if pages_response.status_code == HTTPStatus.OK:
+                return
+            r = await session.post(
+                f'{host}/repos/{repo_name}/pages',
+                json={'source': {
+                    'branch': settings['default_branch'],
+                    'path': '/'
+                }},
+            )
+            r.raise_for_status()
+
+        await _append_on_http_error('GitHub Pages', _configure_pages())

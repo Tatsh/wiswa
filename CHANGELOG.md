@@ -32,6 +32,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- GitHub repository setup logs each failed API step at warning with a short HTTP or JSON message
+  (no traceback), continues with remaining steps, and prefers GitHub's JSON `message` field when
+  present.
 - CONTRIBUTING explains that `man/wiswa.1` and other `man/` output must come from `yarn gen-manpage`,
   not manual edits.
 - Bundled `.claude/rules/python.md` is emitted from
