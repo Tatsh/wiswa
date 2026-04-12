@@ -7,16 +7,10 @@ import json
 
 from wiswa.mcp import (
     clear_resolved_defaults_cache,
-    collect_paths,
-    format_key,
-    generate_override_snippet,
     get_defaults,
-    json_value_to_jsonnet,
     list_settings,
     lookup_setting,
-    navigate,
     search_settings,
-    type_name,
 )
 import pytest
 
@@ -30,6 +24,12 @@ MOCK_DEFAULTS: dict[str, Any] = {
     'line_width': 100,
     'want_main': False,
     'keywords': ['python'],
+    'ratio': 1.5,
+    'nullable_opt': None,
+    'complex_num': 1 + 2j,
+    'opaque_tuple': ('t',),
+    'empty_list': [],
+    'empty_dict': {},
     'pyproject': {
         'tool': {
             'ruff': {
@@ -87,145 +87,6 @@ class TestGetDefaultsReal:
         assert json.loads(result2_json) == {'a': 1}
         assert mock_resolve.call_count == 1
         assert mock_session_cls.call_count == 1
-
-
-class TestNavigate:
-    @staticmethod
-    def test_simple_key() -> None:
-        assert navigate(MOCK_DEFAULTS, ['project_name']) == 'test'
-
-    @staticmethod
-    def test_nested_key() -> None:
-        assert navigate(MOCK_DEFAULTS, ['pyproject', 'tool', 'ruff', 'line-length']) == 100
-
-    @staticmethod
-    def test_empty_parts() -> None:
-        assert navigate(MOCK_DEFAULTS, []) == MOCK_DEFAULTS
-
-    @staticmethod
-    def test_missing_key() -> None:
-        with pytest.raises(KeyError):
-            navigate(MOCK_DEFAULTS, ['nonexistent'])
-
-    @staticmethod
-    def test_missing_nested_key() -> None:
-        with pytest.raises(KeyError):
-            navigate(MOCK_DEFAULTS, ['pyproject', 'tool', 'nonexistent'])
-
-
-class TestFormatKey:
-    @staticmethod
-    def test_simple_identifier() -> None:
-        assert format_key('project_name') == 'project_name'
-
-    @staticmethod
-    def test_hyphenated_key() -> None:
-        assert format_key('line-length') == "'line-length'"
-
-    @staticmethod
-    def test_merge_operator() -> None:
-        assert format_key('tool', merge=True) == 'tool+'
-
-    @staticmethod
-    def test_hyphenated_merge() -> None:
-        assert format_key('line-length', merge=True) == "'line-length'+"
-
-
-class TestJsonValueToJsonnet:
-    @staticmethod
-    def test_null() -> None:
-        assert json_value_to_jsonnet(None) == 'null'
-
-    @staticmethod
-    def test_bool_true() -> None:
-        assert json_value_to_jsonnet(value=True) == 'true'
-
-    @staticmethod
-    def test_bool_false() -> None:
-        assert json_value_to_jsonnet(value=False) == 'false'
-
-    @staticmethod
-    def test_int() -> None:
-        assert json_value_to_jsonnet(42) == '42'
-
-    @staticmethod
-    def test_string() -> None:
-        assert json_value_to_jsonnet('hello') == '"hello"'
-
-    @staticmethod
-    def test_empty_list() -> None:
-        assert json_value_to_jsonnet([]) == '[]'
-
-    @staticmethod
-    def test_empty_dict() -> None:
-        assert json_value_to_jsonnet({}) == '{}'
-
-    @staticmethod
-    def test_list() -> None:
-        result = json_value_to_jsonnet(['a', 'b'])
-        assert '"a"' in result
-        assert '"b"' in result
-
-    @staticmethod
-    def test_dict() -> None:
-        result = json_value_to_jsonnet({'key': 'val'})
-        assert 'key: "val"' in result
-
-
-class TestTypeName:
-    @staticmethod
-    def test_boolean() -> None:
-        assert type_name(value=True) == 'boolean'
-
-    @staticmethod
-    def test_int() -> None:
-        assert type_name(42) == 'number'
-
-    @staticmethod
-    def test_string() -> None:
-        assert type_name('x') == 'string'
-
-    @staticmethod
-    def test_list() -> None:
-        assert type_name([]) == 'array'
-
-    @staticmethod
-    def test_dict() -> None:
-        assert type_name({}) == 'object'
-
-
-class TestCollectPaths:
-    @staticmethod
-    def test_flat() -> None:
-        paths = collect_paths({'a': 1, 'b': 2})
-        assert 'a' in paths
-        assert 'b' in paths
-
-    @staticmethod
-    def test_nested() -> None:
-        paths = collect_paths({'a': {'b': {'c': 1}}})
-        assert 'a' in paths
-        assert 'a.b' in paths
-        assert 'a.b.c' in paths
-
-    @staticmethod
-    def test_non_dict() -> None:
-        assert collect_paths('string') == []
-
-
-class TestGenerateOverrideSnippet:
-    @staticmethod
-    async def test_top_level_scalar() -> None:
-        result = await generate_override_snippet('line_width', 120)
-        assert 'line_width: 120,' in result
-
-    @staticmethod
-    async def test_nested_with_merge() -> None:
-        result = await generate_override_snippet('pyproject.tool.ruff.line-length', 120)
-        assert 'pyproject+:' in result
-        assert 'tool+:' in result
-        assert 'ruff+:' in result
-        assert "'line-length': 120," in result
 
 
 class TestGetDefaults:
@@ -348,46 +209,6 @@ class TestSearchSettings:
         assert 'default_value' not in entries['keywords']
 
 
-class TestNavigateNonDict:
-    @staticmethod
-    def test_navigate_through_non_dict() -> None:
-        with pytest.raises(KeyError, match='child'):
-            navigate({'parent': [1, 2]}, ['parent', 'child'])
-
-
-class TestJsonValueToJsonnetExtended:
-    @staticmethod
-    def test_float() -> None:
-        assert json_value_to_jsonnet(2.5) == '2.5'
-
-    @staticmethod
-    def test_nested_dict_with_hyphenated_key() -> None:
-        result = json_value_to_jsonnet({'line-length': 100})
-        assert "'line-length': 100" in result
-
-    @staticmethod
-    def test_unknown_type() -> None:
-        result = json_value_to_jsonnet(object())
-        assert 'object' in result
-
-    @staticmethod
-    def test_nested_list() -> None:
-        result = json_value_to_jsonnet([1, 'a', True])
-        assert '1' in result
-        assert '"a"' in result
-        assert 'true' in result
-
-
-class TestTypeNameExtended:
-    @staticmethod
-    def test_float() -> None:
-        assert type_name(2.5) == 'number'
-
-    @staticmethod
-    def test_unknown_type() -> None:
-        assert type_name(object()) == 'object'
-
-
 class TestGetDefaultsExtended:
     @staticmethod
     async def test_key_path_to_list() -> None:
@@ -407,6 +228,55 @@ class TestLookupSettingExtended:
         result = json.loads(await lookup_setting('want_main'))
         assert result['type'] == 'boolean'
         assert result['notes'] == []
+        assert 'false' in result['override_snippet']
+
+
+class TestLookupSettingOverrideSnippetJsonnet:
+    """Exercise _json_value_to_jsonnet via public lookup_setting only."""
+    @staticmethod
+    async def test_scalar_number_in_snippet() -> None:
+        result = json.loads(await lookup_setting('line_width'))
+        assert '100' in result['override_snippet']
+
+    @staticmethod
+    async def test_float_in_snippet() -> None:
+        result = json.loads(await lookup_setting('ratio'))
+        assert '1.5' in result['override_snippet']
+
+    @staticmethod
+    async def test_none_as_null() -> None:
+        result = json.loads(await lookup_setting('nullable_opt'))
+        assert 'null' in result['override_snippet']
+
+    @staticmethod
+    async def test_list_multiline() -> None:
+        result = json.loads(await lookup_setting('keywords'))
+        assert '"python"' in result['override_snippet']
+
+    @staticmethod
+    async def test_empty_list() -> None:
+        result = json.loads(await lookup_setting('empty_list'))
+        assert '[]' in result['override_snippet']
+
+    @staticmethod
+    async def test_empty_dict() -> None:
+        result = json.loads(await lookup_setting('empty_dict'))
+        snippet = result['override_snippet'].replace(' ', '')
+        assert '{}' in snippet
+
+    @staticmethod
+    async def test_complex_repr_fallback() -> None:
+        result = json.loads(await lookup_setting('complex_num'))
+        snippet = result['override_snippet']
+        assert 'j' in snippet
+
+    @staticmethod
+    async def test_tuple_serializes_as_jsonnet_list() -> None:
+        result = json.loads(await lookup_setting('opaque_tuple'))
+        assert '"t"' in result['override_snippet']
+        snippet = result['override_snippet']
+        assert '[' in snippet
+        assert ']' in snippet
 
 
 class TestListSettingsExtended:
@@ -422,16 +292,29 @@ class TestListSettingsExtended:
         assert 'tool.ruff.line-length' in keys
 
 
-class TestGenerateOverrideSnippetExtended:
+class TestListSettingsNonJsonTypes:
     @staticmethod
-    async def test_non_dict_intermediate() -> None:
-        result = await generate_override_snippet('keywords.item', 'val')
-        assert 'keywords:' in result
-        assert 'item:' in result
+    async def test_complex_type_name() -> None:
+        result = json.loads(await list_settings())
+        by_key = {e['key']: e for e in result}
+        assert by_key['complex_num']['type'] == 'complex'
 
     @staticmethod
-    async def test_non_dict_deep_path() -> None:
-        result = await generate_override_snippet('keywords.item.deep', 'val')
-        assert 'keywords:' in result
-        assert 'item:' in result
-        assert 'deep:' in result
+    async def test_tuple_type_name() -> None:
+        result = json.loads(await list_settings())
+        by_key = {e['key']: e for e in result}
+        assert by_key['opaque_tuple']['type'] == 'tuple'
+
+
+class TestSearchSettingsNonJsonTypes:
+    @staticmethod
+    async def test_complex_entry() -> None:
+        result = json.loads(await search_settings('complex_num'))
+        entry = next(e for e in result if e['key_path'] == 'complex_num')
+        assert entry['type'] == 'complex'
+
+    @staticmethod
+    async def test_tuple_entry() -> None:
+        result = json.loads(await search_settings('opaque'))
+        entry = next(e for e in result if e['key_path'] == 'opaque_tuple')
+        assert entry['type'] == 'tuple'

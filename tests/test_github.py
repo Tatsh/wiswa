@@ -97,10 +97,8 @@ async def test_setup_github_project_enables_security_features(mocker: MockerFixt
 async def test_setup_github_project_sets_topics(mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
     await setup_github_project(session, _make_settings(keywords=['test', 'multi word']))
-    session.put.assert_any_call(
-        'https://api.github.com/repos/testuser/testrepo/topics',
-        json={'names': ['test', 'multi-word']},
-    )
+    session.put.assert_any_call('https://api.github.com/repos/testuser/testrepo/topics',
+                                json={'names': ['test', 'multi-word']})
 
 
 async def test_setup_github_project_creates_protect_version_tags_ruleset(

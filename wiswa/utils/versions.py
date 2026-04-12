@@ -274,11 +274,10 @@ async def get_latest_yarn_version(session: niquests.AsyncSession) -> str:  # pra
 
 
 async def get_npm_latest_package_version(
-    session: niquests.AsyncSession,
-    package: str,
-    *,
-    npm_age_gate_minutes: int | None = None,
-) -> str:  # pragma: no cover
+        session: niquests.AsyncSession,
+        package: str,
+        *,
+        npm_age_gate_minutes: int | None = None) -> str:  # pragma: no cover
     """
     Get the latest version of an npm package.
 
@@ -545,13 +544,8 @@ def _github_tag_allowed_for_policy(tag: str, *, allow_suffixes: bool, owner: str
 
 
 async def _github_newest_release_tag_respecting_cutoff(
-    session: niquests.AsyncSession,
-    owner: str,
-    repo: str,
-    *,
-    cutoff: datetime,
-    allow_suffixes: bool,
-) -> tuple[str | None, int | None]:
+        session: niquests.AsyncSession, owner: str, repo: str, *, cutoff: datetime,
+        allow_suffixes: bool) -> tuple[str | None, int | None]:
     """
     Return the highest semantic version among GitHub releases published on or before *cutoff*.
 
@@ -606,16 +600,14 @@ async def _github_newest_release_tag_respecting_cutoff(
     return (best[1] if best else None), None
 
 
-async def get_github_release_latest_tag(
-    session: niquests.AsyncSession,
-    owner: str,
-    repo: str,
-    *,
-    skip_releases: bool = False,
-    allow_suffixes: bool = True,
-    apply_npm_min_release_age: bool = False,
-    npm_age_gate_minutes: int | None = None,
-) -> str:
+async def get_github_release_latest_tag(session: niquests.AsyncSession,
+                                        owner: str,
+                                        repo: str,
+                                        *,
+                                        skip_releases: bool = False,
+                                        allow_suffixes: bool = True,
+                                        apply_npm_min_release_age: bool = False,
+                                        npm_age_gate_minutes: int | None = None) -> str:
     """
     Get the latest release tag from a GitHub repository.
 

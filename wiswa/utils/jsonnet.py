@@ -197,14 +197,10 @@ def _default_github_username() -> str:
 
 
 def _make_native_callbacks(
-    session: AsyncSession | None = None,
-    merged_settings: dict[str, Any] | None = None,
-    project_settings_snippet: str | None = None,
-) -> dict[str, JsonnetNativeCallback]:
-    github_cli_username_cb: JsonnetNativeCallback = (
-        (),
-        _default_github_username,
-    )
+        session: AsyncSession | None = None,
+        merged_settings: dict[str, Any] | None = None,
+        project_settings_snippet: str | None = None) -> dict[str, JsonnetNativeCallback]:
+    github_cli_username_cb: JsonnetNativeCallback = ((), _default_github_username)
     if session is None:
         return {
             'githubCliUsername': github_cli_username_cb,

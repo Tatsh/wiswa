@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Iterable, Iterator, Sequence
-from functools import cache
+from functools import cache, partial
 from pathlib import Path
 from shlex import quote
 from typing import TYPE_CHECKING, Any, cast
@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import tempfile
 
 import anyio
@@ -38,24 +39,18 @@ _FORMAT_DEFAULT_FILENAMES = {
     'cyclonedx1.5': 'cyclonedx.json',
     'pylock.toml': 'pylock.toml',
 }
-_LEGACY_WISWA_AI_PATHS = (
-    '.cursor/permissions.json.dist',
-    '.cursor/rules/general.mdc',
-    '.cursor/rules/json-yaml.mdc',
-    '.cursor/rules/markdown.mdc',
-    '.cursor/rules/toml-ini.mdc',
-    '.cursor/rules/cpp.mdc',
-    '.cursor/rules/python.mdc',
-    '.cursor/rules/python-tests.mdc',
-    '.github/copilot-instructions.md',
-    '.github/instructions/general.instructions.md',
-    '.github/instructions/json-yaml.instructions.md',
-    '.github/instructions/markdown.instructions.md',
-    '.github/instructions/toml-ini.instructions.md',
-    '.github/instructions/cpp.instructions.md',
-    '.github/instructions/python.instructions.md',
-    '.github/instructions/python-tests.instructions.md',
-)
+_LEGACY_WISWA_AI_PATHS = ('.cursor/permissions.json.dist', '.cursor/rules/general.mdc',
+                          '.cursor/rules/json-yaml.mdc', '.cursor/rules/markdown.mdc',
+                          '.cursor/rules/toml-ini.mdc', '.cursor/rules/cpp.mdc',
+                          '.cursor/rules/python.mdc', '.cursor/rules/python-tests.mdc',
+                          '.github/copilot-instructions.md',
+                          '.github/instructions/general.instructions.md',
+                          '.github/instructions/json-yaml.instructions.md',
+                          '.github/instructions/markdown.instructions.md',
+                          '.github/instructions/toml-ini.instructions.md',
+                          '.github/instructions/cpp.instructions.md',
+                          '.github/instructions/python.instructions.md',
+                          '.github/instructions/python-tests.instructions.md')
 
 # Fallbacks for the standard CHANGELOG.md boilerplate when GitHub resolution is unavailable.
 _CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL = 'https://keepachangelog.com/en/1.1.1/'
@@ -284,45 +279,39 @@ def _resolve_output_filename(er: ExportRequirements) -> str:
     return _FORMAT_DEFAULT_FILENAMES.get(er.get('format', 'requirements.txt'), 'requirements.txt')
 
 
-_UV_EXPORT_PRE_OUTPUT_BOOL_FLAGS: tuple[tuple[str, str, bool], ...] = (
-    ('all_packages', '--all-packages', False),
-    ('all_extras', '--all-extras', False),
-    ('no_dev', '--no-dev', False),
-    ('only_dev', '--only-dev', False),
-    ('no_default_groups', '--no-default-groups', False),
-    ('all_groups', '--all-groups', False),
-    ('no_annotate', '--no-annotate', False),
-    ('no_header', '--no-header', False),
-    ('no_editable', '--no-editable', False),
-)
+_UV_EXPORT_PRE_OUTPUT_BOOL_FLAGS: tuple[tuple[str, str, bool],
+                                        ...] = (('all_packages', '--all-packages',
+                                                 False), ('all_extras', '--all-extras',
+                                                          False), ('no_dev', '--no-dev', False),
+                                                ('only_dev', '--only-dev', False),
+                                                ('no_default_groups', '--no-default-groups',
+                                                 False), ('all_groups', '--all-groups', False),
+                                                ('no_annotate', '--no-annotate',
+                                                 False), ('no_header', '--no-header', False),
+                                                ('no_editable', '--no-editable', False))
 """
 Boolean keys mapped to ``uv export`` flags emitted before ``--output-file``.
 
 :meta hide-value:
 """
 
-_UV_EXPORT_POST_OUTPUT_BOOL_FLAGS: tuple[tuple[str, str, bool], ...] = (
-    ('no_emit_project', '--no-emit-project', True),
-    ('no_emit_workspace', '--no-emit-workspace', False),
-    ('no_emit_local', '--no-emit-local', False),
-    ('locked', '--locked', False),
-    ('frozen', '--frozen', False),
-)
+_UV_EXPORT_POST_OUTPUT_BOOL_FLAGS: tuple[tuple[str, str, bool],
+                                         ...] = (('no_emit_project', '--no-emit-project', True),
+                                                 ('no_emit_workspace', '--no-emit-workspace',
+                                                  False), ('no_emit_local', '--no-emit-local',
+                                                           False), ('locked', '--locked', False),
+                                                 ('frozen', '--frozen', False))
 """
 Boolean keys mapped to ``uv export`` flags emitted after ``--output-file``.
 
 :meta hide-value:
 """
 
-_UV_EXPORT_PRE_OUTPUT_LIST_FLAGS: tuple[tuple[str, str], ...] = (
-    ('package', '--package'),
-    ('prune', '--prune'),
-    ('extra', '--extra'),
-    ('no_extra', '--no-extra'),
-    ('group', '--group'),
-    ('no_group', '--no-group'),
-    ('only_group', '--only-group'),
-)
+_UV_EXPORT_PRE_OUTPUT_LIST_FLAGS: tuple[tuple[str, str],
+                                        ...] = (('package', '--package'), ('prune', '--prune'),
+                                                ('extra', '--extra'), ('no_extra', '--no-extra'),
+                                                ('group', '--group'), ('no_group', '--no-group'),
+                                                ('only_group', '--only-group'))
 """
 Sequence keys mapped to ``uv export`` flags emitted before ``--output-file``.
 
@@ -469,7 +458,7 @@ async def _post_process_steps_python(settings: Settings,
         cleanup_tasks.append(anyio.Path('poetry.lock').unlink(missing_ok=True))
     if not settings['want_tests']:
         cleanup_tasks.extend((anyio.to_thread.run_sync(
-            lambda: __import__('shutil').rmtree('tests', ignore_errors=True)),
+            partial(shutil.rmtree, 'tests', ignore_errors=True)),
                               anyio.Path('.github/workflows/tests.yml').unlink(missing_ok=True)))
         if (not settings['vscode']['launch']
                 or (len(settings['vscode']['launch']['configurations']) == 1
@@ -477,8 +466,8 @@ async def _post_process_steps_python(settings: Settings,
             cleanup_tasks.append(anyio.Path('.vscode/launch.json').unlink(missing_ok=True))
     if not settings['want_docs']:
         cleanup_tasks.extend((anyio.to_thread.run_sync(
-            lambda: __import__('shutil').rmtree('docs', ignore_errors=True)),
-                              anyio.Path('.readthedocs.yaml').unlink(missing_ok=True)))
+            partial(shutil.rmtree, 'docs',
+                    ignore_errors=True)), anyio.Path('.readthedocs.yaml').unlink(missing_ok=True)))
     if not settings['want_codeql']:
         cleanup_tasks.append(anyio.Path('.github/workflows/codeql.yml').unlink(missing_ok=True))
     if cleanup_tasks:
@@ -616,16 +605,15 @@ def _typescript_badges(settings: Settings) -> list[str]:
         return []
     npm_badges: tuple[str, ...] = ()
     if not settings['private']:
-        npm_badges = (
-            *(_simple_icons_badge(dep, dep.replace('-', ''), dep, 'black',
-                                  f'https://www.npmjs.com/package/{dep}')
-              for dep in ('bootstrap', 'react', 'sass', 'semantic-ui-react', 'sass', 'tailwindcss')
-              if dep in settings['package_json'].get('dependencies', {})),
-            *(_simple_icons_badge(dev_dep, dev_dep.replace('-', ''), dev_dep, 'black',
-                                  f'https://www.npmjs.com/package/{dev_dep}')
-              for dev_dep in ('eslint', 'jest')
-              if dev_dep in settings['package_json']['devDependencies']),
-        )
+        npm_badges = (*(_simple_icons_badge(dep, dep.replace('-', ''), dep, 'black',
+                                            f'https://www.npmjs.com/package/{dep}')
+                        for dep in ('bootstrap', 'react', 'sass', 'semantic-ui-react', 'sass',
+                                    'tailwindcss')
+                        if dep in settings['package_json'].get('dependencies', {})),
+                      *(_simple_icons_badge(dev_dep, dev_dep.replace('-', ''), dev_dep, 'black',
+                                            f'https://www.npmjs.com/package/{dev_dep}')
+                        for dev_dep in ('eslint', 'jest')
+                        if dev_dep in settings['package_json']['devDependencies']))
     return sorted(
         (*npm_badges,
          _simple_icons_badge('TypeScript', 'typescript', 'TypeScript', 'black',
@@ -733,12 +721,9 @@ def _readme_badge_delimiter_indices(lines: Sequence[str]) -> tuple[int, int] | N
     return None
 
 
-async def _replace_badge_section_legacy(
-    readme: anyio.Path,
-    lines: Sequence[str],
-    expected: Sequence[str],
-    social_expected: Sequence[str],
-) -> None:
+async def _replace_badge_section_legacy(readme: anyio.Path, lines: Sequence[str],
+                                        expected: Sequence[str],
+                                        social_expected: Sequence[str]) -> None:
     start_idx = next((i for i, line in enumerate(lines) if line.startswith('#')), 0) + 1
     while start_idx < len(lines) and not lines[start_idx].strip():
         start_idx += 1
@@ -846,8 +831,7 @@ async def maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings,
             on_command=on_command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL,
-            check=False,
-        )
+            check=False)
         if proc_uv.returncode != 0:
             log.debug(
                 'git diff --no-color -a HEAD -- uv.lock failed; skipping extended uv.lock restore.')
@@ -861,8 +845,7 @@ async def maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings,
         on_command=on_command,
         stdout=asyncio.subprocess.DEVNULL,
         stderr=asyncio.subprocess.PIPE,
-        check=False,
-    )
+        check=False)
     if proc_restore.returncode != 0:
         log.debug('git restore uv.lock failed (%s); trying git checkout.',
                   (err or b'').decode().strip())
@@ -871,8 +854,7 @@ async def maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings,
             on_command=on_command,
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.PIPE,
-            check=False,
-        )
+            check=False)
         if proc_co.returncode != 0:
             log.warning('Could not restore uv.lock from HEAD: %s', (err_co or b'').decode().strip())
             return
@@ -908,10 +890,7 @@ async def post_process_steps(settings: Settings,
             await _post_process_steps_python(settings, debug=debug, on_command=on_command)
         case _:
             log.warning('No post-processing steps for project type `%s`.', settings['project_type'])
-    await asyncio.gather(
-        _check_readme_badges(settings),
-        _refresh_changelog_reference_urls(session),
-    )
+    await asyncio.gather(_check_readme_badges(settings), _refresh_changelog_reference_urls(session))
     package_json = anyio.Path('package.json')
     await package_json.write_text(json.dumps(json.loads(await
                                                         package_json.read_text(encoding='utf-8')),
@@ -939,5 +918,4 @@ async def post_process_steps(settings: Settings,
                             stderr=asyncio.subprocess.PIPE,
                             stdout=asyncio.subprocess.PIPE,
                             check=False),
-        maybe_revert_uv_lock_if_only_lockfile_changed(settings, on_command=on_command),
-    )
+        maybe_revert_uv_lock_if_only_lockfile_changed(settings, on_command=on_command))

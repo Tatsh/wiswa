@@ -49,10 +49,8 @@ async def test_evaluate_jsonnet_project_with_output_dir(tmp_path: Path,
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     output_dir = tmp_path / 'output'
-    mocker.patch(
-        'wiswa.utils.jsonnet.evaluate_jsonnet_file',
-        return_value='{"sub/file.txt": "hello content"}',
-    )
+    mocker.patch('wiswa.utils.jsonnet.evaluate_jsonnet_file',
+                 return_value='{"sub/file.txt": "hello content"}')
     await evaluate_jsonnet_project(lib_path, [str(lib_path)], '{}', output_dir=output_dir)
     assert output_dir.exists()
     assert (output_dir / 'sub/file.txt').exists()
@@ -104,19 +102,16 @@ def test_validate_flatpak_app_id_publishing_not_dict_raises() -> None:
 
 
 def _patch_evaluate_merged_settings_mocks(
-    mocker: MockerFixture,
-    *,
-    user_defaults_exists: bool = False,
-    user_defaults_text: str = '{}',
-    readme_exists: bool = False,
-    established_pytest: bool = False,
-    evaluate_snippet_return: str = '{"project_type": "python"}',
-) -> MagicMock:
-    mocker.patch(
-        'wiswa.utils.jsonnet.anyio.to_thread.run_sync',
-        new_callable=AsyncMock,
-        side_effect=lambda func, *_a, **_kw: func(),
-    )
+        mocker: MockerFixture,
+        *,
+        user_defaults_exists: bool = False,
+        user_defaults_text: str = '{}',
+        readme_exists: bool = False,
+        established_pytest: bool = False,
+        evaluate_snippet_return: str = '{"project_type": "python"}') -> MagicMock:
+    mocker.patch('wiswa.utils.jsonnet.anyio.to_thread.run_sync',
+                 new_callable=AsyncMock,
+                 side_effect=lambda func, *_a, **_kw: func())
     mocker.patch('wiswa.utils.jsonnet.json.loads', wraps=json.loads)
 
     def make_path(*args: object, **_kwargs: object) -> MagicMock:
@@ -137,11 +132,9 @@ def _patch_evaluate_merged_settings_mocks(
     mocker.patch('wiswa.utils.jsonnet.anyio.Path', side_effect=make_path)
     mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_snippet.return_value = evaluate_snippet_return
-    mocker.patch(
-        'wiswa.utils.jsonnet.tests_dir_has_pytest_modules_excluding_starter_main',
-        new_callable=AsyncMock,
-        return_value=established_pytest,
-    )
+    mocker.patch('wiswa.utils.jsonnet.tests_dir_has_pytest_modules_excluding_starter_main',
+                 new_callable=AsyncMock,
+                 return_value=established_pytest)
     return mock_jsonnet
 
 
@@ -181,13 +174,11 @@ async def test_evaluate_merged_settings_mocks_user_defaults_readme_pytest(
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     mocker.patch('wiswa.utils.jsonnet.platformdirs.user_config_path', return_value=tmp_path / 'cfg')
-    mock_jsonnet = _patch_evaluate_merged_settings_mocks(
-        mocker,
-        user_defaults_exists=True,
-        user_defaults_text='{ extra: true }',
-        readme_exists=True,
-        established_pytest=True,
-    )
+    mock_jsonnet = _patch_evaluate_merged_settings_mocks(mocker,
+                                                         user_defaults_exists=True,
+                                                         user_defaults_text='{ extra: true }',
+                                                         readme_exists=True,
+                                                         established_pytest=True)
     settings = '{ uses_user_defaults: true }\n'
     merged_json, merged = await evaluate_merged_settings([str(lib_path)], lib_path, settings)
     assert merged_json == '{"project_type": "python"}'
@@ -302,30 +293,21 @@ async def test_github_cli_username_native_returns_unknown_when_gh_missing(
     assert callback() == 'unknown'
 
 
-@pytest.mark.parametrize(
-    ('origin_url', 'expected_owner'),
-    [
-        ('git@github.com:some_owner/some_repo.git', 'some_owner'),
-        ('https://github.com/other_owner/x.git', 'other_owner'),
-    ],
-)
-async def test_github_username_native_falls_back_to_git_origin(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    mocker: MockerFixture,
-    origin_url: str,
-    expected_owner: str,
-) -> None:
+@pytest.mark.parametrize(('origin_url', 'expected_owner'),
+                         [('git@github.com:some_owner/some_repo.git', 'some_owner'),
+                          ('https://github.com/other_owner/x.git', 'other_owner')])
+async def test_github_username_native_falls_back_to_git_origin(tmp_path: Path,
+                                                               monkeypatch: pytest.MonkeyPatch,
+                                                               mocker: MockerFixture,
+                                                               origin_url: str,
+                                                               expected_owner: str) -> None:
     monkeypatch.chdir(tmp_path)
     mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
     mock_run = mocker.patch('wiswa.utils.jsonnet.sp.run')
     mock_run.side_effect = sp.CalledProcessError(1, 'gh')
     git_dir = tmp_path / '.git'
     git_dir.mkdir()
-    (git_dir / 'config').write_text(
-        f'[remote "origin"]\n\turl = {origin_url}\n',
-        encoding='utf-8',
-    )
+    (git_dir / 'config').write_text(f'[remote "origin"]\n\turl = {origin_url}\n', encoding='utf-8')
     mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
@@ -333,31 +315,21 @@ async def test_github_username_native_falls_back_to_git_origin(
     assert callback() == expected_owner
 
 
-@pytest.mark.parametrize(
-    ('origin_url', 'expected_owner'),
-    [
-        ('git://github.com/proto_owner/proto_repo.git', 'proto_owner'),
-        ('ssh://git@github.com/ssh_owner/ssh_repo.git', 'ssh_owner'),
-        ('https://www.github.com/www_owner/repo', 'www_owner'),
-    ],
-)
-async def test_github_username_native_git_remote_url_schemes(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    mocker: MockerFixture,
-    origin_url: str,
-    expected_owner: str,
-) -> None:
+@pytest.mark.parametrize(('origin_url', 'expected_owner'),
+                         [('git://github.com/proto_owner/proto_repo.git', 'proto_owner'),
+                          ('ssh://git@github.com/ssh_owner/ssh_repo.git', 'ssh_owner'),
+                          ('https://www.github.com/www_owner/repo', 'www_owner')])
+async def test_github_username_native_git_remote_url_schemes(tmp_path: Path,
+                                                             monkeypatch: pytest.MonkeyPatch,
+                                                             mocker: MockerFixture, origin_url: str,
+                                                             expected_owner: str) -> None:
     monkeypatch.chdir(tmp_path)
     mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
     mock_run = mocker.patch('wiswa.utils.jsonnet.sp.run')
     mock_run.side_effect = sp.CalledProcessError(1, 'gh')
     git_dir = tmp_path / '.git'
     git_dir.mkdir()
-    (git_dir / 'config').write_text(
-        f'[remote "origin"]\n\turl = {origin_url}\n',
-        encoding='utf-8',
-    )
+    (git_dir / 'config').write_text(f'[remote "origin"]\n\turl = {origin_url}\n', encoding='utf-8')
     mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
@@ -371,15 +343,11 @@ async def test_worktree_without_commondir_yields_only_worktree_config(
     git_main = repo / '.git'
     git_main.mkdir(parents=True)
     (git_main / 'config').write_text(
-        '[remote "origin"]\n\turl = git@github.com:unused_main/x.git\n',
-        encoding='utf-8',
-    )
+        '[remote "origin"]\n\turl = git@github.com:unused_main/x.git\n', encoding='utf-8')
     wt_marker = git_main / 'worktrees' / 'wt'
     wt_marker.mkdir(parents=True)
     (wt_marker / 'config').write_text(
-        '[remote "origin"]\n\turl = https://gitlab.com/wt/no_commondir.git\n',
-        encoding='utf-8',
-    )
+        '[remote "origin"]\n\turl = https://gitlab.com/wt/no_commondir.git\n', encoding='utf-8')
     worktree = tmp_path / 'wt'
     worktree.mkdir()
     (worktree / '.git').write_text(f'gitdir: {wt_marker.as_posix()}\n', encoding='utf-8')
@@ -402,16 +370,12 @@ async def test_github_username_native_worktree_commondir_dot_skips_duplicate_con
     git_main = repo / '.git'
     git_main.mkdir(parents=True)
     (git_main / 'config').write_text(
-        '[remote "origin"]\n\turl = git@github.com:unused_main/x.git\n',
-        encoding='utf-8',
-    )
+        '[remote "origin"]\n\turl = git@github.com:unused_main/x.git\n', encoding='utf-8')
     wt_marker = git_main / 'worktrees' / 'wt'
     wt_marker.mkdir(parents=True)
     (wt_marker / 'commondir').write_text('.\n')
     (wt_marker / 'config').write_text(
-        '[remote "origin"]\n\turl = https://gitlab.com/group/proj.git\n',
-        encoding='utf-8',
-    )
+        '[remote "origin"]\n\turl = https://gitlab.com/group/proj.git\n', encoding='utf-8')
     worktree = tmp_path / 'wt'
     worktree.mkdir()
     (worktree / '.git').write_text(f'gitdir: {wt_marker.as_posix()}\n', encoding='utf-8')
@@ -431,16 +395,12 @@ async def test_github_username_native_gitlab_origin_then_github(tmp_path: Path,
     git_main = repo / '.git'
     git_main.mkdir(parents=True)
     (git_main / 'config').write_text(
-        '[remote "origin"]\n\turl = git@github.com:good_owner/good_repo.git\n',
-        encoding='utf-8',
-    )
+        '[remote "origin"]\n\turl = git@github.com:good_owner/good_repo.git\n', encoding='utf-8')
     wt_marker = git_main / 'worktrees' / 'wt'
     wt_marker.mkdir(parents=True)
     (wt_marker / 'commondir').write_text('../../')
     (wt_marker / 'config').write_text(
-        '[remote "origin"]\n\turl = https://gitlab.com/group/proj.git\n',
-        encoding='utf-8',
-    )
+        '[remote "origin"]\n\turl = https://gitlab.com/group/proj.git\n', encoding='utf-8')
     worktree = tmp_path / 'wt'
     worktree.mkdir()
     (worktree / '.git').write_text(f'gitdir: {wt_marker.as_posix()}\n', encoding='utf-8')
@@ -530,9 +490,7 @@ async def test_github_username_native_non_github_remote_unknown(tmp_path: Path,
     git_dir = tmp_path / '.git'
     git_dir.mkdir()
     (git_dir / 'config').write_text(
-        '[remote "origin"]\n\turl = https://gitlab.com/acme/warehouse.git\n',
-        encoding='utf-8',
-    )
+        '[remote "origin"]\n\turl = https://gitlab.com/acme/warehouse.git\n', encoding='utf-8')
     mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
     mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
@@ -576,9 +534,7 @@ async def test_github_username_native_origin_without_url_key_unknown(
     git_dir = tmp_path / '.git'
     git_dir.mkdir()
     (git_dir / 'config').write_text(
-        '[remote "origin"]\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n',
-        encoding='utf-8',
-    )
+        '[remote "origin"]\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n', encoding='utf-8')
     mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
     mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
@@ -592,10 +548,8 @@ async def test_github_username_native_github_https_root_path_unknown(
     monkeypatch.chdir(tmp_path)
     git_dir = tmp_path / '.git'
     git_dir.mkdir()
-    (git_dir / 'config').write_text(
-        '[remote "origin"]\n\turl = https://github.com/\n',
-        encoding='utf-8',
-    )
+    (git_dir / 'config').write_text('[remote "origin"]\n\turl = https://github.com/\n',
+                                    encoding='utf-8')
     mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
     mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
@@ -609,10 +563,8 @@ async def test_github_username_native_empty_gh_stdout_falls_back_to_git(
     monkeypatch.chdir(tmp_path)
     git_dir = tmp_path / '.git'
     git_dir.mkdir()
-    (git_dir / 'config').write_text(
-        '[remote "origin"]\n\turl = git@github.com:fall_owner/x.git\n',
-        encoding='utf-8',
-    )
+    (git_dir / 'config').write_text('[remote "origin"]\n\turl = git@github.com:fall_owner/x.git\n',
+                                    encoding='utf-8')
     mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
     mock_run = mocker.patch('wiswa.utils.jsonnet.sp.run')
     mock_run.return_value = mocker.MagicMock(stdout='\n')
@@ -656,16 +608,12 @@ async def test_worktree_commondir_read_oserror_skips_common_yield(tmp_path: Path
     git_main = repo / '.git'
     git_main.mkdir(parents=True)
     (git_main / 'config').write_text(
-        '[remote "origin"]\n\turl = git@github.com:skipped_common/x.git\n',
-        encoding='utf-8',
-    )
+        '[remote "origin"]\n\turl = git@github.com:skipped_common/x.git\n', encoding='utf-8')
     wt_marker = git_main / 'worktrees' / 'wt'
     wt_marker.mkdir(parents=True)
     (wt_marker / 'commondir').write_text('../../')
     (wt_marker / 'config').write_text(
-        '[remote "origin"]\n\turl = https://gitlab.com/group/proj.git\n',
-        encoding='utf-8',
-    )
+        '[remote "origin"]\n\turl = https://gitlab.com/group/proj.git\n', encoding='utf-8')
     worktree = tmp_path / 'wt'
     worktree.mkdir()
     (worktree / '.git').write_text(f'gitdir: {wt_marker.as_posix()}\n', encoding='utf-8')

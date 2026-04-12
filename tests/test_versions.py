@@ -34,12 +34,11 @@ def clear_version_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None
 
 
 def _make_response(
-    text: str = '',
-    json_data: object = None,
-    ok: bool = True,  # noqa: FBT001, FBT002
-    content: bytes = b'',
-    status_code: int | None = None,
-) -> MagicMock:
+        text: str = '',
+        json_data: object = None,
+        ok: bool = True,  # noqa: FBT001, FBT002
+        content: bytes = b'',
+        status_code: int | None = None) -> MagicMock:
     """Create a mock niquests response."""
     response = MagicMock()
     response.ok = ok
@@ -248,9 +247,7 @@ async def test_get_github_release_latest_tag_persists_to_disk(tmp_path: Path) ->
 
 
 async def test_get_github_release_latest_tag_disk_cache_on_403(
-    tmp_path: Path,
-    caplog: pytest.LogCaptureFixture,
-) -> None:
+        tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     cache_dir = tmp_path / 'xdg-cache' / 'wiswa'
     cache_dir.mkdir(parents=True)
     key = 'gh_owner/rate_limited_False_True'
@@ -832,19 +829,14 @@ async def test_get_pypi_latest_package_version_uv_toml_global_parses_timestamp(
     assert result == '1.0.0'
 
 
-@pytest.mark.parametrize(
-    ('toml_value', 'pkg', 'use_bare_int'),
-    [
-        ('PT4H', 'dur-pt4h', False),
-        ('P10D', 'dur-p10d', False),
-        ('P2W', 'dur-p2w', False),
-        ('P1DT2H', 'dur-p1dt2h', False),
-        ('9 hours', 'dur-9h', False),
-        ('8 days', 'dur-8d', False),
-        ('2 weeks', 'dur-2w', False),
-        ('30', 'dur-intdays', True),
-    ],
-)
+@pytest.mark.parametrize(('toml_value', 'pkg', 'use_bare_int'), [('PT4H', 'dur-pt4h', False),
+                                                                 ('P10D', 'dur-p10d', False),
+                                                                 ('P2W', 'dur-p2w', False),
+                                                                 ('P1DT2H', 'dur-p1dt2h', False),
+                                                                 ('9 hours', 'dur-9h', False),
+                                                                 ('8 days', 'dur-8d', False),
+                                                                 ('2 weeks', 'dur-2w', False),
+                                                                 ('30', 'dur-intdays', True)])
 async def test_get_pypi_exclude_newer_duration_forms(
         tmp_path: Path,
         mocker: MockerFixture,
@@ -891,8 +883,7 @@ async def test_get_pypi_per_package_uv_toml_skips_invalid_timestamp(tmp_path: Pa
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text(
         '[exclude-newer-package]\nkeep = "2025-02-01T00:00:00Z"\ndrop = "not-a-timestamp"\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     xml = _make_pypi_xml([
         ('2.0.0', 'Mon, 01 Mar 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
@@ -1412,8 +1403,7 @@ async def test_get_pypi_latest_package_version_per_package_cutoff(tmp_path: Path
     (uv_dir / 'uv.toml').write_text(
         'exclude-newer = "2020-01-01T00:00:00Z"\n\n'
         '[exclude-newer-package]\nmy-pkg = "2024-06-01T00:00:00Z"\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     xml = _make_pypi_xml([
         ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
         ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),

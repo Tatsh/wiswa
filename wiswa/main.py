@@ -50,37 +50,11 @@ log = logging.getLogger(__name__)
 # Each dots* spinner name is repeated this many times in the draw pool, so those names beat
 # any other single spinner.
 _DOT_FAMILY_WEIGHT = 4
-_DOT_SPINNER_NAMES = (
-    'dots',
-    'dots2',
-    'dots3',
-    'dots4',
-    'dots5',
-    'dots6',
-    'dots7',
-    'dots8',
-    'dots9',
-    'dots10',
-    'dots11',
-    'dots12',
-    'dots13',
-    'dots14',
-)
-_OTHER_SPINNER_NAMES = (
-    'sand',
-    'pipe',
-    'star',
-    'star2',
-    'hamburger',
-    'growVertical',
-    'growHorizontal',
-    'earth',
-    'runner',
-    'soccerHeader',
-    'orangePulse',
-    'bluePulse',
-    'orangeBluePulse',
-)
+_DOT_SPINNER_NAMES = ('dots', 'dots2', 'dots3', 'dots4', 'dots5', 'dots6', 'dots7', 'dots8',
+                      'dots9', 'dots10', 'dots11', 'dots12', 'dots13', 'dots14')
+_OTHER_SPINNER_NAMES = ('sand', 'pipe', 'star', 'star2', 'hamburger', 'growVertical',
+                        'growHorizontal', 'earth', 'runner', 'soccerHeader', 'orangePulse',
+                        'bluePulse', 'orangeBluePulse')
 _SPINNER_CHOICE_POOL: tuple[str, ...] = (tuple(name for name in _DOT_SPINNER_NAMES
                                                for _ in range(_DOT_FAMILY_WEIGHT)) +
                                          _OTHER_SPINNER_NAMES)
@@ -143,53 +117,44 @@ def _handle_http_error(e: niquests.HTTPError) -> None:
     raise click.Abort
 
 
-async def _postprocess_or_normalize_python_manifests(
-    *,
-    skip_postprocess: bool,
-    loaded: Settings,
-    debug: bool,
-    session: niquests.AsyncSession | None,
-    spin_update: Callable[[str], None],
-) -> None:
+async def _postprocess_or_normalize_python_manifests(*, skip_postprocess: bool, loaded: Settings,
+                                                     debug: bool,
+                                                     session: niquests.AsyncSession | None,
+                                                     spin_update: Callable[[str], None]) -> None:
     if not skip_postprocess:
         spin_update('Post-processing...')
-        await post_process_steps(
-            loaded,
-            debug=debug,
-            on_command=lambda cmd: spin_update(f'Running `{cmd}` ...'),
-            session=session,
-        )
+        await post_process_steps(loaded,
+                                 debug=debug,
+                                 on_command=lambda cmd: spin_update(f'Running `{cmd}` ...'),
+                                 session=session)
     elif loaded['project_type'] == 'python':
         spin_update('Normalizing Python manifests...')
         await apply_python_pyproject_manifest_edits(loaded)
 
 
 async def _main_async(  # noqa: C901
-    file: Path,
-    jpath: tuple[str, ...] = (),
-    *,
-    cache_time: int = 600,
-    debug: bool = False,
-    no_cache: bool = False,
-    output_dir: Path | None = None,
-    quiet: bool = False,
-    skip_github: bool = False,
-    skip_jsonnet: bool = False,
-    skip_postprocess: bool = False,
-    skip_static: bool = False,
-    skip_templates: bool = False,
-    skip_yarn: bool = False,
-) -> None:
-    setup_logging(
-        debug=debug,
-        loggers={
-            'urllib3': {},
-            'urllib3.util.retry': {
-                'level': 'WARNING'
-            },
-            'wiswa': {}
-        },
-    )
+        file: Path,
+        jpath: tuple[str, ...] = (),
+        *,
+        cache_time: int = 600,
+        debug: bool = False,
+        no_cache: bool = False,
+        output_dir: Path | None = None,
+        quiet: bool = False,
+        skip_github: bool = False,
+        skip_jsonnet: bool = False,
+        skip_postprocess: bool = False,
+        skip_static: bool = False,
+        skip_templates: bool = False,
+        skip_yarn: bool = False) -> None:
+    setup_logging(debug=debug,
+                  loggers={
+                      'urllib3': {},
+                      'urllib3.util.retry': {
+                          'level': 'WARNING'
+                      },
+                      'wiswa': {}
+                  })
     os.chdir(file.parent)
     spinner_enabled = (not debug and not quiet
                        and (sys.stderr.isatty() or os.environ.get('WISWA_PROGRESS') == '1'))
@@ -243,10 +208,8 @@ async def _main_async(  # noqa: C901
                     await write_templated_files(module_path, loaded, session)
                 if not skip_yarn:
                     spin_update('Downloading Yarn...')
-                    await asyncio.gather(
-                        download_yarn(session, loaded['yarn_version']),
-                        download_yarn_plugins(session),
-                    )
+                    await asyncio.gather(download_yarn(session, loaded['yarn_version']),
+                                         download_yarn_plugins(session))
                 if not skip_static:
                     spin_update('Copying static files...')
                     copy_tasks: list[Awaitable[None]] = [copy_static_files(loaded, module_path)]
@@ -284,8 +247,7 @@ async def _main_async(  # noqa: C901
                 'This is often GitHub API rate limiting or a repository without semver tags or '
                 'releases. Wait and retry, set GITHUB_TOKEN, or check the upstream repo publishes '
                 'tags.',
-                err=True,
-            )
+                err=True)
         log.debug('RuntimeError', exc_info=e)
         _reraise_or_abort(e, debug=debug)
     except Exception as e:
@@ -302,84 +264,70 @@ async def _main_async(  # noqa: C901
 
 
 @click.command(context_settings={'help_option_names': ('-h', '--help')})
-@click.option(
-    '--cache-time',
-    default=600,
-    show_default=True,
-    type=int,
-    help='Cache expiration time in seconds.',
-)
+@click.option('--cache-time',
+              default=600,
+              show_default=True,
+              type=int,
+              help='Cache expiration time in seconds.')
 @click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
 @click.option(
     '-J',
     '--jpath',
     multiple=True,
-    help=('Add a directory to the Jsonnet search path (only used when evaluating settings).'),
-)
+    help=('Add a directory to the Jsonnet search path (only used when evaluating settings).'))
 @click.option('--no-cache', is_flag=True, help='Disable HTTP response caching.')
-@click.option(
-    '-o',
-    '--output-dir',
-    default=None,
-    type=click.Path(file_okay=False, path_type=Path),
-    help='Output directory for generated files.',
-)
-@click.option(
-    '-q',
-    '--quiet',
-    is_flag=True,
-    help='Suppress the progress spinner and the final Done message.',
-)
+@click.option('-o',
+              '--output-dir',
+              default=None,
+              type=click.Path(file_okay=False, path_type=Path),
+              help='Output directory for generated files.')
+@click.option('-q',
+              '--quiet',
+              is_flag=True,
+              help='Suppress the progress spinner and the final Done message.')
 @click.option('--skip-github', is_flag=True, help='Skip configuring GitHub project.')
 @click.option(
     '--skip-jsonnet',
     is_flag=True,
     help=('Skip project.jsonnet output (for example pyproject.toml, package.json, and workflows). '
-          'Merged settings from .wiswa.jsonnet still use Jsonnet.'),
-)
+          'Merged settings from .wiswa.jsonnet still use Jsonnet.'))
 @click.option('--skip-postprocess', is_flag=True, help='Skip post-processing steps.')
 @click.option('--skip-static', is_flag=True, help='Skip copying static files.')
 @click.option('--skip-templates', is_flag=True, help='Skip Jinja2 template evaluation.')
 @click.option('--skip-yarn', is_flag=True, help='Skip Yarn download.')
-@click.argument(
-    'file',
-    default='.wiswa.jsonnet',
-    type=click.Path(exists=True, dir_okay=False, path_type=Path, resolve_path=True),
-)
-def main(
-    file: Path,
-    jpath: tuple[str, ...] = (),
-    *,
-    cache_time: int = 600,
-    debug: bool = False,
-    no_cache: bool = False,
-    output_dir: Path | None = None,
-    quiet: bool = False,
-    skip_github: bool = False,
-    skip_jsonnet: bool = False,
-    skip_postprocess: bool = False,
-    skip_static: bool = False,
-    skip_templates: bool = False,
-    skip_yarn: bool = False,
-) -> None:
+@click.argument('file',
+                default='.wiswa.jsonnet',
+                type=click.Path(exists=True, dir_okay=False, path_type=Path, resolve_path=True))
+def main(file: Path,
+         jpath: tuple[str, ...] = (),
+         *,
+         cache_time: int = 600,
+         debug: bool = False,
+         no_cache: bool = False,
+         output_dir: Path | None = None,
+         quiet: bool = False,
+         skip_github: bool = False,
+         skip_jsonnet: bool = False,
+         skip_postprocess: bool = False,
+         skip_static: bool = False,
+         skip_templates: bool = False,
+         skip_yarn: bool = False) -> None:
     """Generate and maintain projects with Jsonnet."""  # noqa: DOC501
 
     async def _run() -> None:
-        await _main_async(
-            file,
-            jpath,
-            cache_time=cache_time,
-            debug=debug,
-            no_cache=no_cache,
-            output_dir=output_dir,
-            quiet=quiet,
-            skip_github=skip_github,
-            skip_jsonnet=skip_jsonnet,
-            skip_postprocess=skip_postprocess,
-            skip_static=skip_static,
-            skip_templates=skip_templates,
-            skip_yarn=skip_yarn,
-        )
+        await _main_async(file,
+                          jpath,
+                          cache_time=cache_time,
+                          debug=debug,
+                          no_cache=no_cache,
+                          output_dir=output_dir,
+                          quiet=quiet,
+                          skip_github=skip_github,
+                          skip_jsonnet=skip_jsonnet,
+                          skip_postprocess=skip_postprocess,
+                          skip_static=skip_static,
+                          skip_templates=skip_templates,
+                          skip_yarn=skip_yarn)
 
     try:
         anyio.run(_run)

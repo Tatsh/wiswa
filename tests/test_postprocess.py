@@ -123,12 +123,9 @@ async def test_apply_python_pyproject_manifest_edits_prunes_empty_tool_tables(
         '[tool.poetry]\n'
         '[dependency-groups]\n'
         'docs = []\ntests = []\ndev = []\n',
-        encoding='utf-8',
-    )
-    (tmp_path / 'package.json').write_text(
-        '{"scripts": {"check-formatting": "x", "format": "y"}}',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
+    (tmp_path / 'package.json').write_text('{"scripts": {"check-formatting": "x", "format": "y"}}',
+                                           encoding='utf-8')
     settings = cast('Any', _make_settings(want_yapf=False))
     await apply_python_pyproject_manifest_edits(settings)
     root = tomlkit.loads((tmp_path / 'pyproject.toml').read_text(encoding='utf-8')).unwrap()
@@ -148,13 +145,10 @@ def _setup_python_project(tmp_path: Path) -> None:
         '[tool.ruff.lint]\nignore = []\n'
         '[dependency-groups]\n'
         'docs = []\ntests = []\ndev = []\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     package_json = tmp_path / 'package.json'
-    package_json.write_text(
-        '{"scripts": {"check-formatting": "old", "format": "old"}}',
-        encoding='utf-8',
-    )
+    package_json.write_text('{"scripts": {"check-formatting": "old", "format": "old"}}',
+                            encoding='utf-8')
 
 
 def _mock_subprocess(mocker: MockerFixture) -> AsyncMock:
@@ -219,17 +213,14 @@ async def test_post_process_steps_python_no_tests_removes_launch_json(
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(
-            want_tests=False,
-            vscode={
-                'launch': {
-                    'configurations': [{
-                        'name': 'Run tests'
-                    }],
-                },
-            },
-        ),
-    )
+        _make_settings(want_tests=False,
+                       vscode={
+                           'launch': {
+                               'configurations': [{
+                                   'name': 'Run tests'
+                               }],
+                           },
+                       }))
     await post_process_steps(settings)
     assert not (tmp_path / '.vscode/launch.json').exists()
 
@@ -313,12 +304,9 @@ async def test_post_process_steps_python_poetry(tmp_path: Path, monkeypatch: pyt
         '[tool.ruff.lint]\nignore = []\n'
         '[tool.poetry.group.docs.dependencies]\nsphinx = "^7"\n'
         '[tool.poetry.group.tests.dependencies]\npytest = "^8"\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     (tmp_path / 'package.json').write_text(
-        '{"scripts": {"check-formatting": "old", "format": "old"}}',
-        encoding='utf-8',
-    )
+        '{"scripts": {"check-formatting": "old", "format": "old"}}', encoding='utf-8')
     _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(package_manager='poetry'))
     await post_process_steps(settings)
@@ -339,12 +327,9 @@ async def test_post_process_steps_python_poetry_no_docs_no_tests(tmp_path: Path,
         '[tool.ruff.lint]\nignore = []\n'
         '[tool.poetry.group.docs.dependencies]\nsphinx = "^7"\n'
         '[tool.poetry.group.tests.dependencies]\npytest = "^8"\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     (tmp_path / 'package.json').write_text(
-        '{"scripts": {"check-formatting": "old", "format": "old"}}',
-        encoding='utf-8',
-    )
+        '{"scripts": {"check-formatting": "old", "format": "old"}}', encoding='utf-8')
     _mock_subprocess(mocker)
     settings = cast('Any',
                     _make_settings(package_manager='poetry', want_docs=False, want_tests=False))
@@ -391,8 +376,7 @@ async def test_post_process_steps_readme_badges_replace_delimited_region_only(
         '[![stale](http://example.com/stale)]\n'
         '<!-- WISWA-GENERATED-README:STOP -->\n\n'
         'Keep this paragraph.\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(_readme_existed=True))
     await post_process_steps(settings)
@@ -418,8 +402,7 @@ async def test_post_process_steps_readme_badges_unclosed_start_falls_back_to_leg
         '<!-- WISWA-GENERATED-README:START -->\n'
         '[![old badge](http://example.com)]\n\n'
         'Content here.\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(_readme_existed=True))
     await post_process_steps(settings)
@@ -475,8 +458,7 @@ async def test_post_process_steps_updates_changelog_reference_urls(tmp_path: Pat
         '# Changelog\n\nThe format is based on [Keep a Changelog]'
         '(https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning]'
         '(https://semver.org/spec/v1.2.3.html).\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     _mock_subprocess(mocker)
     settings = cast('Any', _make_settings())
     await post_process_steps(settings)
@@ -497,14 +479,11 @@ async def test_post_process_steps_changelog_urls_resolve_from_github(
         '# Changelog\n\nThe format is based on [Keep a Changelog]'
         '(https://keepachangelog.com/en/0.3.0/), and this project adheres to [Semantic Versioning]'
         '(https://semver.org/spec/v0.0.0.html).\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch(
-        'wiswa.utils.postprocess.get_github_release_latest_tag',
-        new_callable=AsyncMock,
-        side_effect=['v1.1.1', '3.0.0'],
-    )
+    mocker.patch('wiswa.utils.postprocess.get_github_release_latest_tag',
+                 new_callable=AsyncMock,
+                 side_effect=['v1.1.1', '3.0.0'])
     settings = cast('Any', _make_settings())
     await post_process_steps(settings, session=mocker.MagicMock())
     body = changelog.read_text(encoding='utf-8')
@@ -522,14 +501,11 @@ async def test_post_process_steps_changelog_keepachangelog_resolution_failure_fa
         '# Changelog\n\nThe format is based on [Keep a Changelog]'
         '(https://keepachangelog.com/en/0.3.0/), and this project adheres to [Semantic Versioning]'
         '(https://semver.org/spec/v0.0.0.html).\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch(
-        'wiswa.utils.postprocess.get_github_release_latest_tag',
-        new_callable=AsyncMock,
-        side_effect=[niquests.RequestException('simulated'), 'v2.0.0'],
-    )
+    mocker.patch('wiswa.utils.postprocess.get_github_release_latest_tag',
+                 new_callable=AsyncMock,
+                 side_effect=[niquests.RequestException('simulated'), 'v2.0.0'])
     settings = cast('Any', _make_settings())
     await post_process_steps(settings, session=mocker.MagicMock())
     body = changelog.read_text(encoding='utf-8')
@@ -547,14 +523,11 @@ async def test_post_process_steps_changelog_semver_resolution_failure_fallback(
         '# Changelog\n\nThe format is based on [Keep a Changelog]'
         '(https://keepachangelog.com/en/0.3.0/), and this project adheres to [Semantic Versioning]'
         '(https://semver.org/spec/v0.0.0.html).\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch(
-        'wiswa.utils.postprocess.get_github_release_latest_tag',
-        new_callable=AsyncMock,
-        side_effect=['v1.1.1', niquests.RequestException('simulated')],
-    )
+    mocker.patch('wiswa.utils.postprocess.get_github_release_latest_tag',
+                 new_callable=AsyncMock,
+                 side_effect=['v1.1.1', niquests.RequestException('simulated')])
     settings = cast('Any', _make_settings())
     await post_process_steps(settings, session=mocker.MagicMock())
     body = changelog.read_text(encoding='utf-8')
@@ -571,11 +544,9 @@ async def test_post_process_steps_changelog_skips_rewrite_when_no_matching_links
     original = '# Changelog\n\nNo boilerplate hyperlinks here.\n'
     changelog.write_text(original, encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch(
-        'wiswa.utils.postprocess.get_github_release_latest_tag',
-        new_callable=AsyncMock,
-        side_effect=['v9.9.9', 'v9.9.9'],
-    )
+    mocker.patch('wiswa.utils.postprocess.get_github_release_latest_tag',
+                 new_callable=AsyncMock,
+                 side_effect=['v9.9.9', 'v9.9.9'])
     settings = cast('Any', _make_settings())
     await post_process_steps(settings, session=mocker.MagicMock())
     assert changelog.read_text(encoding='utf-8') == original
@@ -587,15 +558,9 @@ async def test_post_process_steps_python_no_tests_no_launch_vscode(tmp_path: Pat
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     _mock_subprocess(mocker)
-    settings = cast(
-        'Any',
-        _make_settings(
-            want_tests=False,
-            vscode={
-                'launch': None,
-            },
-        ),
-    )
+    settings = cast('Any', _make_settings(want_tests=False, vscode={
+        'launch': None,
+    }))
     await post_process_steps(settings)
 
 
@@ -608,19 +573,16 @@ async def test_post_process_steps_python_no_tests_multiple_launch_configs(
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(
-            want_tests=False,
-            vscode={
-                'launch': {
-                    'configurations': [{
-                        'name': 'Run tests'
-                    }, {
-                        'name': 'Debug'
-                    }],
-                },
-            },
-        ),
-    )
+        _make_settings(want_tests=False,
+                       vscode={
+                           'launch': {
+                               'configurations': [{
+                                   'name': 'Run tests'
+                               }, {
+                                   'name': 'Debug'
+                               }],
+                           },
+                       }))
     await post_process_steps(settings)
     assert (tmp_path / '.vscode/launch.json').exists()
 
@@ -686,13 +648,7 @@ async def test_post_process_steps_badges_github_with_tests_codeql(tmp_path: Path
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(
-            _readme_existed=True,
-            want_tests=True,
-            want_codeql=True,
-            want_docs=True,
-        ),
-    )
+        _make_settings(_readme_existed=True, want_tests=True, want_codeql=True, want_docs=True))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'Tests' in content
@@ -723,13 +679,7 @@ async def test_post_process_steps_badges_docs_github_pages(tmp_path: Path,
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(
-            _readme_existed=True,
-            want_docs=True,
-            project_type='c++',
-            using_github=True,
-        ),
-    )
+        _make_settings(_readme_existed=True, want_docs=True, project_type='c++', using_github=True))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'GitHub Pages' in content
@@ -745,14 +695,11 @@ async def test_post_process_steps_badges_private_skips_github_pages(tmp_path: Pa
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(
-            _readme_existed=True,
-            want_docs=True,
-            private=True,
-            project_type='c++',
-            using_github=True,
-        ),
-    )
+        _make_settings(_readme_existed=True,
+                       want_docs=True,
+                       private=True,
+                       project_type='c++',
+                       using_github=True))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'GitHub Pages' not in content
@@ -768,15 +715,12 @@ async def test_post_process_steps_badges_python_poetry_django(tmp_path: Path,
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(
-            _readme_existed=True,
-            using_django=True,
-            package_manager='poetry',
-            python_deps={'main': {
-                'numpy': '>=1',
-            }},
-        ),
-    )
+        _make_settings(_readme_existed=True,
+                       using_django=True,
+                       package_manager='poetry',
+                       python_deps={'main': {
+                           'numpy': '>=1',
+                       }}))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'Django' in content
@@ -813,14 +757,9 @@ async def test_post_process_steps_badges_private_python_skips_numpy_pypi_badge(
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(
-            _readme_existed=True,
-            private=True,
-            python_deps={'main': {
-                'numpy': '>=1',
-            }},
-        ),
-    )
+        _make_settings(_readme_existed=True, private=True, python_deps={'main': {
+            'numpy': '>=1',
+        }}))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'pypi.org/project/numpy' not in content.lower()
@@ -836,21 +775,18 @@ async def test_post_process_steps_badges_typescript_project(tmp_path: Path,
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(
-            project_type='typescript',
-            _readme_existed=True,
-            package_json={
-                'dependencies': {
-                    'react': '^18',
-                    'next': '^14',
-                },
-                'devDependencies': {
-                    'eslint': '^8',
-                    'jest': '^29',
-                },
-            },
-        ),
-    )
+        _make_settings(project_type='typescript',
+                       _readme_existed=True,
+                       package_json={
+                           'dependencies': {
+                               'react': '^18',
+                               'next': '^14',
+                           },
+                           'devDependencies': {
+                               'eslint': '^8',
+                               'jest': '^29',
+                           },
+                       }))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'TypeScript' in content
@@ -865,22 +801,19 @@ async def test_post_process_steps_badges_typescript_private_skips_npm_badges(
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(
-            project_type='typescript',
-            _readme_existed=True,
-            private=True,
-            package_json={
-                'dependencies': {
-                    'react': '^18',
-                    'next': '^14',
-                },
-                'devDependencies': {
-                    'eslint': '^8',
-                    'jest': '^29',
-                },
-            },
-        ),
-    )
+        _make_settings(project_type='typescript',
+                       _readme_existed=True,
+                       private=True,
+                       package_json={
+                           'dependencies': {
+                               'react': '^18',
+                               'next': '^14',
+                           },
+                           'devDependencies': {
+                               'eslint': '^8',
+                               'jest': '^29',
+                           },
+                       }))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'npmjs.com' not in content
@@ -926,32 +859,29 @@ async def test_post_process_steps_social_badges(tmp_path: Path, monkeypatch: pyt
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(
-            _readme_existed=True,
-            keywords=['dotnet', 'ffmpeg', 'kde', 'qt', 'swift'],
-            social={
-                'bsky': 'testuser',
-                'buymeacoffee': 'testuser',
-                'calendly': {
-                    'text': 'Book a call',
-                    'uri': 'https://calendly.com/test',
-                },
-                'cashapp': '$testuser',
-                'libera_irc': 'testuser',
-                'mastodon': {
-                    'id': '123456',
-                    'domain': 'mastodon.social',
-                },
-                'patreon': 'testuser',
-                'slashdot': 'testuser',
-                'youtube': {
-                    'text': 'My Channel',
-                    'uri': 'https://youtube.com/@test',
-                },
-                'custom_badges': ['[![Custom](http://example.com)]'],
-            },
-        ),
-    )
+        _make_settings(_readme_existed=True,
+                       keywords=['dotnet', 'ffmpeg', 'kde', 'qt', 'swift'],
+                       social={
+                           'bsky': 'testuser',
+                           'buymeacoffee': 'testuser',
+                           'calendly': {
+                               'text': 'Book a call',
+                               'uri': 'https://calendly.com/test',
+                           },
+                           'cashapp': '$testuser',
+                           'libera_irc': 'testuser',
+                           'mastodon': {
+                               'id': '123456',
+                               'domain': 'mastodon.social',
+                           },
+                           'patreon': 'testuser',
+                           'slashdot': 'testuser',
+                           'youtube': {
+                               'text': 'My Channel',
+                               'uri': 'https://youtube.com/@test',
+                           },
+                           'custom_badges': ['[![Custom](http://example.com)]'],
+                       }))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert '@testuser' in content
@@ -980,22 +910,19 @@ async def test_post_process_steps_python_uv_with_deps(tmp_path: Path,
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(
-            _readme_existed=True,
-            python_deps={
-                'main': {
-                    'jinja': '>=3',
-                    'pydantic': '>=2',
-                    'sqlalchemy': '>=2',
-                },
-            },
-            pyproject={
-                'project': {
-                    'dependencies': ['pandas>=2', 'scrapy>=2'],
-                },
-            },
-        ),
-    )
+        _make_settings(_readme_existed=True,
+                       python_deps={
+                           'main': {
+                               'jinja': '>=3',
+                               'pydantic': '>=2',
+                               'sqlalchemy': '>=2',
+                           },
+                       },
+                       pyproject={
+                           'project': {
+                               'dependencies': ['pandas>=2', 'scrapy>=2'],
+                           },
+                       }))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'Jinja' in content or 'jinja' in content
@@ -1083,12 +1010,9 @@ async def test_post_process_steps_poetry_quiet_by_default(tmp_path: Path,
         '[tool.ruff.lint]\nignore = []\n'
         '[tool.poetry.group.docs.dependencies]\nsphinx = "^7"\n'
         '[tool.poetry.group.tests.dependencies]\npytest = "^8"\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     (tmp_path / 'package.json').write_text(
-        '{"scripts": {"check-formatting": "old", "format": "old"}}',
-        encoding='utf-8',
-    )
+        '{"scripts": {"check-formatting": "old", "format": "old"}}', encoding='utf-8')
     _mock_subprocess(mocker)
     commands: list[str] = []
     settings = cast('Any', _make_settings(package_manager='poetry'))
@@ -1113,12 +1037,9 @@ async def test_post_process_steps_poetry_no_quiet_in_debug(tmp_path: Path,
         '[tool.ruff.lint]\nignore = []\n'
         '[tool.poetry.group.docs.dependencies]\nsphinx = "^7"\n'
         '[tool.poetry.group.tests.dependencies]\npytest = "^8"\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     (tmp_path / 'package.json').write_text(
-        '{"scripts": {"check-formatting": "old", "format": "old"}}',
-        encoding='utf-8',
-    )
+        '{"scripts": {"check-formatting": "old", "format": "old"}}', encoding='utf-8')
     _mock_subprocess(mocker)
     commands: list[str] = []
     settings = cast('Any', _make_settings(package_manager='poetry'))
@@ -1152,22 +1073,19 @@ async def test_post_process_steps_custom_project_badges(tmp_path: Path,
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(
-            _readme_existed=True,
-            custom_project_badges=[
-                {
-                    'anchor': '[![High Priority](http://example.com/high.svg)',
-                    'href': 'http://example.com/high',
-                    'priority': -1,
-                },
-                {
-                    'anchor': '[![Low Priority](http://example.com/low.svg)',
-                    'href': 'http://example.com/low',
-                    'priority': 1,
-                },
-            ],
-        ),
-    )
+        _make_settings(_readme_existed=True,
+                       custom_project_badges=[
+                           {
+                               'anchor': '[![High Priority](http://example.com/high.svg)',
+                               'href': 'http://example.com/high',
+                               'priority': -1,
+                           },
+                           {
+                               'anchor': '[![Low Priority](http://example.com/low.svg)',
+                               'href': 'http://example.com/low',
+                               'priority': 1,
+                           },
+                       ]))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'High Priority' in content
@@ -1207,12 +1125,9 @@ async def test_post_process_steps_clang_format_expands_globs_and_literals(
                                return_value=mock_proc)
     settings = cast(
         'Any',
-        _make_settings(
-            project_type='c',
-            clang_format_args=('src/*.cpp src/x.cpp orphaned.hpp orphaned.hpp'),
-            _readme_existed=False,
-        ),
-    )
+        _make_settings(project_type='c',
+                       clang_format_args=('src/*.cpp src/x.cpp orphaned.hpp orphaned.hpp'),
+                       _readme_existed=False))
     await post_process_steps(settings)
     clang = [c for c in mock_create.call_args_list if c.args and c.args[0] == 'clang-format']
     assert len(clang) == 1
@@ -1231,10 +1146,8 @@ async def test_post_process_steps_clang_format_skipped_when_no_paths(
     mock_proc.returncode = 0
     mock_create = mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec',
                                return_value=mock_proc)
-    settings = cast(
-        'Any',
-        _make_settings(project_type='c++', clang_format_args='', _readme_existed=False),
-    )
+    settings = cast('Any',
+                    _make_settings(project_type='c++', clang_format_args='', _readme_existed=False))
     await post_process_steps(settings)
     clang = [c for c in mock_create.call_args_list if c.args and c.args[0] == 'clang-format']
     assert clang == []
@@ -1248,10 +1161,8 @@ async def test_post_process_steps_badges_no_codeql_no_tests(tmp_path: Path,
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
     _mock_subprocess(mocker)
-    settings = cast(
-        'Any',
-        _make_settings(_readme_existed=True, want_codeql=False, want_tests=False),
-    )
+    settings = cast('Any', _make_settings(_readme_existed=True, want_codeql=False,
+                                          want_tests=False))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'CodeQL' not in content
@@ -1269,13 +1180,7 @@ async def test_post_process_steps_badges_docs_non_python_non_github(tmp_path: Pa
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(
-            project_type='c',
-            _readme_existed=True,
-            want_docs=True,
-            using_github=False,
-        ),
-    )
+        _make_settings(project_type='c', _readme_existed=True, want_docs=True, using_github=False))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'readthedocs' not in content
@@ -1340,12 +1245,9 @@ def _setup_poetry_project(tmp_path: Path) -> None:
         '[tool.ruff.lint]\nignore = []\n'
         '[tool.poetry.group.docs.dependencies]\nsphinx = "^7"\n'
         '[tool.poetry.group.tests.dependencies]\npytest = "^8"\n',
-        encoding='utf-8',
-    )
+        encoding='utf-8')
     (tmp_path / 'package.json').write_text(
-        '{"scripts": {"check-formatting": "old", "format": "old"}}',
-        encoding='utf-8',
-    )
+        '{"scripts": {"check-formatting": "old", "format": "old"}}', encoding='utf-8')
 
 
 def _get_export_cmd(commands: list[str], tool: str = 'uv') -> str | None:
@@ -1392,34 +1294,32 @@ async def test_post_process_steps_uv_export_all_flags(tmp_path: Path,
     commands: list[str] = []
     settings = cast(
         'Any',
-        _make_settings(export_requirements=_export_settings(
-            format='pylock.toml',
-            output_filename='deps.txt',
-            all_extras=True,
-            all_groups=True,
-            all_packages=True,
-            extra=['docs'],
-            frozen=True,
-            group=['tests'],
-            locked=True,
-            no_annotate=True,
-            no_default_groups=True,
-            no_dev=True,
-            no_editable=True,
-            no_emit_local=True,
-            no_emit_package=['foo'],
-            no_emit_project=True,
-            no_emit_workspace=True,
-            no_extra=['bar'],
-            no_group=['ci'],
-            no_hashes=True,
-            no_header=True,
-            only_dev=True,
-            only_group=['lint'],
-            package=['pkg1'],
-            prune=['pkg2'],
-            script='script.py',
-        )))
+        _make_settings(export_requirements=_export_settings(format='pylock.toml',
+                                                            output_filename='deps.txt',
+                                                            all_extras=True,
+                                                            all_groups=True,
+                                                            all_packages=True,
+                                                            extra=['docs'],
+                                                            frozen=True,
+                                                            group=['tests'],
+                                                            locked=True,
+                                                            no_annotate=True,
+                                                            no_default_groups=True,
+                                                            no_dev=True,
+                                                            no_editable=True,
+                                                            no_emit_local=True,
+                                                            no_emit_package=['foo'],
+                                                            no_emit_project=True,
+                                                            no_emit_workspace=True,
+                                                            no_extra=['bar'],
+                                                            no_group=['ci'],
+                                                            no_hashes=True,
+                                                            no_header=True,
+                                                            only_dev=True,
+                                                            only_group=['lint'],
+                                                            package=['pkg1'],
+                                                            prune=['pkg2'],
+                                                            script='script.py')))
     await post_process_steps(settings, on_command=commands.append)
     cmd = _get_export_cmd(commands)
     assert cmd is not None
@@ -1645,13 +1545,10 @@ async def test_post_process_steps_poetry_export_all_groups_empty_with(
     commands: list[str] = []
     settings = cast(
         'Any',
-        _make_settings(
-            package_manager='poetry',
-            want_docs=False,
-            want_tests=False,
-            export_requirements=_export_settings(all_groups=True, no_dev=True),
-        ),
-    )
+        _make_settings(package_manager='poetry',
+                       want_docs=False,
+                       want_tests=False,
+                       export_requirements=_export_settings(all_groups=True, no_dev=True)))
     await post_process_steps(settings, on_command=commands.append)
     cmd = _get_export_cmd(commands, tool='poetry')
     assert cmd is not None
@@ -1667,11 +1564,8 @@ async def test_post_process_steps_poetry_export_only_dev(tmp_path: Path,
     commands: list[str] = []
     settings = cast(
         'Any',
-        _make_settings(
-            package_manager='poetry',
-            export_requirements=_export_settings(only_dev=True),
-        ),
-    )
+        _make_settings(package_manager='poetry',
+                       export_requirements=_export_settings(only_dev=True)))
     await post_process_steps(settings, on_command=commands.append)
     cmd = _get_export_cmd(commands, tool='poetry')
     assert cmd is not None
@@ -1808,20 +1702,16 @@ def _git_init_commit_uv_repo(tmp_path: Path, *, lock_text: str = 'committed-lock
 @pytest.mark.skipif(which('git') is None, reason='git not installed')
 def test_uv_lock_diff_changes_only_exclude_newer_real_git_diff(tmp_path: Path) -> None:
     _git_init_commit_uv_repo(tmp_path, lock_text=_MINIMAL_UV_LOCK)
-    drifted = _MINIMAL_UV_LOCK.replace(
-        'exclude-newer = "2025-01-01T00:00:00Z"',
-        'exclude-newer = "2030-01-01T00:00:00Z"',
-    )
+    drifted = _MINIMAL_UV_LOCK.replace('exclude-newer = "2025-01-01T00:00:00Z"',
+                                       'exclude-newer = "2030-01-01T00:00:00Z"')
     (tmp_path / 'uv.lock').write_text(drifted, encoding='utf-8')
     git = which('git')
     assert git is not None
-    diff = subprocess.run(
-        [git, 'diff', '--no-color', '-a', 'HEAD', '--', 'uv.lock'],
-        cwd=tmp_path,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    diff = subprocess.run([git, 'diff', '--no-color', '-a', 'HEAD', '--', 'uv.lock'],
+                          cwd=tmp_path,
+                          check=False,
+                          capture_output=True,
+                          text=True)
     assert diff.returncode == 0
     assert uv_lock_diff_changes_only_exclude_newer(diff.stdout) is True
 
@@ -1855,10 +1745,8 @@ async def test_maybe_revert_uv_lock_restores_when_only_options_differ_and_other_
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     _git_init_commit_uv_repo(tmp_path, lock_text=_MINIMAL_UV_LOCK)
-    drifted = _MINIMAL_UV_LOCK.replace(
-        'exclude-newer = "2025-01-01T00:00:00Z"',
-        'exclude-newer = "2030-01-01T00:00:00Z"',
-    )
+    drifted = _MINIMAL_UV_LOCK.replace('exclude-newer = "2025-01-01T00:00:00Z"',
+                                       'exclude-newer = "2030-01-01T00:00:00Z"')
     (tmp_path / 'uv.lock').write_text(drifted, encoding='utf-8')
     (tmp_path / 'pyproject.toml').write_text('[project]\nname = "y"\nversion = "0"\n',
                                              encoding='utf-8')

@@ -16,8 +16,17 @@ __all__ = ('GithubAPIExtension', 'ParseMarkdownBadgeExtension', 'ShellExtension'
            'ToPythonExtension')
 
 
-def topython(  # noqa: PLR0911
-        obj: Any, *, convert_strings: bool = True, list_to_tuple: bool = False) -> Any:
+def _topython_str(obj: str, *, convert_strings: bool) -> Any:
+    if convert_strings:
+        if re.match(r'^true|false$', obj, re.IGNORECASE):
+            return obj.lower() == 'true'
+        if obj.isdigit():
+            return int(obj)
+    fixed = obj.replace('\\', r'\\').replace("'", r"\'")
+    return f"'{fixed}'"
+
+
+def _topython(obj: Any, *, convert_strings: bool = True, list_to_tuple: bool = False) -> Any:
     """
     Convert a Python object to its string representation as Python source code.
 
@@ -36,47 +45,49 @@ def topython(  # noqa: PLR0911
         A string containing the Python source representation of the object, or the object itself if
         it cannot be converted.
     """
-    data: Any
-    if isinstance(obj, str):
-        if convert_strings:
-            if re.match(r'^true|false$', obj, re.IGNORECASE):
-                return obj.lower() == 'true'
-            if obj.isdigit():
-                return int(obj)
-        fixed = obj.replace('\\', r'\\').replace("'", r"\'")
-        return f"'{fixed}'"
-    if isinstance(obj, float | int | bool | Decimal | None):
-        return str(obj)
-    if isinstance(obj, list) and not list_to_tuple:
-        data = [topython(x, list_to_tuple=list_to_tuple) for x in obj]
-        return f'[{", ".join(data)}]'
-    if isinstance(obj, Mapping):
-        data = {
-            str(k).replace('\\', r'\\').replace("'", r"\'"):
-                topython(v, list_to_tuple=list_to_tuple)
-            for k, v in obj.items()
-        }
-        val = ', '.join(f"'{k}': {v}" for k, v in data.items())
-        return f'{{{val}}}'
-    if isinstance(obj, tuple):
-        if not obj:
-            return '()'
-        data = tuple(topython(x, list_to_tuple=list_to_tuple) for x in obj)
-        start = f'({", ".join(data)}'
-        if len(data) == 1:
-            start += ','
-        return f'{start})'
-    if isinstance(obj, set):
-        data = {topython(x, list_to_tuple=list_to_tuple) for x in obj}
-        return f'{{{", ".join(sorted(data))}}}'
-    if isinstance(obj, Iterable):
-        data = [topython(x, list_to_tuple=list_to_tuple) for x in obj]
-        if list_to_tuple:
-            if not data:
-                return '()'
-            return f'({", ".join(data)})' if len(data) > 1 else f'({data[0]},)'
-        return f'[{", ".join(data)}]'
-    return obj
+    out: Any
+    match obj:
+        case str():
+            out = _topython_str(obj, convert_strings=convert_strings)
+        case _ if isinstance(obj, float | int | bool | Decimal | None):
+            out = str(obj)
+        case list() if not list_to_tuple:
+            parts = [_topython(x, list_to_tuple=list_to_tuple) for x in obj]
+            out = f'[{", ".join(parts)}]'
+        case _ if isinstance(obj, Mapping):
+            mapping = {
+                str(k).replace('\\', r'\\').replace("'", r"\'"):
+                    _topython(v, list_to_tuple=list_to_tuple)
+                for k, v in obj.items()
+            }
+            val = ', '.join(f"'{k}': {v}" for k, v in mapping.items())
+            out = f'{{{val}}}'
+        case tuple():
+            if not obj:
+                out = '()'
+            else:
+                tuple_items = tuple(_topython(x, list_to_tuple=list_to_tuple) for x in obj)
+                start = f'({", ".join(tuple_items)}'
+                if len(tuple_items) == 1:
+                    start += ','
+                out = f'{start})'
+        case set():
+            set_items = {_topython(x, list_to_tuple=list_to_tuple) for x in obj}
+            out = f'{{{", ".join(sorted(set_items))}}}'
+        case _ if isinstance(obj, Iterable):
+            iter_items = [_topython(x, list_to_tuple=list_to_tuple) for x in obj]
+            if list_to_tuple:
+                if not iter_items:
+                    out = '()'
+                elif len(iter_items) > 1:
+                    out = f'({", ".join(iter_items)})'
+                else:
+                    out = f'({iter_items[0]},)'
+            else:
+                out = f'[{", ".join(iter_items)}]'
+        case _:
+            out = obj
+    return out
 
 
 _MD_BADGE_RE = re.compile(r'^\[!\[(.+?)]\((.+?)\)]$')
@@ -125,15 +136,16 @@ class ToPythonExtension(Extension):
     """Extension that exports the ``topython`` :py:class:`~jinja2.Environment` filter."""
     def __init__(self, environment: jinja2.Environment) -> None:
         super().__init__(environment)
-        environment.filters['topython'] = topython
+        environment.filters['topython'] = _topython
 
 
 class GithubAPIExtension(Extension):
     """Extension exporting ``github_latest_action_tag`` to :py:class:`~jinja2.Environment`."""
     def __init__(self, environment: jinja2.Environment) -> None:
-        from .utils.versions import get_github_release_latest_tag  # noqa: PLC0415
-
         super().__init__(environment)
+        # Import here, not at module level: ``wiswa.utils``'s ``__init__`` imports ``templating``,
+        # which imports this module, so loading ``utils`` during ``extensions`` import would cycle.
+        from wiswa.utils import versions as versions_mod  # noqa: PLC0415
 
         async def _github_latest_action_tag(owner: str, repo: str) -> str:
             session: AsyncSession | None = environment.globals.get(
@@ -141,10 +153,10 @@ class GithubAPIExtension(Extension):
             if session is None:
                 msg = 'No HTTP session available for GitHub API calls.'
                 raise RuntimeError(msg)
-            return await get_github_release_latest_tag(session,
-                                                       owner,
-                                                       repo,
-                                                       skip_releases=True,
-                                                       allow_suffixes=False)
+            return await versions_mod.get_github_release_latest_tag(session,
+                                                                    owner,
+                                                                    repo,
+                                                                    skip_releases=True,
+                                                                    allow_suffixes=False)
 
         environment.globals['github_latest_action_tag'] = _github_latest_action_tag

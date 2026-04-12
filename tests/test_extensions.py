@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from wiswa.extensions import ShellExtension, ToPythonExtension, topython
+from wiswa.extensions import ShellExtension, ToPythonExtension
 import jinja2
 import pytest
 
@@ -14,78 +14,50 @@ if TYPE_CHECKING:
 
     from pytest_mock import MockerFixture
 
+_TOPYTHON_ENV = jinja2.Environment(extensions=[ToPythonExtension], autoescape=True)
+_TOPYTHON_FILTER: Any = _TOPYTHON_ENV.filters['topython']
 
-@pytest.mark.parametrize(
-    ('obj', 'expected'),
-    [
-        ('true', True),
-        ('false', False),
-        ('TRUE', True),
-        ('FALSE', False),
-        ('123', 123),
-        ('hello', "'hello'"),
-        ("he'llo", "'he\\'llo'"),
-        ('back\\slash', "'back\\\\slash'"),
-        (123, '123'),
-        (12.34, '12.34'),
-        (True, 'True'),
-        (False, 'False'),
-        (None, 'None'),
-        (Decimal('1.23'), '1.23'),
-        ([1, 2, 3], '[1, 2, 3]'),
-        ((1, 2), '(1, 2)'),
-        ((1,), '(1,)'),
-        ([], '[]'),
-        ((), '()'),
-        ({
-            'a': 1,
-            'b': 2
-        }, "{'a': 1, 'b': 2}"),
-        ({
-            'a': [1, 2]
-        }, "{'a': [1, 2]}"),
-        ({
-            'a': {
-                'b': 2
-            }
-        }, "{'a': {'b': 2}}"),
-        ({1, 2}, '{1, 2}'),
-        (set(), '{}'),
-    ],
-)
+
+@pytest.mark.parametrize(('obj', 'expected'), [('true', True), ('false', False), ('TRUE', True),
+                                               ('FALSE', False), ('123', 123), ('hello', "'hello'"),
+                                               ("he'llo", "'he\\'llo'"),
+                                               ('back\\slash', "'back\\\\slash'"), (123, '123'),
+                                               (12.34, '12.34'), (True, 'True'), (False, 'False'),
+                                               (None, 'None'), (Decimal('1.23'), '1.23'),
+                                               ([1, 2, 3], '[1, 2, 3]'), ((1, 2), '(1, 2)'),
+                                               ((1,), '(1,)'), ([], '[]'), ((), '()'),
+                                               ({
+                                                   'a': 1,
+                                                   'b': 2
+                                               }, "{'a': 1, 'b': 2}"),
+                                               ({
+                                                   'a': [1, 2]
+                                               }, "{'a': [1, 2]}"),
+                                               ({
+                                                   'a': {
+                                                       'b': 2
+                                                   }
+                                               }, "{'a': {'b': 2}}"), ({1, 2}, '{1, 2}'),
+                                               (set(), '{}')])
 def test_topython_basic(obj: object, expected: str) -> None:
-    assert topython(obj) == expected
+    assert _TOPYTHON_FILTER(obj) == expected
 
 
-@pytest.mark.parametrize(
-    ('obj', 'expected'),
-    [
-        ([1, 2, 3], '(1, 2, 3)'),
-        ([], '()'),
-        ([1], '(1,)'),
-        ((1, 2), '(1, 2)'),
-        ((1,), '(1,)'),
-    ],
-)
+@pytest.mark.parametrize(('obj', 'expected'), [([1, 2, 3], '(1, 2, 3)'), ([], '()'), ([1], '(1,)'),
+                                               ((1, 2), '(1, 2)'), ((1,), '(1,)')])
 def test_topython_list_to_tuple(obj: object, expected: str) -> None:
-    assert topython(obj, list_to_tuple=True) == expected
+    assert _TOPYTHON_FILTER(obj, list_to_tuple=True) == expected
 
 
-@pytest.mark.parametrize(
-    ('obj', 'expected'),
-    [
-        ('true', "'true'"),
-        ('false', "'false'"),
-        ('123', "'123'"),
-    ],
-)
+@pytest.mark.parametrize(('obj', 'expected'), [('true', "'true'"), ('false', "'false'"),
+                                               ('123', "'123'")])
 def test_topython_convert_strings_false(obj: object, expected: str) -> None:
-    assert topython(obj, convert_strings=False) == expected
+    assert _TOPYTHON_FILTER(obj, convert_strings=False) == expected
 
 
 def test_topython_mapping_with_special_chars() -> None:
     obj = {"a'b": 1, 'c\\d': 2}
-    result = topython(obj)
+    result = _TOPYTHON_FILTER(obj)
     assert result == "{'a\\'b': 1, 'c\\\\d': 2}"
 
 
@@ -95,7 +67,7 @@ def test_topython_iterable_non_list() -> None:
             yield 1
             yield 2
 
-    result = topython(CustomIterable())
+    result = _TOPYTHON_FILTER(CustomIterable())
     assert result == '[1, 2]'
 
 
@@ -104,30 +76,30 @@ def test_topython_returns_obj_for_unknown_type() -> None:
         pass
 
     dummy = Dummy()
-    assert topython(dummy) is dummy
+    assert _TOPYTHON_FILTER(dummy) is dummy
 
 
 def test_topython_set_sorted_output() -> None:
     obj = {'b', 'a'}
-    result = topython(obj)
+    result = _TOPYTHON_FILTER(obj)
     assert result == "{'a', 'b'}"
 
 
 def test_topython_tuple_empty() -> None:
-    assert topython(()) == '()'
+    assert _TOPYTHON_FILTER(()) == '()'
 
 
 def test_topython_tuple_single() -> None:
-    assert topython((1,)) == '(1,)'
+    assert _TOPYTHON_FILTER((1,)) == '(1,)'
 
 
 def test_topython_tuple_multi() -> None:
-    assert topython((1, 2)) == '(1, 2)'
+    assert _TOPYTHON_FILTER((1, 2)) == '(1, 2)'
 
 
 def test_topython_nested_structures() -> None:
     obj = {'a': [1, (2, 3), {'b': 'true'}]}
-    result = topython(obj)
+    result = _TOPYTHON_FILTER(obj)
     assert result == "{'a': [1, (2, 3), {'b': True}]}"
 
 
@@ -135,7 +107,9 @@ def test_topython_extension_registers_filter(mocker: MockerFixture) -> None:
     env = mocker.MagicMock(filters={})
     ToPythonExtension(env)
     assert 'topython' in env.filters
-    assert env.filters['topython'] is topython
+    registered = env.filters['topython']
+    assert registered('hello') == "'hello'"
+    assert registered([1, 2]) == '[1, 2]'
 
 
 def test_topython_iterable_list_to_tuple_empty() -> None:
@@ -143,7 +117,7 @@ def test_topython_iterable_list_to_tuple_empty() -> None:
         def __iter__(self) -> Iterator[int]:
             return iter([])
 
-    result = topython(CustomIterable(), list_to_tuple=True)
+    result = _TOPYTHON_FILTER(CustomIterable(), list_to_tuple=True)
     assert result == '()'
 
 
@@ -152,7 +126,7 @@ def test_topython_iterable_list_to_tuple_single() -> None:
         def __iter__(self) -> Iterator[int]:
             yield 1
 
-    result = topython(CustomIterable(), list_to_tuple=True)
+    result = _TOPYTHON_FILTER(CustomIterable(), list_to_tuple=True)
     assert result == '(1,)'
 
 
@@ -162,7 +136,7 @@ def test_topython_iterable_list_to_tuple_multi() -> None:
             yield 1
             yield 2
 
-    result = topython(CustomIterable(), list_to_tuple=True)
+    result = _TOPYTHON_FILTER(CustomIterable(), list_to_tuple=True)
     assert result == '(1, 2)'
 
 
@@ -227,7 +201,7 @@ def test_parse_md_badge_no_match() -> None:
 
 
 async def test_github_latest_action_tag_no_session() -> None:
-    from typing import Any, cast
+    from typing import cast
 
     from wiswa.extensions import GithubAPIExtension
 
@@ -238,7 +212,7 @@ async def test_github_latest_action_tag_no_session() -> None:
 
 
 async def test_github_latest_action_tag_with_session(mocker: MockerFixture) -> None:
-    from typing import Any, cast
+    from typing import cast
     from unittest.mock import AsyncMock
 
     from wiswa.extensions import GithubAPIExtension
