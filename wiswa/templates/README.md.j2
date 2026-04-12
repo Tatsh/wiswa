@@ -81,7 +81,7 @@
 {% if settings.using_github and not settings.private %}
 [![Stargazers](https://img.shields.io/github/stars/{{ settings.github.username }}/{{ settings.project_name }}?logo=github&style=flat)](https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/stargazers)
 {% endif %}
-[![pre-commit](https://img.shields.io/badge/pre--commit-brightgreen?logo=pre-commit&logoColor=white)](https://pre-commit.com/)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Prettier](https://img.shields.io/badge/Prettier-black?logo=prettier)](https://prettier.io/)
 {% for badge in settings.custom_project_badges | sort(attribute='priority') %}
 {% if (badge.priority | default(0)) >= 0 %}

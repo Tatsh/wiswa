@@ -219,13 +219,11 @@ def _make_native_callbacks(
 
     npm_age_gate = resolve_npm_minimal_age_gate_minutes(settings=merged_settings,
                                                         project_snippet=project_settings_snippet)
-
     gh_action = partial(get_github_release_latest_tag,
                         session,
                         skip_releases=True,
                         allow_suffixes=False)
     gh_tag = partial(get_github_release_latest_tag, session, skip_releases=True)
-
     return {
         # The argument names here cannot conflict with a wrapping function.
         # f(arg):: std.native('f', arg) will fail if it's defined here as 'f': (('arg',), ...).

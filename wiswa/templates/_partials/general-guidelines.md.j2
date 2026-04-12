@@ -36,6 +36,9 @@
 - Use `poetry run` to invoke Python tools (pytest, mypy, Ruff).
 {% endif %}
 {% endif %}
+- In shell tool calls, assume the working directory is already the repository root (or whatever cwd
+  the tool reports). Do not prefix commands with `cd` into that same path unless you need a
+  different directory.
 {% if settings.cspell_language | default('en-GB') != 'en-US' -%}
 - Spell-check uses cspell with British English (`en-GB`). Exception: code identifiers must use
   American English (`ColorCode` not `ColourCode`).

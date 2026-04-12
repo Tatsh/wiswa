@@ -155,7 +155,7 @@ async def _subprocess_log_run(
         on_command: Callable[[str], None] | None = None,
         **kwargs: Any) -> tuple[asyncio.subprocess.Process, bytes | None, bytes | None]:
     first = args[0]
-    if not isinstance(first, Iterable):
+    if not isinstance(first, Iterable):  # pragma: no cover
         msg = 'First positional argument must be an iterable of command arguments.'
         raise TypeError(msg)
     cmd = list(first)
@@ -629,8 +629,8 @@ def _misc_badges(settings: Settings) -> Iterator[str]:
         name = settings['project_name']
         yield (f'[![Stargazers](https://img.shields.io/github/stars/{gh}/{name}'
                f'?logo=github&style=flat)](https://github.com/{gh}/{name}/stargazers)')
-    yield _simple_icons_badge('pre-commit', 'pre-commit', 'pre--commit', 'brightgreen',
-                              'https://pre-commit.com/')
+    yield _simple_icons_badge('pre-commit', 'pre-commit', 'pre--commit-enabled', 'brightgreen',
+                              'https://github.com/pre-commit/pre-commit')
     if (settings['project_type'] in {'c', 'c++'} and Path('CMakeLists.txt').exists()):
         yield _simple_icons_badge('CMake', 'cmake', 'CMake', '6E6E6E', 'https://cmake.org/')
     yield _simple_icons_badge('Prettier', 'prettier', 'Prettier', 'black', 'https://prettier.io/')

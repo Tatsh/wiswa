@@ -15,13 +15,13 @@ import secrets
 import sys
 
 from bascom import setup_logging
+from niquests_cache import cached_session
 from yaspin import yaspin
 from yaspin.spinners import Spinners
 import anyio
 import click
 import niquests
 
-from .session import cached_session
 from .utils import (
     FlatpakConfigurationError,
     apply_python_pyproject_manifest_edits,
@@ -149,6 +149,7 @@ async def _main_async(  # noqa: C901
         skip_yarn: bool = False) -> None:
     setup_logging(debug=debug,
                   loggers={
+                      'niquests_cache': {},
                       'urllib3': {},
                       'urllib3.util.retry': {
                           'level': 'WARNING'
@@ -177,9 +178,11 @@ async def _main_async(  # noqa: C901
         await asyncio.to_thread(progress_spinner.stop)
         progress_spinner = None
 
-    spin_update('Starting up...')
+    spin_update('Evaluating settings...')
     try:
-        async with cached_session(no_cache=no_cache,
+        async with cached_session(aio=True,
+                                  no_cache=no_cache,
+                                  app_name='wiswa',
                                   expire_after=timedelta(seconds=cache_time)) as session:
             with (importlib.resources.as_file(
                     importlib.resources.files('wiswa-jsonnet') / 'defaults.libsonnet') as
@@ -197,7 +200,7 @@ async def _main_async(  # noqa: C901
                 # Skip only wiswa-jsonnet/project.jsonnet (manifest files). Merged settings from
                 # evaluate_merged_settings always run Jsonnet first.
                 if not skip_jsonnet:
-                    spin_update('Evaluating Jsonnet. Please be patient...')
+                    spin_update('Evaluating project. Please be patient...')
                     await evaluate_jsonnet_project(lib_path,
                                                    jpathdir,
                                                    merged_settings,

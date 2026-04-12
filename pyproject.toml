@@ -57,6 +57,7 @@ dependencies = [
   "jsonnet>=0.22.0",
   "keyring>=25.7.0",
   "lxml>=6.0.2",
+  "niquests-cache>=0.0.3",
   "niquests>=3.18.4",
   "platformdirs>=4.9.4",
   "tomlkit>=0.14.0",
@@ -228,6 +229,9 @@ max-statements = 100
 [tool.uv]
 default-groups = "all"
 exclude-newer = "1 week"
+
+[tool.uv.exclude-newer-package]
+niquests-cache = false
 
 [tool.yapf]
 align_closing_bracket_with_visual_indent = true

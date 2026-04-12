@@ -9,8 +9,11 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-04-05T01:49:37.186242114Z"
+exclude-newer = "2026-04-05T04:06:12.889562037Z"
 exclude-newer-span = "P1W"
+
+[options.exclude-newer-package]
+niquests-cache = false
 
 [[package]]
 name = "aiofile"
@@ -1851,6 +1854,20 @@ wheels = [
 ]
 
 [[package]]
+name = "niquests-cache"
+version = "0.0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "niquests" },
+    { name = "platformdirs" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/82/83/28a81393abb1e41d5c3771b8c281c5abb6a7ee4eb3c0986d1c85ea0fb688/niquests_cache-0.0.3.tar.gz", hash = "sha256:292f0093e31d32cf37ed8127bf2a6892fbbcc6273458b51d25291592d7741a84", size = 10391, upload-time = "2026-04-12T04:05:06.593Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/c9/9e08677b85e709f1a6ecf1c51687ea42c9a10bb816fe13d7c4425490536e/niquests_cache-0.0.3-py3-none-any.whl", hash = "sha256:c4f62a320cd993c002951f0268d40f98b960759cf1d66f15452bae4baf1a47b3", size = 6779, upload-time = "2026-04-12T04:05:05.374Z" },
+]
+
+[[package]]
 name = "numpydoc"
 version = "1.10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3644,6 +3661,7 @@ dependencies = [
     { name = "keyring" },
     { name = "lxml" },
     { name = "niquests" },
+    { name = "niquests-cache" },
     { name = "platformdirs" },
     { name = "tomlkit" },
     { name = "typing-extensions" },
@@ -3695,6 +3713,7 @@ requires-dist = [
     { name = "keyring", specifier = ">=25.7.0" },
     { name = "lxml", specifier = ">=6.0.2" },
     { name = "niquests", specifier = ">=3.18.4" },
+    { name = "niquests-cache", specifier = ">=0.0.3" },
     { name = "platformdirs", specifier = ">=4.9.4" },
     { name = "tomlkit", specifier = ">=0.14.0" },
     { name = "typing-extensions", specifier = ">=4.15.0" },

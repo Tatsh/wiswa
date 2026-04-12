@@ -46,6 +46,7 @@ local utils = import 'utils.libsonnet';
       keyring: utils.latestPypiPackageVersionCaret('keyring'),
       lxml: utils.latestPypiPackageVersionCaret('lxml'),
       niquests: utils.latestPypiPackageVersionCaret('niquests'),
+      'niquests-cache': utils.latestPypiPackageVersionCaret('niquests-cache'),
       platformdirs: utils.latestPypiPackageVersionCaret('platformdirs'),
       tomlkit: utils.latestPypiPackageVersionCaret('tomlkit'),
       yaspin: utils.latestPypiPackageVersionCaret('yaspin'),
@@ -85,6 +86,11 @@ local utils = import 'utils.libsonnet';
       },
       ruff+: {
         'namespace-packages'+: ['wiswa/static'],
+      },
+      uv+: {
+        'exclude-newer-package'+: {
+          'niquests-cache': false,
+        },
       },
     },
   },
