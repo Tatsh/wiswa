@@ -227,10 +227,10 @@ async def _main_async(  # noqa: C901
                                                                  session=session,
                                                                  spin_update=spin_update)
                 if not skip_remote:
-                    if loaded.get('using_github'):
+                    if loaded['using_github']:
                         spin_update('Configuring GitHub project settings...')
                         await setup_github_project(session, loaded)
-                    elif loaded.get('using_gitlab'):
+                    elif loaded['using_gitlab']:
                         spin_update('Configuring GitLab project settings...')
                         await setup_gitlab_project(session, loaded)
     except niquests.HTTPError as e:

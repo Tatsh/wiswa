@@ -118,6 +118,81 @@ def test_main_skip_remote(
     assert setup_gitlab.called is False
 
 
+def test_main_remote_calls_gitlab_when_using_gitlab(mocker: MockerFixture, tmp_path: Path) -> None:
+    runner = CliRunner()
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.setup_logging')
+    mocker.patch('wiswa.main.evaluate_merged_settings',
+                 new_callable=AsyncMock,
+                 return_value=_eval_merged_return(using_github=False, using_gitlab=True))
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    setup_github = mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
+    setup_gitlab = mocker.patch('wiswa.main.setup_gitlab_project', new_callable=AsyncMock)
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
+
+    class DummyContextManager:
+        def __init__(self, value: object) -> None:
+            self.value: object = value
+
+        def __enter__(self) -> object:
+            return self.value
+
+        def __exit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None,
+                     exc_tb: object) -> None:
+            return None
+
+    mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
+    result = runner.invoke(main, [str(file_path)], catch_exceptions=False)
+    assert result.exit_code == 0
+    assert setup_github.called is False
+    assert setup_gitlab.called is True
+
+
+def test_main_remote_skips_when_neither_github_nor_gitlab(mocker: MockerFixture,
+                                                          tmp_path: Path) -> None:
+    runner = CliRunner()
+    file_path = tmp_path / '.wiswa.jsonnet'
+    file_path.write_text('{}\n')
+    mocker.patch('wiswa.main.setup_logging')
+    mocker.patch('wiswa.main.evaluate_merged_settings',
+                 new_callable=AsyncMock,
+                 return_value=_eval_merged_return(using_github=False, using_gitlab=False))
+    mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.download_yarn_plugins', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.copy_static_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.create_py_typed_files', new_callable=AsyncMock)
+    mocker.patch('wiswa.main.post_process_steps', new_callable=AsyncMock)
+    setup_github = mocker.patch('wiswa.main.setup_github_project', new_callable=AsyncMock)
+    setup_gitlab = mocker.patch('wiswa.main.setup_gitlab_project', new_callable=AsyncMock)
+    mocker.patch('importlib.resources.files', side_effect=lambda _: tmp_path)
+
+    class DummyContextManager:
+        def __init__(self, value: object) -> None:
+            self.value: object = value
+
+        def __enter__(self) -> object:
+            return self.value
+
+        def __exit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None,
+                     exc_tb: object) -> None:
+            return None
+
+    mocker.patch('importlib.resources.as_file', side_effect=DummyContextManager)
+    result = runner.invoke(main, [str(file_path)], catch_exceptions=False)
+    assert result.exit_code == 0
+    assert setup_github.called is False
+    assert setup_gitlab.called is False
+
+
 @pytest.mark.parametrize(('skip_flag', 'func_name'),
                          [('--skip-jsonnet', 'evaluate_jsonnet_project'),
                           ('--skip-templates', 'write_templated_files')])
