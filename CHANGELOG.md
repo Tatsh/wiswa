@@ -29,12 +29,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `sphinx.fail_on_warning` matches; exposed on `Settings`.
 - README template marks the generated badge block with `<!-- WISWA-GENERATED-README:START -->` and
   `<!-- WISWA-GENERATED-README:STOP -->` so post-processing replaces only that region.
+- Sphinx library docs include a `wiswa.mcp` API page (`docs/library/mcp.rst`) linked from the
+  library toctree.
+- Sphinx `conf.py` intersphinx mappings for Jinja2, niquests, and niquests-cache (alongside the
+  Python mapping).
 
 ### Changed
 
-- GitHub repository setup logs each failed API step at warning with a short HTTP or JSON message
-  (no traceback), continues with remaining steps, and prefers GitHub's JSON `message` field when
-  present.
+- GitHub API error handling during repository setup is improved: each failed step logs a short,
+  readable warning (HTTP status plus body or GitHub's JSON `message` when available, without a
+  traceback), and the rest of the setup still runs instead of stopping at the first error.
+- GitHub Actions workflows that attach draft releases (AppImage, Flatpak, PyInstaller, publish, Snap)
+  pin `softprops/action-gh-release` to v3.0.0.
 - CONTRIBUTING explains that `man/wiswa.1` and other `man/` output must come from `yarn gen-manpage`,
   not manual edits.
 - Bundled `.claude/rules/python.md` is emitted from
