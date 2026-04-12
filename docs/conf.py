@@ -75,4 +75,9 @@ html_theme_options = {
     'site_url': 'https://wiswa.readthedocs.org',
     'toc_title_is_page_title': True
 }
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
+intersphinx_mapping = {
+    'jinja2': ('https://jinja.palletsprojects.com/en/latest', None),
+    'niquests': ('https://niquests.readthedocs.io/en/latest', None),
+    'niquests-cache': ('https://niquests-cache.readthedocs.io/en/latest', None),
+    'python': ('https://docs.python.org/3', None),
+}
