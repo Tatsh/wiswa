@@ -136,6 +136,8 @@
 - Call `.encode()` without arguments if the encoding is expected to be UTF-8.
 - All functions with parameters must have a NumPy-style docstring with a `Parameters` section. If
   the return value is not `None`, include a `Returns` section.
+- In docstrings, write types with the same syntax as annotations (for example `str | None`, not
+  `str or None`).
 - When a docstring spans more than one line, the opening `"""` and the closing `"""` must each sit
   alone on their own line; the summary and body follow on the lines between them:
 
