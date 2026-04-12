@@ -104,6 +104,7 @@ ggdb
 gitdir
 githistory
 glab
+glpat
 globaltoc
 gmock
 gnucxx
@@ -196,6 +197,7 @@ platformdirs
 plistlib
 proc
 prodvers
+pushrules
 pycache
 pydantic
 pydocstyle
