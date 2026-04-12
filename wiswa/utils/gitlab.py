@@ -21,7 +21,6 @@ __all__ = ('gitlab_merged_remote_tables', 'setup_gitlab_project')
 log = logging.getLogger(__name__)
 
 _GITLAB_TOKEN_ENV = 'GITLAB_TOKEN'  # noqa: S105
-_GITLAB_LEGACY_KEYRING_SERVICE = 'wiswa-gitlab-api'
 
 
 def gitlab_merged_remote_tables(
@@ -67,11 +66,10 @@ def _repository_uri_hostname(uri: str) -> str:
 
 def _get_gitlab_token(host: str) -> str | None:
     """
-    Resolve a GitLab API token: environment variable, then host-scoped keyring, then legacy.
+    Resolve a GitLab API token from the environment or host-scoped keyring.
 
-    New entries use service ``wiswa-gitlab:<hostname>`` (username is usually the OS user; the
-    hostname alone is also tried). Legacy entries use ``wiswa-gitlab-api`` with the hostname or OS
-    user as the username.
+    Keyring entries use service ``wiswa-gitlab:<hostname>``. The username is usually the OS user;
+    the hostname alone is also tried as the username.
 
     Returns
     -------
@@ -80,19 +78,14 @@ def _get_gitlab_token(host: str) -> str | None:
     """
     if token := os.environ.get(_GITLAB_TOKEN_ENV):
         return token
+    if not host:
+        return None
     user = getpass.getuser()
     try:
-        if host:
-            token = keyring.get_password(f'wiswa-gitlab:{host}', user)
-            if token:
-                return token
-            token = keyring.get_password(f'wiswa-gitlab:{host}', host)
-            if token:
-                return token
-            token = keyring.get_password(_GITLAB_LEGACY_KEYRING_SERVICE, host)
-            if token:
-                return token
-        return keyring.get_password(_GITLAB_LEGACY_KEYRING_SERVICE, user)
+        token = keyring.get_password(f'wiswa-gitlab:{host}', user)
+        if token:
+            return token
+        return keyring.get_password(f'wiswa-gitlab:{host}', host)
     except keyring.errors.NoKeyringError:
         log.warning('No keyring backend available.')
         return None
@@ -134,7 +127,7 @@ async def setup_gitlab_project(session: niquests.AsyncSession, settings: Setting
     Configure the GitLab project (opinionated settings, description, topics).
 
     Uses ``python-gitlab`` in a worker thread. Authentication uses ``GITLAB_TOKEN``, or keyring
-    ``wiswa-gitlab:<hostname>`` (see README), with legacy fallbacks to ``wiswa-gitlab-api``.
+    ``wiswa-gitlab:<hostname>`` (see README).
 
     Parameters
     ----------
@@ -150,8 +143,7 @@ async def setup_gitlab_project(session: niquests.AsyncSession, settings: Setting
     host = _repository_uri_hostname(settings['repository_uri'])
     token = _get_gitlab_token(host)
     if not token:
-        log.warning('No GitLab token (set %s or keyring wiswa-gitlab:%s / legacy %s).',
-                    _GITLAB_TOKEN_ENV, host or '?', _GITLAB_LEGACY_KEYRING_SERVICE)
+        log.warning('No GitLab token (set %s or keyring wiswa-gitlab:%s).', _GITLAB_TOKEN_ENV, host)
         return
     try:
         await anyio.to_thread.run_sync(lambda: _configure_gitlab_project_sync(settings, token))
