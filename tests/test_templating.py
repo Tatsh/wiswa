@@ -5,8 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, MagicMock
+from urllib.parse import urlparse
 import importlib.resources
 import logging
+import re
 import shutil
 
 from wiswa.utils.postprocess import resolve_changelog_boilerplate_urls
@@ -16,6 +18,29 @@ import wiswa
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
+
+_HTTPS_URL_RE = re.compile(r'https?://[^\s\)\]>\'\"]+', re.IGNORECASE)
+
+
+def _https_urls_in_text(text: str) -> list[str]:
+    return [m.group(0).rstrip('.,;') for m in _HTTPS_URL_RE.finditer(text)]
+
+
+def _urls_include_hostname(text: str, hostname: str) -> bool:
+    want = hostname.lower()
+    for u in _https_urls_in_text(text):
+        h = urlparse(u).hostname
+        if h is not None and h.lower() == want:
+            return True
+    return False
+
+
+def _urls_include_docs_astral_uv(text: str) -> bool:
+    for u in _https_urls_in_text(text):
+        p = urlparse(u)
+        if p.hostname == 'docs.astral.sh' and (p.path or '').startswith('/uv'):
+            return True
+    return False
 
 
 def _social_networks() -> dict[str, Any]:
@@ -580,7 +605,7 @@ async def test_write_templated_files_python_private_badges_rst_omits_public_regi
     after_only = text.split('.. only:: html', maxsplit=1)[1]
     assert after_only.startswith('\n\n   ')
     assert not after_only.startswith('\n\n\n')
-    assert 'docs.astral.sh/uv' in lower
+    assert _urls_include_docs_astral_uv(lower)
 
 
 async def test_write_templated_files_docs_badges_rst_includes_poetry_when_not_uv(
@@ -593,8 +618,8 @@ async def test_write_templated_files_docs_badges_rst_includes_poetry_when_not_uv
                            want_ai=False,
                            package_manager='poetry'))
     text = (out / 'docs/badges.rst').read_text(encoding='utf-8').lower()
-    assert 'python-poetry.org' in text
-    assert 'docs.astral.sh/uv' not in text
+    assert _urls_include_hostname(text, 'python-poetry.org')
+    assert not _urls_include_docs_astral_uv(text)
 
 
 async def test_write_templated_files_docs_badges_rst_regenerated_when_stale(
