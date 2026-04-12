@@ -104,8 +104,8 @@ ggdb
 gitdir
 githistory
 glab
-glpat
 globaltoc
+glpat
 gmock
 gnucxx
 gpgsign
