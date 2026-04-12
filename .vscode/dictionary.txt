@@ -60,6 +60,7 @@ datatables
 davidanson
 dbuild
 debugpy
+delenv
 devmode
 devrelease
 djangorestframework
