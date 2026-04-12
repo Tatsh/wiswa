@@ -10,5 +10,6 @@ Library
 
       constants
       extensions
+      mcp
       typing
       utils
