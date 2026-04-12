@@ -39,8 +39,9 @@ The following scripts are available via `yarn` (see `package.json`):
 - `yarn format`: Auto-format code.
 - `yarn check-spelling`: Run spell checker.
 - `yarn gen-docs`: Build HTML documentation.
-- `yarn gen-manpage`: Build man page documentation. If you update documentation, please run this and
-  commit the updated manpage file.
+- `yarn gen-manpage`: Build the man page from Sphinx sources under `docs/` (do **not** edit
+  `man/wiswa.1` or other generated files under `man/` by hand). After changing CLI or narrative docs,
+  run this and commit the updated `man/` output.
 
 The above all need to pass for any code changes to be accepted.
 
