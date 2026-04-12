@@ -153,14 +153,12 @@ or from the system keyring. Service names include the \fBrepository hostname\fP 
 (for example GitHub.com, GitHub Enterprise, or self\-managed GitLab) keep separate credentials.
 .sp
 Keyring entries use the usual \fBservice name\fP and \fBusername\fP fields. The \fBusername\fP is
-normally your OS login name (\fBwhoami\fP), except where noted for legacy entries.
+normally your OS login name (\fBwhoami\fP).
 .SS GitHub
 .INDENT 0.0
 .IP 1. 3
-\fBPreferred:\fP service \fBwiswa\-github:<hostname>\fP, username your OS user. The hostname is taken
-from \fBrepository_uri\fP (for example \fBgithub.com\fP for \fBhttps://github.com/org/repo\fP).
-.IP 2. 3
-\fBLegacy:\fP service \fBtmu\-github\-api\fP, username your OS user (supported for existing setups).
+Service \fBwiswa\-github:<hostname>\fP, username your OS user. The hostname is taken from
+\fBrepository_uri\fP (for example \fBgithub.com\fP for \fBhttps://github.com/org/repo\fP).
 .UNINDENT
 .sp
 Example (hostname \fBgithub.com\fP, OS user \fBalice\fP):
@@ -181,8 +179,6 @@ python \-m keyring set \(aqwiswa\-github:github.com\(aq alice
 \fBwiswa\-gitlab:gitlab.com\fP).
 .IP 3. 3
 The same service with \fBusername\fP equal to the hostname is also checked.
-.IP 4. 3
-\fBLegacy:\fP service \fBwiswa\-gitlab\-api\fP, username the repository hostname, then your OS user.
 .UNINDENT
 .sp
 Example for \fBgitlab.com\fP:
