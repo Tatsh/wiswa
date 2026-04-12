@@ -1084,8 +1084,8 @@ local utils = import 'utils.libsonnet';
       version: settings.version,
       license: settings.license,
       scripts: if settings.want_main then {
-                 [settings.project_name]: '%s.main:main' % settings.primary_module_qualified,
-               } else {},
+        [settings.project_name]: '%s.main:main' % settings.primary_module_qualified,
+      } else {},
       urls: {
         homepage: settings.homepage,
         documentation: settings.documentation_uri,
@@ -1181,8 +1181,10 @@ local utils = import 'utils.libsonnet';
                        } + (if settings.stubs_only then { reportImplicitOverride: 'none' } else {})
                        + (if is_uv then { venv: '.venv', venvPath: '.' } else {}),
              ruff+: {
+               local min_py_minor = std.parseInt(std.split(settings.supported_python_versions[0], '.')[1]),
+               local com812 = if settings.want_yapf then ['COM812'] else [],
                lint+: if settings.stubs_only then {
-                 ignore: std.set(pyproject.tool.ruff.lint.ignore + [
+                 ignore: std.set(pyproject.tool.ruff.lint.ignore + com812 + [
                    'A002',
                    'E303',
                    'FBT001',
@@ -1192,12 +1194,16 @@ local utils = import 'utils.libsonnet';
                    'T201',
                    'TID252',
                  ]),
-               } else (if settings.want_main then {
-                         'per-file-ignores': {
-                           ['%s/main.py' % primary_module_qualified_path]: ['PLR0913'],
-                         },
-                       }
-                       else {}),
+               } else (
+                 (if settings.want_main then {
+                    'per-file-ignores': {
+                      ['%s/main.py' % primary_module_qualified_path]: ['PLR0913'],
+                    },
+                  } else {})
+                 + {
+                   ignore: std.set(pyproject.tool.ruff.lint.ignore + com812),
+                 }
+               ),
                'target-version': 'py3%s' % settings.supported_python_versions[0][2:],
              },
              [if is_uv then 'hatch']: {

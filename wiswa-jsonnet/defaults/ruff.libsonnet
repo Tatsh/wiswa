@@ -32,21 +32,19 @@
     /** @brief List of error codes to ignore. */
     ignore: [
       'ANN401',
-      'COM812',
       'CPY001',
-      'D201',
+      // D201 wants no blank line after the signature, yet D203 wants a blank line after a ``class`` line.
       'D203',
+      // D204 wants a blank line after the class docstring; YAPF removes it.
       'D204',
+      // Disabled because we want """ to always be on its own line for multi-line docstrings.
       'D212',
-      'DOC201',
+      // Personal preference really. ``raise NoRowFound`` is just as clear as ``raise NoRowFoundError``.
       'N818',
-      'S101',
       'S404',
+      // Disabled because of false positives.
       'S603',
       'TD002',
-      // Below can be removed if project supports 3.12+
-      'UP046',
-      'UP047',
     ],
     /** @brief If true, enable preview features. */
     preview: true,
