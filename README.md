@@ -70,13 +70,54 @@ Options:
   --no-cache                      Disable HTTP response caching.
   -o, --output-dir DIRECTORY      Output directory for generated files.
   -q, --quiet                     Suppress the progress spinner.
-  --skip-github                   Skip configuring GitHub project.
   --skip-jsonnet                  Skip project.jsonnet manifests; settings merge still runs.
   --skip-postprocess              Skip post-processing steps.
+  --skip-remote                   Skip configuring the remote Git host (GitHub or GitLab).
   --skip-static                   Skip copying static files.
   --skip-templates                Skip Jinja2 template evaluation.
   --skip-yarn                     Skip Yarn download.
   -h, --help                      Show this message and exit.
+```
+
+## Remote API tokens (GitHub and GitLab)
+
+When Wiswa configures the remote (`wiswa` without `--skip-remote`), it calls the GitHub or GitLab
+API using a **personal access token**. Tokens are read from the environment when supported, or from
+the system keyring. Service names include the **repository hostname** so different hosts (for
+example GitHub.com, GitHub Enterprise, or self-managed GitLab) keep separate credentials.
+
+Keyring entries use the usual **service name** and **username** fields (for example as shown by
+`secret-tool` on Linux or Keychain Access on macOS). The **username** is normally your OS login
+name (`whoami`), except where noted for legacy entries.
+
+### GitHub
+
+1. **Preferred:** service `wiswa-github:<hostname>`, username your OS user. The hostname is taken
+   from `repository_uri` (for example `github.com` for `https://github.com/org/repo`).
+2. **Legacy:** service `tmu-github-api`, username your OS user (supported for existing setups).
+
+Example (hostname `github.com`, OS user `alice`):
+
+```shell
+python -m keyring set 'wiswa-github:github.com' alice
+# paste the token at the prompt
+```
+
+### GitLab
+
+1. **Environment:** `GITLAB_TOKEN` (if set, used first).
+2. **Preferred:** service `wiswa-gitlab:<hostname>`, username your OS user (for example
+   `wiswa-gitlab:gitlab.com`).
+3. Same service with **username** equal to the hostname is also checked (for older or alternate
+   storage patterns).
+4. **Legacy:** service `wiswa-gitlab-api`, username the repository hostname, then your OS user.
+
+Example for `gitlab.com`:
+
+```shell
+export GITLAB_TOKEN='glpat-...'   # optional; overrides keyring
+
+python -m keyring set 'wiswa-gitlab:gitlab.com' "$(whoami)"
 ```
 
 ## MCP Server

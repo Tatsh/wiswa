@@ -33,6 +33,7 @@ inside the project virtual environment with your usual workflow.
 .. toctree::
    :hidden:
 
+   remote-api-tokens
    mcp-server
    binary-signing
 

@@ -28,12 +28,39 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "WISWA" "1" "Apr 07, 2026" "0.2.0" "wiswa"
+.TH "WISWA" "1" "Apr 12, 2026" "0.2.0" "wiswa"
 .SH NAME
 wiswa \- wiswa v0.2.0
-.SH WISWA
+.SH INSTALLATION
 .sp
-Entry point for the Wiswa CLI.
+We recommend a \fBglobal\fP install so \fBwiswa\fP and \fBwiswa\-mcp\fP are on your
+\fBPATH\fP from any working directory:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+uv tool install wiswa
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Or with pipx:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+pipx install wiswa
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+If you prefer not to install globally, add Wiswa as a \fBdevelopment
+dependency\fP of your project—for example \fBuv add \-\-group dev wiswa\fP, or list
+\fBwiswa\fP under \fBdependency\-groups.dev\fP in \fBpyproject.toml\fP and install
+inside the project virtual environment with your usual workflow.
+.SS wiswa
+.sp
+Generate and maintain projects with Jsonnet.
 .sp
 Usage
 .INDENT 0.0
@@ -83,8 +110,8 @@ Suppress the progress spinner and the final Done message.
 .UNINDENT
 .INDENT 0.0
 .TP
-.B \-\-skip\-github
-Skip configuring GitHub project.
+.B \-\-skip\-remote
+Skip configuring the remote Git host (GitHub or GitLab project API).
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -118,7 +145,58 @@ Arguments
 .B FILE
 Optional argument
 .UNINDENT
-.SH MCP SERVER
+.SS Remote API tokens
+.sp
+When Wiswa configures the remote (\fBwiswa\fP without \fB\-\-skip\-remote\fP), it calls the GitHub or
+GitLab API using a \fBpersonal access token\fP\&. Tokens are read from the environment when supported,
+or from the system keyring. Service names include the \fBrepository hostname\fP so different hosts
+(for example GitHub.com, GitHub Enterprise, or self\-managed GitLab) keep separate credentials.
+.sp
+Keyring entries use the usual \fBservice name\fP and \fBusername\fP fields. The \fBusername\fP is
+normally your OS login name (\fBwhoami\fP), except where noted for legacy entries.
+.SS GitHub
+.INDENT 0.0
+.IP 1. 3
+\fBPreferred:\fP service \fBwiswa\-github:<hostname>\fP, username your OS user. The hostname is taken
+from \fBrepository_uri\fP (for example \fBgithub.com\fP for \fBhttps://github.com/org/repo\fP).
+.IP 2. 3
+\fBLegacy:\fP service \fBtmu\-github\-api\fP, username your OS user (supported for existing setups).
+.UNINDENT
+.sp
+Example (hostname \fBgithub.com\fP, OS user \fBalice\fP):
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+python \-m keyring set \(aqwiswa\-github:github.com\(aq alice
+.EE
+.UNINDENT
+.UNINDENT
+.SS GitLab
+.INDENT 0.0
+.IP 1. 3
+\fBEnvironment:\fP \fBGITLAB_TOKEN\fP (if set, used first).
+.IP 2. 3
+\fBPreferred:\fP service \fBwiswa\-gitlab:<hostname>\fP, username your OS user (for example
+\fBwiswa\-gitlab:gitlab.com\fP).
+.IP 3. 3
+The same service with \fBusername\fP equal to the hostname is also checked.
+.IP 4. 3
+\fBLegacy:\fP service \fBwiswa\-gitlab\-api\fP, username the repository hostname, then your OS user.
+.UNINDENT
+.sp
+Example for \fBgitlab.com\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+export GITLAB_TOKEN=\(aqglpat\-...\(aq
+
+python \-m keyring set \(aqwiswa\-gitlab:gitlab.com\(aq \(dq$(whoami)\(dq
+.EE
+.UNINDENT
+.UNINDENT
+.SS MCP Server
 .sp
 Wiswa includes an MCP server (\fBwiswa\-mcp\fP) that exposes settings discovery tools for AI
 assistants.
@@ -165,7 +243,7 @@ Add to \fB\&.github/copilot/mcp.json\fP:
 .EE
 .UNINDENT
 .UNINDENT
-.SH BINARY SIGNING
+.SS Binary Signing
 .sp
 Wiswa can generate PyInstaller workflow steps that sign Windows and macOS binaries so that users do
 not see security warnings on launch. Signing is \fBoptional\fP and controlled entirely by whether the
