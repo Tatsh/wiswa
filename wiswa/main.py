@@ -24,6 +24,7 @@ import niquests
 
 from .utils import (
     FlatpakConfigurationError,
+    RemoteHostConflictError,
     apply_python_pyproject_manifest_edits,
     copy_static_files,
     create_py_typed_files,
@@ -33,6 +34,7 @@ from .utils import (
     evaluate_merged_settings,
     post_process_steps,
     setup_github_project,
+    setup_gitlab_project,
     write_templated_files,
 )
 
@@ -141,7 +143,7 @@ async def _main_async(  # noqa: C901
         no_cache: bool = False,
         output_dir: Path | None = None,
         quiet: bool = False,
-        skip_github: bool = False,
+        skip_remote: bool = False,
         skip_jsonnet: bool = False,
         skip_postprocess: bool = False,
         skip_static: bool = False,
@@ -224,9 +226,13 @@ async def _main_async(  # noqa: C901
                                                                  debug=debug,
                                                                  session=session,
                                                                  spin_update=spin_update)
-                if not skip_github:
-                    spin_update('Configuring GitHub project settings...')
-                    await setup_github_project(session, loaded)
+                if not skip_remote:
+                    if loaded.get('using_github'):
+                        spin_update('Configuring GitHub project settings...')
+                        await setup_github_project(session, loaded)
+                    elif loaded.get('using_gitlab'):
+                        spin_update('Configuring GitLab project settings...')
+                        await setup_gitlab_project(session, loaded)
     except niquests.HTTPError as e:
         await spin_stop()
         click.echo(click.style('Failed.', fg='red'), err=True)
@@ -238,6 +244,12 @@ async def _main_async(  # noqa: C901
         click.echo(click.style('Failed.', fg='red'), err=True)
         click.echo(str(e), err=True)
         log.debug('FlatpakConfigurationError', exc_info=e)
+        _reraise_or_abort(e, debug=debug)
+    except RemoteHostConflictError as e:
+        await spin_stop()
+        click.echo(click.style('Failed.', fg='red'), err=True)
+        click.echo(str(e), err=True)
+        log.debug('RemoteHostConflictError', exc_info=e)
         _reraise_or_abort(e, debug=debug)
     except RuntimeError as e:
         await spin_stop()
@@ -288,7 +300,11 @@ async def _main_async(  # noqa: C901
               '--quiet',
               is_flag=True,
               help='Suppress the progress spinner and the final Done message.')
-@click.option('--skip-github', is_flag=True, help='Skip configuring GitHub project.')
+@click.option(
+    '--skip-remote',
+    is_flag=True,
+    help='Skip configuring the remote Git host (GitHub or GitLab project API).',
+)
 @click.option(
     '--skip-jsonnet',
     is_flag=True,
@@ -309,7 +325,7 @@ def main(file: Path,
          no_cache: bool = False,
          output_dir: Path | None = None,
          quiet: bool = False,
-         skip_github: bool = False,
+         skip_remote: bool = False,
          skip_jsonnet: bool = False,
          skip_postprocess: bool = False,
          skip_static: bool = False,
@@ -325,7 +341,7 @@ def main(file: Path,
                           no_cache=no_cache,
                           output_dir=output_dir,
                           quiet=quiet,
-                          skip_github=skip_github,
+                          skip_remote=skip_remote,
                           skip_jsonnet=skip_jsonnet,
                           skip_postprocess=skip_postprocess,
                           skip_static=skip_static,
