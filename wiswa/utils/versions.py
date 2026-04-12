@@ -132,6 +132,18 @@ def resolve_npm_minimal_age_gate_minutes(*,
     the ``.wiswa.jsonnet`` project snippet, the repository or user ``.yarnrc.yml`` (minutes), then
     the user ``~/.npmrc`` key ``min-release-age`` (days, converted to minutes), then the 10080-
     minute default.
+
+    Parameters
+    ----------
+    settings : Mapping[str, Any] | None
+        Merged Wiswa settings, or ``None`` to skip this source.
+    project_snippet : str | None
+        Contents of the project ``.wiswa.jsonnet`` snippet, or ``None``.
+
+    Returns
+    -------
+    int
+        Minimal package age gate in minutes.
     """
     if (v := _npm_minimal_age_from_settings(settings)) is not None:
         return v
@@ -145,13 +157,6 @@ def resolve_npm_minimal_age_gate_minutes(*,
 
 
 def _parse_duration(value: str) -> timedelta | None:
-    """
-    Parse a duration string.
-
-    Supports ISO 8601 durations (``P7D``, ``P2W``, ``PT24H``), friendly
-    durations (``7 days``, ``24 hours``, ``2 weeks``), and plain integers
-    interpreted as days. Calendar units (months, years) are not supported.
-    """
     value = value.strip()
     m = re.fullmatch(r'PT(\d+)H', value, re.IGNORECASE)
     if m:
@@ -179,12 +184,6 @@ def _parse_duration(value: str) -> timedelta | None:
 
 
 def _parse_exclude_newer(value: str) -> datetime | None:
-    """
-    Parse an ``exclude-newer`` value.
-
-    Accepts an RFC 3339 timestamp or a duration (resolved relative to
-    now).
-    """
     value = value.strip()
     try:
         return datetime.fromisoformat(value.replace('Z', '+00:00'))
@@ -464,23 +463,10 @@ async def download_yarn(session: niquests.AsyncSession, version: str) -> None:
 
 
 def _github_tag_disk_cache_path() -> Path:
-    """
-    Return the on-disk GitHub tag store path.
-
-    Not memoised: ``platformdirs`` respects runtime environment changes (for example
-    tests setting ``XDG_CACHE_HOME`` per case).
-    """
     return platformdirs.user_cache_path('wiswa', appauthor=False) / _GITHUB_TAG_DISK_FILENAME
 
 
 def _read_github_tag_disk_store() -> dict[str, str]:
-    """
-    Return the GitHub tag disk store, reading the file at most once per snapshot.
-
-    The same mapping object is reused until :func:`clear_resolution_caches` runs or
-    a persistence failure invalidates the snapshot, so callers that mutate the
-    dict (see :func:`_write_github_tag_disk_entry`) keep the cache aligned.
-    """
     cached = _github_tag_disk_store_memo_box[0]
     if cached is not None:
         return cached

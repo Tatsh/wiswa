@@ -29,7 +29,6 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
 
 
 def _setup_module_path(tmp_path: Path) -> Path:
-    """Set up a fake ``module_path`` with static files for ``copy_static_files``."""
     module_path = tmp_path / 'wiswa_pkg'
     rules_dir = module_path / 'static/claude/rules'
     rules_dir.mkdir(parents=True, exist_ok=True)

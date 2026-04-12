@@ -39,7 +39,6 @@ def _make_response(
         ok: bool = True,  # noqa: FBT001, FBT002
         content: bytes = b'',
         status_code: int | None = None) -> MagicMock:
-    """Create a mock niquests response."""
     response = MagicMock()
     response.ok = ok
     if status_code is not None:

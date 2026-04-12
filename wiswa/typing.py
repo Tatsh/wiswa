@@ -28,6 +28,7 @@ The type of project being generated.
 
 class VSCodeLaunchConfiguration(TypedDict):
     """Visual Studio Code launch configuration for a specific task."""
+
     console: str
     """The console type (e.g., 'integratedTerminal' or 'externalTerminal')."""
     env: Mapping[str, str]
@@ -44,6 +45,7 @@ class VSCodeLaunchConfiguration(TypedDict):
 
 class VSCodeLaunch(TypedDict):
     """Visual Studio Code launch configuration."""
+
     configurations: Sequence[VSCodeLaunchConfiguration]
     """A list of configurations for launching the project."""
     version: str
@@ -52,6 +54,7 @@ class VSCodeLaunch(TypedDict):
 
 class VSCode(TypedDict):
     """Visual Studio Code settings."""
+
     extensions: Iterable[str]
     """A list of VS Code extensions to install."""
     launch: VSCodeLaunch
@@ -60,12 +63,14 @@ class VSCode(TypedDict):
 
 class PyProjectToolPoetryPackage(TypedDict):
     """A package in the ``[tool.poetry.packages]`` section of the pyproject.toml."""
+
     include: str
     """The path to the package to include."""
 
 
 class PyProjectToolPoetry(TypedDict, total=False):
     """``[tool.poetry]`` section of pyproject.toml."""
+
     dependencies: Mapping[str, str]
     """A mapping of dependencies and their versions."""
     packages: Iterable[PyProjectToolPoetryPackage]
@@ -74,6 +79,7 @@ class PyProjectToolPoetry(TypedDict, total=False):
 
 class PyProjectToolCommitizen(TypedDict, total=False):
     """``[tool.commitizen]`` section of pyproject.toml."""
+
     tag_format: str
     """The format for tags."""
     version_files: Iterable[str]
@@ -84,6 +90,7 @@ class PyProjectToolCommitizen(TypedDict, total=False):
 
 class PyProjectTool(TypedDict, total=False):
     """Tool section of pyproject.toml."""
+
     commitizen: PyProjectToolCommitizen
     """Commitizen configuration."""
     poetry: PyProjectToolPoetry
@@ -92,6 +99,7 @@ class PyProjectTool(TypedDict, total=False):
 
 class PyProjectProject(TypedDict, total=False):
     """``[project]`` section of pyproject.toml."""
+
     authors: Iterable[str]
     """A list of authors of the project."""
     classifiers: Iterable[str]
@@ -110,6 +118,7 @@ class PyProjectProject(TypedDict, total=False):
 
 class PyProjectBuildSystem(TypedDict, total=False):
     """``[build-system]`` section of pyproject.toml."""
+
     requires: Sequence[str]
     """Build system requirements."""
     build_backend: str
@@ -118,6 +127,7 @@ class PyProjectBuildSystem(TypedDict, total=False):
 
 class PyProject(TypedDict, total=False):
     """Parsed ``pyproject.toml``."""
+
     build_system: PyProjectBuildSystem
     """Build system section of pyproject.toml."""
     dependency_groups: Mapping[str, Sequence[str]]
@@ -130,6 +140,7 @@ class PyProject(TypedDict, total=False):
 
 class PythonDeps(TypedDict, total=False):
     """Python dependency groups in Poetry-style syntax."""
+
     main: Mapping[str, Any]
     """Main project dependencies."""
     dev: Mapping[str, Any]
@@ -142,6 +153,7 @@ class PythonDeps(TypedDict, total=False):
 
 class SettingsGitHub(TypedDict):
     """GitHub settings."""
+
     immutable_releases: bool
     """If releases should be immutable."""
     username: str
@@ -150,6 +162,7 @@ class SettingsGitHub(TypedDict):
 
 class CustomProjectBadge(TypedDict, total=False):
     """A custom project badge displayed before the social section in the README."""
+
     anchor: str
     """Markdown anchor text, e.g. ``[![alt](image_url)]``."""
     href: str
@@ -160,6 +173,7 @@ class CustomProjectBadge(TypedDict, total=False):
 
 class SettingsSocialMastodon(TypedDict):
     """Mastodon settings."""
+
     id: str
     """The Mastodon ID for the project or its maintainer."""
     domain: str
@@ -168,6 +182,7 @@ class SettingsSocialMastodon(TypedDict):
 
 class SettingsSocialTextAndURI(TypedDict):
     """A social media entry with display text and a URI."""
+
     text: str
     """The text shown in the badge."""
     uri: str
@@ -176,6 +191,7 @@ class SettingsSocialTextAndURI(TypedDict):
 
 class SettingsSocial(TypedDict):
     """Social media settings."""
+
     bsky: str
     """The Bluesky handle for the project or its maintainer."""
     mastodon: SettingsSocialMastodon
@@ -200,6 +216,7 @@ class SettingsSocial(TypedDict):
 
 class PackageJSON(TypedDict):
     """Parsed ``package.json``."""
+
     dependencies: Mapping[str, str]
     """A mapping of dependencies and their versions."""
     devDependencies: Mapping[str, str]
@@ -208,6 +225,7 @@ class PackageJSON(TypedDict):
 
 class ExportRequirements(TypedDict, total=False):
     """Configuration for exporting requirements from the lock file."""
+
     enabled: bool
     """Whether to run the export step and add a pre-commit hook."""
     format: str
@@ -268,6 +286,7 @@ class ExportRequirements(TypedDict, total=False):
 
 class Settings(TypedDict):
     """Project settings."""
+
     default_branch: str
     """The default Git branch."""
     description: str

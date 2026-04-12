@@ -64,14 +64,12 @@ _GITHUB_TAG_RESOLUTION_EXC_TYPES = (KeyError, OSError, TypeError, ValueError,
 
 @cache
 def _keep_a_changelog_documentation_url(release_tag: str) -> str:
-    """Map a GitHub release tag to the keepachangelog.com language-version URL."""
     without_v = release_tag.strip().removeprefix('v')
     return f'https://keepachangelog.com/en/{without_v}/'
 
 
 @cache
 def _semver_spec_documentation_url(release_tag: str) -> str:
-    """Map a GitHub release tag (for example ``v2.0.0``) to the semver.org spec page URL."""
     tag = release_tag.strip()
     if not tag.startswith('v'):
         tag = f'v{tag}'
@@ -79,12 +77,6 @@ def _semver_spec_documentation_url(release_tag: str) -> str:
 
 
 async def _resolve_keep_a_changelog_url(session: niquests.AsyncSession | None) -> str:
-    """
-    Resolve the Keep a Changelog spec URL from the latest tag on GitHub.
-
-    Repository: ``olivierlacan/keep-a-changelog``. Falls back to a pinned URL when there is no
-    session or GitHub resolution fails.
-    """
     if session is None:
         return _CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL
     try:
@@ -96,11 +88,6 @@ async def _resolve_keep_a_changelog_url(session: niquests.AsyncSession | None) -
 
 
 async def _resolve_semver_spec_url(session: niquests.AsyncSession | None) -> str:
-    """
-    Resolve the SemVer specification page URL using the latest tag from ``semver/semver``.
-
-    Falls back to a pinned URL when there is no session or GitHub resolution fails.
-    """
     if session is None:
         return _CHANGELOG_SEMVER_SPEC_FALLBACK_URL
     try:
@@ -118,6 +105,16 @@ async def resolve_changelog_boilerplate_urls(
 
     Uses the same GitHub tag resolution as :func:`post_process_steps` (with fallbacks
     when ``session`` is ``None`` or the API fails).
+
+    Parameters
+    ----------
+    session : niquests.AsyncSession | None
+        HTTP session for GitHub API calls, or ``None`` to use fallback URLs.
+
+    Returns
+    -------
+    tuple[str, str]
+        Keep a Changelog documentation URL and SemVer specification URL.
     """
     keep = await _resolve_keep_a_changelog_url(session)
     semver = await _resolve_semver_spec_url(session)
@@ -126,7 +123,6 @@ async def resolve_changelog_boilerplate_urls(
 
 def _normalise_changelog_reference_urls(content: str, keep_a_changelog_url: str,
                                         semver_spec_url: str) -> str:
-    """Rewrite Keep a Changelog and SemVer spec links to the resolved documentation URLs."""
     step1 = _RE_CHANGELOG_KEEP_A_CHANGELOG.sub(keep_a_changelog_url, content)
     return _RE_CHANGELOG_SEMVER_SPEC.sub(semver_spec_url, step1)
 
@@ -158,8 +154,11 @@ async def _subprocess_log_run(
         *args: Any,
         on_command: Callable[[str], None] | None = None,
         **kwargs: Any) -> tuple[asyncio.subprocess.Process, bytes | None, bytes | None]:
-    assert isinstance(args[0], Iterable)
-    cmd = list(args[0])
+    first = args[0]
+    if not isinstance(first, Iterable):
+        msg = 'First positional argument must be an iterable of command arguments.'
+        raise TypeError(msg)
+    cmd = list(first)
     cmd_str = ' '.join(quote(x) for x in cmd)
     log.debug('Running command: `%s`', cmd_str)
     if on_command is not None:
@@ -174,7 +173,6 @@ async def _subprocess_log_run(
 
 
 def _clang_format_file_paths(clang_format_args: str) -> list[str]:
-    """Expand glob tokens in ``clang_format_args`` into paths for ``clang-format`` (no shell)."""
     root = Path()
     seen: set[str] = set()
     out: list[str] = []
@@ -705,7 +703,6 @@ def _custom_project_badges(settings: Settings, *, negative: bool = False) -> Ite
 
 
 def _readme_badge_delimiter_indices(lines: Sequence[str]) -> tuple[int, int] | None:
-    """Return ``(start, stop)`` line indices for the Wiswa README badge region, or ``None``."""
     start_i: int | None = None
     for i, raw in enumerate(lines):
         if raw.strip() == _README_GENERATED_START:
@@ -768,7 +765,19 @@ _RE_UV_LOCK_DIFF_EXCLUDE_NEWER_HUNK_LINE = re.compile(r'^[+-]\s*exclude-newer\s*
 
 
 def uv_lock_diff_changes_only_exclude_newer(diff_text: str) -> bool:
-    """Return whether unified diff hunks change only ``exclude-newer`` assignments."""
+    """
+    Return whether unified diff hunks change only ``exclude-newer`` assignments.
+
+    Parameters
+    ----------
+    diff_text : str
+        Unified diff text, typically from comparing ``uv.lock`` revisions.
+
+    Returns
+    -------
+    bool
+        ``True`` when every ``+``/``-`` line affects only ``exclude-newer`` keys.
+    """
     if not diff_text.strip():
         return False
     saw_exclude_newer_change = False

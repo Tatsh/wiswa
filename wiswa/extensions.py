@@ -113,7 +113,6 @@ def _shell_indent(text: str, width: int = 4) -> str:
 
 
 def _parse_md_badge(anchor: str) -> dict[str, str]:
-    """Parse a Markdown badge anchor ``[![alt](image_url)]`` into ``{alt, image}``."""
     m = _MD_BADGE_RE.match(anchor)
     return {'alt': m.group(1), 'image': m.group(2)} if m else {'alt': '', 'image': ''}
 

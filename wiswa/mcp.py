@@ -53,7 +53,6 @@ def _format_key(key: str, *, merge: bool = False) -> str:
 
 
 def _json_dumps(obj: Any) -> str:
-    """Serialise MCP responses; coerce non-JSON-native values with str()."""
     return json.dumps(obj, indent=2, default=str)
 
 
@@ -140,6 +139,18 @@ async def get_defaults(key_path: str | None = None) -> str:
     """
     Get resolved default settings, optionally narrowed to a dot-separated key path.
 
+    Parameters
+    ----------
+    key_path : str | None
+        Dot-separated path into the defaults tree, or ``None`` for the full document.
+
+    Returns
+    -------
+    str
+        JSON text for the resolved value or an error object.
+
+    Notes
+    -----
     Examples: ``get_defaults("pyproject.tool.ruff")``, ``get_defaults()`` for all defaults.
     """
     defaults = await _get_defaults()
@@ -157,6 +168,18 @@ async def lookup_setting(key_path: str) -> str:
     """
     Look up a setting by dot-separated key path and get its default value plus override snippet.
 
+    Parameters
+    ----------
+    key_path : str
+        Dot-separated path to the setting.
+
+    Returns
+    -------
+    str
+        JSON text with default value, type, override snippet, and notes.
+
+    Notes
+    -----
     Example: ``lookup_setting("pyproject.tool.ruff.line-length")``
     """
     defaults = await _get_defaults()
@@ -188,7 +211,22 @@ async def list_settings(key_path: str | None = None, depth: int = 1) -> str:
     """
     List setting keys at a given path and depth.
 
-    Examples: ``list_settings()`` for top-level keys, ``list_settings("pyproject.tool", depth=2)``.
+    Parameters
+    ----------
+    key_path : str | None
+        Dot-separated path prefix, or ``None`` for the root.
+    depth : int
+        How many object levels to expand.
+
+    Returns
+    -------
+    str
+        JSON list of key metadata entries or an error object.
+
+    Notes
+    -----
+    Examples: ``list_settings()`` for top-level keys,
+    ``list_settings("pyproject.tool", depth=2)``.
     """
     defaults = await _get_defaults()
     try:
@@ -226,6 +264,18 @@ async def search_settings(query: str) -> str:
     """
     Search for settings by substring match on their fully-qualified key path.
 
+    Parameters
+    ----------
+    query : str
+        Substring matched against fully-qualified key paths.
+
+    Returns
+    -------
+    str
+        JSON list of matching settings with types and scalar defaults.
+
+    Notes
+    -----
     Example: ``search_settings("want_")`` to find all boolean feature flags.
     """
     defaults = await _get_defaults()

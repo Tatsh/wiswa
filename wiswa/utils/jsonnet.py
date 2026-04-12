@@ -80,7 +80,6 @@ _UNKNOWN_GITHUB_USER = 'unknown'
 
 
 def _github_cli_username() -> str | None:
-    """Return the login for the current GitHub CLI authentication, or ``None``."""
     gh_executable = shutil.which('gh')
     if not gh_executable:
         return None
@@ -97,9 +96,15 @@ def _github_cli_username() -> str | None:
 
 
 def _github_owner_from_remote_url(url: str) -> str | None:
-    """Return the repository owner from *url* if it targets github.com.
+    """
+    Return the repository owner from *url* if it targets github.com.
 
     *url* must be stripped and non-empty (callers skip blank ``remote.origin.url`` values).
+
+    Returns
+    -------
+    str | None
+        Owner login, or ``None`` when *url* does not reference GitHub.
     """
     if url.startswith('git@github.com:'):
         rest = url.removeprefix('git@github.com:')
@@ -154,7 +159,6 @@ def _iter_git_config_paths() -> Iterator[Path]:
 
 
 def _origin_url_from_git_config_file(config_path: Path) -> str | None:
-    """Return ``remote.origin.url`` from *config_path* if present."""
     parser = configparser.ConfigParser(interpolation=None)
     parser.optionxform = str  # type: ignore[assignment]
     try:
@@ -168,7 +172,6 @@ def _origin_url_from_git_config_file(config_path: Path) -> str | None:
 
 
 def _github_username_from_git_origin() -> str | None:
-    """Return the GitHub owner from ``remote.origin.url`` in ``.git/config`` if available."""
     seen: set[Path] = set()
     for cfg in _iter_git_config_paths():
         if not cfg.is_file():
@@ -188,7 +191,6 @@ def _github_username_from_git_origin() -> str | None:
 
 
 def _default_github_username() -> str:
-    """Prefer ``gh`` authentication; then ``remote.origin.url`` under ``.git``; else unknown."""
     if login := _github_cli_username():
         return login
     if owner := _github_username_from_git_origin():
