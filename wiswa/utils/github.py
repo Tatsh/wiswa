@@ -21,8 +21,6 @@ __all__ = ('setup_github_project',)
 
 log = logging.getLogger(__name__)
 
-_GITHUB_LEGACY_KEYRING_SERVICE = 'tmu-github-api'
-
 
 def _repository_uri_hostname(uri: str) -> str:
     return urlparse(uri).hostname or ''
@@ -32,8 +30,9 @@ def _get_github_token(settings: Settings) -> str | None:
     """
     Resolve a GitHub API token from the keyring.
 
-    Tries ``wiswa-github:<hostname>`` (hostname from ``repository_uri``), then the legacy
-    service ``tmu-github-api``. Both use the current OS username as the keyring username.
+    Only two lookups are used, both with the current OS username: ``wiswa-github:<hostname>``
+    (hostname from ``repository_uri``, default ``github.com``; documented in the README), then
+    ``tmu-github-api`` (legacy).
 
     Returns
     -------
@@ -46,7 +45,7 @@ def _get_github_token(settings: Settings) -> str | None:
         token = keyring.get_password(f'wiswa-github:{host}', user)
         if token:
             return token
-        return keyring.get_password(_GITHUB_LEGACY_KEYRING_SERVICE, user)
+        return keyring.get_password('tmu-github-api', user)
     except keyring.errors.NoKeyringError:
         log.warning('No keyring backend available.')
         return None
@@ -105,8 +104,8 @@ async def _setup_github_session(session: niquests.AsyncSession,
     token = await anyio.to_thread.run_sync(lambda: _get_github_token(settings))
     if not token:
         gh_host = _repository_uri_hostname(settings['repository_uri']) or 'github.com'
-        log.warning('No GitHub token (set keyring %s or legacy %s for user %r).',
-                    f'wiswa-github:{gh_host}', _GITHUB_LEGACY_KEYRING_SERVICE, getpass.getuser())
+        log.warning('No GitHub token (set keyring %s for user %r).', f'wiswa-github:{gh_host}',
+                    getpass.getuser())
         return None
     session.headers.update({
         'Accept': 'application/vnd.github+json',
@@ -231,8 +230,7 @@ async def setup_github_project(session: niquests.AsyncSession, settings: Setting
     """
     Configure the GitHub repository (topics, rulesets, security, Pages).
 
-    API authentication uses the keyring (see README): ``wiswa-github:<hostname>``, then legacy
-    ``tmu-github-api``.
+    API authentication uses the keyring (see README): ``wiswa-github:<hostname>``.
 
     Parameters
     ----------
