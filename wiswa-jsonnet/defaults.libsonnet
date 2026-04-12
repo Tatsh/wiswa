@@ -6,6 +6,7 @@ local pre_commit_configs = {
 local python_deps = import 'defaults/python-deps.libsonnet';
 local vscode_settings = import 'defaults/vscode/settings.libsonnet';
 local utils = import 'utils.libsonnet';
+local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
 
 /**
  * @brief Default settings for project generation.
@@ -398,11 +399,24 @@ local utils = import 'utils.libsonnet';
   using_github: std.member(self.repository_uri, 'github.com'),
   /**
    * @brief If the project is hosted on GitLab.
+   * @details True when the repository host looks like GitLab (for example ``gitlab.com`` or
+   *     ``gitlab.example.com``). For other hosts running GitLab, set ``using_gitlab: true`` in
+   *     ``.wiswa.jsonnet``.
    * @var boolean
    */
-  using_gitlab: std.member(self.repository_uri, 'gitlab.com'),
+  using_gitlab:
+    local host = utils.repositoryUriHost(self.repository_uri);
+    !self.using_github && (
+      host == 'gitlab.com' ||
+      (std.length(host) > 0 && std.length(std.findSubstr('gitlab', host)) > 0)
+    ),
   /** @brief GitLab CI configuration object; manifest as `.gitlab-ci.yml` when non-empty. */
   gitlab_ci: {},
+  /**
+   * @brief GitLab remote project API tables (defaults in ``defaults/gitlab.libsonnet``).
+   * @details Override with ``gitlab+: { project_settings+: { ... }, ... }`` in ``.wiswa.jsonnet``.
+   */
+  gitlab: gitlab_opinionated,
   /** @brief If the project hosts documentation on ReadTheDocs. */
   using_readthedocs: true,
   /** @brief If the project consists of only Python typing stubs. */
@@ -528,7 +542,9 @@ local utils = import 'utils.libsonnet';
                     'Bash(vcpkg *)',
                   ] else []) +
              (if settings.using_github then ['WebFetch(domain:api.github.com)'] else []) +
-             (if settings.using_gitlab then ['WebFetch(domain:gitlab.com)'] else []),
+             (if settings.using_gitlab && std.length(utils.repositoryUriHost(settings.repository_uri)) > 0
+              then ['WebFetch(domain:%s)' % utils.repositoryUriHost(settings.repository_uri)]
+              else []),
     },
   },
   /**

@@ -152,6 +152,18 @@
     ],
 
   /**
+   * @brief Extract the host from an ``http`` or ``https`` repository URI.
+   * @param uri A repository URL such as ``https://gitlab.example.com/group/project``.
+   * @returns The hostname, or empty string if the URI does not look like ``http(s)://host/...``.
+   */
+  repositoryUriHost(uri)::
+    local parts = std.split(uri, '/');
+    if std.length(parts) >= 3 && (parts[0] == 'https:' || parts[0] == 'http:') then
+      parts[2]
+    else
+      '',
+
+  /**
    * @brief Convert an array of authors to a format suitable for pyproject.toml.
    * @param authors The array of author objects.
    * @returns An array of objects with `name` and `email` fields.
