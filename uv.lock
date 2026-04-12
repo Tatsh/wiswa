@@ -9,7 +9,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-04-05T04:06:12.889562037Z"
+exclude-newer = "2026-04-05T04:35:40.962429062Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
@@ -2280,6 +2280,19 @@ wheels = [
 ]
 
 [[package]]
+name = "python-gitlab"
+version = "8.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "requests-toolbelt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/77/9c/ec0073c260812bca170418e8e259a2ed0728200af4b3f7120badf2e6f05a/python_gitlab-8.2.0.tar.gz", hash = "sha256:de874dc538db6dceb48929f4c8fb55d6064dd19cb3ffdad1100190f835c5b674", size = 407110, upload-time = "2026-03-28T01:50:07.66Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/38/ee/a61bb562bdf6f0bc6c51cdcf80ab5503cbb4b2f5053fa4b054cc0a56e48a/python_gitlab-8.2.0-py3-none-any.whl", hash = "sha256:884618d4d60beadb21bb0c5f0cca46e70c6e501784f136bf0b6f85f5bc15ce62", size = 147477, upload-time = "2026-03-28T01:50:06.237Z" },
+]
+
+[[package]]
 name = "python-multipart"
 version = "0.0.22"
 source = { registry = "https://pypi.org/simple" }
@@ -2507,6 +2520,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5f/a4/98b9c7c6428a668bf7e42ebb7c79d576a1c3c1e3ae2d47e674b468388871/requests-2.33.1.tar.gz", hash = "sha256:18817f8c57c6263968bc123d237e3b8b08ac046f5456bd1e307ee8f4250d3517", size = 134120, upload-time = "2026-03-30T16:09:15.531Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d7/8e/7540e8a2036f79a125c1d2ebadf69ed7901608859186c856fa0388ef4197/requests-2.33.1-py3-none-any.whl", hash = "sha256:4e6d1ef462f3626a1f0a0a9c42dd93c63bad33f9f1c1937509b8c5c8718ab56a", size = 64947, upload-time = "2026-03-30T16:09:13.83Z" },
+]
+
+[[package]]
+name = "requests-toolbelt"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f3/61/d7545dafb7ac2230c70d38d31cbfe4cc64f7144dc41f6e4e4b78ecd9f5bb/requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6", size = 206888, upload-time = "2023-05-01T04:11:33.229Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06", size = 54481, upload-time = "2023-05-01T04:11:28.427Z" },
 ]
 
 [[package]]
@@ -3374,11 +3399,11 @@ wheels = [
 
 [[package]]
 name = "types-jsonnet"
-version = "0.21.0.20250708"
+version = "0.22.0.20260405"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f6/6e/b9ce425c2ac1e7b47d504c63dceaad43e4d1e34e451eaff3ed408aaf2193/types_jsonnet-0.21.0.20250708.tar.gz", hash = "sha256:b16381bb12eff80850bd98b6c2263f1d9e594361a8a42ed9d1e6277b38f9c24f", size = 7018, upload-time = "2025-07-08T03:13:49.655Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4f/b5/08a7c9f408ef4472beb53a5df68f078e45b7838e91f3928af76c5275f701/types_jsonnet-0.22.0.20260405.tar.gz", hash = "sha256:97d89d0049d23ca435f291123a88c5fad5f6eaa8a22be39438d0a8a56fc6e43b", size = 7025, upload-time = "2026-04-05T04:27:02.871Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/55/08/83542cccf53d562a44d7a8ff57ee95fc92ff80a3bc26956f7baf25020a51/types_jsonnet-0.21.0.20250708-py3-none-any.whl", hash = "sha256:4c3ff1235692f0c5f341f12ff4d6ada836c524733c46ee8c35032ed174c8b7b5", size = 7557, upload-time = "2025-07-08T03:13:48.76Z" },
+    { url = "https://files.pythonhosted.org/packages/35/2c/78439dec941252062637e7bde75d9c785df391e6effe70f9a15fe6d622b0/types_jsonnet-0.22.0.20260405-py3-none-any.whl", hash = "sha256:f6f0a3a63f70390c7d8cffa76b63c13cb35a019831dc515bdcddcd72e957b4c1", size = 7524, upload-time = "2026-04-05T04:27:01.944Z" },
 ]
 
 [[package]]
@@ -3663,6 +3688,7 @@ dependencies = [
     { name = "niquests" },
     { name = "niquests-cache" },
     { name = "platformdirs" },
+    { name = "python-gitlab" },
     { name = "tomlkit" },
     { name = "typing-extensions" },
     { name = "yaspin" },
@@ -3715,6 +3741,7 @@ requires-dist = [
     { name = "niquests", specifier = ">=3.18.4" },
     { name = "niquests-cache", specifier = ">=0.0.3" },
     { name = "platformdirs", specifier = ">=4.9.4" },
+    { name = "python-gitlab", specifier = ">=8.2.0" },
     { name = "tomlkit", specifier = ">=0.14.0" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
     { name = "yaspin", specifier = ">=3.4.0" },
@@ -3727,7 +3754,7 @@ dev = [
     { name = "mypy", specifier = ">=1.20.0" },
     { name = "ruff", specifier = ">=0.15.9" },
     { name = "ty", specifier = ">=0.0.28" },
-    { name = "types-jsonnet", specifier = ">=0.21.0.20250708" },
+    { name = "types-jsonnet", specifier = ">=0.22.0.20260405" },
     { name = "yapf", specifier = ">=0.43.0" },
 ]
 docs = [

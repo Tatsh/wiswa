@@ -9,7 +9,7 @@ dev = [
   "mypy>=1.20.0",
   "ruff>=0.15.9",
   "ty>=0.0.28",
-  "types-jsonnet>=0.21.0.20250708",
+  "types-jsonnet>=0.22.0.20260405",
   "yapf>=0.43.0",
 ]
 docs = [
@@ -60,6 +60,7 @@ dependencies = [
   "niquests-cache>=0.0.3",
   "niquests>=3.18.4",
   "platformdirs>=4.9.4",
+  "python-gitlab>=8.2.0",
   "tomlkit>=0.14.0",
   "typing-extensions>=4.15.0",
   "yaspin>=3.4.0",

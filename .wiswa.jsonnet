@@ -48,6 +48,7 @@ local utils = import 'utils.libsonnet';
       niquests: utils.latestPypiPackageVersionCaret('niquests'),
       'niquests-cache': utils.latestPypiPackageVersionCaret('niquests-cache'),
       platformdirs: utils.latestPypiPackageVersionCaret('platformdirs'),
+      'python-gitlab': utils.latestPypiPackageVersionCaret('python-gitlab'),
       tomlkit: utils.latestPypiPackageVersionCaret('tomlkit'),
       yaspin: utils.latestPypiPackageVersionCaret('yaspin'),
     },
