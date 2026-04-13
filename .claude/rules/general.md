@@ -38,6 +38,12 @@ concrete repository change, do not edit project files.
 - Run `yarn format` after any changes to format all files. Must exit with code 0.
 - Run `yarn qa` after any changes to type-check and run QA utilities. Must exit with code 0. Both
   commands must pass before committing.
+
+  Be aware that some checks may not run successfully and that this is intentional. This may include
+  items like Pyright or ty where we check for issues but we do not necessarily try to fix all
+  reported errors from those tools (Mypy takes priority). You can verify this by checking the `qa`
+  script in `package.json` where any command of this kind will be wrapped in `{ ... || true; }`.
+
 - Use `yarn` to invoke Node-based tools (Prettier, markdownlint-cli2, cspell).
 - Use `uv run` to invoke Python tools (pytest, mypy, Ruff).
 - In shell tool calls, assume the working directory is already the repository root (or whatever cwd
