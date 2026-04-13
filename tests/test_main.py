@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock
 
 from click.testing import CliRunner
+from typing_extensions import override
 from wiswa.main import main
 from wiswa.utils import FlatpakConfigurationError, RemoteHostConflictError
 import click
@@ -780,6 +781,7 @@ def test_main_anyio_run_outer_failure_empty_message(mocker: MockerFixture, tmp_p
     file_path.write_text('{}\n')
 
     class _SilentError(Exception):
+        @override
         def __str__(self) -> str:
             return ''
 

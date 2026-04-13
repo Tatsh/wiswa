@@ -39,7 +39,7 @@ def _make_resp(status: int = 200, json_data: Any = None) -> MagicMock:
 
 
 def _mock_github_session(mocker: MockerFixture) -> MagicMock:
-    mocker.patch('wiswa.utils.github.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.github.run_sync', side_effect=lambda fn: fn())
     mocker.patch('wiswa.utils.github.keyring.get_password', return_value='ghp_test')
     session = MagicMock()
     default_resp = _make_resp()
@@ -77,7 +77,7 @@ async def test_setup_github_project_skips_when_not_using_github(mocker: MockerFi
 
 
 async def test_setup_github_project_skips_when_no_token(mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.github.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.github.run_sync', side_effect=lambda fn: fn())
     mocker.patch('wiswa.utils.github.keyring.get_password', return_value=None)
     session = MagicMock()
     await setup_github_project(session, _make_settings())
@@ -94,7 +94,7 @@ async def test_setup_github_project_keyring_tries_host_scoped_before_legacy(
             return 'ghp_host'
         return None
 
-    mocker.patch('wiswa.utils.github.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.github.run_sync', side_effect=lambda fn: fn())
     mocker.patch('wiswa.utils.github.keyring.get_password', side_effect=_fake_get_password)
     session = MagicMock()
     default_resp = _make_resp()
@@ -117,7 +117,7 @@ async def test_setup_github_project_keyring_falls_back_to_legacy(mocker: MockerF
             return 'ghp_legacy'
         return None
 
-    mocker.patch('wiswa.utils.github.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.github.run_sync', side_effect=lambda fn: fn())
     mocker.patch('wiswa.utils.github.keyring.get_password', side_effect=_fake_get_password)
     session = MagicMock()
     default_resp = _make_resp()
@@ -250,7 +250,7 @@ async def test_setup_github_project_rulesets_get_skips_cache(mocker: MockerFixtu
 async def test_setup_github_project_returns_none_on_no_keyring(mocker: MockerFixture) -> None:
     import keyring.errors
 
-    mocker.patch('wiswa.utils.github.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.github.run_sync', side_effect=lambda fn: fn())
     mocker.patch('wiswa.utils.github.keyring.get_password',
                  side_effect=keyring.errors.NoKeyringError)
     session = MagicMock()

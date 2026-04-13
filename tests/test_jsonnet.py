@@ -122,7 +122,7 @@ def _patch_evaluate_merged_settings_mocks(
         readme_exists: bool = False,
         established_pytest: bool = False,
         evaluate_snippet_return: str = '{"project_type": "python"}') -> MagicMock:
-    mocker.patch('wiswa.utils.jsonnet.anyio.to_thread.run_sync',
+    mocker.patch('wiswa.utils.jsonnet.run_sync',
                  new_callable=AsyncMock,
                  side_effect=lambda func, *_a, **_kw: func())
     mocker.patch('wiswa.utils.jsonnet.json.loads', wraps=json.loads)

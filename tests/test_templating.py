@@ -177,11 +177,14 @@ def _github_defaults() -> dict[str, Any]:
                 'max_versions_to_keep': 3,
             },
             'qa': {
-                'apt_packages': []
+                'allow_pyright_failure': False,
+                'allow_ty_failure': False,
+                'apt_packages': [],
             },
             'tests': {
                 'apt_packages': []
             },
+            'release_gate_workflows': [],
         },
     }
 

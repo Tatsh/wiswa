@@ -10,7 +10,7 @@ import json
 from wiswa.utils.gitlab import setup_gitlab_project
 import _jsonnet  # noqa: PLC2701
 import gitlab.exceptions
-import keyring
+import keyring.errors
 import pytest
 
 if TYPE_CHECKING:
@@ -77,7 +77,7 @@ def test_gitlab_merged_remote_tables_returns_gitlab_subsections() -> None:
 
 
 async def test_setup_gitlab_project_skips_when_not_using_gitlab(mocker: MockerFixture) -> None:
-    run_sync = mocker.patch('wiswa.utils.gitlab.anyio.to_thread.run_sync')
+    run_sync = mocker.patch('wiswa.utils.gitlab.run_sync')
     session = MagicMock()
     await setup_gitlab_project(session, _make_settings(using_gitlab=False))
     run_sync.assert_not_called()
@@ -85,7 +85,7 @@ async def test_setup_gitlab_project_skips_when_not_using_gitlab(mocker: MockerFi
 
 async def test_setup_gitlab_project_skips_when_no_token(mocker: MockerFixture) -> None:
     mocker.patch('wiswa.utils.gitlab._get_gitlab_token', return_value=None)
-    run_sync = mocker.patch('wiswa.utils.gitlab.anyio.to_thread.run_sync')
+    run_sync = mocker.patch('wiswa.utils.gitlab.run_sync')
     session = MagicMock()
     await setup_gitlab_project(session, _make_settings())
     run_sync.assert_not_called()
@@ -101,8 +101,7 @@ async def test_setup_gitlab_project_runs_configure(mocker: MockerFixture) -> Non
     mock_gl = MagicMock()
     mock_gl.projects.get.return_value = mock_project
     mocker.patch('wiswa.utils.gitlab.gitlab.Gitlab', return_value=mock_gl)
-    run_sync = mocker.patch('wiswa.utils.gitlab.anyio.to_thread.run_sync',
-                            side_effect=lambda fn: fn())
+    run_sync = mocker.patch('wiswa.utils.gitlab.run_sync', side_effect=lambda fn: fn())
     session = MagicMock()
     await setup_gitlab_project(session, _make_settings())
     run_sync.assert_called_once()
@@ -122,7 +121,7 @@ async def test_setup_gitlab_project_uses_token_from_env(monkeypatch: pytest.Monk
     mock_gl = MagicMock()
     mock_gl.projects.get.return_value = mock_project
     gitlab_ctor = mocker.patch('wiswa.utils.gitlab.gitlab.Gitlab', return_value=mock_gl)
-    mocker.patch('wiswa.utils.gitlab.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.gitlab.run_sync', side_effect=lambda fn: fn())
     session = MagicMock()
     await setup_gitlab_project(session, _make_settings())
     gitlab_ctor.assert_called_once()
@@ -142,7 +141,7 @@ async def test_setup_gitlab_project_keyring_prefers_os_username(mocker: MockerFi
     mock_gl = MagicMock()
     mock_gl.projects.get.return_value = mock_project
     gitlab_ctor = mocker.patch('wiswa.utils.gitlab.gitlab.Gitlab', return_value=mock_gl)
-    mocker.patch('wiswa.utils.gitlab.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.gitlab.run_sync', side_effect=lambda fn: fn())
     session = MagicMock()
     await setup_gitlab_project(session, _make_settings())
     _, kwargs = gitlab_ctor.call_args
@@ -170,7 +169,7 @@ async def test_setup_gitlab_project_keyring_falls_back_to_hostname_username(
     mock_gl = MagicMock()
     mock_gl.projects.get.return_value = mock_project
     gitlab_ctor = mocker.patch('wiswa.utils.gitlab.gitlab.Gitlab', return_value=mock_gl)
-    mocker.patch('wiswa.utils.gitlab.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.gitlab.run_sync', side_effect=lambda fn: fn())
     session = MagicMock()
     await setup_gitlab_project(session, _make_settings())
     _, kwargs = gitlab_ctor.call_args
@@ -181,7 +180,7 @@ async def test_setup_gitlab_project_skips_when_no_keyring_backend(mocker: Mocker
     mocker.patch('wiswa.utils.gitlab.os.environ.get', return_value=None)
     mocker.patch('wiswa.utils.gitlab.keyring.get_password',
                  side_effect=keyring.errors.NoKeyringError())
-    run_sync = mocker.patch('wiswa.utils.gitlab.anyio.to_thread.run_sync')
+    run_sync = mocker.patch('wiswa.utils.gitlab.run_sync')
     session = MagicMock()
     await setup_gitlab_project(session, _make_settings())
     run_sync.assert_not_called()
@@ -191,7 +190,7 @@ async def test_setup_gitlab_project_skips_when_empty_hostname_and_no_env_token(
         monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
     monkeypatch.delenv('GITLAB_TOKEN', raising=False)
     mocker.patch('wiswa.utils.gitlab.os.environ.get', return_value=None)
-    run_sync = mocker.patch('wiswa.utils.gitlab.anyio.to_thread.run_sync')
+    run_sync = mocker.patch('wiswa.utils.gitlab.run_sync')
     session = MagicMock()
     await setup_gitlab_project(session, _make_settings(repository_uri='https://'))
     run_sync.assert_not_called()
@@ -200,7 +199,7 @@ async def test_setup_gitlab_project_skips_when_empty_hostname_and_no_env_token(
 async def test_setup_gitlab_project_invalid_repository_uri_raises(monkeypatch: pytest.MonkeyPatch,
                                                                   mocker: MockerFixture) -> None:
     monkeypatch.setenv('GITLAB_TOKEN', 'tok')
-    mocker.patch('wiswa.utils.gitlab.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.gitlab.run_sync', side_effect=lambda fn: fn())
     session = MagicMock()
     with pytest.raises(ValueError, match='Invalid repository URI'):
         await setup_gitlab_project(session, _make_settings(repository_uri='https:'))
@@ -210,7 +209,7 @@ async def test_setup_gitlab_project_returns_when_project_path_empty(monkeypatch:
                                                                     mocker: MockerFixture) -> None:
     monkeypatch.setenv('GITLAB_TOKEN', 'tok')
     gitlab_ctor = mocker.patch('wiswa.utils.gitlab.gitlab.Gitlab')
-    mocker.patch('wiswa.utils.gitlab.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.gitlab.run_sync', side_effect=lambda fn: fn())
     session = MagicMock()
     await setup_gitlab_project(session,
                                _make_settings(repository_uri='https://gitlab.example.com/'))
@@ -220,7 +219,7 @@ async def test_setup_gitlab_project_returns_when_project_path_empty(monkeypatch:
 async def test_setup_gitlab_project_catches_gitlab_error(monkeypatch: pytest.MonkeyPatch,
                                                          mocker: MockerFixture) -> None:
     monkeypatch.setenv('GITLAB_TOKEN', 'tok')
-    mocker.patch('wiswa.utils.gitlab.anyio.to_thread.run_sync',
+    mocker.patch('wiswa.utils.gitlab.run_sync',
                  new_callable=AsyncMock,
                  side_effect=gitlab.exceptions.GitlabError)
     session = MagicMock()
@@ -238,7 +237,7 @@ async def test_setup_gitlab_project_applies_project_settings_from_merged_setting
     mock_gl = MagicMock()
     mock_gl.projects.get.return_value = mock_project
     mocker.patch('wiswa.utils.gitlab.gitlab.Gitlab', return_value=mock_gl)
-    mocker.patch('wiswa.utils.gitlab.anyio.to_thread.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.gitlab.run_sync', side_effect=lambda fn: fn())
     session = MagicMock()
     settings = _make_settings(gitlab={
         'project_settings': {
