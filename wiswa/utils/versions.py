@@ -13,6 +13,7 @@ import logging
 import operator
 import re
 
+from anyio.to_thread import run_sync
 from bs4 import BeautifulSoup as Soup, Tag
 from packaging.version import InvalidVersion, Version, parse as parse_version
 from wiswa.constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
@@ -454,12 +455,12 @@ async def download_yarn(session: niquests.AsyncSession, version: str) -> None:
     resp.raise_for_status()
     text = resp.text or ''
     releases_dir = Path('.yarn/releases')
-    await anyio.to_thread.run_sync(lambda: rmtree(releases_dir, ignore_errors=True))
+    await run_sync(lambda: rmtree(releases_dir, ignore_errors=True))
     aio_releases_dir = anyio.Path(releases_dir)
     await aio_releases_dir.mkdir(parents=True, exist_ok=True)
     target = aio_releases_dir / f'yarn-{version}.cjs'
     await target.write_text(f'{text.strip()}\n', encoding='utf-8')
-    await anyio.to_thread.run_sync(lambda: Path(target).chmod(0o755))
+    await run_sync(lambda: Path(target).chmod(0o755))
 
 
 def _github_tag_disk_cache_path() -> Path:

@@ -2,16 +2,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 import asyncio
 import logging
 
-from wiswa.extensions import (
-    GithubAPIExtension,
-    ParseMarkdownBadgeExtension,
-    ShellExtension,
-    ToPythonExtension,
-)
 import anyio
 import jinja2
 
@@ -65,6 +59,12 @@ async def _write_rendered_template(template: jinja2.Template,
 def _template_env(module_path: Path,
                   settings: Settings,
                   session: AsyncSession | None = None) -> _TemplateEnvTuple:
+    # Local import: ``wiswa.extensions`` may import ``wiswa.utils.versions``, which loads this
+    # package's ``__init__`` before ``templating`` has finished initializing.
+    from wiswa.extensions import (  # noqa: I001, PLC0415
+        GithubAPIExtension, ParseMarkdownBadgeExtension, ShellExtension, ToPythonExtension,
+    )
+
     env = jinja2.Environment(autoescape=jinja2.select_autoescape(),
                              enable_async=True,
                              extensions=(GithubAPIExtension, ParseMarkdownBadgeExtension,
@@ -74,7 +74,7 @@ def _template_env(module_path: Path,
                              trim_blocks=True,
                              undefined=jinja2.StrictUndefined)
     if session is not None:
-        env.globals['_http_session'] = session
+        cast('dict[str, Any]', env.globals)['_http_session'] = session
     templates_dir = module_path / 'templates'
 
     def resolve_template(file_path: Path) -> jinja2.Template:

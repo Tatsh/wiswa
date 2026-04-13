@@ -5,7 +5,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias, cast
 from urllib.parse import urlparse
 import configparser
 import json
@@ -15,6 +15,8 @@ import shutil
 import subprocess as sp
 import time
 
+from anyio.from_thread import run as run_async_from_worker_thread
+from anyio.to_thread import run_sync
 import _jsonnet  # noqa: PLC2701
 import anyio
 import platformdirs
@@ -183,7 +185,8 @@ def _iter_git_config_paths() -> Iterator[Path]:
 
 def _origin_url_from_git_config_file(config_path: Path) -> str | None:
     parser = configparser.ConfigParser(interpolation=None)
-    parser.optionxform = str  # type: ignore[assignment]
+    # ``str`` preserves key case; ``setattr`` avoids strict stub mismatch on ``optionxform``.
+    setattr(parser, 'optionxform', str)  # noqa: B010
     try:
         parser.read(config_path, encoding='utf-8')
     except configparser.Error:
@@ -233,12 +236,12 @@ def _make_native_callbacks(
             'year': ((), lambda: datetime.now(tz=timezone.utc).year),
         }
     # Jsonnet native callbacks are sync, but our HTTP functions are async. These callbacks run
-    # inside anyio.to_thread.run_sync, so we use anyio.from_thread.run to schedule the async
+    # inside run_sync, so we use :func:`anyio.from_thread.run` to schedule the async
     # work on the event loop.
 
     def _sync_wrap(async_fn: Callable[..., Any], *args: Any,
                    **kwargs: Any) -> Any:  # pragma: no cover
-        return anyio.from_thread.run(partial(async_fn, *args, **kwargs))
+        return run_async_from_worker_thread(partial(async_fn, *args, **kwargs))
 
     npm_age_gate = resolve_npm_minimal_age_gate_minutes(settings=merged_settings,
                                                         project_snippet=project_settings_snippet)
@@ -311,7 +314,7 @@ async def evaluate_jsonnet_file(jpathdir: Sequence[str],
                                       tla_codes={'settings': merged_settings})
 
     t0 = time.perf_counter()
-    result = await anyio.to_thread.run_sync(_evaluate)
+    result = await run_sync(_evaluate)
     log.debug('Jsonnet evaluation of `%s` took %.3fs.', path_str, time.perf_counter() - t0)
     return result
 
@@ -397,7 +400,7 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
 
     async def _eval_merge(user_overlay: str) -> str:
         t0 = time.perf_counter()
-        result = await anyio.to_thread.run_sync(lambda: _jsonnet.evaluate_snippet(
+        result = await run_sync(lambda: _jsonnet.evaluate_snippet(
             '',
             'function(defaults, user_defaults, settings) defaults + user_defaults + settings',
             jpathdir=list(jpathdir),
@@ -416,11 +419,11 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
     validate_remote_host_flags(merged_dict)
     readme_existed = await anyio.Path('README.md').exists()
     established_pytest = await tests_dir_has_pytest_modules_excluding_starter_main()
-    return merged_json, (merged_dict
-                         | {
-                             '_readme_existed': readme_existed,
-                             '_has_established_pytest_modules': established_pytest
-                         })
+    return merged_json, cast('Settings', (merged_dict
+                                          | {
+                                              '_readme_existed': readme_existed,
+                                              '_has_established_pytest_modules': established_pytest
+                                          }))
 
 
 async def resolve_defaults_only(jpathdir: Sequence[str],
@@ -451,7 +454,7 @@ async def resolve_defaults_only(jpathdir: Sequence[str],
         lib_path.resolve(strict=True) / 'defaults.libsonnet')  # noqa: ASYNC240
     defaults_text = await defaults_path.read_text()
     t0 = time.perf_counter()
-    s = await anyio.to_thread.run_sync(lambda: _jsonnet.evaluate_snippet(
+    s = await run_sync(lambda: _jsonnet.evaluate_snippet(
         '',
         'function(defaults, user_defaults, settings) defaults + user_defaults + settings',
         jpathdir=list(jpathdir),

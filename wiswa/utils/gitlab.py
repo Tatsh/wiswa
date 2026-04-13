@@ -7,10 +7,11 @@ import getpass
 import logging
 import os
 
-import anyio
+from anyio.to_thread import run_sync
 import gitlab
 import gitlab.exceptions
 import keyring
+import keyring.errors
 
 if TYPE_CHECKING:
     from wiswa.typing import Settings
@@ -146,7 +147,7 @@ async def setup_gitlab_project(session: niquests.AsyncSession, settings: Setting
         log.warning('No GitLab token (set %s or keyring wiswa-gitlab:%s).', _GITLAB_TOKEN_ENV, host)
         return
     try:
-        await anyio.to_thread.run_sync(lambda: _configure_gitlab_project_sync(settings, token))
+        await run_sync(lambda: _configure_gitlab_project_sync(settings, token))
     except gitlab.exceptions.GitlabError as e:
         log.warning('Caught error updating GitLab project: %s.', e)
         log.debug('%r', e)

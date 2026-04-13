@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 import re
 
 from jinja2.ext import Extension
@@ -142,20 +142,21 @@ class GithubAPIExtension(Extension):
     """Extension exporting ``github_latest_action_tag`` to :py:class:`~jinja2.Environment`."""
     def __init__(self, environment: jinja2.Environment) -> None:
         super().__init__(environment)
-        # Import here, not at module level: ``wiswa.utils``'s ``__init__`` imports ``templating``,
-        # which imports this module, so loading ``utils`` during ``extensions`` import would cycle.
-        from wiswa.utils import versions as versions_mod  # noqa: PLC0415
+        # Local import: ``wiswa.utils`` package init imports ``templating``, which only imports
+        # this module from inside ``_template_env``, so this module must finish loading first.
+        from wiswa.utils.versions import get_github_release_latest_tag  # noqa: PLC0415
+
+        globs = cast('dict[str, Any]', environment.globals)
 
         async def _github_latest_action_tag(owner: str, repo: str) -> str:
-            session: AsyncSession | None = environment.globals.get(
-                '_http_session')  # type: ignore[assignment]
+            session = cast('AsyncSession | None', globs.get('_http_session'))
             if session is None:
                 msg = 'No HTTP session available for GitHub API calls.'
                 raise RuntimeError(msg)
-            return await versions_mod.get_github_release_latest_tag(session,
-                                                                    owner,
-                                                                    repo,
-                                                                    skip_releases=True,
-                                                                    allow_suffixes=False)
+            return await get_github_release_latest_tag(session,
+                                                       owner,
+                                                       repo,
+                                                       skip_releases=True,
+                                                       allow_suffixes=False)
 
-        environment.globals['github_latest_action_tag'] = _github_latest_action_tag
+        globs['github_latest_action_tag'] = _github_latest_action_tag

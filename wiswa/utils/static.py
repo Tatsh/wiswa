@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 import json
 import logging
 
+from anyio.to_thread import run_sync
 import anyio
 
 from .path import non_empty_file_exists, primary_module_to_path, remove_empty_dirs
@@ -43,7 +44,7 @@ async def _sync_file_pairs(pairs: Sequence[tuple[Path, Path]], dir_path: Path, s
     if wanted:
         await anyio.Path(dir_path).mkdir(parents=True, exist_ok=True)
         for dest, src in pairs:
-            await anyio.to_thread.run_sync(partial(copyfile, src, dest))
+            await run_sync(partial(copyfile, src, dest))
             log.debug('Wrote `%s`.', dest)
     else:
         for dest, src in pairs:
@@ -84,7 +85,7 @@ async def copy_static_files_python(settings: Settings, module_path: Path) -> Non
             log.debug('Skipping `%s`.', output_file)
             return
         await anyio.Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-        await anyio.to_thread.run_sync(partial(copyfile, static_path, output_file))
+        await run_sync(partial(copyfile, static_path, output_file))
         log.debug('Wrote `%s`.', output_file)
 
     if settings['stubs_only']:

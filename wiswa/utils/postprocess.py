@@ -15,6 +15,7 @@ import re
 import shutil
 import tempfile
 
+from anyio.to_thread import run_sync
 import anyio
 import niquests
 import tomlkit
@@ -151,6 +152,7 @@ async def _remove_legacy_wiswa_ai_files() -> None:
 
 
 async def _subprocess_log_run(
+        cmd: Iterable[str],
         *args: Any,
         on_command: Callable[[str], None] | None = None,
         **kwargs: Any) -> tuple[asyncio.subprocess.Process, bytes | None, bytes | None]:
@@ -158,7 +160,6 @@ async def _subprocess_log_run(
     if not isinstance(first, Iterable):  # pragma: no cover
         msg = 'First positional argument must be an iterable of command arguments.'
         raise TypeError(msg)
-    cmd = list(first)
     cmd_str = ' '.join(quote(x) for x in cmd)
     log.debug('Running command: `%s`', cmd_str)
     if on_command is not None:
@@ -455,17 +456,15 @@ async def _post_process_steps_python(settings: Settings,
     if is_uv:
         cleanup_tasks.append(anyio.Path('poetry.lock').unlink(missing_ok=True))
     if not settings['want_tests']:
-        cleanup_tasks.extend((anyio.to_thread.run_sync(
-            partial(shutil.rmtree, 'tests', ignore_errors=True)),
+        cleanup_tasks.extend((run_sync(partial(shutil.rmtree, 'tests', ignore_errors=True)),
                               anyio.Path('.github/workflows/tests.yml').unlink(missing_ok=True)))
         if (not settings['vscode']['launch']
                 or (len(settings['vscode']['launch']['configurations']) == 1
                     and settings['vscode']['launch']['configurations'][0]['name'] == 'Run tests')):
             cleanup_tasks.append(anyio.Path('.vscode/launch.json').unlink(missing_ok=True))
     if not settings['want_docs']:
-        cleanup_tasks.extend((anyio.to_thread.run_sync(
-            partial(shutil.rmtree, 'docs',
-                    ignore_errors=True)), anyio.Path('.readthedocs.yaml').unlink(missing_ok=True)))
+        cleanup_tasks.extend((run_sync(partial(shutil.rmtree, 'docs', ignore_errors=True)),
+                              anyio.Path('.readthedocs.yaml').unlink(missing_ok=True)))
     if not settings['want_codeql']:
         cleanup_tasks.append(anyio.Path('.github/workflows/codeql.yml').unlink(missing_ok=True))
     if cleanup_tasks:

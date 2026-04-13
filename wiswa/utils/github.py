@@ -7,8 +7,9 @@ from urllib.parse import urlparse
 import getpass
 import logging
 
-import anyio
+from anyio.to_thread import run_sync
 import keyring
+import keyring.errors
 import niquests
 
 if TYPE_CHECKING:
@@ -142,7 +143,7 @@ def _get_repo_config(settings: Settings) -> dict[str, Any]:
 
 async def _setup_github_session(session: niquests.AsyncSession,
                                 settings: Settings) -> tuple[niquests.AsyncSession, str] | None:
-    token = await anyio.to_thread.run_sync(lambda: _get_github_token(settings))
+    token = await run_sync(lambda: _get_github_token(settings))
     if not token:
         gh_host = _repository_uri_hostname(settings['repository_uri']) or 'github.com'
         log.warning('No GitHub token (set keyring %s for user %r).', f'wiswa-github:{gh_host}',
