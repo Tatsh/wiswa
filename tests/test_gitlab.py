@@ -7,7 +7,11 @@ from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, MagicMock
 import json
 
-from wiswa.utils.gitlab import setup_gitlab_project
+from wiswa.utils.gitlab import (
+    _desired_gitlab_badges,  # noqa: PLC2701
+    _sync_gitlab_badges,  # noqa: PLC2701
+    setup_gitlab_project,
+)
 import _jsonnet  # noqa: PLC2701
 import gitlab.exceptions
 import keyring.errors
@@ -27,8 +31,14 @@ def _make_settings(**overrides: Any) -> Settings:
         'gitlab': {},
         'homepage': 'https://example.com',
         'keywords': ['test', 'example project'],
+        'package_manager': 'uv',
+        'private': False,
+        'project_type': 'python',
         'repository_uri': 'https://gitlab.example.com/group/sub/repo',
+        'stubs_only': False,
+        'using_django': False,
         'using_gitlab': True,
+        'want_tests': True,
     }
     base |= overrides
     return cast('Settings', base)
@@ -98,6 +108,7 @@ async def test_setup_gitlab_project_runs_configure(mocker: MockerFixture) -> Non
     branch.name = 'master'
     branch.attributes = {'default': True}
     mock_project.branches.list.return_value = [branch]
+    mock_project.badges.list.return_value = []
     mock_gl = MagicMock()
     mock_gl.projects.get.return_value = mock_project
     mocker.patch('wiswa.utils.gitlab.gitlab.Gitlab', return_value=mock_gl)
@@ -118,6 +129,7 @@ async def test_setup_gitlab_project_uses_token_from_env(monkeypatch: pytest.Monk
     branch.name = 'master'
     branch.attributes = {'default': True}
     mock_project.branches.list.return_value = [branch]
+    mock_project.badges.list.return_value = []
     mock_gl = MagicMock()
     mock_gl.projects.get.return_value = mock_project
     gitlab_ctor = mocker.patch('wiswa.utils.gitlab.gitlab.Gitlab', return_value=mock_gl)
@@ -138,6 +150,7 @@ async def test_setup_gitlab_project_keyring_prefers_os_username(mocker: MockerFi
     branch.name = 'master'
     branch.attributes = {'default': True}
     mock_project.branches.list.return_value = [branch]
+    mock_project.badges.list.return_value = []
     mock_gl = MagicMock()
     mock_gl.projects.get.return_value = mock_project
     gitlab_ctor = mocker.patch('wiswa.utils.gitlab.gitlab.Gitlab', return_value=mock_gl)
@@ -166,6 +179,7 @@ async def test_setup_gitlab_project_keyring_falls_back_to_hostname_username(
     branch.name = 'master'
     branch.attributes = {'default': True}
     mock_project.branches.list.return_value = [branch]
+    mock_project.badges.list.return_value = []
     mock_gl = MagicMock()
     mock_gl.projects.get.return_value = mock_project
     gitlab_ctor = mocker.patch('wiswa.utils.gitlab.gitlab.Gitlab', return_value=mock_gl)
@@ -234,6 +248,7 @@ async def test_setup_gitlab_project_applies_project_settings_from_merged_setting
     branch.name = 'master'
     branch.attributes = {'default': True}
     mock_project.branches.list.return_value = [branch]
+    mock_project.badges.list.return_value = []
     mock_gl = MagicMock()
     mock_gl.projects.get.return_value = mock_project
     mocker.patch('wiswa.utils.gitlab.gitlab.Gitlab', return_value=mock_gl)
@@ -246,3 +261,216 @@ async def test_setup_gitlab_project_applies_project_settings_from_merged_setting
     })
     await setup_gitlab_project(session, settings)
     assert mock_project.issues_enabled == 'false'
+
+
+def test_desired_gitlab_badges_python_uv() -> None:
+    badges = _desired_gitlab_badges(_make_settings())
+    names = [b['name'] for b in badges]
+    assert names == [
+        'QA', 'Coverage', 'Latest Release', 'mypy', 'uv', 'pytest', 'Ruff', 'pre-commit', 'Prettier'
+    ]
+
+
+def test_desired_gitlab_badges_python_poetry() -> None:
+    badges = _desired_gitlab_badges(_make_settings(package_manager='poetry'))
+    names = [b['name'] for b in badges]
+    assert 'Poetry' in names
+    assert 'uv' not in names
+
+
+def test_desired_gitlab_badges_no_tests() -> None:
+    badges = _desired_gitlab_badges(_make_settings(want_tests=False))
+    names = [b['name'] for b in badges]
+    assert 'Coverage' not in names
+    assert 'pytest' not in names
+    assert 'Latest Release' in names
+
+
+def test_desired_gitlab_badges_private_includes_all_ci_badges() -> None:
+    badges = _desired_gitlab_badges(_make_settings(private=True))
+    names = [b['name'] for b in badges]
+    assert 'Coverage' in names
+    assert 'Latest Release' in names
+
+
+def test_desired_gitlab_badges_stubs_only_skips_pytest() -> None:
+    badges = _desired_gitlab_badges(_make_settings(stubs_only=True))
+    names = [b['name'] for b in badges]
+    assert 'pytest' not in names
+    assert 'mypy' in names
+
+
+def test_desired_gitlab_badges_non_python() -> None:
+    badges = _desired_gitlab_badges(_make_settings(project_type='typescript'))
+    names = [b['name'] for b in badges]
+    assert 'mypy' not in names
+    assert 'uv' not in names
+    assert 'Ruff' not in names
+    assert names == ['QA', 'Coverage', 'Latest Release', 'pre-commit', 'Prettier']
+
+
+def test_desired_gitlab_badges_uses_placeholders() -> None:
+    badges = _desired_gitlab_badges(_make_settings())
+    base = 'https://gitlab.example.com/%{project_path}'
+    by_name = {b['name']: b for b in badges}
+    assert by_name['QA']['image_url'].startswith(base)
+    assert '%{default_branch}' in by_name['QA']['image_url']
+    assert by_name['QA']['link_url'] == f'{base}/-/pipelines'
+    assert by_name['Coverage']['image_url'].startswith(base)
+    assert '%{default_branch}' in by_name['Coverage']['image_url']
+    assert by_name['Latest Release']['link_url'] == f'{base}/-/releases'
+
+
+def test_desired_gitlab_badges_pipeline_and_coverage_ignore_skipped() -> None:
+    badges = _desired_gitlab_badges(_make_settings())
+    by_name = {b['name']: b for b in badges}
+    assert 'ignore_skipped=true' in by_name['QA']['image_url']
+    assert 'ignore_skipped=true' in by_name['Coverage']['image_url']
+
+
+def test_desired_gitlab_badges_release() -> None:
+    badges = _desired_gitlab_badges(_make_settings())
+    by_name = {b['name']: b for b in badges}
+    assert 'Latest Release' in by_name
+    assert 'release.svg' in by_name['Latest Release']['image_url']
+    assert '/-/releases' in by_name['Latest Release']['link_url']
+
+
+def test_desired_gitlab_badges_django() -> None:
+    badges = _desired_gitlab_badges(_make_settings(using_django=True))
+    names = [b['name'] for b in badges]
+    assert 'Django' in names
+    assert names.index('Django') < names.index('mypy')
+
+
+def test_sync_gitlab_badges_creates_missing() -> None:
+    project = MagicMock()
+    project.badges.list.return_value = []
+    desired = [{
+        'image_url': 'https://example.com/img.svg',
+        'link_url': 'https://example.com',
+        'name': 'QA'
+    }]
+    _sync_gitlab_badges(project, desired)
+    project.badges.create.assert_called_once_with(desired[0])
+
+
+def test_sync_gitlab_badges_updates_changed() -> None:
+    existing_badge = MagicMock()
+    existing_badge.kind = 'project'
+    existing_badge.name = 'QA'
+    existing_badge.image_url = 'https://old.example.com/img.svg'
+    existing_badge.link_url = 'https://old.example.com'
+    project = MagicMock()
+    project.badges.list.return_value = [existing_badge]
+    desired = [{
+        'image_url': 'https://new.example.com/img.svg',
+        'link_url': 'https://new.example.com',
+        'name': 'QA'
+    }]
+    _sync_gitlab_badges(project, desired)
+    assert existing_badge.image_url == 'https://new.example.com/img.svg'
+    assert existing_badge.link_url == 'https://new.example.com'
+    existing_badge.save.assert_called_once()
+    project.badges.create.assert_not_called()
+
+
+def test_sync_gitlab_badges_skips_up_to_date() -> None:
+    existing_badge = MagicMock()
+    existing_badge.kind = 'project'
+    existing_badge.name = 'QA'
+    existing_badge.image_url = 'https://example.com/img.svg'
+    existing_badge.link_url = 'https://example.com'
+    project = MagicMock()
+    project.badges.list.return_value = [existing_badge]
+    desired = [{
+        'image_url': 'https://example.com/img.svg',
+        'link_url': 'https://example.com',
+        'name': 'QA'
+    }]
+    _sync_gitlab_badges(project, desired)
+    existing_badge.save.assert_not_called()
+    project.badges.create.assert_not_called()
+
+
+def test_sync_gitlab_badges_ignores_group_badges() -> None:
+    group_badge = MagicMock()
+    group_badge.kind = 'group'
+    group_badge.name = 'QA'
+    project = MagicMock()
+    project.badges.list.return_value = [group_badge]
+    desired = [{
+        'image_url': 'https://example.com/img.svg',
+        'link_url': 'https://example.com',
+        'name': 'QA'
+    }]
+    _sync_gitlab_badges(project, desired)
+    project.badges.create.assert_called_once_with(desired[0])
+    group_badge.save.assert_not_called()
+
+
+def test_sync_gitlab_badges_ignores_badges_with_empty_name() -> None:
+    nameless_badge = MagicMock()
+    nameless_badge.kind = 'project'
+    nameless_badge.name = ''
+    project = MagicMock()
+    project.badges.list.return_value = [nameless_badge]
+    desired = [{
+        'image_url': 'https://example.com/img.svg',
+        'link_url': 'https://example.com',
+        'name': 'QA'
+    }]
+    _sync_gitlab_badges(project, desired)
+    project.badges.create.assert_called_once_with(desired[0])
+    nameless_badge.save.assert_not_called()
+
+
+def test_sync_gitlab_badges_updates_when_only_image_url_differs() -> None:
+    existing_badge = MagicMock()
+    existing_badge.kind = 'project'
+    existing_badge.name = 'QA'
+    existing_badge.image_url = 'https://old.example.com/img.svg'
+    existing_badge.link_url = 'https://example.com'
+    project = MagicMock()
+    project.badges.list.return_value = [existing_badge]
+    desired = [{
+        'image_url': 'https://new.example.com/img.svg',
+        'link_url': 'https://example.com',
+        'name': 'QA'
+    }]
+    _sync_gitlab_badges(project, desired)
+    assert existing_badge.image_url == 'https://new.example.com/img.svg'
+    existing_badge.save.assert_called_once()
+
+
+def test_sync_gitlab_badges_updates_when_only_link_url_differs() -> None:
+    existing_badge = MagicMock()
+    existing_badge.kind = 'project'
+    existing_badge.name = 'QA'
+    existing_badge.image_url = 'https://example.com/img.svg'
+    existing_badge.link_url = 'https://old.example.com'
+    project = MagicMock()
+    project.badges.list.return_value = [existing_badge]
+    desired = [{
+        'image_url': 'https://example.com/img.svg',
+        'link_url': 'https://new.example.com',
+        'name': 'QA'
+    }]
+    _sync_gitlab_badges(project, desired)
+    assert existing_badge.link_url == 'https://new.example.com'
+    existing_badge.save.assert_called_once()
+
+
+def test_sync_gitlab_badges_preserves_user_badges() -> None:
+    user_badge = MagicMock()
+    user_badge.kind = 'project'
+    user_badge.name = 'Custom'
+    project = MagicMock()
+    project.badges.list.return_value = [user_badge]
+    _sync_gitlab_badges(project, [{
+        'image_url': 'https://example.com/img.svg',
+        'link_url': 'https://example.com',
+        'name': 'QA'
+    }])
+    user_badge.save.assert_not_called()
+    user_badge.delete.assert_not_called()

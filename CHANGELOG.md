@@ -33,6 +33,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   library toctree.
 - Sphinx `conf.py` intersphinx mappings for Jinja2, niquests, and niquests-cache (alongside the
   Python mapping).
+- GitLab project badge management via the Badge API during remote setup (`wiswa` without
+  `--skip-remote`). Wiswa creates and updates project badges (QA pipeline, Coverage, Latest Release,
+  and tool badges like mypy, uv, Ruff, pytest, pre-commit, and Prettier) on GitLab projects.
+  Duplicates are avoided by matching on badge name; user-added badges with different names are
+  preserved.
 
 ### Changed
 

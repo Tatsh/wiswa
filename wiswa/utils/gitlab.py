@@ -92,6 +92,126 @@ def _get_gitlab_token(host: str) -> str | None:
         return None
 
 
+def _desired_gitlab_badges(settings: Settings) -> list[dict[str, str]]:
+    """
+    Build the list of badges Wiswa should manage on the GitLab project.
+
+    Parameters
+    ----------
+    settings : Settings
+        Merged project settings. Only the server hostname is derived from ``repository_uri``;
+        all other path components use GitLab badge placeholders.
+
+    Returns
+    -------
+    list[dict[str, str]]
+        Each dict has ``name``, ``image_url``, and ``link_url`` keys suitable for the GitLab
+        project badges API.
+    """
+    base = _gitlab_base_url(settings['repository_uri'])
+    project = f'{base}/%{{project_path}}'
+    branch = '%{default_branch}'
+    pipelines_link = f'{project}/-/pipelines'
+    badges: list[dict[str, str]] = [{
+        'image_url': f'{project}/badges/{branch}/pipeline.svg?ignore_skipped=true',
+        'link_url': pipelines_link,
+        'name': 'QA',
+    }]
+    if settings['want_tests']:
+        badges.append({
+            'image_url': f'{project}/badges/{branch}/coverage.svg?ignore_skipped=true',
+            'link_url': pipelines_link,
+            'name': 'Coverage',
+        })
+    badges.append({
+        'image_url': f'{project}/-/badges/release.svg',
+        'link_url': f'{project}/-/releases',
+        'name': 'Latest Release',
+    })
+    if settings['project_type'] == 'python':
+        if settings['using_django']:
+            badges.append({
+                'image_url': 'https://img.shields.io/badge/django-092E20?logo=django',
+                'link_url': 'https://djangoproject.com',
+                'name': 'Django',
+            })
+        badges.append({
+            'image_url': 'https://www.mypy-lang.org/static/mypy_badge.svg',
+            'link_url': 'https://mypy-lang.org/',
+            'name': 'mypy',
+        })
+        if settings['package_manager'] == 'uv':
+            badges.append({
+                'image_url': 'https://img.shields.io/badge/uv-261230?logo=astral',
+                'link_url': 'https://docs.astral.sh/uv/',
+                'name': 'uv',
+            })
+        else:
+            badges.append({
+                'image_url': 'https://img.shields.io/badge/Poetry-242d3e?logo=poetry',
+                'link_url': 'https://python-poetry.org',
+                'name': 'Poetry',
+            })
+        if settings['want_tests'] and not settings['stubs_only']:
+            badges.append({
+                'image_url': ('https://img.shields.io/badge/pytest-zz'
+                              '?logo=Pytest&labelColor=black&color=black'),
+                'link_url': 'https://docs.pytest.org/en/stable/',
+                'name': 'pytest',
+            })
+        badges.append({
+            'image_url': ('https://img.shields.io/endpoint?url=https://raw.githubusercontent.com'
+                          '/astral-sh/ruff/main/assets/badge/v2.json'),
+            'link_url': 'https://github.com/astral-sh/ruff',
+            'name': 'Ruff',
+        })
+    badges.extend(({
+        'image_url': 'https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit',
+        'link_url': 'https://github.com/pre-commit/pre-commit',
+        'name': 'pre-commit',
+    }, {
+        'image_url': 'https://img.shields.io/badge/Prettier-black?logo=prettier',
+        'link_url': 'https://prettier.io/',
+        'name': 'Prettier',
+    }))
+    return badges
+
+
+def _sync_gitlab_badges(project: Any, desired: list[dict[str, str]]) -> None:
+    """
+    Synchronise project badges on GitLab to match the desired set.
+
+    Existing project-level badges are updated in place when their URLs differ; missing badges are
+    created. Badges not in *desired* (user-managed) are left untouched.
+
+    Parameters
+    ----------
+    project : Any
+        A ``python-gitlab`` project object.
+    desired : list[dict[str, str]]
+        Badge definitions, each with ``name``, ``image_url``, and ``link_url`` keys.
+    """
+    existing_by_name: dict[str, Any] = {
+        badge.name: badge
+        for badge in project.badges.list(get_all=True) if badge.kind == 'project' and badge.name
+    }
+    for badge_def in desired:
+        name = badge_def['name']
+        if name in existing_by_name:
+            existing = existing_by_name[name]
+            if (existing.image_url != badge_def['image_url']
+                    or existing.link_url != badge_def['link_url']):
+                existing.image_url = badge_def['image_url']
+                existing.link_url = badge_def['link_url']
+                existing.save()
+                log.debug('Updated GitLab badge `%s`.', name)
+            else:
+                log.debug('GitLab badge `%s` is up to date.', name)
+        else:
+            project.badges.create(badge_def)
+            log.debug('Created GitLab badge `%s`.', name)
+
+
 def _configure_gitlab_project_sync(settings: Settings, token: str) -> None:
     uri = settings['repository_uri']
     base_url = _gitlab_base_url(uri)
@@ -121,6 +241,7 @@ def _configure_gitlab_project_sync(settings: Settings, token: str) -> None:
         f'/projects/{project.get_id()}/protected_branches/{encoded_branch}',
         post_data=default_branch_protection,
     )
+    _sync_gitlab_badges(project, _desired_gitlab_badges(settings))
 
 
 async def setup_gitlab_project(session: niquests.AsyncSession, settings: Settings) -> None:
