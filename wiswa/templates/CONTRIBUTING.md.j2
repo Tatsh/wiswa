@@ -82,7 +82,7 @@ The above all need to pass for any code changes to be accepted.
 - Prefer latest Python features (3.10+).
 - For subprocess, avoid `shell=True` and `check=False`.
 - Alias subprocess as `import subprocess as sp`.
-- Add public facing API elements to `__all__`. Prefer not to use underscore-prefix except in
+- Add public-facing API elements to `__all__`. Prefer not to use underscore-prefix except in
   'private' method names. Do not create class attributes that invoke name mangling.
 - See [Python instructions] for full details.
 
@@ -144,6 +144,15 @@ locally or allowing Dependabot to do them.
 2. Ensure your code follows the above guidelines.
 3. Run all tests (`yarn test`) and QA scripts (`yarn qa`). Be certain pre-commit runs on your
    commits.
+{% if settings.project_type == 'python' %}
+{% if settings.github.workflows.qa.allow_pyright_failure or settings.github.workflows.qa.allow_ty_failure %}
+
+   Be aware that some checks may not run successfully and that this is intentional. This may include
+   items like Pyright or ty where we check for issues but we do not necessarily try to fix all
+   reported errors from those tools (Mypy takes priority). You can verify this by checking the `qa`
+   script in `package.json` where any command of this kind will be wrapped in `{ ... || true; }`.
+{% endif %}
+{% endif %}
 4. Submit a pull request with a clear description of your changes.
 
 {% if settings.project_type == 'c++' %}
