@@ -904,17 +904,19 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
          */
         apt_packages: [],
         /**
-         * @brief If the Pyright job in ``qa.yml`` is allowed to fail (``continue-on-error``), and if
-         *     ``yarn qa`` should not stop when Pyright fails (``{ yarn pyright || true; }``).
+         * @brief Whether Pyright may fail without failing CI or ``yarn qa``. When true, the Pyright
+         *     job uses ``continue-on-error`` and ``yarn qa`` wraps Pyright in ``{ yarn pyright ||
+         *     true; }``. When false, Pyright must pass in CI and locally.
          * @var boolean
          */
-        allow_pyright_failure: true,
+        allow_pyright_failure: false,
         /**
-         * @brief If the ty job in ``qa.yml`` is allowed to fail (``continue-on-error``), and if
-         *     ``yarn qa`` should not stop when ty fails (``{ uv run ty check || true; }``).
+         * @brief Whether ty may fail without failing CI or ``yarn qa``. When true, the ty job uses
+         *     ``continue-on-error`` and ``yarn qa`` wraps ty in ``{ uv run ty check || true; }``.
+         *     When false, ty must pass in CI and locally.
          * @var boolean
          */
-        allow_ty_failure: true,
+        allow_ty_failure: false,
       },
       /** @brief Tests running settings. */
       tests: {

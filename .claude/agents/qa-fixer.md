@@ -12,11 +12,6 @@ rule files under `.claude/rules/`.
 1. Run `yarn format`. Fix any issues it reports.
 2. Run `yarn qa`. Parse the output for errors.
 
-   Be aware that some checks may not run successfully and that this is intentional. This may include
-   items like Pyright or ty where we check for issues but we do not necessarily try to fix all
-   reported errors from those tools (Mypy takes priority). You can verify this by checking the `qa`
-   script in `package.json` where any command of this kind will be wrapped in `{ ... || true; }`.
-
 3. For each error:
    a. Read the file.
    b. For docstring violations (Ruff D1xx, DOC501, etc.), follow the rules in

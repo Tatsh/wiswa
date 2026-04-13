@@ -116,7 +116,7 @@ repos:
     rev: 'v9.8.0'
   - hooks:
       - entry: 'jsonnetfmt --string-style s --no-pad-arrays --in-place --'
-        files: '\.(jsonnet|libsonnet)$'
+        files: "\\.(jsonnet|libsonnet)$"
         id: 'check-jsonnet-formatting'
         language: 'system'
         name: 'Check Jsonnet formatting'
