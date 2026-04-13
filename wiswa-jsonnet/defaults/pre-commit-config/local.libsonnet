@@ -7,7 +7,8 @@ local eslint = import 'defaults/pre-commit-config/eslint.libsonnet';
  */
 {
   local uv_export_hook(settings) =
-    if settings.package_manager == 'uv' && settings.export_requirements.enabled then
+    if settings.project_type == 'python' && settings.package_manager == 'uv'
+       && settings.export_requirements.enabled then
       local er = settings.export_requirements;
       local args = ['uv', 'export']
                    + (if er.format != 'requirements.txt' then ['--format', er.format] else [])
