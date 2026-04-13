@@ -8,7 +8,7 @@ dev = [
   "cz-path>=0.0.6",
   "mypy>=1.20.0",
   "ruff>=0.15.9",
-  "ty>=0.0.28",
+  "ty>=0.0.29",
   "types-jsonnet>=0.22.0.20260405",
   "yapf>=0.43.0",
 ]
@@ -226,6 +226,9 @@ max-positional-args = 15
 max-public-methods = 30
 max-returns = 10
 max-statements = 100
+
+[tool.ty.src]
+exclude = ["tests/test_extensions.py"]
 
 [tool.uv]
 default-groups = "all"
