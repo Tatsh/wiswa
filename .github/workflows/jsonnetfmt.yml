@@ -1,0 +1,40 @@
+jobs:
+  jsonnetfmt:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: 'actions/checkout@v6.0.2'
+      - name: 'Install jsonnet (C++ jsonnet + jsonnetfmt)'
+        run: 'sudo apt-get update && sudo apt-get install -y jsonnet'
+      - name: 'Check Jsonnet formatting'
+        run: |
+          set -uo pipefail
+          files=()
+          [[ -f .wiswa.jsonnet ]] && files+=('.wiswa.jsonnet')
+          if [ -d wiswa-jsonnet ]; then
+            while IFS= read -r f; do
+              files+=("$f")
+            done < <(find wiswa-jsonnet -type f '(' -name '*.jsonnet' -o -name '*.libsonnet' ')' | sort)
+          fi
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo 'No Jsonnet sources (.wiswa.jsonnet or wiswa-jsonnet/).'
+            exit 0
+          fi
+          echo "Checking ${#files[@]} Jsonnet file(s) with `jsonnetfmt --test`."
+          failed=0
+          for f in "${files[@]}"; do
+            if ! jsonnetfmt --test -- "$f"; then
+              echo "::error file=$f::format with: jsonnetfmt -i $f"
+              failed=1
+            fi
+          done
+          exit "$failed"
+name: 'jsonnetfmt'
+'on':
+  pull_request:
+    branches:
+      - 'master'
+  push:
+    branches:
+      - 'master'
+permissions:
+  contents: 'read'
