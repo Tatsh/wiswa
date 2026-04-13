@@ -1235,7 +1235,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                        + (if is_uv then { venv: '.venv', venvPath: '.' } else {}),
              ruff+: {
                local min_py_minor = std.parseInt(std.split(settings.supported_python_versions[0], '.')[1]),
-               local com812 = if settings.want_yapf then ['COM812'] else [],
+               local com812 = ['COM812'],
                lint+: if settings.stubs_only then {
                  ignore: std.set(pyproject.tool.ruff.lint.ignore + com812 + [
                    'A002',
