@@ -60,9 +60,10 @@ local utils = import 'utils.libsonnet';
       regen: '%s wiswa' % run_cmd,
       ruff: '%s ruff check' % run_cmd,
       'ruff:fix': '%s ruff check --fix' % run_cmd,
-    } + if settings.want_tests then python_test_scripts(run_cmd) else {}
-                                                                      + (if settings.want_pyright then { pyright: 'yarn pyright' } else {})
-                                                                      + (if settings.want_ty then { ty: '%s ty check' % run_cmd } else {}),
+    } + (
+      if settings.want_tests then python_test_scripts(run_cmd) else {}
+    )
+    + (if settings.want_ty then { ty: '%s ty check' % run_cmd } else {}),
   local c_cpp_scripts(settings) = {
     build: 'cmake --preset=default -DBUILD_DOCS=ON && cmake --build build',
     'check-formatting': 'clang-format --dry-run %s && prettier --check . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % settings.clang_format_args,

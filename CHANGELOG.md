@@ -91,12 +91,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   entries first.
 - Post-process README Python badges: removed pydocstyle; pytest, `pre-commit`, and Prettier shields
   match the Sphinx templates (including label text and targets).
+- Ruff `COM812` rule is now always included in the ignore list for Python projects, instead of being
+  conditional on `want_yapf`. The rule conflicts with formatters regardless of which formatter is
+  used.
 
 ### Removed
 
 - Jsonnet `primary_module_implicit_namespace`; namespace-style layout is inferred when
   `primary_module_qualified` differs from `primary_module` and contains a dot (documented on
   `primary_module` and `primary_module_qualified`).
+- `pyright` script from generated `package.json` for Python projects; `want_pyright` no longer adds
+  a `pyright: 'yarn pyright'` entry. The `want_ty` conditional remains.
 - Unused runtime dependency `aiofiles`.
 - Pydocstyle badge from generated README and Sphinx HTML badge lists.
 
