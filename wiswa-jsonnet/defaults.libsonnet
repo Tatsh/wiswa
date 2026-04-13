@@ -718,6 +718,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
       'post-checkout',
       'post-merge',
     ],
+    local ruff_precommit = [(import 'defaults/pre-commit-config/ruff.libsonnet')(settings)],
     local yapf_precommit = if settings.want_yapf then
       [import 'defaults/pre-commit-config/yapf.libsonnet']
     else [],
@@ -727,7 +728,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     local pkg_mgr_hooks = if is_uv then [import 'defaults/pre-commit-config/uv.libsonnet']
     else [import 'defaults/pre-commit-config/poetry.libsonnet'],
     local precommit_python_repos = if settings.project_type == 'python' then
-      pkg_mgr_hooks + poetry_plugin_export + yapf_precommit else [],
+      pkg_mgr_hooks + poetry_plugin_export + ruff_precommit + yapf_precommit else [],
     local precommit_c_cpp_repos = if settings.project_type == 'c' || settings.project_type == 'c++' then [
       import 'defaults/pre-commit-config/clang-format.libsonnet',
     ] else [],
@@ -758,7 +759,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
              'detect-aws-credentials',
              'fix-formatting-markdown',
              'fix-formatting-prettier',
-           ] + (if settings.project_type == 'python' then ['fix-ruff'] else []) + [
              'yarn-check-lock',
            ],
          },

@@ -6,19 +6,6 @@ local eslint = import 'defaults/pre-commit-config/eslint.libsonnet';
  * @brief Local hook configuration for `.pre-commit-config.yaml`.
  */
 {
-  local python_hooks(settings) = [{
-    entry: '%s ruff check --fix --exit-non-zero-on-fix' % (
-      if settings.package_manager == 'uv' then 'uv run' else 'poetry run'
-    ),
-    id: 'fix-ruff',
-    language: 'system',
-    name: 'check Python files have Ruff fixes applied',
-    require_serial: true,
-    types_or: [
-      'python',
-      'pyi',
-    ],
-  }],
   local uv_export_hook(settings) =
     if settings.package_manager == 'uv' && settings.export_requirements.enabled then
       local er = settings.export_requirements;
@@ -103,7 +90,7 @@ local eslint = import 'defaults/pre-commit-config/eslint.libsonnet';
         language: 'system',
         name: 'check files are formatted with Prettier',
       },
-    ] + (if settings.project_type == 'python' then python_hooks(settings) else []) + uv_export_hook(settings) + (if settings.force_eslint then eslint_hooks else []) + [
+    ] + uv_export_hook(settings) + (if settings.force_eslint then eslint_hooks else []) + [
       {
         entry: 'yarn markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix',
         id: 'fix-formatting-markdown',
