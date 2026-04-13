@@ -5,6 +5,6 @@ local utils = import 'utils.libsonnet';
   with: {
     key: "${{ runner.os }}-yarn-${{ hashFiles('yarn.lock', '.yarnrc.yml') }}",
     path: '~/.yarn/berry',
-    'restore-keys': '${ runner.os }}-yarn',
+    'restore-keys': '${{ runner.os }}-yarn',
   },
 }
