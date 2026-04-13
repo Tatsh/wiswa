@@ -2,9 +2,10 @@ local check_workflows = import 'github/workflows/_check-workflows.libsonnet';
 local utils = import 'utils.libsonnet';
 
 function(settings)
-  local watched_workflows = std.sort(
+  local watched_workflows = std.set(
     ['Prettier', 'QA', 'Spelling', 'markdownlint'] +
-    (if settings.want_tests then ['Tests'] else [])
+    (if settings.want_tests then ['Tests'] else []) +
+    settings.github.workflows.release_gate_workflows
   );
   {
     jobs: {

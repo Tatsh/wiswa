@@ -27,31 +27,42 @@ local utils = import 'utils.libsonnet';
       },
     },
   ],
-  local python_deps = { pyright: utils.latestNpmPackageVersionCaret('pyright') },
+  local python_npm_dev_deps(settings) = if settings.want_pyright then {
+    pyright: utils.latestNpmPackageVersionCaret('pyright'),
+  } else {},
   // tr arguments need to be quoted or Yarn will not handle it correctly.
   local dictionary_update = "rm -f .vscode/dictionary.txt && cspell lint --no-progress --no-summary --unique --words-only | tr '[:upper:]' '[:lower:]' | sort -u > .vscode/dictionary.txt",
   local python_test_scripts(run_cmd) = {
     test: '%s pytest' % run_cmd,
     'test:cov': 'yarn test --cov . --cov-branch --cov-report html --cov-report term-missing:skip-covered',
   },
-  local python_scripts(settings) = {
-    local run_cmd = if settings.package_manager == 'uv' then 'uv run' else 'poetry run',
+  local python_scripts(settings) =
+    local run_cmd = if settings.package_manager == 'uv' then 'uv run' else 'poetry run';
     local fmt_check = if settings.want_yapf then '%s yapf --diff --parallel --recursive .' % run_cmd
-    else '%s ruff format --check .' % run_cmd,
+    else '%s ruff format --check .' % run_cmd;
     local fmt_apply = if settings.want_yapf then '%s yapf --in-place --parallel --recursive .' % run_cmd
-    else '%s ruff format .' % run_cmd,
-    'check-formatting': 'prettier --check . && %s && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % fmt_check,
-    'check-spelling': 'cspell --no-progress',
-    'dict:update': dictionary_update,
-    format: 'prettier --write . && %s && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix' % fmt_apply,
-    mypy: '%s mypy' % run_cmd,
-    qa: 'yarn mypy . && yarn ruff . && yarn check-spelling && yarn check-formatting',
-    regen: '%s wiswa' % run_cmd,
-    ruff: '%s ruff check' % run_cmd,
-    'ruff:fix': '%s ruff check --fix' % run_cmd,
-  } + if settings.want_tests then python_test_scripts(
-    if settings.package_manager == 'uv' then 'uv run' else 'poetry run'
-  ) else {},
+    else '%s ruff format .' % run_cmd;
+    local qa_pyright = if settings.github.workflows.qa.allow_pyright_failure then
+      '{ yarn pyright || true; }' else 'yarn pyright';
+    local qa_ty = if settings.github.workflows.qa.allow_ty_failure then
+      '{ uv run ty check || true; }' else 'uv run ty check';
+    local qa_steps = ['yarn mypy .']
+                     + (if settings.want_pyright then [qa_pyright] else [])
+                     + (if settings.want_ty then [qa_ty] else [])
+                     + ['yarn ruff .', 'yarn check-spelling', 'yarn check-formatting'];
+    {
+      'check-formatting': 'prettier --check . && %s && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % fmt_check,
+      'check-spelling': 'cspell --no-progress',
+      'dict:update': dictionary_update,
+      format: 'prettier --write . && %s && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix' % fmt_apply,
+      mypy: '%s mypy' % run_cmd,
+      qa: std.join(' && ', qa_steps),
+      regen: '%s wiswa' % run_cmd,
+      ruff: '%s ruff check' % run_cmd,
+      'ruff:fix': '%s ruff check --fix' % run_cmd,
+    } + if settings.want_tests then python_test_scripts(run_cmd) else {}
+                                                                      + (if settings.want_pyright then { pyright: 'yarn pyright' } else {})
+                                                                      + (if settings.want_ty then { ty: '%s ty check' % run_cmd } else {}),
   local c_cpp_scripts(settings) = {
     build: 'cmake --preset=default -DBUILD_DOCS=ON && cmake --build build',
     'check-formatting': 'clang-format --dry-run %s && prettier --check . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % settings.clang_format_args,
@@ -139,7 +150,7 @@ local utils = import 'utils.libsonnet';
       'prettier-plugin-ini': utils.latestNpmPackageVersionCaret('prettier-plugin-ini'),
       'prettier-plugin-sort-json': utils.latestNpmPackageVersionCaret('prettier-plugin-sort-json'),
       'prettier-plugin-toml': utils.latestNpmPackageVersionCaret('prettier-plugin-toml'),
-    } + if settings.project_type == 'python' then python_deps else
+    } + if settings.project_type == 'python' then python_npm_dev_deps(settings) else
       {} + if settings.project_type == 'typescript' then top.typescript_dev_deps(settings) else {},
     files: ['LICENSE.txt', 'README.md'] + man,
     'markdownlint-cli2': {

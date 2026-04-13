@@ -48,6 +48,33 @@ function(settings)
     pull_request+: { paths: python_paths },
     push+: { paths: python_paths },
   };
+  local pyright_job = if settings.want_pyright then {
+    pyright: {
+      'runs-on': settings.qa_runs_on,
+      steps: [common.checkout] + uv_setup_steps + apt_steps + [
+        python_setup(version=latest_python),
+        install_deps(include_tests=settings.want_tests),
+      ] + common.yarn_steps + [
+        {
+          name: 'Lint with Pyright',
+          run: 'yarn pyright',
+        },
+      ],
+    } + if settings.github.workflows.qa.allow_pyright_failure then { 'continue-on-error': true } else {},
+  } else {};
+  local ty_job = if settings.want_ty then {
+    ty: {
+      'runs-on': settings.qa_runs_on,
+      steps: [common.checkout] + uv_setup_steps + apt_steps + [
+        python_setup(version=latest_python),
+        install_deps(include_tests=settings.want_tests),
+        {
+          name: 'Lint with ty',
+          run: '%s ty check' % run_cmd,
+        },
+      ],
+    } + if settings.github.workflows.qa.allow_ty_failure then { 'continue-on-error': true } else {},
+  } else {};
   {
     '.github/workflows/qa.yml': utils.manifestYaml({
       jobs: {
@@ -86,7 +113,7 @@ function(settings)
             },
           ],
         },
-      } + (if settings.force_eslint then {
+      } + pyright_job + ty_job + (if settings.force_eslint then {
              eslint: {
                'runs-on': settings.qa_runs_on,
                steps: [common.checkout] + common.yarn_steps + [

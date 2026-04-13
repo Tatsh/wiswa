@@ -21,6 +21,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     self.project_name,
     self.want_coveralls,
     self.want_sqlfluff,
+    self.want_ty,
     self.supported_python_versions[0],
   ),
   local is_uv = self.package_manager == 'uv',
@@ -307,6 +308,15 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   cspell_pre_commit_hook: true,
   /** @brief If the project will use SQLFluff. */
   want_sqlfluff: false,
+  /**
+   * @brief If Pyright should run in QA, ship as an npm dev dependency, and expose a ``yarn pyright``
+   *     script.
+   */
+  want_pyright: true,
+  /**
+   * @brief If Astral ``ty`` should run in QA, and ship as a dev dependency.
+   */
+  want_ty: true,
   /** @brief If the project will publish to WinGet using GitHub Actions (C/C++ only). */
   want_winget: true,
 
@@ -457,44 +467,46 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                'Bash(mktemp *)',
              ] + (if settings.project_type == 'python' then (
                     if settings.package_manager == 'uv' then [
-                      'Bash(uv add *)',
-                      'Bash(uv audit *)',
-                      'Bash(uv cache *)',
-                      'Bash(uv export *)',
-                      'Bash(uv lock *)',
-                      'Bash(uv pip *)',
-                      'Bash(uv remove *)',
-                      'Bash(uv run mypy *)',
-                      'Bash(uv run pytest *)',
-                      'Bash(uv run ruff *)',
-                      'Bash(uv run sphinx-build *)',
-                      'Bash(uv run wiswa *)',
-                      'Bash(uv run yapf *)',
-                      'Bash(uv run yarn pyright *)',
+                                                               'Bash(uv add *)',
+                                                               'Bash(uv audit *)',
+                                                               'Bash(uv cache *)',
+                                                               'Bash(uv export *)',
+                                                               'Bash(uv lock *)',
+                                                               'Bash(uv pip *)',
+                                                               'Bash(uv remove *)',
+                                                               'Bash(uv run mypy *)',
+                                                               'Bash(uv run pytest *)',
+                                                               'Bash(uv run ruff *)',
+                                                               'Bash(uv run sphinx-build *)',
+                                                               'Bash(uv run wiswa *)',
+                                                               'Bash(uv run yapf *)',
+                                                             ] + (if settings.want_pyright then ['Bash(uv run yarn pyright *)'] else [])
+                                                             + (if settings.want_ty then ['Bash(uv run ty *)'] else []) + [
                       'Bash(uv sync *)',
                       'Bash(uv tree *)',
                       'Bash(uv venv *)',
                       'Bash(uv version *)',
                     ] else [
-                      'Bash(poetry about *)',
-                      'Bash(poetry add *)',
-                      'Bash(poetry cache *)',
-                      'Bash(poetry check *)',
-                      'Bash(poetry debug *)',
-                      'Bash(poetry env *)',
-                      'Bash(poetry export *)',
-                      'Bash(poetry help *)',
-                      'Bash(poetry install *)',
-                      'Bash(poetry list *)',
-                      'Bash(poetry lock *)',
-                      'Bash(poetry remove *)',
-                      'Bash(poetry run mypy *)',
-                      'Bash(poetry run pytest *)',
-                      'Bash(poetry run ruff *)',
-                      'Bash(poetry run sphinx-build *)',
-                      'Bash(poetry run wiswa *)',
-                      'Bash(poetry run yapf *)',
-                      'Bash(poetry run yarn pyright *)',
+                             'Bash(poetry about *)',
+                             'Bash(poetry add *)',
+                             'Bash(poetry cache *)',
+                             'Bash(poetry check *)',
+                             'Bash(poetry debug *)',
+                             'Bash(poetry env *)',
+                             'Bash(poetry export *)',
+                             'Bash(poetry help *)',
+                             'Bash(poetry install *)',
+                             'Bash(poetry list *)',
+                             'Bash(poetry lock *)',
+                             'Bash(poetry remove *)',
+                             'Bash(poetry run mypy *)',
+                             'Bash(poetry run pytest *)',
+                             'Bash(poetry run ruff *)',
+                             'Bash(poetry run sphinx-build *)',
+                             'Bash(poetry run wiswa *)',
+                             'Bash(poetry run yapf *)',
+                           ] + (if settings.want_pyright then ['Bash(poetry run yarn pyright *)'] else [])
+                           + (if settings.want_ty then ['Bash(poetry run ty *)'] else []) + [
                       'Bash(poetry search *)',
                       'Bash(poetry show *)',
                       'Bash(poetry sync *)',
@@ -504,7 +516,9 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                     ]
                   ) + [
                     'Bash(yarn mypy *)',
-                    'Bash(yarn pyright *)',
+                  ] + (
+                    if settings.want_pyright then ['Bash(yarn pyright *)'] else []
+                  ) + [
                     'Bash(yarn ruff *)',
                     'Bash(yarn ruff:fix *)',
                     'Bash(yarn test *)',
@@ -889,6 +903,18 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
          * @var string[]
          */
         apt_packages: [],
+        /**
+         * @brief If the Pyright job in ``qa.yml`` is allowed to fail (``continue-on-error``), and if
+         *     ``yarn qa`` should not stop when Pyright fails (``{ yarn pyright || true; }``).
+         * @var boolean
+         */
+        allow_pyright_failure: true,
+        /**
+         * @brief If the ty job in ``qa.yml`` is allowed to fail (``continue-on-error``), and if
+         *     ``yarn qa`` should not stop when ty fails (``{ uv run ty check || true; }``).
+         * @var boolean
+         */
+        allow_ty_failure: true,
       },
       /** @brief Tests running settings. */
       tests: {
@@ -898,6 +924,15 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
          */
         apt_packages: [],
       },
+      /**
+       * @brief Extra GitHub Actions workflow ``name`` values that must succeed before the Publish
+       *     workflow's gate job finishes and before the Release workflow promotes a draft release.
+       *
+       * Each string must match that workflow file's top-level ``name`` field (as in
+       * ``gh workflow list``).
+       * @var string[]
+       */
+      release_gate_workflows: [],
     },
   },
   /** @brief Operating system for `qa.yml` runs on GitHub runners. */
