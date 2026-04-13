@@ -1,7 +1,6 @@
 """Post-process a generated project (lock files, tooling, README badges, Yarn)."""
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Iterable, Iterator, Sequence
 from functools import cache, partial
 from pathlib import Path
 from shlex import quote
@@ -23,6 +22,8 @@ import tomlkit
 from .versions import get_github_release_latest_tag
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable, Iterable, Iterator, Sequence
+
     from wiswa.typing import ExportRequirements, Settings
 
 __all__ = ('apply_python_pyproject_manifest_edits', 'maybe_revert_uv_lock_if_only_lockfile_changed',
@@ -153,13 +154,8 @@ async def _remove_legacy_wiswa_ai_files() -> None:
 
 async def _subprocess_log_run(
         cmd: Iterable[str],
-        *args: Any,
         on_command: Callable[[str], None] | None = None,
         **kwargs: Any) -> tuple[asyncio.subprocess.Process, bytes | None, bytes | None]:
-    first = args[0]
-    if not isinstance(first, Iterable):  # pragma: no cover
-        msg = 'First positional argument must be an iterable of command arguments.'
-        raise TypeError(msg)
     cmd_str = ' '.join(quote(x) for x in cmd)
     log.debug('Running command: `%s`', cmd_str)
     if on_command is not None:
