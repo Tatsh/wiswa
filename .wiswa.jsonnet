@@ -15,6 +15,9 @@ local utils = import 'utils.libsonnet';
     pages_config+: {
       exclude+: ['wiswa/templates/'],
     },
+    workflows+: {
+      release_gate_workflows+: ['jsonnetfmt'],
+    },
   },
   shared_ignore+: ['/docs/_build*/'],
   prettierignore+: ['*.adoc', 'Doxyfile'],
@@ -87,6 +90,12 @@ local utils = import 'utils.libsonnet';
       },
       ruff+: {
         'namespace-packages'+: ['wiswa/static'],
+      },
+      ty+: {
+        src+: [
+          // ty fails miserably with calls into the Jinja2 environment.
+          'tests/test_extensions.py',
+        ],
       },
       uv+: {
         'exclude-newer-package'+: {
