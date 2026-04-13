@@ -135,6 +135,7 @@ jpath
 jpathdir
 jquery
 jsonnet
+jsonnetfmt
 jsonschema
 kdeplasma
 keepachangelog
@@ -193,6 +194,7 @@ pascalreitermann
 pathlib
 pavelzw
 pepy
+pipefail
 pipx
 platformdirs
 plistlib
