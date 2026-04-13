@@ -25,6 +25,29 @@ local utils = import 'utils.libsonnet';
     cspell+: {
       ignorePaths+: ['*.html'],
     },
+    scripts+: {
+      'check-formatting': super['check-formatting'] + ' && jsonnetfmt --string-style s --no-pad-arrays --test -- .wiswa.jsonnet wiswa-jsonnet/**/*.*sonnet',
+      format: super.format + ' && jsonnetfmt --string-style s --no-pad-arrays --in-place -- .wiswa.jsonnet wiswa-jsonnet/**/*.*sonnet',
+    },
+  },
+  pre_commit_config+: {
+    ci+: {
+      skip+: ['check-jsonnet-formatting'],
+    },
+    repos+: [
+      {
+        repo: 'local',
+        hooks: [
+          {
+            id: 'check-jsonnet-formatting',
+            name: 'Check Jsonnet formatting',
+            files: '\\.(jsonnet|libsonnet)$',
+            language: 'system',
+            entry: 'jsonnetfmt --string-style s --no-pad-arrays --in-place --',
+          },
+        ],
+      },
+    ],
   },
   pyinstaller+: {
     collect_data+: ['fastmcp', 'yaspin'],
@@ -92,10 +115,13 @@ local utils = import 'utils.libsonnet';
         'namespace-packages'+: ['wiswa/static'],
       },
       ty+: {
-        src+: [
-          // ty fails miserably with calls into the Jinja2 environment.
-          'tests/test_extensions.py',
-        ],
+        src+: {
+          exclude+:
+            [
+              // ty fails miserably with calls into the Jinja2 environment.
+              'tests/test_extensions.py',
+            ],
+        },
       },
       uv+: {
         'exclude-newer-package'+: {

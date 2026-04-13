@@ -19,7 +19,7 @@ jobs:
             echo 'No Jsonnet sources (.wiswa.jsonnet or wiswa-jsonnet/).'
             exit 0
           fi
-          echo "Checking ${#files[@]} Jsonnet file(s) with `jsonnetfmt --string-style s --no-pad-arrays --test`."
+          echo "Checking ${#files[@]} Jsonnet file(s) using jsonnetfmt."
           failed=0
           for f in "${files[@]}"; do
             if ! jsonnetfmt --string-style s --no-pad-arrays --test -- "$f"; then

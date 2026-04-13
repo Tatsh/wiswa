@@ -7,6 +7,7 @@ ci:
     - 'fix-formatting-prettier'
     - 'fix-ruff'
     - 'yarn-check-lock'
+    - 'check-jsonnet-formatting'
 default_install_hook_types:
   - 'pre-commit'
   - 'pre-push'
@@ -113,3 +114,10 @@ repos:
       - id: 'cspell'
     repo: 'https://github.com/streetsidesoftware/cspell-cli'
     rev: 'v9.8.0'
+  - hooks:
+      - entry: 'jsonnetfmt --string-style s --no-pad-arrays --in-place --'
+        files: '\.(jsonnet|libsonnet)$'
+        id: 'check-jsonnet-formatting'
+        language: 'system'
+        name: 'Check Jsonnet formatting'
+    repo: 'local'
