@@ -6,8 +6,14 @@ local utils = import 'utils.libsonnet';
  * All version specifiers use Poetry conventions (^, ~, etc.). Conversion to PEP 508 for uv
  * happens at pyproject.toml assembly time.
  */
-function(want_main, want_yapf, stubs_only, project_name, want_coveralls, want_sqlfluff, want_ty,
- min_python_version='3.10') {
+function(want_main,
+         want_yapf,
+         stubs_only,
+         project_name,
+         want_coveralls,
+         want_sqlfluff,
+         want_ty,
+         min_python_version='3.10') {
   local ver(package) = utils.latestPypiPackageVersionCaret(package),
   local want_main_deps = if want_main then { click: ver('click') } else {},
   local bascom_dep = if want_main && !stubs_only && project_name != 'bascom' then { bascom: ver('bascom') } else {},
@@ -16,13 +22,13 @@ function(want_main, want_yapf, stubs_only, project_name, want_coveralls, want_sq
     'typing-extensions': ver('typing-extensions'),
   } + want_main_deps + bascom_dep,
   dev: {
-    commitizen: ver('commitizen'),
-    mypy: ver('mypy'),
-    ruff: ver('ruff'),
-  } + cz_path_dep + (
-    if want_yapf then { yapf: ver('yapf') } else {}
-  ) + (if want_sqlfluff then { sqlfluff: ver('sqlfluff') } else {})
-    + (if want_ty then { ty: ver('ty') } else {}),
+         commitizen: ver('commitizen'),
+         mypy: ver('mypy'),
+         ruff: ver('ruff'),
+       } + cz_path_dep + (
+         if want_yapf then { yapf: ver('yapf') } else {}
+       ) + (if want_sqlfluff then { sqlfluff: ver('sqlfluff') } else {})
+       + (if want_ty then { ty: ver('ty') } else {}),
   local needs_tomlkit = std.parseInt(std.split(min_python_version, '.')[1]) < 11,
   docs: {
           'autodoc-pydantic': ver('autodoc-pydantic'),

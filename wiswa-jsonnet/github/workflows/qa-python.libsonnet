@@ -114,16 +114,16 @@ function(settings)
           ],
         },
       } + pyright_job + ty_job + (if settings.force_eslint then {
-             eslint: {
-               'runs-on': settings.qa_runs_on,
-               steps: [common.checkout] + common.yarn_steps + [
-                 {
-                   name: 'Lint with ESLint',
-                   run: 'yarn eslint',
-                 },
-               ],
-             },
-           } else {}),
+                                    eslint: {
+                                      'runs-on': settings.qa_runs_on,
+                                      steps: [common.checkout] + common.yarn_steps + [
+                                        {
+                                          name: 'Lint with ESLint',
+                                          run: 'yarn eslint',
+                                        },
+                                      ],
+                                    },
+                                  } else {}),
       name: 'QA',
       on: on_python,
       permissions: common.permissions,
