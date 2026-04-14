@@ -5,14 +5,11 @@ function(settings)
                           (settings.supported_platforms == 'all' ||
                            std.member(settings.supported_platforms, 'windows') ||
                            std.member(settings.supported_platforms, 'macos'));
-  local has_appimage = (settings.want_main || settings.has_multiple_entry_points) &&
-                       (settings.supported_platforms == 'all' ||
-                        std.member(settings.supported_platforms, 'linux'));
   local watched_workflows = std.set(
     ['QA', 'Prettier', 'Spelling', 'markdownlint'] +
     (if settings.want_tests then ['Tests'] else []) +
     (if !settings.private then ['Publish'] else []) +
-    (if has_appimage then ['AppImage'] else []) +
+    (if settings.want_appimage then ['AppImage'] else []) +
     (if utils.wantFlatpakOutputs(settings) then ['Flatpak'] else []) +
     (if has_pyinstaller then ['PyInstaller'] else []) +
     (if settings.want_snap then ['Snap'] else []) +

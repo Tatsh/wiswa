@@ -26,47 +26,47 @@
 {% endif %}
 {% if settings.using_github %}
 {{ rst_badge(
-      'https://img.shields.io/github/v/tag/' ~ settings.github.username ~ '/' ~ settings.project_name,
-      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name ~ '/tags',
+      'https://img.shields.io/github/v/tag/' ~ settings.github.username ~ '/' ~ settings.github_project_name,
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.github_project_name ~ '/tags',
       'GitHub tag (with filter)') }}
 {{ rst_badge(
-      'https://img.shields.io/github/license/' ~ settings.github.username ~ '/' ~ settings.project_name,
-      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      'https://img.shields.io/github/license/' ~ settings.github.username ~ '/' ~ settings.github_project_name,
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.github_project_name
       ~ '/blob/master/LICENSE.txt',
       'License') }}
 {{ rst_badge(
       'https://img.shields.io/github/commits-since/' ~ settings.github.username ~ '/'
-      ~ settings.project_name ~ '/v' ~ settings.version ~ '/master',
-      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      ~ settings.github_project_name ~ '/v' ~ settings.version ~ '/master',
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.github_project_name
       ~ '/compare/v' ~ settings.version ~ '...master',
       'GitHub commits since latest release (by SemVer including pre-releases)') }}
 {% if settings.want_codeql %}
 {{ rst_badge(
-      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.github_project_name
       ~ '/actions/workflows/codeql.yml/badge.svg',
-      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.github_project_name
       ~ '/actions/workflows/codeql.yml',
       'CodeQL') }}
 {% endif %}
 {{ rst_badge(
-      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.github_project_name
       ~ '/actions/workflows/qa.yml/badge.svg',
-      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.github_project_name
       ~ '/actions/workflows/qa.yml',
       'QA') }}
 {% if settings.want_tests %}
 {{ rst_badge(
-      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.github_project_name
       ~ '/actions/workflows/tests.yml/badge.svg',
-      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.github_project_name
       ~ '/actions/workflows/tests.yml',
       'Tests') }}
 {% if not settings.private %}
 {{ rst_badge(
       'https://coveralls.io/repos/github/' ~ settings.github.username ~ '/'
-      ~ settings.project_name ~ '/badge.svg?branch=master',
+      ~ settings.github_project_name ~ '/badge.svg?branch=master',
       'https://coveralls.io/github/' ~ settings.github.username ~ '/'
-      ~ settings.project_name ~ '?branch=master',
+      ~ settings.github_project_name ~ '?branch=master',
       'Coverage Status') }}
 {% endif %}
 {% endif %}
@@ -77,8 +77,8 @@
 {% endif %}
 {% if settings.want_docs and not settings.private %}
 {{ rst_badge(
-      'https://readthedocs.org/projects/' ~ settings.project_name ~ '/badge/?version=latest',
-      'https://' ~ settings.project_name ~ '.readthedocs.org/?badge=latest',
+      'https://readthedocs.org/projects/' ~ settings.github_project_name ~ '/badge/?version=latest',
+      'https://' ~ settings.github_project_name ~ '.readthedocs.org/?badge=latest',
       'Documentation Status') }}
 {% endif %}
 {{ rst_badge(
@@ -154,8 +154,8 @@
 {% if settings.using_github and not settings.private %}
 {{ rst_badge(
       'https://img.shields.io/github/stars/' ~ settings.github.username ~ '/'
-      ~ settings.project_name ~ '?logo=github&style=flat',
-      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.project_name ~ '/stargazers',
+      ~ settings.github_project_name ~ '?logo=github&style=flat',
+      'https://github.com/' ~ settings.github.username ~ '/' ~ settings.github_project_name ~ '/stargazers',
       'Stargazers') }}
 {% endif %}
 {{ rst_badge(

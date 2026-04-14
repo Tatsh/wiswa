@@ -463,6 +463,8 @@ async def _post_process_steps_python(settings: Settings,
                               anyio.Path('.readthedocs.yaml').unlink(missing_ok=True)))
     if not settings['want_codeql']:
         cleanup_tasks.append(anyio.Path('.github/workflows/codeql.yml').unlink(missing_ok=True))
+    if not settings.get('want_appimage', False):
+        cleanup_tasks.append(anyio.Path('.github/workflows/appimage.yml').unlink(missing_ok=True))
     if cleanup_tasks:
         await asyncio.gather(*cleanup_tasks)
     await apply_python_pyproject_manifest_edits(settings)
@@ -522,7 +524,7 @@ def _github_badges(settings: Settings) -> Iterator[str]:
     if not settings['using_github']:
         return
     gh = settings['github']['username']
-    name = settings['project_name']
+    name = settings['github_project_name']
     repo_uri = settings['repository_uri']
     branch = settings['default_branch']
     yield (f'[![GitHub tag (with filter)](https://img.shields.io/github/v/tag/{gh}/{name})]'
@@ -552,12 +554,12 @@ def _docs_badges(settings: Settings) -> Iterator[str]:
     if not settings['want_docs'] or settings['private']:
         return
     if settings['project_type'] == 'python':
-        yield (
-            f"[![Documentation Status](https://readthedocs.org/projects/{settings['project_name']}"
-            f"/badge/?version=latest)]({settings['documentation_uri']}/?badge=latest)")
+        yield (f"[![Documentation Status](https://readthedocs.org/projects/"
+               f"{settings['github_project_name']}"
+               f"/badge/?version=latest)]({settings['documentation_uri']}/?badge=latest)")
     elif settings['using_github']:
         gh = settings['github']['username']
-        name = settings['project_name']
+        name = settings['github_project_name']
         yield (f'[![GitHub Pages](https://github.com/{gh}/{name}/actions/workflows/'
                f'pages.yml/badge.svg)](https://{gh.lower()}.github.io/{name}/)')
 
@@ -621,7 +623,7 @@ def _misc_badges(settings: Settings) -> Iterator[str]:
         yield _simple_icons_badge('Docker', 'docker', 'Docker', 'black', 'https://www.docker.com/')
     if settings['using_github'] and not settings['private']:
         gh = settings['github']['username']
-        name = settings['project_name']
+        name = settings['github_project_name']
         yield (f'[![Stargazers](https://img.shields.io/github/stars/{gh}/{name}'
                f'?logo=github&style=flat)](https://github.com/{gh}/{name}/stargazers)')
     yield _simple_icons_badge('pre-commit', 'pre-commit', 'pre--commit-enabled', 'brightgreen',
@@ -808,6 +810,13 @@ async def maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings,
     ``[options]`` (compare to ``HEAD``, matching ``git restore --source=HEAD``). ``git restore`` and
     ``git checkout`` pass ``-c`` ``core.hooksPath=`` with the platform null device so hooks (for
     example pre-commit) cannot block reverting the lock.
+
+    Parameters
+    ----------
+    settings : Settings
+        Merged project settings.
+    on_command : Callable[[str], None] | None
+        Called with the command string before each subprocess runs.
     """
     if settings['package_manager'] != 'uv':
         return

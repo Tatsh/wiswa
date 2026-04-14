@@ -374,6 +374,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'want_ai': False,
         'using_beads': False,
         'uses_user_defaults': False,
+        'want_appimage': False,
         'want_codeql': False,
         'want_gpg': False,
         'claude_settings_local': {},
@@ -655,7 +656,8 @@ async def test_write_templated_files_python_want_tests_and_main(
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
-            _make_settings(want_tests=True,
+            _make_settings(want_appimage=True,
+                           want_tests=True,
                            want_main=True,
                            want_ai=False,
                            using_github=True,
@@ -671,7 +673,8 @@ async def test_write_templated_files_python_skips_test_main_when_established_tes
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
-            _make_settings(want_tests=True,
+            _make_settings(want_appimage=True,
+                           want_tests=True,
                            want_main=True,
                            want_ai=False,
                            using_github=True,
@@ -722,7 +725,8 @@ async def test_write_templated_files_python_linux_only(tmp_path: Path,
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
-            _make_settings(want_main=True,
+            _make_settings(want_appimage=True,
+                           want_main=True,
                            want_ai=False,
                            using_github=True,
                            supported_platforms=['linux']))
@@ -735,13 +739,28 @@ async def test_write_templated_files_python_multiple_entry_points(
     with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
-            _make_settings(want_main=False,
+            _make_settings(want_appimage=True,
+                           want_main=False,
                            has_multiple_entry_points=True,
                            want_ai=False,
                            using_github=True,
                            supported_platforms='all'))
     assert (out / '.github/workflows/pyinstaller.yml').exists()
     assert (out / '.github/workflows/appimage.yml').exists()
+
+
+async def test_write_templated_files_python_want_main_no_appimage(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+        out = await _run_write(
+            monkeypatch, tmp_path, module_path,
+            _make_settings(want_appimage=False,
+                           want_main=True,
+                           want_ai=False,
+                           using_github=True,
+                           supported_platforms='all'))
+    assert (out / '.github/workflows/pyinstaller.yml').exists()
+    assert not (out / '.github/workflows/appimage.yml').exists()
 
 
 async def test_write_templated_files_cpp_want_main_writes_files(

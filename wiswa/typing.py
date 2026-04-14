@@ -309,6 +309,8 @@ class Settings(TypedDict):
     """The HTTP URI of the project's documentation."""
     github: SettingsGitHub
     """GitHub settings."""
+    github_project_name: str
+    """The GitHub repository name (may differ from :py:attr:`project_name`)."""
     gitlab: GitlabRemoteSettings
     """GitLab remote project tables (merged in Jsonnet; see ``defaults/gitlab.libsonnet``)."""
     has_multiple_entry_points: bool
@@ -377,6 +379,8 @@ class Settings(TypedDict):
     Wiswa detects this only from a literal ``uses_user_defaults: true`` in ``.wiswa.jsonnet``; the
     flag cannot be enabled from user ``defaults.jsonnet`` alone.
     """
+    want_appimage: bool
+    """If the project should generate an AppImage workflow."""
     want_codeql: bool
     """If the project should include ``.github/workflows/codeql.yml``."""
     want_gpg: bool

@@ -5,8 +5,8 @@ function(settings)
   local is_uv = settings.package_manager == 'uv';
   local watched_workflows = std.set(
     ['QA', 'Prettier', 'Spelling', 'Tests', 'markdownlint'] +
+    (if settings.want_appimage then ['AppImage'] else []) +
     (if settings.want_main || settings.has_multiple_entry_points then
-       (if settings.supported_platforms == 'all' || std.member(settings.supported_platforms, 'linux') then ['AppImage'] else []) +
        (if settings.supported_platforms == 'all' || std.member(settings.supported_platforms, 'windows') || std.member(settings.supported_platforms, 'macos') then ['PyInstaller'] else [])
      else []) +
     (if utils.wantFlatpakOutputs(settings) then ['Flatpak'] else []) +

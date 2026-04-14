@@ -157,7 +157,9 @@ async def _write_templated_files_python(settings: Settings, templates_dir: Path,
                 write_file(resolve_template(templates_dir / 'github/workflows/pyinstaller.yml.j2'),
                            '.github/workflows/pyinstaller.yml',
                            overwrite=True))
-        if settings['supported_platforms'] == 'all' or 'linux' in settings['supported_platforms']:
+        if (settings.get('want_appimage', False)
+                and (settings['supported_platforms'] == 'all'
+                     or 'linux' in settings['supported_platforms'])):
             tasks.append(
                 write_file(resolve_template(templates_dir / 'github/workflows/appimage.yml.j2'),
                            '.github/workflows/appimage.yml',

@@ -40,6 +40,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'using_github': True,
         'using_gitlab': False,
         'using_django': False,
+        'github_project_name': 'myproject',
         'project_name': 'myproject',
         'pypi_project_name': 'myproject',
         'primary_module': 'mymod',
@@ -103,6 +104,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         '_readme_existed': False,
         '_has_established_pytest_modules': False,
         'want_ai': True,
+        'want_appimage': True,
         'using_beads': False,
     }
     return base | overrides
@@ -249,6 +251,19 @@ async def test_post_process_steps_python_no_codeql(tmp_path: Path, monkeypatch: 
     settings = cast('Any', _make_settings(want_codeql=False))
     await post_process_steps(settings)
     assert not (tmp_path / '.github/workflows/codeql.yml').exists()
+
+
+async def test_post_process_steps_python_no_appimage(tmp_path: Path,
+                                                     monkeypatch: pytest.MonkeyPatch,
+                                                     mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    (tmp_path / '.github/workflows').mkdir(parents=True)
+    (tmp_path / '.github/workflows/appimage.yml').write_text('test')
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings(want_appimage=False))
+    await post_process_steps(settings)
+    assert not (tmp_path / '.github/workflows/appimage.yml').exists()
 
 
 async def test_post_process_steps_python_want_man_with_man_dir(tmp_path: Path,
@@ -636,6 +651,28 @@ async def test_post_process_steps_badges_xcode_project(tmp_path: Path,
     _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(project_type='xcode', _readme_existed=True))
     await post_process_steps(settings)
+
+
+async def test_post_process_steps_badges_use_github_project_name_not_project_name(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(_readme_existed=True,
+                       project_name='my-pypi-name',
+                       github_project_name='my-github-repo',
+                       want_tests=True,
+                       want_codeql=True,
+                       want_docs=True))
+    await post_process_steps(settings)
+    content = readme.read_text(encoding='utf-8')
+    assert 'my-github-repo' in content
+    assert 'testuser/my-github-repo' in content
+    assert 'testuser/my-pypi-name' not in content
 
 
 async def test_post_process_steps_badges_github_with_tests_codeql(tmp_path: Path,

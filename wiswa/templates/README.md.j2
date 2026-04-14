@@ -13,9 +13,9 @@
 {% endif %}
 {% endif %}
 {% if settings.using_github %}
-[![GitHub tag (with filter)](https://img.shields.io/github/v/tag/{{ settings.github.username }}/{{ settings.project_name }})]({{ settings.repository_uri }}/tags)
-[![License](https://img.shields.io/github/license/{{ settings.github.username }}/{{ settings.project_name }})]({{ settings.repository_uri }}/blob/{{ settings.default_branch }}/LICENSE.txt)
-[![GitHub commits since latest release (by SemVer including pre-releases)](https://img.shields.io/github/commits-since/{{ settings.github.username }}/{{ settings.project_name }}/v{{ settings.version }}/{{ settings.default_branch }})]({{ settings.repository_uri }}/compare/v{{ settings.version }}...{{ settings.default_branch }})
+[![GitHub tag (with filter)](https://img.shields.io/github/v/tag/{{ settings.github.username }}/{{ settings.github_project_name }})]({{ settings.repository_uri }}/tags)
+[![License](https://img.shields.io/github/license/{{ settings.github.username }}/{{ settings.github_project_name }})]({{ settings.repository_uri }}/blob/{{ settings.default_branch }}/LICENSE.txt)
+[![GitHub commits since latest release (by SemVer including pre-releases)](https://img.shields.io/github/commits-since/{{ settings.github.username }}/{{ settings.github_project_name }}/v{{ settings.version }}/{{ settings.default_branch }})]({{ settings.repository_uri }}/compare/v{{ settings.version }}...{{ settings.default_branch }})
 {% if settings.want_codeql %}
 [![CodeQL]({{ settings.repository_uri }}/actions/workflows/codeql.yml/badge.svg)]({{ settings.repository_uri }}/actions/workflows/codeql.yml)
 {% endif %}
@@ -23,7 +23,7 @@
 {% if settings.want_tests %}
 [![Tests]({{ settings.repository_uri }}/actions/workflows/tests.yml/badge.svg)]({{ settings.repository_uri }}/actions/workflows/tests.yml)
 {% if not settings.private %}
-[![Coverage Status](https://coveralls.io/repos/github/{{ settings.github.username }}/{{ settings.project_name }}/badge.svg?branch=master)](https://coveralls.io/github/{{ settings.github.username }}/{{ settings.project_name }}?branch={{ settings.default_branch }})
+[![Coverage Status](https://coveralls.io/repos/github/{{ settings.github.username }}/{{ settings.github_project_name }}/badge.svg?branch=master)](https://coveralls.io/github/{{ settings.github.username }}/{{ settings.github_project_name }}?branch={{ settings.default_branch }})
 {% endif %}
 {% endif %}
 [![Dependabot](https://img.shields.io/badge/Dependabot-enabled-blue?logo=dependabot)](https://github.com/dependabot)
@@ -34,9 +34,9 @@
 {% endif %}
 {% if settings.want_docs and not settings.private %}
 {% if settings.project_type == 'python' %}
-[![Documentation Status](https://readthedocs.org/projects/{{ settings.project_name }}/badge/?version=latest)]({{ settings.documentation_uri }}/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/{{ settings.github_project_name }}/badge/?version=latest)]({{ settings.documentation_uri }}/?badge=latest)
 {% elif settings.using_github %}
-[![GitHub Pages](https://github.com/Tatsh/{{ settings.project_name }}/actions/workflows/pages.yml/badge.svg)](https://tatsh.github.io/{{ settings.project_name }}/)
+[![GitHub Pages]({{ settings.repository_uri }}/actions/workflows/pages.yml/badge.svg)](https://{{ settings.github.username | lower }}.github.io/{{ settings.github_project_name }}/)
 {% endif %}
 {% endif %}
 {% if settings.project_type == 'python' %}
@@ -79,7 +79,7 @@
 {% endif %}
 {% endif %}
 {% if settings.using_github and not settings.private %}
-[![Stargazers](https://img.shields.io/github/stars/{{ settings.github.username }}/{{ settings.project_name }}?logo=github&style=flat)](https://github.com/{{ settings.github.username }}/{{ settings.project_name }}/stargazers)
+[![Stargazers](https://img.shields.io/github/stars/{{ settings.github.username }}/{{ settings.github_project_name }}?logo=github&style=flat)](https://github.com/{{ settings.github.username }}/{{ settings.github_project_name }}/stargazers)
 {% endif %}
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Prettier](https://img.shields.io/badge/Prettier-black?logo=prettier)](https://prettier.io/)

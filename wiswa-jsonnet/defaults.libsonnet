@@ -588,6 +588,13 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    */
   want_man: self.want_main,
   /**
+   * @brief If the project will generate an AppImage workflow.
+   * @var boolean
+   */
+  want_appimage: (self.want_main || self.has_multiple_entry_points) &&
+                 (self.supported_platforms == 'all' ||
+                  std.member(self.supported_platforms, 'linux')),
+  /**
    * @brief If the project will have a Snapcraft configuration.
    * @var boolean
    */
