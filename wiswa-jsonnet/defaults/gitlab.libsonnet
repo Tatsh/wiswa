@@ -17,7 +17,6 @@
     ci_separated_caches: 'true',
     commit_committer_check: 'true',
     compliance_frameworks: '[]',
-    container_registry_access_level: 'disabled',
     emails_enabled: 'true',
     environments_access_level: 'disabled',
     feature_flags_access_level: 'disabled',
