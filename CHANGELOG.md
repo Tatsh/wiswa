@@ -40,6 +40,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Jsonnet GitLab defaults no longer force `container_registry_access_level: 'disabled'`; project
+  setup now relies on the GitLab server default when applying remote settings.
 - Generated `yarn gen-docs` and `yarn gen-manpage` scripts always include
   `sphinx-build --fail-on-warning`, regardless of `sphinx_fail_on_warning`; ReadTheDocs
   `sphinx.fail_on_warning` still follows that flag.
