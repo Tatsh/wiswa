@@ -110,7 +110,7 @@ repos:
   - hooks:
       - id: 'cspell'
     repo: 'https://github.com/streetsidesoftware/cspell-cli'
-    rev: 'v9.8.0'
+    rev: 'v10.0.0'
   - hooks:
       - entry: 'jsonnetfmt --string-style s --no-pad-arrays --in-place --'
         files: "\\.(jsonnet|libsonnet)$"
