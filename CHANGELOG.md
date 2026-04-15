@@ -24,9 +24,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   on-disk package, with `primary_module` as the namespace root when they differ.
 - Jsonnet `utils.moduleImportToPath` for turning dotted import names into POSIX path segments.
 - VS Code default `files.associations` mapping `*.json.dist` to the JSON language id.
-- Jsonnet `sphinx_fail_on_warning` (default `true`): when set, generated `yarn gen-docs` and
-  `yarn gen-manpage` scripts include `sphinx-build --fail-on-warning`, and ReadTheDocs
-  `sphinx.fail_on_warning` matches; exposed on `Settings`.
+- Jsonnet `sphinx_fail_on_warning` (default `true`): controls ReadTheDocs `sphinx.fail_on_warning`
+  in generated configs, and is exposed on `Settings`.
 - README template marks the generated badge block with `<!-- WISWA-GENERATED-README:START -->` and
   `<!-- WISWA-GENERATED-README:STOP -->` so post-processing replaces only that region.
 - Sphinx library docs include a `wiswa.mcp` API page (`docs/library/mcp.rst`) linked from the
@@ -41,6 +40,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Generated `yarn gen-docs` and `yarn gen-manpage` scripts always include
+  `sphinx-build --fail-on-warning`, regardless of `sphinx_fail_on_warning`; ReadTheDocs
+  `sphinx.fail_on_warning` still follows that flag.
 - GitHub API error handling during repository setup is improved: each failed step logs a short,
   readable warning (HTTP status plus body or GitHub's JSON `message` when available, without a
   traceback), and the rest of the setup still runs instead of stopping at the first error.

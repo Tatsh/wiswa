@@ -6,6 +6,7 @@ from shutil import which
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock
 import asyncio
+import json
 import logging
 import os
 import subprocess
@@ -126,13 +127,71 @@ async def test_apply_python_pyproject_manifest_edits_prunes_empty_tool_tables(
         '[dependency-groups]\n'
         'docs = []\ntests = []\ndev = []\n',
         encoding='utf-8')
-    (tmp_path / 'package.json').write_text('{"scripts": {"check-formatting": "x", "format": "y"}}',
-                                           encoding='utf-8')
+    (tmp_path / 'package.json').write_text(
+        '{"scripts": {"check-formatting": "x", "format": "y", "gen-docs": '
+        '"uv run sphinx-build --fresh-env --builder html docs docs/_build/html", '
+        '"gen-manpage": "uv run sphinx-build --fresh-env --builder man docs man"}}',
+        encoding='utf-8')
     settings = cast('Any', _make_settings(want_yapf=False))
     await apply_python_pyproject_manifest_edits(settings)
     root = tomlkit.loads((tmp_path / 'pyproject.toml').read_text(encoding='utf-8')).unwrap()
+    package_json = cast('dict[str, Any]',
+                        json.loads((tmp_path / 'package.json').read_text(encoding='utf-8')))
     assert 'poetry' not in root.get('tool', {})
     assert root['tool']
+    assert '--fail-on-warning' in package_json['scripts']['gen-docs']
+    assert '--fail-on-warning' in package_json['scripts']['gen-manpage']
+
+
+@pytest.mark.parametrize('package_manager', ['uv', 'poetry'])
+async def test_apply_python_pyproject_manifest_edits_preserves_sphinx_fail_on_warning_scripts(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, package_manager: str) -> None:
+    monkeypatch.chdir(tmp_path)
+    if package_manager == 'uv':
+        _setup_python_project(tmp_path)
+    else:
+        _setup_poetry_project(tmp_path)
+    run_cmd = 'uv run' if package_manager == 'uv' else 'poetry run'
+    gen_docs = (f'{run_cmd} sphinx-build --fresh-env --fail-on-warning --builder html '
+                '--doctree-dir docs/_build/doctrees --define language=en docs docs/_build/html')
+    gen_manpage = (f'{run_cmd} sphinx-build --fresh-env --fail-on-warning --builder man '
+                   '--doctree-dir docs/_build/doctrees --define language=en docs man')
+    (tmp_path / 'package.json').write_text(json.dumps({
+        'scripts': {
+            'check-formatting': 'old',
+            'format': 'old',
+            'gen-docs': gen_docs,
+            'gen-manpage': gen_manpage,
+        },
+    }),
+                                           encoding='utf-8')
+    settings = cast('Any', _make_settings(package_manager=package_manager, want_yapf=False))
+    await apply_python_pyproject_manifest_edits(settings)
+    pkg = json.loads((tmp_path / 'package.json').read_text(encoding='utf-8'))
+    assert '--fail-on-warning' in pkg['scripts']['gen-docs']
+    assert '--fail-on-warning' in pkg['scripts']['gen-manpage']
+    assert 'sphinx-build' in pkg['scripts']['gen-docs']
+    assert 'sphinx-build' in pkg['scripts']['gen-manpage']
+
+
+async def test_post_process_steps_preserves_sphinx_fail_on_warning_scripts(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    gen_docs = ('uv run sphinx-build --fresh-env --fail-on-warning --builder html '
+                '--doctree-dir docs/_build/doctrees --define language=en docs docs/_build/html')
+    gen_manpage = ('uv run sphinx-build --fresh-env --fail-on-warning --builder man '
+                   '--doctree-dir docs/_build/doctrees --define language=en docs man')
+    pkg = json.loads((tmp_path / 'package.json').read_text(encoding='utf-8'))
+    pkg['scripts']['gen-docs'] = gen_docs
+    pkg['scripts']['gen-manpage'] = gen_manpage
+    (tmp_path / 'package.json').write_text(json.dumps(pkg), encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings(want_yapf=False))
+    await post_process_steps(settings)
+    out = json.loads((tmp_path / 'package.json').read_text(encoding='utf-8'))
+    assert '--fail-on-warning' in out['scripts']['gen-docs']
+    assert '--fail-on-warning' in out['scripts']['gen-manpage']
 
 
 def _setup_python_project(tmp_path: Path) -> None:
@@ -296,8 +355,6 @@ async def test_post_process_steps_python_no_yapf(tmp_path: Path, monkeypatch: py
     _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(want_yapf=False))
     await post_process_steps(settings)
-    import json
-
     pkg = json.loads((tmp_path / 'package.json').read_text(encoding='utf-8'))
     assert 'yarn prettier --check --ignore-unknown .' in pkg['scripts']['check-formatting']
     assert 'yarn prettier --write --ignore-unknown .' in pkg['scripts']['format']
@@ -1636,7 +1693,7 @@ async def test_post_process_steps_regenerate_yarn_lock_false(tmp_path: Path,
 
 
 class _FakeAsyncSubprocess:
-    """Minimal stand-in for asyncio subprocess.Process in create_subprocess_exec tests."""
+    """Stub for ``asyncio`` subprocess ``Process`` in ``create_subprocess_exec`` tests."""
 
     __slots__ = ('_stdout', 'returncode')
 

@@ -15,6 +15,7 @@ import shutil
 import tempfile
 
 from anyio.to_thread import run_sync
+from niquests import AsyncSession
 import anyio
 import niquests
 import tomlkit
@@ -78,7 +79,7 @@ def _semver_spec_documentation_url(release_tag: str) -> str:
     return f'https://semver.org/spec/{tag}.html'
 
 
-async def _resolve_keep_a_changelog_url(session: niquests.AsyncSession | None) -> str:
+async def _resolve_keep_a_changelog_url(session: AsyncSession | None) -> str:
     if session is None:
         return _CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL
     try:
@@ -89,7 +90,7 @@ async def _resolve_keep_a_changelog_url(session: niquests.AsyncSession | None) -
     return _keep_a_changelog_documentation_url(tag)
 
 
-async def _resolve_semver_spec_url(session: niquests.AsyncSession | None) -> str:
+async def _resolve_semver_spec_url(session: AsyncSession | None) -> str:
     if session is None:
         return _CHANGELOG_SEMVER_SPEC_FALLBACK_URL
     try:
@@ -100,8 +101,7 @@ async def _resolve_semver_spec_url(session: niquests.AsyncSession | None) -> str
     return _semver_spec_documentation_url(tag)
 
 
-async def resolve_changelog_boilerplate_urls(
-        session: niquests.AsyncSession | None) -> tuple[str, str]:
+async def resolve_changelog_boilerplate_urls(session: AsyncSession | None) -> tuple[str, str]:
     """
     Resolve Keep a Changelog and SemVer documentation URLs for generated boilerplate.
 
@@ -110,7 +110,7 @@ async def resolve_changelog_boilerplate_urls(
 
     Parameters
     ----------
-    session : niquests.AsyncSession | None
+    session : AsyncSession | None
         HTTP session for GitHub API calls, or ``None`` to use fallback URLs.
 
     Returns
@@ -129,7 +129,7 @@ def _normalise_changelog_reference_urls(content: str, keep_a_changelog_url: str,
     return _RE_CHANGELOG_SEMVER_SPEC.sub(semver_spec_url, step1)
 
 
-async def _refresh_changelog_reference_urls(session: niquests.AsyncSession | None) -> None:
+async def _refresh_changelog_reference_urls(session: AsyncSession | None) -> None:
     changelog = anyio.Path('CHANGELOG.md')
     if not await changelog.is_file():
         return
@@ -235,37 +235,38 @@ async def _run_postprocess_language_formatters(settings: Settings, *, debug: boo
                                                on_command: Callable[[str], None] | None,
                                                env: dict[str, str]) -> None:
     """Run YAPF or Ruff (Python), or clang-format (C/C++), after Prettier and markdownlint."""
-    if settings['project_type'] == 'python':
-        is_uv = settings['package_manager'] == 'uv'
-        quiet_uv_poetry: tuple[str, ...] = () if debug else ('--quiet',)
-        run_cmd: tuple[str, ...] = (('uv', *quiet_uv_poetry, 'run') if is_uv else
-                                    ('poetry', *quiet_uv_poetry, 'run'))
-        if settings['want_yapf']:
-            await _subprocess_log_run(
-                (*run_cmd, 'yapf', '--in-place', '--parallel', '--recursive', '.'),
-                env=env,
-                on_command=on_command,
-                stderr=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                check=False)
-        else:
-            await _subprocess_log_run((*run_cmd, 'ruff', 'format', *(() if debug else
-                                                                     ('--quiet',)), '.'),
-                                      env=env,
-                                      on_command=on_command,
-                                      stderr=asyncio.subprocess.PIPE,
-                                      stdout=asyncio.subprocess.PIPE,
-                                      check=False)
-    elif settings['project_type'] in {'c', 'c++'}:
-        if paths := _clang_format_file_paths(
-                str(settings.get('clang_format_args', 'src/*.cpp src/*.h'))):
-            await _subprocess_log_run(('clang-format', *(('--verbose',) if debug else
-                                                         ()), '--in-place', *paths),
-                                      env=env,
-                                      on_command=on_command,
-                                      stderr=asyncio.subprocess.PIPE,
-                                      stdout=asyncio.subprocess.PIPE,
-                                      check=False)
+    match settings['project_type']:
+        case 'python':
+            is_uv = settings['package_manager'] == 'uv'
+            quiet_uv_poetry: tuple[str, ...] = () if debug else ('--quiet',)
+            run_cmd: tuple[str, ...] = (('uv', *quiet_uv_poetry, 'run') if is_uv else
+                                        ('poetry', *quiet_uv_poetry, 'run'))
+            if settings['want_yapf']:
+                await _subprocess_log_run(
+                    (*run_cmd, 'yapf', '--in-place', '--parallel', '--recursive', '.'),
+                    env=env,
+                    on_command=on_command,
+                    stderr=asyncio.subprocess.PIPE,
+                    stdout=asyncio.subprocess.PIPE,
+                    check=False)
+            else:
+                await _subprocess_log_run((*run_cmd, 'ruff', 'format', *(() if debug else
+                                                                         ('--quiet',)), '.'),
+                                          env=env,
+                                          on_command=on_command,
+                                          stderr=asyncio.subprocess.PIPE,
+                                          stdout=asyncio.subprocess.PIPE,
+                                          check=False)
+        case 'c' | 'c++':
+            if paths := _clang_format_file_paths(
+                    str(settings.get('clang_format_args', 'src/*.cpp src/*.h'))):
+                await _subprocess_log_run(('clang-format', *(('--verbose',) if debug else
+                                                             ()), '--in-place', *paths),
+                                          env=env,
+                                          on_command=on_command,
+                                          stderr=asyncio.subprocess.PIPE,
+                                          stdout=asyncio.subprocess.PIPE,
+                                          check=False)
 
 
 def _resolve_output_filename(er: ExportRequirements) -> str:
@@ -420,6 +421,12 @@ async def apply_python_pyproject_manifest_edits(settings: Settings) -> None:
         del pyproject_content['tool']['pytest']
     run_cmd = 'uv run' if is_uv else 'poetry run'
     package_json_content = json.loads(await anyio.Path('package.json').read_text(encoding='utf-8'))
+    for script_name in ('gen-docs', 'gen-manpage'):
+        script_command = package_json_content['scripts'].get(script_name)
+        if (isinstance(script_command, str) and 'sphinx-build' in script_command
+                and '--fail-on-warning' not in script_command):
+            package_json_content['scripts'][script_name] = script_command.replace(
+                'sphinx-build ', 'sphinx-build --fail-on-warning ', 1)
     ml_check = 'yarn markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2'
     ml_fix = f'{ml_check} --fix'
     prettier_w = 'yarn prettier --write --ignore-unknown .'
@@ -800,15 +807,15 @@ async def maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings,
                                                         on_command: Callable[[str], None]
                                                         | None = None) -> None:
     """
-    Restore ``uv.lock`` from ``HEAD`` when drift is incidental resolution.
+    Restore ``uv.lock`` from ``HEAD`` when the drift arises from incidental resolution.
 
-    ``uv lock --upgrade`` can refresh the lock without any edit to ``pyproject.toml`` (for example
+    ``uv lock --upgrade`` can refresh the lock without any edits to ``pyproject.toml`` (for example
     when rolling ``exclude-newer`` cut-offs in the user ``uv.toml`` or when the index moves). If the
     working tree differs from ``HEAD`` only in ``uv.lock``, put the lock file back so a run does
     not leave an incidental lock diff. The same applies when other tracked paths also differ, if
     ``git diff --no-color -a HEAD -- uv.lock`` shows changes only on ``exclude-newer`` lines under
     ``[options]`` (compare to ``HEAD``, matching ``git restore --source=HEAD``). ``git restore`` and
-    ``git checkout`` pass ``-c`` ``core.hooksPath=`` with the platform null device so hooks (for
+    ``git checkout`` pass ``-c`` ``core.hooksPath`` set to the platform null device so hooks (for
     example pre-commit) cannot block reverting the lock.
 
     Parameters
@@ -878,7 +885,7 @@ async def post_process_steps(settings: Settings,
                              *,
                              debug: bool = False,
                              on_command: Callable[[str], None] | None = None,
-                             session: niquests.AsyncSession | None = None) -> None:
+                             session: AsyncSession | None = None) -> None:
     """
     Run post-processing steps after project generation.
 
@@ -891,7 +898,7 @@ async def post_process_steps(settings: Settings,
         ``--quiet``.
     on_command : Callable[[str], None] | None
         Called with the command string before each subprocess runs.
-    session : niquests.AsyncSession | None
+    session : AsyncSession | None
         Optional HTTP session. When set, ``CHANGELOG.md`` boilerplate links for Keep a Changelog and
         Semantic Versioning are updated from ``olivierlacan/keep-a-changelog`` and ``semver/semver``
         respectively; otherwise pinned fallback URLs are used.
