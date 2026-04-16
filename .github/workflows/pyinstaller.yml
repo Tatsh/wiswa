@@ -110,7 +110,6 @@ jobs:
               uv run pyinstaller --log-level ERROR --onefile -n "${script_name}" --optimize 1 \
                 --hidden-import colorlog \
                 --collect-data fastmcp \
-                --collect-data yaspin \
                 --copy-metadata fastmcp \
                 -y --version-file version-info.txt \
                 "${openssl_args[@]}" \

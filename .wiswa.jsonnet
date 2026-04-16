@@ -50,7 +50,7 @@ local utils = import 'utils.libsonnet';
     ],
   },
   pyinstaller+: {
-    collect_data+: ['fastmcp', 'yaspin'],
+    collect_data+: ['fastmcp'],
     copy_metadata+: ['fastmcp'],
     vcpkg: {
       enabled: true,
@@ -75,8 +75,8 @@ local utils = import 'utils.libsonnet';
       'niquests-cache': utils.latestPypiPackageVersionCaret('niquests-cache'),
       platformdirs: utils.latestPypiPackageVersionCaret('platformdirs'),
       'python-gitlab': utils.latestPypiPackageVersionCaret('python-gitlab'),
+      rich: utils.latestPypiPackageVersionCaret('rich'),
       tomlkit: utils.latestPypiPackageVersionCaret('tomlkit'),
-      yaspin: utils.latestPypiPackageVersionCaret('yaspin'),
     },
     dev+: {
       'types-jsonnet': utils.latestPypiPackageVersionCaret('types-jsonnet'),

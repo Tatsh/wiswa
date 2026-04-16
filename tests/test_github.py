@@ -163,20 +163,16 @@ async def test_setup_github_project_creates_protect_version_tags_ruleset(
 
 async def test_setup_github_project_updates_existing_rulesets(mocker: MockerFixture) -> None:
     session = _mock_github_session(mocker)
-    rulesets_resp = _make_resp(200, [
-        {
-            'name': 'Protect version tags',
-            'id': 1
-        },
-        {
-            'name': 'Protect default branch',
-            'id': 2
-        },
-        {
-            'name': 'Copilot review for default branch',
-            'id': 3
-        },
-    ])
+    rulesets_resp = _make_resp(200, [{
+        'name': 'Protect version tags',
+        'id': 1
+    }, {
+        'name': 'Protect default branch',
+        'id': 2
+    }, {
+        'name': 'Copilot review for default branch',
+        'id': 3
+    }])
     session.get = AsyncMock(return_value=rulesets_resp)
     await setup_github_project(session, _make_settings())
     post_calls = [
