@@ -98,6 +98,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Ruff `COM812` rule is now always included in the ignore list for Python projects, instead of being
   conditional on `want_yapf`. The rule conflicts with formatters regardless of which formatter is
   used.
+- Wiswa CLI progress spinner now uses `rich.status.Status` on a `rich.console.Console` bound to
+  stderr instead of `yaspin`; spinner names come from `rich.spinner.SPINNERS`, keeping the
+  weighted random dots-heavy pool. `yaspin` is no longer a runtime dependency.
+- Wiswa CLI progress now renders a full live display instead of a single spinner line when stderr
+  is a TTY (or `WISWA_PROGRESS=1` is set) and neither `--debug` nor `--quiet` is passed:
+  - A bold NFO-style block-letter `wiswa` banner drawn with Unicode box characters
+    (`█`, `║`, `╗`, and similar), using the terminal's default foreground colour so it reads on
+    both light and dark backgrounds.
+  - The project URL `https://github.com/Tatsh/wiswa` right-aligned beneath the banner.
+  - A seven-task checklist using Unicode ballot boxes: `☐` for pending or running tasks, green
+    `☑` for completed tasks, and dim strike-through `☒` for skipped tasks. The tasks are
+    evaluate settings, evaluate project, write templated files, download Yarn, copy static files,
+    post-process, and configure remote.
+  - A spinner line below the checklist that shows the latest status message (for example,
+    ``Running `yarn install` ...``).
+  - `--quiet`, `--debug`, and the `WISWA_PROGRESS=1` override keep their existing behaviour: the
+    display is disabled when stderr is not a TTY (unless `WISWA_PROGRESS=1` is set), when
+    `--debug` is used, or when `--quiet` is passed.
 
 ### Removed
 

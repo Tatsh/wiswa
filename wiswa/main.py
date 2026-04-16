@@ -5,23 +5,21 @@ from __future__ import annotations
 from datetime import timedelta
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, NoReturn
 import asyncio
 import importlib.resources
 import logging
 import os
 import re
-import secrets
 import sys
 
 from bascom import setup_logging
 from niquests_cache import cached_session
-from yaspin import yaspin
-from yaspin.spinners import Spinners
 import anyio
 import click
 import niquests
 
+from .progress import ProgressDisplay, TaskId
 from .utils import (
     FlatpakConfigurationError,
     RemoteHostConflictError,
@@ -39,31 +37,13 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Mapping
-
-    from yaspin.core import Yaspin
+    from collections.abc import Awaitable, Mapping
 
     from .typing import Settings
 
 __all__ = ('main',)
 
 log = logging.getLogger(__name__)
-
-# Each dots* spinner name is repeated this many times in the draw pool, so those names beat
-# any other single spinner.
-_DOT_FAMILY_WEIGHT = 4
-_DOT_SPINNER_NAMES = ('dots', 'dots2', 'dots3', 'dots4', 'dots5', 'dots6', 'dots7', 'dots8',
-                      'dots9', 'dots10', 'dots11', 'dots12', 'dots13', 'dots14')
-_OTHER_SPINNER_NAMES = ('sand', 'pipe', 'star', 'star2', 'hamburger', 'growVertical',
-                        'growHorizontal', 'earth', 'runner', 'soccerHeader', 'orangePulse',
-                        'bluePulse', 'orangeBluePulse')
-_SPINNER_CHOICE_POOL: tuple[str, ...] = (tuple(name for name in _DOT_SPINNER_NAMES
-                                               for _ in range(_DOT_FAMILY_WEIGHT)) +
-                                         _OTHER_SPINNER_NAMES)
-
-
-def _random_cli_spinner() -> Any:  # pragma: no cover
-    return getattr(Spinners, secrets.choice(_SPINNER_CHOICE_POOL))
 
 
 def _has_legacy_poetry_deps(settings: Settings) -> bool:
@@ -122,33 +102,140 @@ def _handle_http_error(e: niquests.HTTPError) -> None:
 async def _postprocess_or_normalize_python_manifests(*, skip_postprocess: bool, loaded: Settings,
                                                      debug: bool,
                                                      session: niquests.AsyncSession | None,
-                                                     spin_update: Callable[[str], None]) -> None:
+                                                     progress: ProgressDisplay) -> bool:
+    """
+    Run post-processing steps or fall back to Python manifest normalisation.
+
+    Parameters
+    ----------
+    skip_postprocess : bool
+        Whether ``--skip-postprocess`` was requested.
+    loaded : Settings
+        The loaded project settings.
+    debug : bool
+        Whether debug output is enabled.
+    session : niquests.AsyncSession | None
+        Optional shared HTTP session.
+    progress : ProgressDisplay
+        Progress display used to surface the currently running subcommand.
+
+    Returns
+    -------
+    bool
+        ``True`` when any work was performed, ``False`` when the step was fully skipped.
+    """
     if not skip_postprocess:
-        spin_update('Post-processing...')
-        await post_process_steps(loaded,
-                                 debug=debug,
-                                 on_command=lambda cmd: spin_update(f'Running `{cmd}` ...'),
-                                 session=session)
-    elif loaded['project_type'] == 'python':
-        spin_update('Normalizing Python manifests...')
+        progress.start_task(TaskId.POST_PROCESS, 'Post-processing...')
+        await post_process_steps(
+            loaded,
+            debug=debug,
+            on_command=lambda cmd: progress.update_message(f'Running `{cmd}` ...'),
+            session=session)
+        return True
+    if loaded['project_type'] == 'python':
+        progress.start_task(TaskId.POST_PROCESS, 'Normalizing Python manifests...')
         await apply_python_pyproject_manifest_edits(loaded)
+        return True
+    return False
 
 
-async def _main_async(  # noqa: C901
-        file: Path,
-        jpath: tuple[str, ...] = (),
-        *,
-        cache_time: int = 600,
-        debug: bool = False,
-        no_cache: bool = False,
-        output_dir: Path | None = None,
-        quiet: bool = False,
-        skip_remote: bool = False,
-        skip_jsonnet: bool = False,
-        skip_postprocess: bool = False,
-        skip_static: bool = False,
-        skip_templates: bool = False,
-        skip_yarn: bool = False) -> None:
+async def _run_copy_static(progress: ProgressDisplay, *, loaded: Settings, module_path: Path,
+                           skip_static: bool) -> None:
+    if skip_static:
+        progress.skip(TaskId.COPY_STATIC)
+        return
+    progress.start_task(TaskId.COPY_STATIC, 'Copying static files...')
+    copy_tasks: list[Awaitable[None]] = [copy_static_files(loaded, module_path)]
+    if loaded['project_type'] == 'python' and not loaded['stubs_only']:
+        copy_tasks.append(create_py_typed_files(loaded))
+    await asyncio.gather(*copy_tasks)
+    progress.complete(TaskId.COPY_STATIC)
+
+
+async def _run_configure_remote(progress: ProgressDisplay, *, loaded: Settings,
+                                session: niquests.AsyncSession, skip_remote: bool) -> None:
+    if skip_remote:
+        progress.skip(TaskId.CONFIGURE_REMOTE)
+        return
+    if loaded['using_github']:
+        progress.start_task(TaskId.CONFIGURE_REMOTE, 'Configuring GitHub project settings...')
+        await setup_github_project(session, loaded)
+        progress.complete(TaskId.CONFIGURE_REMOTE)
+        return
+    if loaded['using_gitlab']:
+        progress.start_task(TaskId.CONFIGURE_REMOTE, 'Configuring GitLab project settings...')
+        await setup_gitlab_project(session, loaded)
+        progress.complete(TaskId.CONFIGURE_REMOTE)
+        return
+    progress.skip(TaskId.CONFIGURE_REMOTE)
+
+
+async def _run_workflow(progress: ProgressDisplay, *, debug: bool, file: Path,
+                        jpath: tuple[str, ...], jpathdir: list[str], lib_path: Path,
+                        module_path: Path, output_dir: Path | None, session: niquests.AsyncSession,
+                        skip_jsonnet: bool, skip_postprocess: bool, skip_remote: bool,
+                        skip_static: bool, skip_templates: bool, skip_yarn: bool) -> None:
+    progress.start_task(TaskId.EVALUATE_SETTINGS, 'Evaluating settings...')
+    merged_settings, loaded = await evaluate_merged_settings(
+        [*jpath, *jpathdir], lib_path, await anyio.Path(file).read_text(encoding='utf-8'), session)
+    progress.complete(TaskId.EVALUATE_SETTINGS)
+    if _has_legacy_poetry_deps(loaded):
+        log.warning('pyproject.tool.poetry.*.dependencies is deprecated. '
+                    'Move dependencies to python_deps.main/dev/docs/tests in .wiswa.jsonnet.')
+    # Skip only wiswa-jsonnet/project.jsonnet (manifest files). Merged settings from
+    # evaluate_merged_settings always run Jsonnet first.
+    if not skip_jsonnet:
+        progress.start_task(TaskId.EVALUATE_PROJECT, 'Evaluating project. Please be patient...')
+        await evaluate_jsonnet_project(lib_path,
+                                       jpathdir,
+                                       merged_settings,
+                                       session,
+                                       output_dir=output_dir)
+        progress.complete(TaskId.EVALUATE_PROJECT)
+    else:
+        progress.skip(TaskId.EVALUATE_PROJECT)
+    if not skip_templates:
+        progress.start_task(TaskId.WRITE_TEMPLATES, 'Writing templated files...')
+        await write_templated_files(module_path, loaded, session)
+        progress.complete(TaskId.WRITE_TEMPLATES)
+    else:
+        progress.skip(TaskId.WRITE_TEMPLATES)
+    if not skip_yarn:
+        progress.start_task(TaskId.DOWNLOAD_YARN, 'Downloading Yarn...')
+        await asyncio.gather(download_yarn(session, loaded['yarn_version']),
+                             download_yarn_plugins(session))
+        progress.complete(TaskId.DOWNLOAD_YARN)
+    else:
+        progress.skip(TaskId.DOWNLOAD_YARN)
+    await _run_copy_static(progress,
+                           loaded=loaded,
+                           module_path=module_path,
+                           skip_static=skip_static)
+    if await _postprocess_or_normalize_python_manifests(skip_postprocess=skip_postprocess,
+                                                        loaded=loaded,
+                                                        debug=debug,
+                                                        session=session,
+                                                        progress=progress):
+        progress.complete(TaskId.POST_PROCESS)
+    else:
+        progress.skip(TaskId.POST_PROCESS)
+    await _run_configure_remote(progress, loaded=loaded, session=session, skip_remote=skip_remote)
+
+
+async def _main_async(file: Path,
+                      jpath: tuple[str, ...] = (),
+                      *,
+                      cache_time: int = 600,
+                      debug: bool = False,
+                      no_cache: bool = False,
+                      output_dir: Path | None = None,
+                      quiet: bool = False,
+                      skip_remote: bool = False,
+                      skip_jsonnet: bool = False,
+                      skip_postprocess: bool = False,
+                      skip_static: bool = False,
+                      skip_templates: bool = False,
+                      skip_yarn: bool = False) -> None:
     setup_logging(debug=debug,
                   loggers={
                       'niquests_cache': {},
@@ -159,28 +246,10 @@ async def _main_async(  # noqa: C901
                       'wiswa': {}
                   })
     os.chdir(file.parent)
-    spinner_enabled = (not debug and not quiet
-                       and (sys.stderr.isatty() or os.environ.get('WISWA_PROGRESS') == '1'))
-    progress_spinner: Yaspin | None = None
-
-    def spin_update(message: str) -> None:  # pragma: no cover
-        nonlocal progress_spinner
-        if not spinner_enabled:
-            return
-        if progress_spinner is None:
-            progress_spinner = yaspin(_random_cli_spinner(), text=message, stream=sys.stderr)
-            progress_spinner.start()
-            return
-        progress_spinner.text = message
-
-    async def spin_stop() -> None:  # pragma: no cover
-        nonlocal progress_spinner
-        if progress_spinner is None:
-            return
-        await asyncio.to_thread(progress_spinner.stop)
-        progress_spinner = None
-
-    spin_update('Evaluating settings...')
+    progress_enabled = (not debug and not quiet
+                        and (sys.stderr.isatty() or os.environ.get('WISWA_PROGRESS') == '1'))
+    progress = ProgressDisplay(enabled=progress_enabled)
+    progress.start()
     try:
         async with cached_session(aio=True,
                                   no_cache=no_cache,
@@ -192,67 +261,41 @@ async def _main_async(  # noqa: C901
                   importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path):
                 lib_path = Path(jsonnet_defaults_file).parent
                 jpathdir = [str(lib_path)]
-                merged_settings, loaded = await evaluate_merged_settings(
-                    [*jpath, *jpathdir], lib_path, await
-                    anyio.Path(file).read_text(encoding='utf-8'), session)
-                if _has_legacy_poetry_deps(loaded):
-                    log.warning(
-                        'pyproject.tool.poetry.*.dependencies is deprecated. '
-                        'Move dependencies to python_deps.main/dev/docs/tests in .wiswa.jsonnet.')
-                # Skip only wiswa-jsonnet/project.jsonnet (manifest files). Merged settings from
-                # evaluate_merged_settings always run Jsonnet first.
-                if not skip_jsonnet:
-                    spin_update('Evaluating project. Please be patient...')
-                    await evaluate_jsonnet_project(lib_path,
-                                                   jpathdir,
-                                                   merged_settings,
-                                                   session,
-                                                   output_dir=output_dir)
-                if not skip_templates:
-                    spin_update('Writing templated files...')
-                    await write_templated_files(module_path, loaded, session)
-                if not skip_yarn:
-                    spin_update('Downloading Yarn...')
-                    await asyncio.gather(download_yarn(session, loaded['yarn_version']),
-                                         download_yarn_plugins(session))
-                if not skip_static:
-                    spin_update('Copying static files...')
-                    copy_tasks: list[Awaitable[None]] = [copy_static_files(loaded, module_path)]
-                    if loaded['project_type'] == 'python' and not loaded['stubs_only']:
-                        copy_tasks.append(create_py_typed_files(loaded))
-                    await asyncio.gather(*copy_tasks)
-                await _postprocess_or_normalize_python_manifests(skip_postprocess=skip_postprocess,
-                                                                 loaded=loaded,
-                                                                 debug=debug,
-                                                                 session=session,
-                                                                 spin_update=spin_update)
-                if not skip_remote:
-                    if loaded['using_github']:
-                        spin_update('Configuring GitHub project settings...')
-                        await setup_github_project(session, loaded)
-                    elif loaded['using_gitlab']:
-                        spin_update('Configuring GitLab project settings...')
-                        await setup_gitlab_project(session, loaded)
+                await _run_workflow(progress,
+                                    debug=debug,
+                                    file=file,
+                                    jpath=jpath,
+                                    jpathdir=jpathdir,
+                                    lib_path=lib_path,
+                                    module_path=module_path,
+                                    output_dir=output_dir,
+                                    session=session,
+                                    skip_jsonnet=skip_jsonnet,
+                                    skip_postprocess=skip_postprocess,
+                                    skip_remote=skip_remote,
+                                    skip_static=skip_static,
+                                    skip_templates=skip_templates,
+                                    skip_yarn=skip_yarn)
     except niquests.HTTPError as e:
-        await spin_stop()
+        progress.stop()
         click.echo(click.style('Failed.', fg='red'), err=True)
         _handle_http_error(e)
     except click.Abort:
         raise
     except FlatpakConfigurationError as e:
-        await spin_stop()
+        progress.stop()
         click.echo(click.style('Failed.', fg='red'), err=True)
         click.echo(str(e), err=True)
         log.debug('FlatpakConfigurationError', exc_info=e)
         _reraise_or_abort(e, debug=debug)
     except RemoteHostConflictError as e:
-        await spin_stop()
+        progress.stop()
         click.echo(click.style('Failed.', fg='red'), err=True)
         click.echo(str(e), err=True)
         log.debug('RemoteHostConflictError', exc_info=e)
         _reraise_or_abort(e, debug=debug)
     except RuntimeError as e:
-        await spin_stop()
+        progress.stop()
         click.echo(click.style('Failed.', fg='red'), err=True)
         msg = str(e)
         first_line = msg.split('\n', maxsplit=1)[0].removeprefix('RUNTIME ERROR: ')
@@ -266,16 +309,16 @@ async def _main_async(  # noqa: C901
         log.debug('RuntimeError', exc_info=e)
         _reraise_or_abort(e, debug=debug)
     except Exception as e:
-        await spin_stop()
+        progress.stop()
         click.echo(click.style('Failed.', fg='red'), err=True)
         log.debug('Unhandled exception', exc_info=e)
         _reraise_or_abort(e, debug=debug)
     else:
-        await spin_stop()
+        progress.stop()
         if not quiet:
             click.echo('Done.')
     finally:
-        await spin_stop()
+        progress.stop()
 
 
 @click.command(context_settings={'help_option_names': ('-h', '--help')})
