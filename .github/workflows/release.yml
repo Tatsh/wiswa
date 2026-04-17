@@ -114,4 +114,5 @@ name: 'Release'
       - 'jsonnetfmt'
       - 'markdownlint'
 permissions:
+  actions: 'write'
   contents: 'write'

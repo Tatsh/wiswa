@@ -146,6 +146,7 @@ function(settings)
       },
     },
     permissions: {
+      actions: 'write',
       contents: 'write',
     },
   }

@@ -101,6 +101,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Wiswa CLI progress spinner now uses `rich.status.Status` on a `rich.console.Console` bound to
   stderr instead of `yaspin`; spinner names come from `rich.spinner.SPINNERS`, keeping the
   weighted random dots-heavy pool. `yaspin` is no longer a runtime dependency.
+- Generated Publish workflow's wait-for-workflows step and Release workflow's gate step treat gating
+  workflows as optional: a missing run for the commit (for example because the workflow's `on:`
+  filters exclude tag pushes) or a `skipped` / `neutral` conclusion is no longer waited on; the
+  loop still fails fast on `failure`, `cancelled`, `timed_out`, `startup_failure`, or
+  `action_required`, and only genuinely in-progress runs are waited on. This fixes the Publish job
+  timing out after 30 minutes when gating workflows do not run for tag pushes.
+- Generated Release workflow always runs its body, records the `workflow_run` trigger decision in
+  a `guard` step output, deletes prior Release runs on the same commit that concluded `skipped`,
+  `cancelled`, or `neutral`, and self-cancels when it did not publish so a later invocation
+  removes it. This keeps the release history free of non-publishing runs without requiring manual
+  cleanup.
 - Wiswa CLI progress now renders a full live display instead of a single spinner line when stderr
   is a TTY (or `WISWA_PROGRESS=1` is set) and neither `--debug` nor `--quiet` is passed:
   - A bold NFO-style block-letter `wiswa` banner drawn with Unicode box characters
