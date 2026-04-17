@@ -106,18 +106,36 @@ function(settings)
               GH_TOKEN: '${{ github.token }}',
               REPO: '${{ github.repository }}',
               RUN_ID: '${{ github.run_id }}',
-              HEAD_SHA: '${{ github.event.workflow_run.head_sha }}',
             },
             run: |||
-              sha="$HEAD_SHA"
-              gh run list --repo "$REPO" --workflow 'Release' --commit "$sha" \
+              delete_run() {
+                local id="$1" reason="$2"
+                echo "Deleting prior Release run ${id} (${reason})."
+                gh run delete --repo "$REPO" "$id" || true
+              }
+              published_step_skipped() {
+                local id="$1"
+                local step_conclusion
+                step_conclusion=$(gh api "repos/${REPO}/actions/runs/${id}/jobs" \
+                  --jq '[.jobs[].steps[] | select(.name == "Publish release")][0].conclusion' 2>/dev/null || echo '')
+                [[ "$step_conclusion" == 'skipped' ]]
+              }
+              gh run list --repo "$REPO" --workflow 'Release' \
                 --json databaseId,status,conclusion --limit 100 \
                 | jq -r --arg self "$RUN_ID" \
-                    '.[] | select((.databaseId|tostring) != $self) | select(.status == "completed" and (.conclusion == "skipped" or .conclusion == "cancelled" or .conclusion == "neutral")) | .databaseId' \
-                | while read -r id; do
+                    '.[] | select((.databaseId|tostring) != $self) | select(.status == "completed") | [.databaseId, .conclusion] | @tsv' \
+                | while IFS=$'\t' read -r id conclusion; do
                     [[ -z "$id" ]] && continue
-                    echo "Deleting prior Release run ${id}."
-                    gh run delete --repo "$REPO" "$id" || true
+                    case "$conclusion" in
+                      skipped|cancelled|neutral)
+                        delete_run "$id" "$conclusion"
+                        ;;
+                      success)
+                        if published_step_skipped "$id"; then
+                          delete_run "$id" 'success without publish'
+                        fi
+                        ;;
+                    esac
                   done
             |||,
           },
