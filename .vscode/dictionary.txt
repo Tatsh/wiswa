@@ -83,6 +83,7 @@ endcode
 endfor
 endmacro
 endraw
+esac
 esbenp
 esbonio
 excinfo
@@ -264,6 +265,7 @@ tomllib
 tomlq
 tonumber
 topython
+tostring
 tryfirst
 tseslint
 typeattributes

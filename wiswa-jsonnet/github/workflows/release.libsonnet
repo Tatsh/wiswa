@@ -18,19 +18,36 @@ function(settings)
   {
     jobs: {
       'publish-release': {
-        'if': |||
-          github.event.workflow_run.conclusion == 'success' &&
-          github.event.workflow_run.head_branch &&
-          startsWith(github.event.workflow_run.head_branch, 'v')
-        |||,
         'runs-on': 'ubuntu-latest',
         steps: [
           {
             uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
           {
+            id: 'guard',
+            name: 'Check trigger conditions',
+            env: {
+              HEAD_BRANCH: '${{ github.event.workflow_run.head_branch }}',
+              TRIGGER_CONCLUSION: '${{ github.event.workflow_run.conclusion }}',
+            },
+            run: |||
+              if [[ "$TRIGGER_CONCLUSION" != 'success' ]]; then
+                echo "Triggering workflow concluded with '${TRIGGER_CONCLUSION}', nothing to do."
+                echo 'proceed=false' >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              if [[ -z "$HEAD_BRANCH" || "$HEAD_BRANCH" != v* ]]; then
+                echo "Head branch '${HEAD_BRANCH}' is not a release tag, nothing to do."
+                echo 'proceed=false' >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              echo 'proceed=true' >> "$GITHUB_OUTPUT"
+            |||,
+          },
+          {
             id: 'check',
-            name: 'Check all workflows succeeded',
+            'if': "steps.guard.outputs.proceed == 'true'",
+            name: 'Check all required workflows succeeded',
             env: {
               GH_TOKEN: '${{ github.token }}',
               HEAD_BRANCH: '${{ github.event.workflow_run.head_branch }}',
@@ -41,20 +58,35 @@ function(settings)
               sha="$HEAD_SHA"
               all_success=true
               for workflow in %(workflows)s; do
-                status=$(gh run list --workflow "$workflow" --commit "$sha" --json conclusion --jq '.[0].conclusion')
-                if [[ "$status" == 'failure' || "$status" == 'cancelled' ]]; then
-                  echo "::error::Workflow '$workflow' ${status}."
-                  exit 1
-                elif [[ "$status" != 'success' ]]; then
-                  echo "Workflow '$workflow' still pending, skipping."
-                  all_success=false
+                run=$(gh run list --workflow "$workflow" --commit "$sha" --json status,conclusion --jq '.[0]')
+                if [[ -z "$run" || "$run" == 'null' ]]; then
+                  echo "Workflow '$workflow' did not run for this commit; treating as optional."
+                  continue
                 fi
+                status=$(echo "$run" | jq -r '.status')
+                conclusion=$(echo "$run" | jq -r '.conclusion')
+                case "$conclusion" in
+                  failure|cancelled|timed_out|startup_failure|action_required)
+                    echo "::error::Workflow '$workflow' ${conclusion}."
+                    exit 1
+                    ;;
+                  success|skipped|neutral)
+                    ;;
+                  *)
+                    if [[ "$status" == 'completed' ]]; then
+                      echo "::error::Workflow '$workflow' completed with unexpected conclusion '${conclusion}'."
+                      exit 1
+                    fi
+                    echo "Workflow '$workflow' still pending (status=${status})."
+                    all_success=false
+                    ;;
+                esac
               done
               if [[ "$all_success" != 'true' ]]; then
                 echo 'Not all workflows have completed yet.'
                 exit 0
               fi
-              echo "All workflows succeeded for ${tag}."
+              echo "All required workflows succeeded for ${tag}."
               echo "tag=${tag}" >> "$GITHUB_ENV"
               echo "ready=true" >> "$GITHUB_OUTPUT"
             ||| % { workflows: std.join(' ', watched_workflows) },
@@ -66,6 +98,42 @@ function(settings)
               GH_TOKEN: '${{ github.token }}',
             },
             run: 'gh release edit "$tag" --draft=false',
+          },
+          {
+            'if': 'always()',
+            name: 'Delete prior non-publishing Release runs',
+            env: {
+              GH_TOKEN: '${{ github.token }}',
+              REPO: '${{ github.repository }}',
+              RUN_ID: '${{ github.run_id }}',
+              HEAD_SHA: '${{ github.event.workflow_run.head_sha }}',
+            },
+            run: |||
+              sha="$HEAD_SHA"
+              gh run list --repo "$REPO" --workflow 'Release' --commit "$sha" \
+                --json databaseId,status,conclusion --limit 100 \
+                | jq -r --arg self "$RUN_ID" \
+                    '.[] | select((.databaseId|tostring) != $self) | select(.status == "completed" and (.conclusion == "skipped" or .conclusion == "cancelled" or .conclusion == "neutral")) | .databaseId' \
+                | while read -r id; do
+                    [[ -z "$id" ]] && continue
+                    echo "Deleting prior Release run ${id}."
+                    gh run delete --repo "$REPO" "$id" || true
+                  done
+            |||,
+          },
+          {
+            'if': "steps.guard.outputs.proceed != 'true' || steps.check.outputs.ready != 'true'",
+            name: 'Cancel this run so it can be cleaned up',
+            env: {
+              GH_TOKEN: '${{ github.token }}',
+              REPO: '${{ github.repository }}',
+              RUN_ID: '${{ github.run_id }}',
+            },
+            run: |||
+              echo 'This run did not publish; cancelling so a later run can remove it.'
+              gh run cancel --repo "$REPO" "$RUN_ID" || true
+              sleep 30
+            |||,
           },
         ],
       },
