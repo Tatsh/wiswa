@@ -469,9 +469,18 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
        * @brief Allowed commands.
        * @var string[]
        */
-      allow: std.set((if settings.using_github then ['Bash(gh api *)'] else []) + (
+      allow: std.set((if settings.using_github then [
+                        'Bash(gh api *)',
+                        'Bash(gh release edit *)',
+                        'Bash(gh release list *)',
+                        'Bash(gh release view *)',
+                      ] else []) + (
                        if settings.using_gitlab then ['Bash(glab api *)'] else []
                      ) + [
+                       'Bash(git commit -S -s -F *)',
+                       'Bash(git commit -S -s -m *)',
+                       'Bash(git rev-parse *)',
+                       'Bash(git tag -s * -m *)',
                        'Bash(mkdir --parents .wiswa-ci)',
                        'Bash(mkdir -p .wiswa-ci)',
                        'Bash(mkdir .wiswa-ci)',
@@ -482,11 +491,15 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                                                                        'Bash(uv audit *)',
                                                                        'Bash(uv cache *)',
                                                                        'Bash(uv export *)',
+                                                                       'Bash(uv lock)',
                                                                        'Bash(uv lock *)',
                                                                        'Bash(uv pip *)',
                                                                        'Bash(uv remove *)',
+                                                                       'Bash(uv run cz bump *)',
                                                                        'Bash(uv run mypy *)',
+                                                                       'Bash(uv run pre-commit run -a)',
                                                                        'Bash(uv run pytest *)',
+                                                                       'Bash(uv run python *)',
                                                                        'Bash(uv run ruff *)',
                                                                        'Bash(uv run sphinx-build *)',
                                                                        'Bash(uv run wiswa *)',
@@ -510,8 +523,11 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                                      'Bash(poetry list *)',
                                      'Bash(poetry lock *)',
                                      'Bash(poetry remove *)',
+                                     'Bash(poetry run cz bump *)',
                                      'Bash(poetry run mypy *)',
+                                     'Bash(poetry run pre-commit run -a)',
                                      'Bash(poetry run pytest *)',
+                                     'Bash(poetry run python *)',
                                      'Bash(poetry run ruff *)',
                                      'Bash(poetry run sphinx-build *)',
                                      'Bash(poetry run wiswa *)',
@@ -534,6 +550,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                             'Bash(yarn ruff:fix *)',
                             'Bash(yarn test *)',
                             'Bash(yarn test:cov *)',
+                            'WebFetch(domain:files.pythonhosted.org)',
                             'WebFetch(domain:pypi.org)',
                             'WebFetch(domain:readthedocs.io)',
                           ]) + [
@@ -543,6 +560,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                        'Bash(yarn dict:update *)',
                        'Bash(yarn format *)',
                        'Bash(yarn gen-docs *)',
+                       'Bash(yarn gen-manpage)',
                        'Bash(yarn gen-manpage *)',
                        'Bash(yarn markdownlint-cli2 *)',
                        'Bash(yarn prettier *)',
