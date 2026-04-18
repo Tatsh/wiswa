@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-04-18
+
 ### Added
 
 - GitLab remote project setup (`python-gitlab`): Jsonnet defaults live in `defaults/gitlab.libsonnet`
@@ -70,7 +72,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   package tree; workflow `paths` globs use slashes, not dots.
 - Hatch defaults: `sdist` `include` lists unique top-level package directories (for example `aps`,
   plus `tests` when enabled); `wheel` `packages` use filesystem paths, and namespace-style projects
-  (`primary_module_qualified` ≠ `primary_module` with a dotted qualified name) list only those
+  (`primary_module_qualified` != `primary_module` with a dotted qualified name) list only those
   top-level directories in `packages` (for example `["aps"]`).
 - Commitizen `remove_path_prefixes` and `__init__.py` `version_files` entries use the qualified
   package path; generated coverage and Ruff paths target `__main__.py` and `main.py` under that
@@ -159,7 +161,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   badges.
 - Flatpak manifest: use `build-options.build-args: ['--share=network']` so `flatpak-builder` allows
   PyPI during the module build (the `network: true` key is not a valid `BuilderOptions` field and
-  was ignored). Uv projects install uv with `pip3 install --prefix=/app uv` then run
+  was ignored). Uv projects install uv with `pip3 install --prefix=/app uv`, then run
   `/app/bin/uv pip install --prefix=/app .` (a bare `pip3 install uv` targets the user site and
   breaks `python3 -m uv` under the SDK). Poetry projects use `pip3 install --prefix=/app .`.
 - Jsonnet always emits `tool.hatch.build.targets` for uv-managed projects. It was previously skipped
@@ -435,7 +437,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First version.
 
-[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/Tatsh/wiswa/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Tatsh/wiswa/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Tatsh/wiswa/compare/v0.0.1...v0.1.0
 [0.0.1]: https://github.com/Tatsh/wiswa/releases/tag/v0.0.1
