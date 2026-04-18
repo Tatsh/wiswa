@@ -409,6 +409,8 @@ class Settings(TypedDict):
     """The version of the project."""
     yarn_version: str
     """The version of Yarn to use."""
+    want_cursor_settings: bool
+    """If the project should have a `.cursor/cli-config.json`."""
     _readme_existed: bool
     """
     Whether ``README.md`` existed before the current Wiswa run (informational).

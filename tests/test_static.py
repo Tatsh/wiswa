@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from wiswa.utils.static import copy_static_files, copy_static_files_python
+from wiswa.utils.static import (
+    convert_claude_permissions_to_cursor,
+    copy_static_files,
+    copy_static_files_python,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -18,6 +22,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'project_type': 'python',
         'stubs_only': False,
         'want_ai': True,
+        'want_cursor_settings': False,
         'claude_settings_local': {},
         'want_main': False,
         'has_multiple_entry_points': False,
@@ -26,6 +31,33 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
     }
     base |= overrides
     return base
+
+
+def test_convert_claude_permissions_to_cursor_translations() -> None:
+    """Claude permission strings map to Cursor ``permissions`` entries."""
+    out = convert_claude_permissions_to_cursor({
+        'allow': [
+            'Read(/abs/foo)',
+            'Write(/bar)',
+            'Edit(/baz)',
+            'Update(/qux)',
+            'WebFetch(domain:example.com)',
+            'Bash(uv run pytest *)',
+            'mcp__wiswa-mcp__get_defaults',
+            'mcp__srv',
+        ],
+        'deny': ['Read(/denied)'],
+    })
+    assert out['allow'] == sorted(out['allow'])
+    assert 'Read(abs/foo)' in out['allow']
+    assert 'Write(bar)' in out['allow']
+    assert 'Write(baz)' in out['allow']
+    assert 'Write(qux)' in out['allow']
+    assert 'WebFetch(example.com)' in out['allow']
+    assert 'Shell(uv:run pytest *)' in out['allow']
+    assert 'Mcp(wiswa-mcp:get_defaults)' in out['allow']
+    assert 'Mcp(srv:*)' in out['allow']
+    assert 'Read(denied)' in out['deny']
 
 
 def _setup_module_path(tmp_path: Path) -> Path:
@@ -83,6 +115,32 @@ async def test_copy_static_files_not_wanted_ai_keeps_different_rule(
     settings = cast('Any', _make_settings(want_ai=False))
     await copy_static_files(settings, module_path)
     assert (rules_dir / 'json-yaml.md').read_text() == 'custom user content'
+
+
+async def test_copy_static_files_writes_cursor_cli_when_cursor_settings_enabled(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    module_path = _setup_module_path(tmp_path)
+    cursor_dir = tmp_path / '.cursor'
+    cursor_dir.mkdir(parents=True)
+    (cursor_dir / 'cli-config.json').write_text('{"editor": "vim"}\n', encoding='utf-8')
+    claude = {
+        'permissions': {
+            'allow': ['Read(/project/README.md)'],
+            'deny': [],
+        },
+    }
+    settings = cast(
+        'Any',
+        _make_settings(want_ai=True, want_cursor_settings=True, claude_settings_local=claude),
+    )
+    await copy_static_files(settings, module_path)
+    text = (cursor_dir / 'cli-config.json').read_text(encoding='utf-8')
+    assert '"editor": "vim"' in text
+    assert 'Read(project/README.md)' in text
+    assert (cursor_dir / 'cli-config.json.dist').exists()
+    assert 'Read(project/README.md)' in (cursor_dir /
+                                         'cli-config.json.dist').read_text(encoding='utf-8')
 
 
 async def test_copy_static_files_claude_json_written_when_wanted(

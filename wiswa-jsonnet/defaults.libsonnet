@@ -439,6 +439,11 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    */
   want_ai: true,
   /**
+   * @brief If the project should have a `.cursor/cli-config.json` with permissions derived from the
+   * Claude permissions.
+   */
+  want_cursor_settings: self.want_ai,
+  /**
    * @brief If user-level ``defaults.jsonnet`` is merged with project settings.
    * @details Wiswa reads a ``uses_user_defaults: true`` literal only from ``.wiswa.jsonnet`` to
    *     enable merging; the flag cannot be enabled from user ``defaults.jsonnet`` alone.
@@ -453,107 +458,104 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
        * @brief Allowed commands.
        * @var string[]
        */
-      allow: (if settings.using_github then ['Bash(gh api *)'] else []) + (
-               if settings.using_gitlab then ['Bash(glab api *)'] else []
-             ) + [
-               'Bash(mkdir --parents .wiswa-ci)',
-               'Bash(mkdir -p .wiswa-ci)',
-               'Bash(mkdir .wiswa-ci)',
-               'Bash(mktemp *)',
-             ] + (if settings.project_type == 'python' then (
-                    if settings.package_manager == 'uv' then [
-                                                               'Bash(uv add *)',
-                                                               'Bash(uv audit *)',
-                                                               'Bash(uv cache *)',
-                                                               'Bash(uv export *)',
-                                                               'Bash(uv lock *)',
-                                                               'Bash(uv pip *)',
-                                                               'Bash(uv remove *)',
-                                                               'Bash(uv run mypy *)',
-                                                               'Bash(uv run pytest *)',
-                                                               'Bash(uv run ruff *)',
-                                                               'Bash(uv run sphinx-build *)',
-                                                               'Bash(uv run wiswa *)',
-                                                               'Bash(uv run yapf *)',
-                                                             ] + (if settings.want_pyright then ['Bash(uv run yarn pyright *)'] else [])
-                                                             + (if settings.want_ty then ['Bash(uv run ty *)'] else []) + [
-                      'Bash(uv sync *)',
-                      'Bash(uv tree *)',
-                      'Bash(uv venv *)',
-                      'Bash(uv version *)',
-                    ] else [
-                             'Bash(poetry about *)',
-                             'Bash(poetry add *)',
-                             'Bash(poetry cache *)',
-                             'Bash(poetry check *)',
-                             'Bash(poetry debug *)',
-                             'Bash(poetry env *)',
-                             'Bash(poetry export *)',
-                             'Bash(poetry help *)',
-                             'Bash(poetry install *)',
-                             'Bash(poetry list *)',
-                             'Bash(poetry lock *)',
-                             'Bash(poetry remove *)',
-                             'Bash(poetry run mypy *)',
-                             'Bash(poetry run pytest *)',
-                             'Bash(poetry run ruff *)',
-                             'Bash(poetry run sphinx-build *)',
-                             'Bash(poetry run wiswa *)',
-                             'Bash(poetry run yapf *)',
-                           ] + (if settings.want_pyright then ['Bash(poetry run yarn pyright *)'] else [])
-                           + (if settings.want_ty then ['Bash(poetry run ty *)'] else []) + [
-                      'Bash(poetry search *)',
-                      'Bash(poetry show *)',
-                      'Bash(poetry sync *)',
-                      'Bash(poetry up *)',
-                      'Bash(poetry update *)',
-                      'Bash(poetry version *)',
-                    ]
-                  ) + [
-                    'Bash(yarn mypy *)',
-                  ] + (
-                    if settings.want_pyright then ['Bash(yarn pyright *)'] else []
-                  ) + [
-                    'Bash(yarn ruff *)',
-                    'Bash(yarn ruff:fix *)',
-                    'Bash(yarn test *)',
-                    'Bash(yarn test:cov *)',
-                    'Read(~/.cache/mypy/**)',
-                    'Read(~/.cache/uv/**)',
-                    'WebFetch(domain:pypi.org)',
-                    'WebFetch(domain:readthedocs.io)',
-                    'Write(~/.cache/mypy/**)',
-                    'Write(~/.cache/uv/**)',
-                  ]) + [
-               'Bash(rm --force ./.vscode/dictionary.txt)',
-               'Bash(rm -f ./.vscode/dictionary.txt)',
-               'Bash(rm ./.vscode/dictionary.txt)',
-               'Bash(yarn check-formatting *)',
-               'Bash(yarn check-spelling *)',
-               'Bash(yarn cspell *)',
-               'Bash(yarn dict:update *)',
-               'Bash(yarn format *)',
-               'Bash(yarn gen-docs *)',
-               'Bash(yarn gen-manpage *)',
-               'Bash(yarn markdownlint-cli2 *)',
-               'Bash(yarn prettier *)',
-               'Bash(yarn qa *)',
-               'Bash(yarn regen *)',
-               'Edit(/.vscode/dictionary.txt)',
-               'Edit(/.wiswa-ci/**)',
-               'Read(/.vscode/dictionary.txt)',
-               'Read(/.wiswa-ci/**)',
-               'Update(/.vscode/dictionary.txt)',
-               'WebFetch(domain:npmjs.com)',
-             ] + (if settings.project_type == 'c' || settings.project_type == 'c++' then [
-                    'Bash(cmake *)',
-                    'Bash(clang-format *)',
-                    'Bash(vcpkg *)',
-                  ] else []) +
-             (if settings.using_github then ['WebFetch(domain:api.github.com)'] else []) +
-             (if settings.using_gitlab && std.length(utils.repositoryUriHost(settings.repository_uri)) > 0
-              then ['WebFetch(domain:%s)' % utils.repositoryUriHost(settings.repository_uri)]
-              else []),
+      allow: std.set((if settings.using_github then ['Bash(gh api *)'] else []) + (
+                       if settings.using_gitlab then ['Bash(glab api *)'] else []
+                     ) + [
+                       'Bash(mkdir --parents .wiswa-ci)',
+                       'Bash(mkdir -p .wiswa-ci)',
+                       'Bash(mkdir .wiswa-ci)',
+                       'Bash(mktemp *)',
+                     ] + (if settings.project_type == 'python' then (
+                            if settings.package_manager == 'uv' then [
+                                                                       'Bash(uv add *)',
+                                                                       'Bash(uv audit *)',
+                                                                       'Bash(uv cache *)',
+                                                                       'Bash(uv export *)',
+                                                                       'Bash(uv lock *)',
+                                                                       'Bash(uv pip *)',
+                                                                       'Bash(uv remove *)',
+                                                                       'Bash(uv run mypy *)',
+                                                                       'Bash(uv run pytest *)',
+                                                                       'Bash(uv run ruff *)',
+                                                                       'Bash(uv run sphinx-build *)',
+                                                                       'Bash(uv run wiswa *)',
+                                                                       'Bash(uv run yapf *)',
+                                                                     ] + (if settings.want_pyright then ['Bash(uv run yarn pyright *)'] else [])
+                                                                     + (if settings.want_ty then ['Bash(uv run ty *)'] else []) + [
+                              'Bash(uv sync *)',
+                              'Bash(uv tree *)',
+                              'Bash(uv venv *)',
+                              'Bash(uv version *)',
+                            ] else [
+                                     'Bash(poetry about *)',
+                                     'Bash(poetry add *)',
+                                     'Bash(poetry cache *)',
+                                     'Bash(poetry check *)',
+                                     'Bash(poetry debug *)',
+                                     'Bash(poetry env *)',
+                                     'Bash(poetry export *)',
+                                     'Bash(poetry help *)',
+                                     'Bash(poetry install *)',
+                                     'Bash(poetry list *)',
+                                     'Bash(poetry lock *)',
+                                     'Bash(poetry remove *)',
+                                     'Bash(poetry run mypy *)',
+                                     'Bash(poetry run pytest *)',
+                                     'Bash(poetry run ruff *)',
+                                     'Bash(poetry run sphinx-build *)',
+                                     'Bash(poetry run wiswa *)',
+                                     'Bash(poetry run yapf *)',
+                                   ] + (if settings.want_pyright then ['Bash(poetry run yarn pyright *)'] else [])
+                                   + (if settings.want_ty then ['Bash(poetry run ty *)'] else []) + [
+                              'Bash(poetry search *)',
+                              'Bash(poetry show *)',
+                              'Bash(poetry sync *)',
+                              'Bash(poetry up *)',
+                              'Bash(poetry update *)',
+                              'Bash(poetry version *)',
+                            ]
+                          ) + [
+                            'Bash(yarn mypy *)',
+                          ] + (
+                            if settings.want_pyright then ['Bash(yarn pyright *)'] else []
+                          ) + [
+                            'Bash(yarn ruff *)',
+                            'Bash(yarn ruff:fix *)',
+                            'Bash(yarn test *)',
+                            'Bash(yarn test:cov *)',
+                            'Read(~/.cache/mypy/**)',
+                            'Read(~/.cache/uv/**)',
+                            'WebFetch(domain:pypi.org)',
+                            'WebFetch(domain:readthedocs.io)',
+                            'Write(~/.cache/mypy/**)',
+                            'Write(~/.cache/uv/**)',
+                          ]) + [
+                       'Bash(yarn check-formatting *)',
+                       'Bash(yarn check-spelling *)',
+                       'Bash(yarn cspell *)',
+                       'Bash(yarn dict:update *)',
+                       'Bash(yarn format *)',
+                       'Bash(yarn gen-docs *)',
+                       'Bash(yarn gen-manpage *)',
+                       'Bash(yarn markdownlint-cli2 *)',
+                       'Bash(yarn prettier *)',
+                       'Bash(yarn qa *)',
+                       'Bash(yarn regen *)',
+                       'Edit(/.vscode/dictionary.txt)',
+                       'Edit(/.wiswa-ci/**)',
+                       'Read(/.vscode/dictionary.txt)',
+                       'Read(/.wiswa-ci/**)',
+                       'Update(/.vscode/dictionary.txt)',
+                       'WebFetch(domain:npmjs.com)',
+                     ] + (if settings.project_type == 'c' || settings.project_type == 'c++' then [
+                            'Bash(cmake *)',
+                            'Bash(clang-format *)',
+                            'Bash(vcpkg *)',
+                          ] else []) +
+                     (if settings.using_github then ['WebFetch(domain:api.github.com)'] else []) +
+                     (if settings.using_gitlab && std.length(utils.repositoryUriHost(settings.repository_uri)) > 0
+                      then ['WebFetch(domain:%s)' % utils.repositoryUriHost(settings.repository_uri)]
+                      else [])),
     },
   },
   /**
@@ -994,6 +996,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     '/.claude/settings.json',
     '/.claude/settings.local.json',
   ] else [],
+  local cursor_ignore = if self.want_cursor_settings then ['/.cursor/cli-config.json'] else [],
   local python_ignore = if self.project_type == 'python' then [
     '.venv/',
     '/docs/_build/',
@@ -1008,7 +1011,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   local typescript_ignore = if self.project_type == 'typescript' then ['/coverage/'] else [],
   /** @brief Array of .gitignore entries. */
   gitignore: std.set(self.shared_ignore + python_ignore + cpp_ignore + typescript_ignore +
-                     claude_ignore + if !self.keep_dist then ['/dist/'] else []),
+                     claude_ignore + cursor_ignore + if !self.keep_dist then ['/dist/'] else []),
 
   // C/C++ only
   local clang_format = import 'defaults/clang-format.libsonnet',

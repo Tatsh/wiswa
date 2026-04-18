@@ -11,6 +11,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Jsonnet `want_cursor_settings` (defaults to `want_ai`): when enabled, Wiswa writes
+  `.cursor/cli-config.json` and `.cursor/cli-config.json.dist` with Cursor CLI permissions
+  translated from the generated Claude local settings, and adds `/.cursor/cli-config.json` to the
+  generated `.gitignore` so local overrides stay untracked.
 - GitLab remote project setup (`python-gitlab`): Jsonnet defaults live in `defaults/gitlab.libsonnet`
   and merge with `gitlab+:` overrides; `using_gitlab` detects GitLab hosts from `repository_uri`.
 - CLI `--skip-remote` to skip GitHub or GitLab API configuration (replaces `--skip-github` /
