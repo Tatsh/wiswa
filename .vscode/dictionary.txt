@@ -300,6 +300,7 @@ wraparguments
 wrapcollections
 wrapparameters
 wrapselection
+writable
 xcrun
 yapf
 yapfignore
