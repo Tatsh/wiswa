@@ -222,6 +222,7 @@ regen
 renderable
 renderables
 resp
+ripgreprc
 rockspec
 rstcheck
 ruiquelhas
