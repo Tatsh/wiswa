@@ -11,10 +11,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Jsonnet `want_cursor_settings` (defaults to `want_ai`): when enabled, Wiswa writes
-  `.cursor/cli-config.json` and `.cursor/cli-config.json.dist` with Cursor CLI permissions
-  translated from the generated Claude local settings, and adds `/.cursor/cli-config.json` to the
-  generated `.gitignore` so local overrides stay untracked.
 - GitLab remote project setup (`python-gitlab`): Jsonnet defaults live in `defaults/gitlab.libsonnet`
   and merge with `gitlab+:` overrides; `using_gitlab` detects GitLab hosts from `repository_uri`.
 - CLI `--skip-remote` to skip GitHub or GitLab API configuration (replaces `--skip-github` /
@@ -44,10 +40,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- `convert_claude_permissions_to_cursor` now maps Claude `Bash(...)` / `PowerShell(...)` lines to
-  Cursor `Shell(...)` entries using a space-separated command (and drops trailing `*` globs) so
-  generated `.cursor/cli-config.json` matches the Cursor CLI permission shape; the bundled
-  `.cursor/cli-config.json.dist` allow list is updated to match.
 - Jsonnet GitLab defaults no longer force `container_registry_access_level: 'disabled'`; project
   setup now relies on the GitLab server default when applying remote settings.
 - Generated `yarn gen-docs` and `yarn gen-manpage` scripts always include

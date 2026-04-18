@@ -17,7 +17,6 @@
 .pnp.*
 .shellcheckrc
 .venv/
-/.cursor/plans/
 /.wiswa-ci/
 /.yarn/**/*.cjs
 /.yarn/install-state.gz

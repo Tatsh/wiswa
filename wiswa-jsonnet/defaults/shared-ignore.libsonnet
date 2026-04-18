@@ -15,7 +15,6 @@
   '.cspellcache',
   '.directory',
   '.pnp.*',
-  '/.cursor/plans/',
   '/.wiswa-ci/',
   '/.yarn/install-state.gz',
   '/build/',

@@ -7,7 +7,6 @@ from shutil import copyfile
 from typing import TYPE_CHECKING, Any
 import json
 import logging
-import re
 
 from anyio.to_thread import run_sync
 import anyio
@@ -19,7 +18,7 @@ if TYPE_CHECKING:
 
     from wiswa.typing import Settings
 
-__all__ = ('convert_claude_permissions_to_cursor', 'copy_static_files')
+__all__ = ('copy_static_files',)
 
 log = logging.getLogger(__name__)
 
@@ -96,60 +95,6 @@ async def copy_static_files_python(settings: Settings, module_path: Path) -> Non
         await copy_file('main.py')
 
 
-_CLAUDE_MCP_PERM_LENGTH_NO_TOOL = 2
-
-
-def convert_claude_permissions_to_cursor(
-        claude_permissions: Mapping[str, Sequence[str]]) -> dict[str, list[str]]:
-    """
-    Convert Claude permissions to Cursor permissions.
-
-    Parameters
-    ----------
-    claude_permissions : Mapping[str, Sequence[str]]
-        The permissions from `.claude/settings.local.json`.
-
-    Returns
-    -------
-    dict[str, list[str]]
-        The converted permissions for `.cursor/cli-config.json`.
-    """
-    cursor_permissions: dict[str, list[str]] = {'allow': [], 'deny': []}
-    for action in ('allow', 'deny'):
-        for permission in claude_permissions.get(action, []):
-            if permission.startswith(('Read(', 'Write(')):
-                cursor_permissions[action].append(
-                    re.sub(r'^(Read|Write)\(/(.*)', r'\1(\2', permission))
-            elif permission.startswith(('Edit(', 'Update(')):
-                cursor_permissions[action].append(
-                    re.sub(r'^(Edit|Update)\(/(.*)', r'Write(\2', permission))
-            elif permission.startswith('WebFetch('):
-                cursor_permissions[action].append(
-                    permission.replace('WebFetch(domain:', 'WebFetch('))
-            elif permission.startswith(('Bash(', 'PowerShell(')):
-                perm = [
-                    x.strip() for x in re.sub(r'^(Bash|PowerShell)\(', '',
-                                              re.sub(r' \*\)$', '', permission)).split()
-                ]
-                perm[-1] = perm[-1].rstrip(')')
-                cursor_permissions[action].append(f'Shell({" ".join(perm)})')
-            elif permission.startswith('mcp__'):
-                split_perm = permission.split('__', 2)
-                tool_name = '*'
-                if len(split_perm) == _CLAUDE_MCP_PERM_LENGTH_NO_TOOL:  # Implied asterisk.
-                    name_of_mcp = split_perm[1]
-                # Explicit asterisk or specific tool.
-                else:
-                    name_of_mcp = split_perm[1]
-                    tool_name = split_perm[2]
-                cursor_permissions[action].append(f'Mcp({name_of_mcp}:{tool_name})')
-            else:
-                log.warning('Unrecognized permission `%s` when translating for Cursor.', permission)
-    cursor_permissions['allow'] = sorted(set(cursor_permissions['allow']))
-    cursor_permissions['deny'] = sorted(set(cursor_permissions['deny']))
-    return cursor_permissions
-
-
 async def copy_static_files(settings: Settings, module_path: Path) -> None:
     """
     Copy static files to the current directory.
@@ -174,19 +119,6 @@ async def copy_static_files(settings: Settings, module_path: Path) -> None:
     await _sync_json_file(Path('.claude/settings.local.json.dist'),
                           settings['claude_settings_local'],
                           wanted=settings['want_ai'])
-    content: dict[str, Any] = {}
-    if await anyio.Path('.cursor/cli-config.json').exists():
-        content = json.loads(await
-                             anyio.Path('.cursor/cli-config.json').read_text(encoding='utf-8'))
-    if settings['want_cursor_settings']:
-        permissions = convert_claude_permissions_to_cursor(
-            settings['claude_settings_local']['permissions'])
-        await _sync_json_file(Path('.cursor/cli-config.json'),
-                              content | {'permissions': permissions},
-                              wanted=True)
-        await _sync_json_file(Path('.cursor/cli-config.json.dist'),
-                              content | {'permissions': permissions},
-                              wanted=True)
     match settings['project_type']:
         case 'python':
             await copy_static_files_python(settings, module_path)

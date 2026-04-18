@@ -439,11 +439,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    */
   want_ai: true,
   /**
-   * @brief If the project should have a `.cursor/cli-config.json` with permissions derived from the
-   * Claude permissions.
-   */
-  want_cursor_settings: self.want_ai,
-  /**
    * @brief If user-level ``defaults.jsonnet`` is merged with project settings.
    * @details Wiswa reads a ``uses_user_defaults: true`` literal only from ``.wiswa.jsonnet`` to
    *     enable merging; the flag cannot be enabled from user ``defaults.jsonnet`` alone.
@@ -996,7 +991,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     '/.claude/settings.json',
     '/.claude/settings.local.json',
   ] else [],
-  local cursor_ignore = if self.want_cursor_settings then ['/.cursor/cli-config.json'] else [],
   local python_ignore = if self.project_type == 'python' then [
     '.venv/',
     '/docs/_build/',
@@ -1011,7 +1005,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   local typescript_ignore = if self.project_type == 'typescript' then ['/coverage/'] else [],
   /** @brief Array of .gitignore entries. */
   gitignore: std.set(self.shared_ignore + python_ignore + cpp_ignore + typescript_ignore +
-                     claude_ignore + cursor_ignore + if !self.keep_dist then ['/dist/'] else []),
+                     claude_ignore + if !self.keep_dist then ['/dist/'] else []),
 
   // C/C++ only
   local clang_format = import 'defaults/clang-format.libsonnet',
