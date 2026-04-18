@@ -214,6 +214,7 @@ pypa
 pypi
 pyproject
 pytest
+pythonhosted
 qstringbuilder
 qtcore
 ramda
