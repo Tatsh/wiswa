@@ -249,6 +249,29 @@ async def test_post_process_steps_removes_legacy_wiswa_ai_files(tmp_path: Path,
     assert not legacy_gh.exists()
 
 
+async def test_post_process_steps_creates_wiswa_ci_cache_dirs(tmp_path: Path,
+                                                              monkeypatch: pytest.MonkeyPatch,
+                                                              mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings(want_ai=True))
+    await post_process_steps(settings)
+    for subdir in ('mypy', 'ruff', 'uv', 'yarn'):
+        assert (tmp_path / '.wiswa-ci' / 'cache' / subdir).is_dir()
+
+
+async def test_post_process_steps_skips_cache_dirs_when_no_ai(tmp_path: Path,
+                                                              monkeypatch: pytest.MonkeyPatch,
+                                                              mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings(want_ai=False))
+    await post_process_steps(settings)
+    assert not (tmp_path / '.wiswa-ci' / 'cache').exists()
+
+
 async def test_post_process_steps_python_no_tests(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
                                                   mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)

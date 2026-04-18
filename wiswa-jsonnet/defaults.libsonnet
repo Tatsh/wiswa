@@ -447,6 +447,22 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   uses_user_defaults: false,
   /** @brief JSON object written to ``.claude/settings.local.json.dist`` when ``want_ai`` is true. */
   claude_settings_local: {
+    /**
+     * @brief Environment variables injected into every Claude Code subprocess.
+     * @details Redirect tool caches into ``.wiswa-ci/cache/`` so writes land inside the repo
+     * (already sandbox-writable and gitignored) instead of under ``~/.cache``. Eliminates
+     * sandbox-bypass prompts when running ``yarn qa`` and similar.
+     */
+    env: {
+      /** @brief mypy cache directory. */
+      MYPY_CACHE_DIR: '.wiswa-ci/cache/mypy',
+      /** @brief Ruff cache directory. */
+      RUFF_CACHE_DIR: '.wiswa-ci/cache/ruff',
+      /** @brief uv cache directory. */
+      UV_CACHE_DIR: '.wiswa-ci/cache/uv',
+      /** @brief Yarn Berry global cache directory. */
+      YARN_CACHE_FOLDER: '.wiswa-ci/cache/yarn',
+    },
     /** @brief Permissions dictionary. */
     permissions: {
       /**
@@ -518,12 +534,8 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                             'Bash(yarn ruff:fix *)',
                             'Bash(yarn test *)',
                             'Bash(yarn test:cov *)',
-                            'Read(~/.cache/mypy/**)',
-                            'Read(~/.cache/uv/**)',
                             'WebFetch(domain:pypi.org)',
                             'WebFetch(domain:readthedocs.io)',
-                            'Write(~/.cache/mypy/**)',
-                            'Write(~/.cache/uv/**)',
                           ]) + [
                        'Bash(yarn check-formatting *)',
                        'Bash(yarn check-spelling *)',

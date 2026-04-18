@@ -152,6 +152,29 @@ async def _remove_legacy_wiswa_ai_files() -> None:
             log.debug('Removed legacy Wiswa AI file `%s`.', relative)
 
 
+async def _create_wiswa_ci_cache_dirs(settings: Settings) -> None:
+    """
+    Create ``.wiswa-ci/cache`` subdirectories for tool caches when ``want_ai`` is enabled.
+
+    Tools launched from Claude Code subprocesses use environment variables (``UV_CACHE_DIR``,
+    ``YARN_CACHE_FOLDER``, ``MYPY_CACHE_DIR``, ``RUFF_CACHE_DIR``) set in
+    ``.claude/settings.local.json`` to redirect their caches into this tree so writes land inside
+    the repo (sandbox-writable and gitignored) rather than ``~/.cache``. Pre-creating the
+    directories keeps tools that refuse to auto-create their cache parent from failing on first
+    run.
+
+    Parameters
+    ----------
+    settings : Settings
+        Project settings.
+    """
+    if not settings['want_ai']:
+        return
+    for subdir in ('mypy', 'ruff', 'uv', 'yarn'):
+        await anyio.Path(f'.wiswa-ci/cache/{subdir}').mkdir(parents=True, exist_ok=True)
+    log.debug('Created `.wiswa-ci/cache` subdirectories.')
+
+
 async def _subprocess_log_run(
         cmd: Iterable[str],
         on_command: Callable[[str], None] | None = None,
@@ -926,7 +949,7 @@ async def post_process_steps(settings: Settings,
                               stderr=asyncio.subprocess.PIPE,
                               stdout=asyncio.subprocess.PIPE)
     await asyncio.gather(
-        _remove_legacy_wiswa_ai_files(),
+        _create_wiswa_ci_cache_dirs(settings), _remove_legacy_wiswa_ai_files(),
         _run_prettier_then_markdownlint_fix(debug=debug, on_command=on_command, env=yarn_env),
         _run_postprocess_language_formatters(settings,
                                              debug=debug,
