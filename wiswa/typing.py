@@ -370,8 +370,6 @@ class Settings(TypedDict):
     """Visual Studio Code settings."""
     want_ai: bool
     """If the project should include ``AGENTS.md``, ``CLAUDE.md``, and the ``.claude/`` tree."""
-    using_beads: bool
-    """If Beads issue-tracker instructions should appear in ``AGENTS.md``."""
     uses_user_defaults: bool
     """
     If user-level ``defaults.jsonnet`` is merged with project settings.

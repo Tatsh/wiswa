@@ -439,11 +439,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    */
   want_ai: true,
   /**
-   * @brief If using beads with AI tooling. All this does is add the Beads instructions to ``AGENTS.md``.
-   * @var boolean
-   */
-  using_beads: false,
-  /**
    * @brief If user-level ``defaults.jsonnet`` is merged with project settings.
    * @details Wiswa reads a ``uses_user_defaults: true`` literal only from ``.wiswa.jsonnet`` to
    *     enable merging; the flag cannot be enabled from user ``defaults.jsonnet`` alone.

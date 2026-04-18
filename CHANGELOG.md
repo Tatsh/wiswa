@@ -130,6 +130,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
+- Jsonnet `using_beads` and the optional Beads issue-tracker section in generated `AGENTS.md`.
 - Jsonnet `primary_module_implicit_namespace`; namespace-style layout is inferred when
   `primary_module_qualified` differs from `primary_module` and contains a dot (documented on
   `primary_module` and `primary_module_qualified`).

@@ -106,7 +106,6 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         '_has_established_pytest_modules': False,
         'want_ai': True,
         'want_appimage': True,
-        'using_beads': False,
     }
     return base | overrides
 
