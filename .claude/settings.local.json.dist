@@ -1,4 +1,10 @@
 {
+  "env": {
+    "MYPY_CACHE_DIR": ".wiswa-ci/cache/mypy",
+    "RUFF_CACHE_DIR": ".wiswa-ci/cache/ruff",
+    "UV_CACHE_DIR": ".wiswa-ci/cache/uv",
+    "YARN_CACHE_FOLDER": ".wiswa-ci/cache/yarn"
+  },
   "permissions": {
     "allow": [
       "Bash(gh api *)",
@@ -46,15 +52,11 @@
       "Edit(/.wiswa-ci/**)",
       "Read(/.vscode/dictionary.txt)",
       "Read(/.wiswa-ci/**)",
-      "Read(~/.cache/mypy/**)",
-      "Read(~/.cache/uv/**)",
       "Update(/.vscode/dictionary.txt)",
       "WebFetch(domain:api.github.com)",
       "WebFetch(domain:npmjs.com)",
       "WebFetch(domain:pypi.org)",
-      "WebFetch(domain:readthedocs.io)",
-      "Write(~/.cache/mypy/**)",
-      "Write(~/.cache/uv/**)"
+      "WebFetch(domain:readthedocs.io)"
     ]
   }
 }
