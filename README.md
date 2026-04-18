@@ -54,7 +54,7 @@ virtual environment with your usual workflow.
 
 ## Usage
 
-[![asciicast](https://asciinema.org/a/n19f7TQdVtiNnOaf.svg)](https://asciinema.org/a/n19f7TQdVtiNnOaf)
+![demo](demo.gif)
 
 Add `-d` to show debug logs.
 

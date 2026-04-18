@@ -26,6 +26,11 @@ inside the project virtual environment with your usual workflow.
 
    .. include:: badges.rst
 
+.. only:: html
+
+   .. image:: ../demo.gif
+      :alt: demo
+
 .. click:: wiswa.main:main
    :prog: wiswa
    :nested: full
