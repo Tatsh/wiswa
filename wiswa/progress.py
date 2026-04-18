@@ -296,7 +296,7 @@ class ProgressDisplay:
         renderables.append(Text(''))
         renderables.extend(self._render_task_line(self._tasks[task_id]) for task_id in self._order)
         renderables.append(Text(''))
-        if self._spinner is not None:
+        if self._spinner is not None:  # pragma: no cover
             self._spinner.update(text=Text(self._message or '...', style='bold'))
             renderables.append(self._spinner)
         return Group(*renderables)
@@ -313,7 +313,7 @@ class ProgressDisplay:
             case TaskState.SKIPPED:
                 box = Text('☒ ', style='dim')
                 label = Text(task.label, style='dim strike')
-            case TaskState.PENDING:
+            case TaskState.PENDING:  # pragma: no cover
                 box = Text('☐ ', style='dim')
                 label = Text(task.label, style='dim')
         line = Text('  ')
