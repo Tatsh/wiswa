@@ -58,10 +58,10 @@ dependencies = [
   "keyring>=25.7.0",
   "lxml>=6.0.3",
   "niquests-cache>=0.0.3",
-  "niquests>=3.18.4",
+  "niquests>=3.18.5",
   "platformdirs>=4.9.6",
   "python-gitlab>=8.2.0",
-  "rich>=14.3.3",
+  "rich>=14.3.4",
   "tomlkit>=0.14.0",
   "typing-extensions>=4.15.0",
 ]
