@@ -9,6 +9,7 @@ appdir
 appimage
 appinfo
 appstore
+asciicast
 asyncio
 authenticode
 autodoc
