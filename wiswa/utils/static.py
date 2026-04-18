@@ -96,7 +96,6 @@ async def copy_static_files_python(settings: Settings, module_path: Path) -> Non
         await copy_file('main.py')
 
 
-_CLAUDE_MCP_PERM_LENGTH_WITH_TOOL = 3
 _CLAUDE_MCP_PERM_LENGTH_NO_TOOL = 2
 
 
@@ -130,24 +129,19 @@ def convert_claude_permissions_to_cursor(
             elif permission.startswith(('Bash(', 'PowerShell(')):
                 perm = [
                     x.strip() for x in re.sub(r'^(Bash|PowerShell)\(', '',
-                                              re.sub(r'\*\)', '*', permission)).split()
+                                              re.sub(r' \*\)$', '', permission)).split()
                 ]
                 perm[-1] = perm[-1].rstrip(')')
-                cursor_permissions[action].append(
-                    f'Shell({perm[0]}' + (f':{" ".join(perm[1:])}' if len(perm) > 1 else '') + ')')
+                cursor_permissions[action].append(f'Shell({" ".join(perm)})')
             elif permission.startswith('mcp__'):
                 split_perm = permission.split('__', 2)
                 tool_name = '*'
                 if len(split_perm) == _CLAUDE_MCP_PERM_LENGTH_NO_TOOL:  # Implied asterisk.
                     name_of_mcp = split_perm[1]
                 # Explicit asterisk or specific tool.
-                elif len(split_perm) == _CLAUDE_MCP_PERM_LENGTH_WITH_TOOL:
+                else:
                     name_of_mcp = split_perm[1]
                     tool_name = split_perm[2]
-                else:
-                    log.warning('Unrecognized permission `%s` when translating for Cursor.',
-                                permission)
-                    continue
                 cursor_permissions[action].append(f'Mcp({name_of_mcp}:{tool_name})')
             else:
                 log.warning('Unrecognized permission `%s` when translating for Cursor.', permission)

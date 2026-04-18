@@ -37,14 +37,9 @@ def test_convert_claude_permissions_to_cursor_translations() -> None:
     """Claude permission strings map to Cursor ``permissions`` entries."""
     out = convert_claude_permissions_to_cursor({
         'allow': [
-            'Read(/abs/foo)',
-            'Write(/bar)',
-            'Edit(/baz)',
-            'Update(/qux)',
-            'WebFetch(domain:example.com)',
-            'Bash(uv run pytest *)',
-            'mcp__wiswa-mcp__get_defaults',
-            'mcp__srv',
+            'Read(/abs/foo)', 'Write(/bar)', 'Edit(/baz)', 'Update(/qux)',
+            'WebFetch(domain:example.com)', 'Bash(uv run pytest *)', 'mcp__wiswa-mcp__get_defaults',
+            'mcp__srv', 'NotARealPermission()'
         ],
         'deny': ['Read(/denied)'],
     })
@@ -54,7 +49,7 @@ def test_convert_claude_permissions_to_cursor_translations() -> None:
     assert 'Write(baz)' in out['allow']
     assert 'Write(qux)' in out['allow']
     assert 'WebFetch(example.com)' in out['allow']
-    assert 'Shell(uv:run pytest *)' in out['allow']
+    assert 'Shell(uv run pytest)' in out['allow']
     assert 'Mcp(wiswa-mcp:get_defaults)' in out['allow']
     assert 'Mcp(srv:*)' in out['allow']
     assert 'Read(denied)' in out['deny']

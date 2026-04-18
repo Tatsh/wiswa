@@ -44,6 +44,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `convert_claude_permissions_to_cursor` now maps Claude `Bash(...)` / `PowerShell(...)` lines to
+  Cursor `Shell(...)` entries using a space-separated command (and drops trailing `*` globs) so
+  generated `.cursor/cli-config.json` matches the Cursor CLI permission shape; the bundled
+  `.cursor/cli-config.json.dist` allow list is updated to match.
 - Jsonnet GitLab defaults no longer force `container_registry_access_level: 'disabled'`; project
   setup now relies on the GitLab server default when applying remote settings.
 - Generated `yarn gen-docs` and `yarn gen-manpage` scripts always include
