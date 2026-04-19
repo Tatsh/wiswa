@@ -9,7 +9,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-04-12T00:41:23.000340925Z"
+exclude-newer = "2026-04-12T00:51:55.861209422Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
@@ -1847,16 +1847,18 @@ wheels = [
 
 [[package]]
 name = "niquests-cache"
-version = "0.0.3"
+version = "0.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "aiosqlite" },
+    { name = "anyio" },
     { name = "niquests" },
     { name = "platformdirs" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/82/83/28a81393abb1e41d5c3771b8c281c5abb6a7ee4eb3c0986d1c85ea0fb688/niquests_cache-0.0.3.tar.gz", hash = "sha256:292f0093e31d32cf37ed8127bf2a6892fbbcc6273458b51d25291592d7741a84", size = 10391, upload-time = "2026-04-12T04:05:06.593Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/06/90/7b1a2b5066e5d9af5694c6cf1441fb113f39dc37e20afafe87a79e8cc1ca/niquests_cache-0.1.0.tar.gz", hash = "sha256:6b72341f98a3c480eeb412bcd2fd25264eca74460c326a380839aabef02011ad", size = 20984, upload-time = "2026-04-19T00:47:46.509Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/c9/9e08677b85e709f1a6ecf1c51687ea42c9a10bb816fe13d7c4425490536e/niquests_cache-0.0.3-py3-none-any.whl", hash = "sha256:c4f62a320cd993c002951f0268d40f98b960759cf1d66f15452bae4baf1a47b3", size = 6779, upload-time = "2026-04-12T04:05:05.374Z" },
+    { url = "https://files.pythonhosted.org/packages/3d/09/ffd17dc823a0c7be808e02902d7081f2bf203eb27d5430b5eeccc495cfb9/niquests_cache-0.1.0-py3-none-any.whl", hash = "sha256:2c8ebc09ef347a748dded2260fba86402051ab61a8329255a717eb3b7fcf2101", size = 18030, upload-time = "2026-04-19T00:47:44.938Z" },
 ]
 
 [[package]]
@@ -3731,7 +3733,7 @@ requires-dist = [
     { name = "keyring", specifier = ">=25.7.0" },
     { name = "lxml", specifier = ">=6.0.3" },
     { name = "niquests", specifier = ">=3.18.5" },
-    { name = "niquests-cache", specifier = ">=0.0.3" },
+    { name = "niquests-cache", specifier = ">=0.1.0" },
     { name = "platformdirs", specifier = ">=4.9.6" },
     { name = "python-gitlab", specifier = ">=8.2.0" },
     { name = "rich", specifier = ">=14.3.4" },
