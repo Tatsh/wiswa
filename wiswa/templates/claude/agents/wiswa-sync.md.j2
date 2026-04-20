@@ -12,7 +12,8 @@ When a managed file is modified directly (e.g.
 {%- elif settings.project_type == 'c' or settings.project_type == 'c++' %} manual
 `CMakeLists.txt` or `vcpkg.json` edits,
 {%- else %} manual edits to generated config files,
-{%- endif %} etc.), you update `.wiswa.jsonnet` so that running Wiswa
+{%- endif %} etc.), you
+update `.wiswa.jsonnet` so that running Wiswa
 again would produce the same result.
 
 ## Context
@@ -170,7 +171,8 @@ For example, if a dependency is added to `vcpkg.json`, the override in `.wiswa.j
 {%- if settings.project_type == 'python' %} `pyproject.toml`,
 {%- elif settings.project_type == 'typescript' %} `tsconfig.json`,
 {%- elif settings.project_type == 'c' or settings.project_type == 'c++' %} `CMakeLists.txt`, `vcpkg.json`,
-{%- endif %} `package.json`) to identify what changed.
+{%- endif %} `package.json`)
+   to identify what changed.
 
 3. **Read the relevant defaults** (`defaults.libsonnet`
 {%- if settings.project_type == 'python' %}, `defaults/python-deps.libsonnet`{% endif %}, etc.)
