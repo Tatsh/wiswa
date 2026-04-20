@@ -206,6 +206,9 @@
    * @brief Get the latest version of an npm package.
    *
    * Requires a native function `latestNpmPackageVersion` to be defined in the Jsonnet environment.
+   * The returned version is automatically constrained by the project-wide `node_engine` setting
+   * (default `>=20.0`), filtering out package versions whose own `engines.node` demands a newer
+   * Node major.
    *
    * @param package The npm package name.
    * @returns The latest version string.
@@ -217,6 +220,9 @@
    * @brief Get the latest version of an npm package, prefixed with a caret (^).
    *
    * Requires a native function `latestNpmPackageVersion` to be defined in the Jsonnet environment.
+   * The returned version is automatically constrained by the project-wide `node_engine` setting
+   * (default `>=20.0`), filtering out package versions whose own `engines.node` demands a newer
+   * Node major.
    *
    * @param package The npm package name.
    * @returns The latest version string prefixed with `^`.

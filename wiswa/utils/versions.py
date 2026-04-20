@@ -52,6 +52,41 @@ _YARNRC_FILENAME = '.yarnrc.yml'
 _GITHUB_RELEASES_PAGE_CAP = 20
 _GITHUB_RELEASES_PER_PAGE = 100
 
+_NODE_RANGE_RE = re.compile(r'>=\s*(\d+)')
+"""
+Matches the common node-engine lower-bound pattern ``>=N`` (optionally with trailing minor or
+patch components). Only the major component is captured because only that granularity is needed
+to decide whether a package version is compatible with a given Node major release.
+"""
+
+
+def _node_engine_min_major(constraint: str) -> int | None:
+    """
+    Extract the smallest Node major version implied by a node-engine constraint string.
+
+    Only simple ``>=`` lower-bound forms are recognised (for example ``>=20``, ``>=14.17.0``,
+    ``>=18 <23``). Anything else (including ``*``, ``^20``, OR-joined clauses, and empty strings)
+    returns :data:`None`, which the caller should treat as an unknown or no-constraint case and
+    therefore skip filtering.
+
+    Parameters
+    ----------
+    constraint : str
+        The engine constraint string taken from a package manifest.
+
+    Returns
+    -------
+    int | None
+        The smallest Node major version allowed by the constraint, or :data:`None` if no
+        ``>=`` lower bound could be parsed.
+    """
+    if not constraint:
+        return None
+    majors = [int(m.group(1)) for m in _NODE_RANGE_RE.finditer(constraint)]
+    if not majors:
+        return None
+    return min(majors)
+
 
 def _npm_minimal_age_from_settings(settings: Mapping[str, Any] | None) -> int | None:
     if settings is None:
@@ -277,6 +312,7 @@ async def get_npm_latest_package_version(
         session: niquests.AsyncSession,
         package: str,
         *,
+        node_constraint: str = '',
         npm_age_gate_minutes: int | None = None) -> str:  # pragma: no cover
     """
     Get the latest version of an npm package.
@@ -286,12 +322,20 @@ async def get_npm_latest_package_version(
     *npm_age_gate_minutes* is omitted. Versions that appear in the registry ``time`` map but are
     absent from the published ``versions`` map are also excluded.
 
+    When *node_constraint* is a ``>=`` style range (for example ``>=20`` from
+    ``package.json``'s ``engines.node``), package versions whose own ``engines.node`` demands a
+    higher Node major than the constraint's minimum are filtered out so the returned version will
+    install cleanly on that Node release.
+
     Parameters
     ----------
     session : niquests.AsyncSession
         The HTTP session.
     package : str
         The npm package name.
+    node_constraint : str
+        The caller's Node engine constraint (for example ``'>=20'``). An empty string disables
+        Node-engine filtering.
     npm_age_gate_minutes : int | None
         Age gate in minutes. When ``None``, :func:`resolve_npm_minimal_age_gate_minutes` is used
         with no settings or snippet (for example from the CLI).
@@ -299,18 +343,19 @@ async def get_npm_latest_package_version(
     Returns
     -------
     str
-        The latest version string that passes the age gate.
+        The latest version string that passes the age gate and the Node-engine filter.
     """
     gate_min = (npm_age_gate_minutes
                 if npm_age_gate_minutes is not None else resolve_npm_minimal_age_gate_minutes())
-    key = f'npm_{package}_{gate_min}'
+    node_min = _node_engine_min_major(node_constraint)
+    key = f'npm_{package}_{gate_min}_{node_min if node_min is not None else ""}'
     if key in _cache:
         return _cache[key]
     resp = await session.get(f'https://registry.npmjs.org/{package}', timeout=15)
     resp.raise_for_status()
     data = resp.json()
     time_map: dict[str, str] = data.get('time', {})
-    published_versions: set[str] = set(data.get('versions', {}))
+    published_versions: dict[str, Any] = data.get('versions', {})
     latest_tag = cast('str', data.get('dist-tags', {}).get('latest', ''))
     cutoff = datetime.now(tz=timezone.utc) - timedelta(minutes=gate_min)
     candidates: list[tuple[Version, datetime]] = []
@@ -327,8 +372,14 @@ async def get_npm_latest_package_version(
             pub_date = datetime.fromisoformat(pub_date_str.replace('Z', '+00:00'))
         except ValueError:
             continue
-        if pub_date <= cutoff:
-            candidates.append((ver, pub_date))
+        if pub_date > cutoff:
+            continue
+        if node_min is not None:
+            engines = published_versions[ver_str].get('engines', {})
+            pkg_min = _node_engine_min_major(engines.get('node', ''))
+            if pkg_min is not None and pkg_min > node_min:
+                continue
+        candidates.append((ver, pub_date))
     if candidates:
         result = str(max(candidates, key=operator.itemgetter(0))[0])
     else:

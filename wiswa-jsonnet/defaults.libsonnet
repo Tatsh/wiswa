@@ -652,6 +652,15 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   // Detailed settings
   /** @brief Line width for code formatting. */
   line_width: 100,
+  /**
+   * @brief Node-engine constraint for generated `package.json` and the `engines.node` field.
+   *
+   * Written into `package_json.engines.node`, and also consulted by
+   * `utils.latestNpmPackageVersion*` to filter out candidate npm releases whose own
+   * `engines.node` requires a newer Node major. Defaults to `>=20.0` so generated projects
+   * stay compatible with GitHub's default `ubuntu-latest` runner image.
+   */
+  node_engine: '>=20.0',
   /** @brief Depth of the Python package index (for Pyright and Pylance). */
   python_package_index_depth: 100,
 

@@ -1358,6 +1358,76 @@ async def test_get_npm_latest_package_version_mixed_published_unpublished() -> N
     assert result == '3.0.0'
 
 
+async def test_get_npm_latest_package_version_respects_node_engine() -> None:
+    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={
+            'dist-tags': {
+                'latest': '10.0.0'
+            },
+            'versions': {
+                '9.5.0': {
+                    'engines': {
+                        'node': '>=18'
+                    }
+                },
+                '10.0.0': {
+                    'engines': {
+                        'node': '>=22'
+                    }
+                },
+                '11.0.0': {
+                    'engines': {}
+                },
+            },
+            'time': {
+                'created': '2025-01-01T00:00:00Z',
+                'modified': '2025-01-01T00:00:00Z',
+                '9.5.0': old_date,
+                '10.0.0': old_date,
+                '11.0.0': old_date,
+            },
+        }))
+    result = await get_npm_latest_package_version(mock_session,
+                                                  'engines-pkg',
+                                                  node_constraint='>=20.0')
+    assert result == '11.0.0'
+
+
+async def test_get_npm_latest_package_version_node_engine_invalid_constraint() -> None:
+    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={
+            'dist-tags': {
+                'latest': '2.0.0'
+            },
+            'versions': {
+                '1.0.0': {
+                    'engines': {
+                        'node': '^nonsense'
+                    }
+                },
+                '2.0.0': {
+                    'engines': {
+                        'node': ''
+                    }
+                },
+            },
+            'time': {
+                'created': '2025-01-01T00:00:00Z',
+                'modified': '2025-01-01T00:00:00Z',
+                '1.0.0': old_date,
+                '2.0.0': old_date,
+            },
+        }))
+    result = await get_npm_latest_package_version(mock_session,
+                                                  'invalid-engines-pkg',
+                                                  node_constraint='>=20')
+    assert result == '2.0.0'
+
+
 # get_pypi_latest_package_version tests
 
 

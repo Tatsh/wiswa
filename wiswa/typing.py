@@ -321,6 +321,11 @@ class Settings(TypedDict):
     """A list of keywords describing the project."""
     mastodon_id: str | None
     """The Mastodon ID for the project or its maintainer."""
+    node_engine: str
+    """
+    Node-engine constraint written into ``package_json.engines.node`` and consulted by
+    ``utils.latestNpmPackageVersion*`` to filter candidate npm releases by the target Node major.
+    """
     package_json: PackageJSON
     """Parsed ``package.json``."""
     primary_module: str
