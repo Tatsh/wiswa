@@ -24,7 +24,8 @@ function(want_main,
   dev: {
          commitizen: ver('commitizen'),
          mypy: ver('mypy'),
-         ruff: ver('ruff'),
+         // Keep a static version due to the workflow liking to upgrade.
+         ruff: utils.latestPypiPackageVersion('ruff'),
        } + cz_path_dep + (
          if want_yapf then { yapf: ver('yapf') } else {}
        ) + (if want_sqlfluff then { sqlfluff: ver('sqlfluff') } else {})
