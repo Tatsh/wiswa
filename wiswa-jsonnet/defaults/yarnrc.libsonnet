@@ -4,6 +4,8 @@
  * @brief Default settings for `.yarnrc.yml`.
  */
 {
+  /** @brief List of approved git repositories for dependencies. */
+  approvedGitRepositories: ['**'],
   /** @brief Enable/disable hardened mode. If enabled, breaks Dependabot updates. */
   enableHardenedMode: false,
   /** @brief Enable/disable telemetry collection. */
