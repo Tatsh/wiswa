@@ -553,7 +553,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                             'WebFetch(domain:files.pythonhosted.org)',
                             'WebFetch(domain:pypi.org)',
                             'WebFetch(domain:readthedocs.io)',
-                          ]) + [
+                          ] else []) + [
                        'Bash(yarn check-formatting *)',
                        'Bash(yarn check-spelling *)',
                        'Bash(yarn cspell *)',
