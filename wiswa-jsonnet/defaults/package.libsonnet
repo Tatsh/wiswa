@@ -69,7 +69,7 @@ local utils = import 'utils.libsonnet';
     'check-formatting': 'clang-format --dry-run %s && prettier --check . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % settings.clang_format_args,
     'check-spelling': 'cspell --no-progress .',
     'dict:update': dictionary_update,
-    format: 'clang-format --in-place %s && prettier --write . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix' % settings.clang_format_args,
+    format: 'clang-format -i %s && prettier --write . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix' % settings.clang_format_args,
     qa: 'yarn check-spelling && yarn check-formatting',
   },
   typescript_dev_deps(settings):: {
