@@ -1423,6 +1423,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                             '*.libsonnet',
                             '*.libsonnet',
                             '*.lock',
+                            '*.min.js',
                             'pylock*.toml',
                             '.eslintignore',
                             '.shellcheckrc',
