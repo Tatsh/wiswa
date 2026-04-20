@@ -932,6 +932,9 @@ async def post_process_steps(settings: Settings,
         case 'python':
             await _post_process_steps_python(settings, debug=debug, on_command=on_command)
         case _:
+            qa_yml = anyio.Path('.github/workflows/qa.yml')
+            if await qa_yml.exists() and 'jobs: {}' in (await qa_yml.read_text(encoding='utf-8')):
+                await qa_yml.unlink(missing_ok=True)
             log.warning('No post-processing steps for project type `%s`.', settings['project_type'])
     await asyncio.gather(_check_readme_badges(settings), _refresh_changelog_reference_urls(session))
     package_json = anyio.Path('package.json')
