@@ -8,11 +8,9 @@ local actions_exts = [
 ];
 local cpp_exts = [
   '**/*.cpp',
-  '**/*.c++',
   '**/*.cxx',
   '**/*.hpp',
   '**/*.hh',
-  '**/*.h++',
   '**/*.hxx',
   '**/*.c',
   '**/*.cc',
