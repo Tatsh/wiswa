@@ -153,6 +153,10 @@ local utils = import 'utils.libsonnet';
       'prettier-plugin-toml': utils.latestNpmPackageVersionCaret('prettier-plugin-toml'),
     } + if settings.project_type == 'python' then python_npm_dev_deps(settings) else
       {} + if settings.project_type == 'typescript' then top.typescript_dev_deps(settings) else {},
+    // GitHub's default `ubuntu-latest` runner images ship Node 20. Declaring it here lets
+    // yarn/npm warn or refuse to install packages (for example cspell >=10 which requires
+    // Node 22) that would break on that runtime.
+    engines: { node: '>=20' },
     files: ['LICENSE.txt', 'README.md'] + man,
     'markdownlint-cli2': {
       config: {
