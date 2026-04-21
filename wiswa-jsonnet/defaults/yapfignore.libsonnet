@@ -4,7 +4,8 @@
    * @var string[]
    */
   ignore_patterns: [
-    '.venv/**',
-    'node_modules/**',
+    '.venv',
+    '.wiswa-ci',
+    'node_modules',
   ],
 }
