@@ -273,7 +273,7 @@ async def test_native_callback_params_use_short_names(mocker: MockerFixture) -> 
     assert native_callbacks['githubLatestReleaseTag'][0] == ('o', 'r', 'g')
     assert native_callbacks['githubLatestTag'][0] == ('o', 'r')
     assert native_callbacks['latestNpmPackageVersion'][0] == ('p',)
-    assert native_callbacks['latestPypiPackageVersion'][0] == ('p', 'host', 'py')
+    assert native_callbacks['latestPypiPackageVersion'][0] == ('p', 'h', 'py')
     assert native_callbacks['githubCliUsername'][0] == ()
     assert native_callbacks['isodate'][0] == ()
     assert native_callbacks['latestYarnVersion'][0] == ()

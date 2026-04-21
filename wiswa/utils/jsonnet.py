@@ -284,9 +284,8 @@ def _make_native_callbacks(
                                          p,
                                          node_constraint=node_engine,
                                          npm_age_gate_minutes=npm_age_gate)),
-        'latestPypiPackageVersion': (
-            ('p', 'host', 'py'), lambda p, host='pypi.org', py='': _sync_wrap(
-                get_pypi_latest_package_version, session, p, host=host, python=py or None)),
+        'latestPypiPackageVersion': (('p', 'h', 'py'), lambda p, h='pypi.org', py='': _sync_wrap(
+            get_pypi_latest_package_version, session, p, host=h, python=py or None)),
         'latestYarnVersion': ((), lambda: _sync_wrap(get_latest_yarn_version, session)),
         'year': ((), lambda: datetime.now(tz=timezone.utc).year),
     }
