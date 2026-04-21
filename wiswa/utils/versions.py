@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from email.utils import parsedate_to_datetime
 from functools import cache
 from pathlib import Path
 from shutil import rmtree
@@ -14,7 +13,7 @@ import operator
 import re
 
 from anyio.to_thread import run_sync
-from bs4 import BeautifulSoup as Soup, Tag
+from packaging.specifiers import InvalidSpecifier, SpecifierSet
 from packaging.version import InvalidVersion, Version, parse as parse_version
 from wiswa.constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
 import anyio
@@ -283,7 +282,7 @@ def clear_resolution_caches() -> None:
     _get_uv_config.cache_clear()
 
 
-async def get_latest_yarn_version(session: niquests.AsyncSession) -> str:  # pragma: no cover
+async def get_latest_yarn_version(session: niquests.AsyncSession) -> str:
     """
     Get the latest Yarn version.
 
@@ -390,13 +389,46 @@ async def get_npm_latest_package_version(
     return result
 
 
+def _requires_python_compatible(files: list[dict[str, Any]], python: str) -> bool:
+    for f in files:
+        raw = f.get('requires_python')
+        if not isinstance(raw, str) or not raw.strip():
+            return True
+        try:
+            return Version(python) in SpecifierSet(raw)
+        except (InvalidSpecifier, InvalidVersion):
+            return True
+    return True
+
+
+def _earliest_upload_time(files: list[dict[str, Any]]) -> datetime | None:
+    earliest: datetime | None = None
+    for f in files:
+        raw = f.get('upload_time_iso_8601')
+        if not isinstance(raw, str):
+            continue
+        try:
+            dt = datetime.fromisoformat(raw.replace('Z', '+00:00'))
+        except ValueError:
+            continue
+        if earliest is None or dt < earliest:
+            earliest = dt
+    return earliest
+
+
 async def get_pypi_latest_package_version(session: niquests.AsyncSession,
-                                          package: str) -> str:  # pragma: no cover
+                                          package: str,
+                                          *,
+                                          host: str = 'pypi.org',
+                                          python: str | None = None) -> str:
     """
     Get the latest version of a PyPI package.
 
     Respects ``exclude-newer-package`` (per-package) and ``exclude-newer`` (global) from uv's
     user ``uv.toml`` (via ``platformdirs``) to filter out versions published after the cutoff.
+
+    When *python* is a non-empty version string (for example ``'3.10'``), releases whose
+    ``requires_python`` specifier excludes that version are filtered out.
 
     Parameters
     ----------
@@ -404,6 +436,11 @@ async def get_pypi_latest_package_version(session: niquests.AsyncSession,
         The HTTP session.
     package : str
         The PyPI package name.
+    host : str
+        The PyPI-compatible host to query. Defaults to ``pypi.org``.
+    python : str | None
+        The Python version to require compatibility with (for example ``'3.10'``). ``None``
+        disables Python-version filtering.
 
     Returns
     -------
@@ -413,57 +450,43 @@ async def get_pypi_latest_package_version(session: niquests.AsyncSession,
     Raises
     ------
     ValueError
-        If no versions are found.
+        If no versions are found or no version is compatible with ``python``.
     """
-    key = f'pypi_{package}'
+    key = f'pypi_{host}_{package}_{python}'
     if key in _cache:
         return _cache[key]
     global_cutoff, per_package = _get_uv_config()
     cutoff = per_package.get(package, global_cutoff)
-    resp = await session.get(f'https://pypi.org/rss/project/{package}/releases.xml', timeout=15)
+    resp = await session.get(f'https://{host}/pypi/{package}/json', timeout=15)
     resp.raise_for_status()
-    content = resp.content or b''
-    root = Soup(content, 'xml')
-    items = root.select('item')
-    if not items:
+    data = resp.json()
+    releases: dict[str, list[dict[str, Any]]] = data.get('releases', {})
+    if not releases:
         msg = f'No versions found for package `{package}`.'
         raise ValueError(msg)
-
-    def _parse_version_safe(v: str) -> Version | None:
+    candidates: list[Version] = []
+    unfiltered: list[Version] = []
+    for ver_str, files in releases.items():
         try:
-            return parse_version(v)
+            ver = parse_version(ver_str)
         except InvalidVersion:
-            return None
-
-    def _is_candidate(item: Tag) -> Version | None:
-        title = item.select_one('title')
-        if not title or not title.text:
-            return None
-        ver = _parse_version_safe(title.text)
-        if (not ver or ver.is_prerelease or ver.is_devrelease
-                or f'{package}-{ver}' in _PYPI_YANKED_RELEASES):
-            return None
+            continue
+        if ver.is_prerelease or ver.is_devrelease:
+            continue
+        if f'{package}-{ver}' in _PYPI_YANKED_RELEASES:
+            continue
+        if python and not _requires_python_compatible(files, python):
+            continue
         if cutoff is not None:
-            pub_el = item.select_one('pubDate')
-            if pub_el and pub_el.text:
-                try:
-                    if parsedate_to_datetime(pub_el.text) > cutoff:
-                        return None
-                except (ValueError, TypeError):
-                    pass
-        return ver
-
-    candidates = [v for item in items if (v := _is_candidate(item)) is not None]
-    if not candidates and cutoff is not None:
-        unfiltered = [
-            v for item in items if (title := item.select_one('title')) and title.text and (
-                v := _parse_version_safe(title.text)) is not None and not v.is_prerelease
-            and not v.is_devrelease and f'{package}-{v}' not in _PYPI_YANKED_RELEASES
-        ]
-        if unfiltered:
-            candidates = unfiltered
-            log.debug('No PyPI version of %s passes exclude-newer; using latest unfiltered: %s',
-                      package, max(candidates))
+            upload_time = _earliest_upload_time(files)
+            if upload_time is not None and upload_time > cutoff:
+                unfiltered.append(ver)
+                continue
+        candidates.append(ver)
+    if not candidates and cutoff is not None and unfiltered:
+        candidates = unfiltered
+        log.debug('No PyPI version of %s passes exclude-newer; using latest unfiltered: %s',
+                  package, max(candidates))
     if not candidates:
         msg = f'No versions found for package `{package}`.'
         raise ValueError(msg)

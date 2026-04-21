@@ -273,7 +273,7 @@ async def test_native_callback_params_use_short_names(mocker: MockerFixture) -> 
     assert native_callbacks['githubLatestReleaseTag'][0] == ('o', 'r', 'g')
     assert native_callbacks['githubLatestTag'][0] == ('o', 'r')
     assert native_callbacks['latestNpmPackageVersion'][0] == ('p',)
-    assert native_callbacks['latestPypiPackageVersion'][0] == ('p',)
+    assert native_callbacks['latestPypiPackageVersion'][0] == ('p', 'host', 'py')
     assert native_callbacks['githubCliUsername'][0] == ()
     assert native_callbacks['isodate'][0] == ()
     assert native_callbacks['latestYarnVersion'][0] == ()
@@ -375,7 +375,7 @@ async def test_worktree_without_commondir_yields_only_worktree_config(
 
 async def test_github_username_native_worktree_commondir_dot_skips_duplicate_config_path(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
-    """``commondir`` ``.`` makes common git match the worktree directory.
+    """``commondir`` ``.`` makes common Git match the worktree directory.
 
     The same ``config`` path is then yielded twice and the second is skipped.
     """

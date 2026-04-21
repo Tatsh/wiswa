@@ -64,7 +64,13 @@ class FlatpakConfigurationError(ValueError):
 
 
 def validate_flatpak_app_id(settings: dict[str, Any]) -> None:
-    """Validate Flatpak publishing when ``want_flatpak`` is set.
+    """
+    Validate Flatpak publishing when ``want_flatpak`` is set.
+
+    Parameters
+    ----------
+    settings : dict[str, Any]
+        Merged Wiswa settings dictionary.
 
     Raises
     ------
@@ -82,7 +88,13 @@ def validate_flatpak_app_id(settings: dict[str, Any]) -> None:
 
 
 def validate_remote_host_flags(settings: dict[str, Any]) -> None:
-    """Reject merged settings when both GitHub and GitLab remotes are selected.
+    """
+    Reject merged settings when both GitHub and GitLab remotes are selected.
+
+    Parameters
+    ----------
+    settings : dict[str, Any]
+        Merged Wiswa settings dictionary.
 
     Raises
     ------
@@ -273,7 +285,8 @@ def _make_native_callbacks(
                                          node_constraint=node_engine,
                                          npm_age_gate_minutes=npm_age_gate)),
         'latestPypiPackageVersion': (
-            ('p',), lambda p: _sync_wrap(get_pypi_latest_package_version, session, p)),
+            ('p', 'host', 'py'), lambda p, host='pypi.org', py='': _sync_wrap(
+                get_pypi_latest_package_version, session, p, host=host, python=py or None)),
         'latestYarnVersion': ((), lambda: _sync_wrap(get_latest_yarn_version, session)),
         'year': ((), lambda: datetime.now(tz=timezone.utc).year),
     }

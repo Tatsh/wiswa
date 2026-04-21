@@ -9,6 +9,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `get_pypi_latest_package_version` accepts a `host` parameter (default `'pypi.org'`) for querying
+  private or alternative PyPI-compatible registries.
+- `get_pypi_latest_package_version` accepts a `python` parameter for filtering releases by
+  `requires_python` compatibility using `packaging.specifiers.SpecifierSet`.
+- Jsonnet `latestPypiPackageVersion`, `latestPypiPackageVersionCaret`,
+  `latestPypiPackageVersionGe`, and `latestPypiPackageVersionTilde` accept optional `host` and
+  `python` parameters.
+
+### Changed
+
+- `get_pypi_latest_package_version` uses the PyPI JSON API (`/pypi/<package>/json`) instead of the
+  RSS feed, removing the `beautifulsoup4` and `lxml` runtime dependencies.
+
+### Removed
+
+- `beautifulsoup4` and `lxml` runtime dependencies.
+
 ## [0.2.1] - 2026-04-18
 
 ### Added

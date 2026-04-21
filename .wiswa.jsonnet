@@ -65,12 +65,10 @@ local utils = import 'utils.libsonnet';
   python_deps+: {
     main+: {
       anyio: utils.latestPypiPackageVersionCaret('anyio'),
-      beautifulsoup4: utils.latestPypiPackageVersionCaret('beautifulsoup4'),
       fastmcp: utils.latestPypiPackageVersionCaret('fastmcp'),
       jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
       jsonnet: utils.latestPypiPackageVersionCaret('jsonnet'),
       keyring: utils.latestPypiPackageVersionCaret('keyring'),
-      lxml: utils.latestPypiPackageVersionCaret('lxml'),
       niquests: utils.latestPypiPackageVersionCaret('niquests'),
       'niquests-cache': utils.latestPypiPackageVersionCaret('niquests-cache'),
       platformdirs: utils.latestPypiPackageVersionCaret('platformdirs'),

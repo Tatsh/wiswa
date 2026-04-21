@@ -16,6 +16,7 @@ from wiswa.utils.versions import (
     download_yarn,
     download_yarn_plugins,
     get_github_release_latest_tag,
+    get_latest_yarn_version,
     get_npm_latest_package_version,
     get_pypi_latest_package_version,
     resolve_npm_minimal_age_gate_minutes,
@@ -84,6 +85,29 @@ async def test_download_yarn_removes_old_releases(tmp_path: Path,
     await download_yarn(mock_session, '4.0.0')
     assert not (releases_dir / 'yarn-3.0.0.cjs').exists()
     assert (releases_dir / 'yarn-4.0.0.cjs').exists()
+
+
+async def test_get_latest_yarn_version_returns_stable() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={'latest': {
+            'stable': '4.6.0'
+        }}))
+    result = await get_latest_yarn_version(mock_session)
+    assert result == '4.6.0'
+    mock_session.get.assert_called_once_with('https://repo.yarnpkg.com/tags', timeout=15)
+
+
+async def test_get_latest_yarn_version_cache_hit() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={'latest': {
+            'stable': '4.6.0'
+        }}))
+    result1 = await get_latest_yarn_version(mock_session)
+    result2 = await get_latest_yarn_version(mock_session)
+    assert result1 == result2 == '4.6.0'
+    assert mock_session.get.call_count == 1
 
 
 async def test_get_github_release_latest_tag_from_release() -> None:
@@ -818,12 +842,12 @@ async def test_get_pypi_latest_package_version_uv_toml_global_parses_timestamp(
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('exclude-newer = "2025-01-15T12:00:00Z"\n', encoding='utf-8')
-    xml = _make_pypi_xml([
-        ('2.0.0', 'Mon, 01 Jun 2025 00:00:00 GMT'),
-        ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+    data = _make_pypi_json([
+        ('2.0.0', '2025-06-01T00:00:00Z'),
+        ('1.0.0', '2024-01-01T00:00:00Z'),
     ])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'toml-parse-pkg')
     assert result == '1.0.0'
 
@@ -851,12 +875,12 @@ async def test_get_pypi_exclude_newer_duration_forms(
     fixed_now = datetime(2025, 8, 1, 12, 0, 0, tzinfo=timezone.utc)
     mocker.patch('wiswa.utils.versions.datetime', wraps=datetime)
     mocker.patch('wiswa.utils.versions.datetime.now', return_value=fixed_now)
-    xml = _make_pypi_xml([
-        ('2.0.0', 'Mon, 01 Aug 2025 10:00:00 GMT'),
-        ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+    data = _make_pypi_json([
+        ('2.0.0', '2025-08-01T10:00:00Z'),
+        ('1.0.0', '2024-01-01T00:00:00Z'),
     ])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, pkg)
     assert result == '1.0.0'
 
@@ -869,9 +893,9 @@ async def test_get_pypi_latest_package_version_uv_toml_duration_exclude_newer(
     fixed_now = datetime(2025, 3, 15, 12, 0, 0, tzinfo=timezone.utc)
     mocker.patch('wiswa.utils.versions.datetime', wraps=datetime)
     mocker.patch('wiswa.utils.versions.datetime.now', return_value=fixed_now)
-    xml = _make_pypi_xml([('1.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT')])
+    data = _make_pypi_json([('1.0.0', '2025-01-01T00:00:00Z')])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'duration-cutoff-pkg')
     assert result == '1.0.0'
 
@@ -883,12 +907,12 @@ async def test_get_pypi_per_package_uv_toml_skips_invalid_timestamp(tmp_path: Pa
     (uv_dir / 'uv.toml').write_text(
         '[exclude-newer-package]\nkeep = "2025-02-01T00:00:00Z"\ndrop = "not-a-timestamp"\n',
         encoding='utf-8')
-    xml = _make_pypi_xml([
-        ('2.0.0', 'Mon, 01 Mar 2025 00:00:00 GMT'),
-        ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+    data = _make_pypi_json([
+        ('2.0.0', '2025-03-01T00:00:00Z'),
+        ('1.0.0', '2024-01-01T00:00:00Z'),
     ])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'keep')
     assert result == '1.0.0'
 
@@ -898,9 +922,9 @@ async def test_get_pypi_uv_toml_empty_behaves_like_no_config(tmp_path: Path,
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('', encoding='utf-8')
-    xml = _make_pypi_xml([('1.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT')])
+    data = _make_pypi_json([('1.0.0', '2025-01-01T00:00:00Z')])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'empty-uv-pkg')
     assert result == '1.0.0'
 
@@ -911,12 +935,12 @@ async def test_get_pypi_uv_toml_read_os_error_falls_back_to_no_cutoff(
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('valid = true', encoding='utf-8')
     mocker.patch('pathlib.Path.read_text', side_effect=OSError('Permission denied'))
-    xml = _make_pypi_xml([
-        ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
-        ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+    data = _make_pypi_json([
+        ('2.0.0', '2025-01-01T00:00:00Z'),
+        ('1.0.0', '2024-01-01T00:00:00Z'),
     ])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'read-error-pkg')
     assert result == '2.0.0'
 
@@ -1431,124 +1455,393 @@ async def test_get_npm_latest_package_version_node_engine_invalid_constraint() -
 # get_pypi_latest_package_version tests
 
 
-def _make_pypi_xml(versions: list[tuple[str, str]]) -> bytes:
-    items = ''
-    for ver, pub_date in versions:
-        items += f'<item><title>{ver}</title><pubDate>{pub_date}</pubDate></item>\n'
-    return f'<?xml version="1.0"?><rss><channel>{items}</channel></rss>'.encode()
+def _make_pypi_json(versions: list[tuple[str, str]]) -> dict[str, Any]:
+    releases: dict[str, list[dict[str, str]]] = {}
+    for ver, upload_time in versions:
+        releases[ver] = [{'upload_time_iso_8601': upload_time}]
+    return {'info': {'version': versions[0][0] if versions else ''}, 'releases': releases}
 
 
-async def test_get_pypi_latest_package_version_no_cutoff(tmp_path: Path,
-                                                         mocker: MockerFixture) -> None:
-    xml = _make_pypi_xml([
-        ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
-        ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+async def test_get_pypi_latest_package_version_no_cutoff() -> None:
+    data = _make_pypi_json([
+        ('2.0.0', '2025-01-01T00:00:00Z'),
+        ('1.0.0', '2024-01-01T00:00:00Z'),
     ])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'no-cutoff-pkg')
     assert result == '2.0.0'
 
 
-async def test_get_pypi_latest_package_version_global_cutoff(tmp_path: Path,
-                                                             mocker: MockerFixture) -> None:
+async def test_get_pypi_latest_package_version_global_cutoff(tmp_path: Path) -> None:
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('exclude-newer = "2024-06-01T00:00:00Z"\n', encoding='utf-8')
-    xml = _make_pypi_xml([
-        ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
-        ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+    data = _make_pypi_json([
+        ('2.0.0', '2025-01-01T00:00:00Z'),
+        ('1.0.0', '2024-01-01T00:00:00Z'),
     ])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'global-cutoff-pkg')
     assert result == '1.0.0'
 
 
-async def test_get_pypi_latest_package_version_per_package_cutoff(tmp_path: Path,
-                                                                  mocker: MockerFixture) -> None:
+async def test_get_pypi_latest_package_version_per_package_cutoff(tmp_path: Path) -> None:
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text(
         'exclude-newer = "2020-01-01T00:00:00Z"\n\n'
         '[exclude-newer-package]\nmy-pkg = "2024-06-01T00:00:00Z"\n',
         encoding='utf-8')
-    xml = _make_pypi_xml([
-        ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
-        ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+    data = _make_pypi_json([
+        ('2.0.0', '2025-01-01T00:00:00Z'),
+        ('1.0.0', '2024-01-01T00:00:00Z'),
     ])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'my-pkg')
     assert result == '1.0.0'
 
 
-async def test_get_pypi_latest_package_version_all_filtered_fallback(tmp_path: Path,
-                                                                     mocker: MockerFixture) -> None:
+async def test_get_pypi_latest_package_version_all_filtered_fallback(tmp_path: Path) -> None:
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('exclude-newer = "2020-01-01T00:00:00Z"\n', encoding='utf-8')
-    xml = _make_pypi_xml([
-        ('2.0.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
-        ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+    data = _make_pypi_json([
+        ('2.0.0', '2025-01-01T00:00:00Z'),
+        ('1.0.0', '2024-01-01T00:00:00Z'),
     ])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'all-filtered-pkg')
     assert result == '2.0.0'
 
 
-async def test_get_pypi_latest_package_version_no_items_raises(tmp_path: Path,
-                                                               mocker: MockerFixture) -> None:
-    xml = b'<?xml version="1.0"?><rss><channel></channel></rss>'
+async def test_get_pypi_latest_package_version_no_releases_raises() -> None:
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data={
+        'info': {},
+        'releases': {}
+    }))
     with pytest.raises(ValueError, match='No versions found'):
         await get_pypi_latest_package_version(mock_session, 'empty-pkg')
 
 
-async def test_get_pypi_latest_package_version_skips_prerelease(tmp_path: Path,
-                                                                mocker: MockerFixture) -> None:
-    xml = _make_pypi_xml([
-        ('2.0.0a1', 'Mon, 01 Jan 2025 00:00:00 GMT'),
-        ('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+async def test_get_pypi_latest_package_version_skips_prerelease() -> None:
+    data = _make_pypi_json([
+        ('2.0.0a1', '2025-01-01T00:00:00Z'),
+        ('1.0.0', '2024-01-01T00:00:00Z'),
     ])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'prerelease-pkg')
     assert result == '1.0.0'
 
 
-async def test_get_pypi_latest_package_version_skips_yanked(tmp_path: Path,
-                                                            mocker: MockerFixture) -> None:
-    xml = _make_pypi_xml([
-        ('8.3.0', 'Mon, 01 Jan 2025 00:00:00 GMT'),
-        ('8.2.0', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+async def test_get_pypi_latest_package_version_skips_yanked() -> None:
+    data = _make_pypi_json([
+        ('8.3.0', '2025-01-01T00:00:00Z'),
+        ('8.2.0', '2024-01-01T00:00:00Z'),
     ])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'sphinx')
     assert result == '8.2.0'
 
 
-async def test_get_pypi_latest_package_version_cache_hit(tmp_path: Path,
-                                                         mocker: MockerFixture) -> None:
-    xml = _make_pypi_xml([('1.0.0', 'Mon, 01 Jan 2024 00:00:00 GMT')])
+async def test_get_pypi_latest_package_version_cache_hit() -> None:
+    data = _make_pypi_json([('1.0.0', '2024-01-01T00:00:00Z')])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result1 = await get_pypi_latest_package_version(mock_session, 'cached-pypi')
     result2 = await get_pypi_latest_package_version(mock_session, 'cached-pypi')
     assert result1 == result2 == '1.0.0'
     assert mock_session.get.call_count == 1
 
 
-async def test_get_pypi_latest_package_version_only_prerelease_raises(
-        tmp_path: Path, mocker: MockerFixture) -> None:
-    xml = _make_pypi_xml([
-        ('2.0.0a1', 'Mon, 01 Jan 2025 00:00:00 GMT'),
-        ('1.0.0rc1', 'Mon, 01 Jan 2024 00:00:00 GMT'),
+async def test_get_pypi_latest_package_version_only_prerelease_raises() -> None:
+    data = _make_pypi_json([
+        ('2.0.0a1', '2025-01-01T00:00:00Z'),
+        ('1.0.0rc1', '2024-01-01T00:00:00Z'),
     ])
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(return_value=_make_response(content=xml))
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     with pytest.raises(ValueError, match='No versions found'):
         await get_pypi_latest_package_version(mock_session, 'only-pre-pkg')
+
+
+async def test_get_pypi_latest_package_version_custom_host() -> None:
+    data = _make_pypi_json([('3.0.0', '2025-01-01T00:00:00Z')])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session,
+                                                   'internal-pkg',
+                                                   host='pypi.internal.example.com')
+    assert result == '3.0.0'
+    mock_session.get.assert_called_once_with(
+        'https://pypi.internal.example.com/pypi/internal-pkg/json', timeout=15)
+
+
+async def test_get_pypi_latest_package_version_filters_by_python() -> None:
+    data: dict[str, Any] = {
+        'info': {
+            'version': '2.0.0'
+        },
+        'releases': {
+            '1.0.0': [{
+                'upload_time_iso_8601': '2024-01-01T00:00:00Z',
+                'requires_python': '>=3.9'
+            }],
+            '2.0.0': [{
+                'upload_time_iso_8601': '2025-01-01T00:00:00Z',
+                'requires_python': '>=3.13',
+            }],
+        },
+    }
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'py-filter-pkg', python='3.10')
+    assert result == '1.0.0'
+
+
+async def test_get_pypi_latest_package_version_python_empty_skips_filter() -> None:
+    data: dict[str, Any] = {
+        'info': {
+            'version': '2.0.0'
+        },
+        'releases': {
+            '1.0.0': [{
+                'upload_time_iso_8601': '2024-01-01T00:00:00Z',
+                'requires_python': '>=3.9'
+            }],
+            '2.0.0': [{
+                'upload_time_iso_8601': '2025-01-01T00:00:00Z',
+                'requires_python': '>=3.13',
+            }],
+        },
+    }
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'py-filter-off-pkg')
+    assert result == '2.0.0'
+
+
+async def test_get_pypi_latest_package_version_python_no_compatible_raises() -> None:
+    data: dict[str, Any] = {
+        'info': {
+            'version': '1.0.0'
+        },
+        'releases': {
+            '1.0.0': [{
+                'upload_time_iso_8601': '2024-01-01T00:00:00Z',
+                'requires_python': '>=3.13',
+            }],
+        },
+    }
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    with pytest.raises(ValueError, match='No versions found'):
+        await get_pypi_latest_package_version(mock_session, 'no-compat-pkg', python='3.10')
+
+
+async def test_get_pypi_latest_package_version_python_missing_requires_passes() -> None:
+    data: dict[str, Any] = {
+        'info': {
+            'version': '1.0.0'
+        },
+        'releases': {
+            '1.0.0': [{
+                'upload_time_iso_8601': '2024-01-01T00:00:00Z'
+            }],
+        },
+    }
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'no-req-py-pkg', python='3.10')
+    assert result == '1.0.0'
+
+
+async def test_get_pypi_latest_package_version_python_upper_bound() -> None:
+    data: dict[str, Any] = {
+        'info': {
+            'version': '2.0.0'
+        },
+        'releases': {
+            '1.0.0': [{
+                'upload_time_iso_8601': '2024-01-01T00:00:00Z',
+                'requires_python': '>=3.9,<3.11',
+            }],
+            '2.0.0': [{
+                'upload_time_iso_8601': '2025-01-01T00:00:00Z',
+                'requires_python': '<4.0,>=3.10',
+            }],
+        },
+    }
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'upper-bound-pkg', python='3.12')
+    assert result == '2.0.0'
+
+
+async def test_get_pypi_latest_package_version_python_invalid_specifier_passes() -> None:
+    data: dict[str, Any] = {
+        'info': {
+            'version': '1.0.0'
+        },
+        'releases': {
+            '1.0.0': [{
+                'upload_time_iso_8601': '2024-01-01T00:00:00Z',
+                'requires_python': '>>>broken<<<',
+            }],
+        },
+    }
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'bad-spec-pkg', python='3.10')
+    assert result == '1.0.0'
+
+
+async def test_get_pypi_latest_package_version_python_empty_requires_passes() -> None:
+    data: dict[str, Any] = {
+        'info': {
+            'version': '1.0.0'
+        },
+        'releases': {
+            '1.0.0': [{
+                'upload_time_iso_8601': '2024-01-01T00:00:00Z',
+                'requires_python': '',
+            }],
+        },
+    }
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'empty-req-pkg', python='3.10')
+    assert result == '1.0.0'
+
+
+async def test_get_pypi_latest_package_version_python_non_string_requires_passes() -> None:
+    data: dict[str, Any] = {
+        'info': {
+            'version': '1.0.0'
+        },
+        'releases': {
+            '1.0.0': [{
+                'upload_time_iso_8601': '2024-01-01T00:00:00Z',
+                'requires_python': None,
+            }],
+        },
+    }
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'none-req-pkg', python='3.10')
+    assert result == '1.0.0'
+
+
+async def test_get_pypi_latest_package_version_empty_files_with_python_passes() -> None:
+    data: dict[str, Any] = {
+        'info': {
+            'version': '1.0.0'
+        },
+        'releases': {
+            '1.0.0': [],
+        },
+    }
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'empty-files-pkg', python='3.10')
+    assert result == '1.0.0'
+
+
+async def test_get_pypi_latest_package_version_skips_invalid_version_key() -> None:
+    data: dict[str, Any] = {
+        'info': {
+            'version': '1.0.0'
+        },
+        'releases': {
+            'not!!a!!version': [{
+                'upload_time_iso_8601': '2025-01-01T00:00:00Z'
+            }],
+            '1.0.0': [{
+                'upload_time_iso_8601': '2024-01-01T00:00:00Z'
+            }],
+        },
+    }
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'invalid-ver-pypi-pkg')
+    assert result == '1.0.0'
+
+
+async def test_get_pypi_latest_package_version_earliest_upload_multiple_files(
+        tmp_path: Path) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text('exclude-newer = "2024-06-01T00:00:00Z"\n', encoding='utf-8')
+    data: dict[str, Any] = {
+        'info': {
+            'version': '1.0.0'
+        },
+        'releases': {
+            '1.0.0': [
+                {
+                    'upload_time_iso_8601': '2024-01-01T00:00:00Z'
+                },
+                {
+                    'upload_time_iso_8601': '2024-03-01T00:00:00Z'
+                },
+            ],
+        },
+    }
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'multi-file-pkg')
+    assert result == '1.0.0'
+
+
+async def test_get_pypi_latest_package_version_upload_time_non_string_skipped(
+        tmp_path: Path) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text('exclude-newer = "2024-06-01T00:00:00Z"\n', encoding='utf-8')
+    data: dict[str, Any] = {
+        'info': {
+            'version': '1.0.0'
+        },
+        'releases': {
+            '1.0.0': [{
+                'upload_time_iso_8601': 12345
+            }],
+            '2.0.0': [{
+                'upload_time_iso_8601': '2024-01-01T00:00:00Z'
+            }],
+        },
+    }
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'non-str-time-pkg')
+    assert result == '2.0.0'
+
+
+async def test_get_pypi_latest_package_version_upload_time_invalid_date_skipped(
+        tmp_path: Path) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text('exclude-newer = "2024-06-01T00:00:00Z"\n', encoding='utf-8')
+    data: dict[str, Any] = {
+        'info': {
+            'version': '1.0.0'
+        },
+        'releases': {
+            '1.0.0': [{
+                'upload_time_iso_8601': 'not-a-date'
+            }],
+            '2.0.0': [{
+                'upload_time_iso_8601': '2024-01-01T00:00:00Z'
+            }],
+        },
+    }
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'bad-time-pkg')
+    assert result == '2.0.0'

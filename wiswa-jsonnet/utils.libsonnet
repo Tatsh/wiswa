@@ -236,44 +236,68 @@
    * Requires a native function `latestPypiPackageVersion` to be defined in the Jsonnet environment.
    *
    * @param package The PyPI package name.
+   * @param host The PyPI-compatible host to query. Defaults to `pypi.org`.
+   * @param python Minimum Python version to require compatibility with (e.g. `'3.10'`). Empty
+   *   string disables filtering.
    * @returns The latest version string prefixed with `^`.
+   * @pt string
+   * @pt string
    * @pt string
    * @rv string
    */
-  latestPypiPackageVersionCaret(package):: '^' + self.latestPypiPackageVersion(package),
+  latestPypiPackageVersionCaret(package, host='pypi.org', python='')::
+    '^' + self.latestPypiPackageVersion(package, host, python),
   /**
    * @brief Get the latest version of a PyPI package, prefixed with `>=`.
    *
    * Requires a native function `latestPypiPackageVersion` to be defined in the Jsonnet environment.
    *
    * @param package The PyPI package name.
+   * @param host The PyPI-compatible host to query. Defaults to `pypi.org`.
+   * @param python Minimum Python version to require compatibility with (e.g. `'3.10'`). Empty
+   *   string disables filtering.
    * @returns The latest version string prefixed with `>=`.
+   * @pt string
+   * @pt string
    * @pt string
    * @rv string
    */
-  latestPypiPackageVersionGe(package):: '>=' + self.latestPypiPackageVersion(package),
+  latestPypiPackageVersionGe(package, host='pypi.org', python='')::
+    '>=' + self.latestPypiPackageVersion(package, host, python),
   /**
    * @brief Get the latest version of a PyPI package, prefixed with a tilde (~).
    *
    * Requires a native function `latestPypiPackageVersion` to be defined in the Jsonnet environment.
    *
    * @param package The PyPI package name.
+   * @param host The PyPI-compatible host to query. Defaults to `pypi.org`.
+   * @param python Minimum Python version to require compatibility with (e.g. `'3.10'`). Empty
+   *   string disables filtering.
    * @returns The latest version string prefixed with `~`.
+   * @pt string
+   * @pt string
    * @pt string
    * @rv string
    */
-  latestPypiPackageVersionTilde(package):: '~' + self.latestPypiPackageVersion(package),
+  latestPypiPackageVersionTilde(package, host='pypi.org', python='')::
+    '~' + self.latestPypiPackageVersion(package, host, python),
   /**
    * @brief Get the latest version of a PyPI package.
    *
    * Requires a native function `latestPypiPackageVersion` to be defined in the Jsonnet environment.
    *
    * @param package The PyPI package name.
+   * @param host The PyPI-compatible host to query. Defaults to `pypi.org`.
+   * @param python Minimum Python version to require compatibility with (e.g. `'3.10'`). Empty
+   *   string disables filtering.
    * @returns The latest version string.
+   * @pt string
+   * @pt string
    * @pt string
    * @rv string
    */
-  latestPypiPackageVersion(package):: std.native('latestPypiPackageVersion')(package),
+  latestPypiPackageVersion(package, host='pypi.org', python='')::
+    std.native('latestPypiPackageVersion')(package, host, python),
   /**
    * @brief Get the latest action tag for a GitHub repository.
    *
