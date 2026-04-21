@@ -24,6 +24,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `get_pypi_latest_package_version` uses the PyPI JSON API (`/pypi/<package>/json`) instead of the
   RSS feed, removing the `beautifulsoup4` and `lxml` runtime dependencies.
 
+### Fixed
+
+- Generated PyPI publish workflow no longer gates on the Tests workflow for `stubs_only` packages,
+  which do not have tests.
+
 ### Removed
 
 - `beautifulsoup4` and `lxml` runtime dependencies.
