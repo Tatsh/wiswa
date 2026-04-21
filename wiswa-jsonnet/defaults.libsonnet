@@ -1313,7 +1313,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                  },
                },
              },
-           } + (if settings.want_sqlfluff then { sqlfluff: import 'defaults/sqlfluff.libsonnet' } else {})
+           } + (if settings.want_sqlfluff then { sqlfluff: (import 'defaults/sqlfluff.libsonnet')('postgres') } else {})
            + (if is_uv then { poetry:: super.poetry }
                             + (if std.length(settings.package_sources) > 0 then {
                                  uv+: {
