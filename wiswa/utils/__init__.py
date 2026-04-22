@@ -1,7 +1,7 @@
 """Utilities."""
 from __future__ import annotations
 
-from .github import setup_github_project
+from .github import get_github_pages_build_type, setup_github_project
 from .gitlab import setup_gitlab_project
 from .jsonnet import (
     FlatpakConfigurationError,
@@ -23,8 +23,8 @@ from .versions import download_yarn, download_yarn_plugins, get_latest_yarn_vers
 __all__ = ('FlatpakConfigurationError', 'RemoteHostConflictError',
            'apply_python_pyproject_manifest_edits', 'copy_static_files', 'create_py_typed_files',
            'download_yarn', 'download_yarn_plugins', 'evaluate_jsonnet_file',
-           'evaluate_jsonnet_project', 'evaluate_merged_settings', 'get_latest_yarn_version',
-           'non_empty_file_exists', 'post_process_steps', 'primary_module_to_path',
-           'remove_empty_dirs', 'resolve_defaults_only', 'setup_github_project',
-           'setup_gitlab_project', 'validate_flatpak_app_id', 'validate_remote_host_flags',
-           'write_templated_files')
+           'evaluate_jsonnet_project', 'evaluate_merged_settings', 'get_github_pages_build_type',
+           'get_latest_yarn_version', 'non_empty_file_exists', 'post_process_steps',
+           'primary_module_to_path', 'remove_empty_dirs', 'resolve_defaults_only',
+           'setup_github_project', 'setup_gitlab_project', 'validate_flatpak_app_id',
+           'validate_remote_host_flags', 'write_templated_files')

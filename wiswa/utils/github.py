@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlparse
 import getpass
 import logging
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
     from wiswa.typing import Settings
 
-__all__ = ('setup_github_project',)
+__all__ = ('get_github_pages_build_type', 'setup_github_project')
 
 log = logging.getLogger(__name__)
 
@@ -90,6 +90,49 @@ def _get_github_token(settings: Settings) -> str | None:
         return keyring.get_password('tmu-github-api', user)
     except keyring.errors.NoKeyringError:
         log.warning('No keyring backend available.')
+        return None
+
+
+_GITHUB_API_HEADERS = {
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28'
+}
+
+
+async def get_github_pages_build_type(session: niquests.AsyncSession,
+                                      settings: Settings) -> str | None:
+    """
+    Return the GitHub Pages ``build_type`` for the repository.
+
+    Parameters
+    ----------
+    session : ~niquests.AsyncSession
+        HTTP session (auth headers are added per-request, not mutated on the session).
+    settings : Settings
+        Project settings dictionary.
+
+    Returns
+    -------
+    str | None
+        ``'legacy'`` when Pages deploys from a branch, ``'workflow'`` when it uses GitHub Actions,
+        or ``None`` when the token is unavailable or the API call fails.
+    """
+    token = await run_sync(lambda: _get_github_token(settings))
+    if not token:
+        return None
+    parts = settings['repository_uri'].rstrip('/').split('/')
+    repo_name = f'{parts[-2]}/{parts[-1]}'
+    try:
+        r = await session.get(f'https://api.github.com/repos/{repo_name}/pages',
+                              headers={
+                                  **_GITHUB_API_HEADERS, 'Authorization': f'Bearer {token}'
+                              })
+        if r.status_code != HTTPStatus.OK:
+            log.debug('GitHub Pages API returned %s for `%s`.', r.status_code, repo_name)
+            return None
+        return cast('str | None', r.json().get('build_type'))
+    except niquests.RequestException:
+        log.debug('GitHub Pages API request failed for `%s`.', repo_name, exc_info=True)
         return None
 
 

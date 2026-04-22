@@ -21,8 +21,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Generated `eslint.config.mjs` uses `tseslint.config()` with spread syntax instead of
+  `defineConfig()` with `globalIgnores()` and `.concat()`.
 - `get_pypi_latest_package_version` uses the PyPI JSON API (`/pypi/<package>/json`) instead of the
   RSS feed, removing the `beautifulsoup4` and `lxml` runtime dependencies.
+- README badge for GitHub Pages now uses the GitHub API to detect whether Pages deploys from a
+  branch or GitHub Actions. Legacy deploys render the built-in `pages-build-deployment` badge;
+  workflow deploys scan `.github/workflows/*.yml` for `actions/deploy-pages` and render that
+  workflow's badge. Previously it always rendered a `pages.yml` badge.
 
 ### Fixed
 

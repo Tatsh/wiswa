@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
-from wiswa.utils.github import setup_github_project
+from wiswa.utils.github import get_github_pages_build_type, setup_github_project
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
@@ -451,3 +451,41 @@ async def test_setup_github_project_http_error_text_not_str_returns_status_only(
     await setup_github_project(session, _make_settings())
     args = mock_log.warning.call_args[0]
     assert args[2] == 'HTTP 400'
+
+
+async def test_get_github_pages_build_type_legacy(mocker: MockerFixture) -> None:
+    session = _mock_github_session(mocker)
+    session.get = AsyncMock(return_value=_make_resp(200, {'build_type': 'legacy'}))
+    result = await get_github_pages_build_type(session, _make_settings())
+    assert result == 'legacy'
+
+
+async def test_get_github_pages_build_type_workflow(mocker: MockerFixture) -> None:
+    session = _mock_github_session(mocker)
+    session.get = AsyncMock(return_value=_make_resp(200, {'build_type': 'workflow'}))
+    result = await get_github_pages_build_type(session, _make_settings())
+    assert result == 'workflow'
+
+
+async def test_get_github_pages_build_type_no_token(mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.utils.github.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.utils.github.keyring.get_password', return_value=None)
+    session = MagicMock()
+    result = await get_github_pages_build_type(session, _make_settings())
+    assert result is None
+
+
+async def test_get_github_pages_build_type_not_found(mocker: MockerFixture) -> None:
+    session = _mock_github_session(mocker)
+    session.get = AsyncMock(return_value=_make_resp(404))
+    result = await get_github_pages_build_type(session, _make_settings())
+    assert result is None
+
+
+async def test_get_github_pages_build_type_request_error(mocker: MockerFixture) -> None:
+    import niquests
+
+    session = _mock_github_session(mocker)
+    session.get = AsyncMock(side_effect=niquests.RequestException)
+    result = await get_github_pages_build_type(session, _make_settings())
+    assert result is None

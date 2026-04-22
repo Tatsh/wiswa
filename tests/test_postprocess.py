@@ -785,20 +785,86 @@ async def test_post_process_steps_badges_not_using_github(tmp_path: Path,
     await post_process_steps(settings)
 
 
-async def test_post_process_steps_badges_docs_github_pages(tmp_path: Path,
-                                                           monkeypatch: pytest.MonkeyPatch,
-                                                           mocker: MockerFixture) -> None:
+async def test_post_process_steps_badges_docs_github_pages_workflow(tmp_path: Path,
+                                                                    monkeypatch: pytest.MonkeyPatch,
+                                                                    mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    workflows_dir = tmp_path / '.github' / 'workflows'
+    workflows_dir.mkdir(parents=True, exist_ok=True)
+    (workflows_dir / 'pages.yml').write_text(
+        'jobs:\n  deploy:\n'
+        '    uses: actions/deploy-pages@v4\n', encoding='utf-8')
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    mocker.patch('wiswa.utils.postprocess.get_github_pages_build_type', return_value='workflow')
+    settings = cast(
+        'Any',
+        _make_settings(_readme_existed=True, want_docs=True, project_type='c++', using_github=True))
+    await post_process_steps(settings, session=mocker.MagicMock())
+    content = readme.read_text(encoding='utf-8')
+    assert 'GitHub Pages' in content
+    assert 'actions/workflows/pages.yml/badge.svg' in content
+    assert 'https://testuser.github.io/myproject/' in content
+
+
+async def test_post_process_steps_badges_docs_github_pages_legacy(tmp_path: Path,
+                                                                  monkeypatch: pytest.MonkeyPatch,
+                                                                  mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
     _mock_subprocess(mocker)
+    mocker.patch('wiswa.utils.postprocess.get_github_pages_build_type', return_value='legacy')
     settings = cast(
         'Any',
         _make_settings(_readme_existed=True, want_docs=True, project_type='c++', using_github=True))
-    await post_process_steps(settings)
+    await post_process_steps(settings, session=mocker.MagicMock())
     content = readme.read_text(encoding='utf-8')
-    assert 'GitHub Pages' in content
+    assert 'pages-build-deployment' in content
+    assert 'pages/pages-build-deployment/badge.svg' in content
+    assert 'https://testuser.github.io/myproject/' in content
+
+
+async def test_post_process_steps_badges_docs_github_pages_workflow_no_workflow_file(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    mocker.patch('wiswa.utils.postprocess.get_github_pages_build_type', return_value='workflow')
+    settings = cast(
+        'Any',
+        _make_settings(_readme_existed=True, want_docs=True, project_type='c++', using_github=True))
+    await post_process_steps(settings, session=mocker.MagicMock())
+    content = readme.read_text(encoding='utf-8')
+    assert 'GitHub Pages' not in content
+    assert 'pages-build-deployment' not in content
+
+
+async def test_post_process_steps_badges_docs_github_pages_workflow_no_matching_file(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    workflows_dir = tmp_path / '.github' / 'workflows'
+    workflows_dir.mkdir(parents=True, exist_ok=True)
+    (workflows_dir / 'ci.yml').write_text('jobs:\n  build:\n    runs-on: ubuntu-latest\n',
+                                          encoding='utf-8')
+    (workflows_dir / 'qa.yml').write_text('jobs:\n  lint:\n    runs-on: ubuntu-latest\n',
+                                          encoding='utf-8')
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    mocker.patch('wiswa.utils.postprocess.get_github_pages_build_type', return_value='workflow')
+    settings = cast(
+        'Any',
+        _make_settings(_readme_existed=True, want_docs=True, project_type='c++', using_github=True))
+    await post_process_steps(settings, session=mocker.MagicMock())
+    content = readme.read_text(encoding='utf-8')
+    assert 'GitHub Pages' not in content
 
 
 async def test_post_process_steps_badges_private_skips_github_pages(tmp_path: Path,

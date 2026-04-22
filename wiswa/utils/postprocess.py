@@ -20,6 +20,7 @@ import anyio
 import niquests
 import tomlkit
 
+from .github import get_github_pages_build_type
 from .versions import get_github_release_latest_tag
 
 if TYPE_CHECKING:
@@ -60,6 +61,7 @@ _CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL = 'https://keepachangelog.com/en/1.1.1/
 _CHANGELOG_SEMVER_SPEC_FALLBACK_URL = 'https://semver.org/spec/v2.0.0.html'
 _RE_CHANGELOG_KEEP_A_CHANGELOG = re.compile(r'https://keepachangelog\.com/en/\d+\.\d+\.\d+/')
 _RE_CHANGELOG_SEMVER_SPEC = re.compile(r'https://semver\.org/spec/v\d+\.\d+\.\d+\.html')
+_RE_DEPLOY_PAGES = re.compile(r'uses:\s*actions/deploy-pages')
 
 _GITHUB_TAG_RESOLUTION_EXC_TYPES = (KeyError, OSError, TypeError, ValueError,
                                     niquests.JSONDecodeError, niquests.RequestException)
@@ -580,18 +582,27 @@ def _github_badges(settings: Settings) -> Iterator[str]:
                               'https://github.com/dependabot')
 
 
-def _docs_badges(settings: Settings) -> Iterator[str]:
+def _docs_badges(settings: Settings,
+                 *,
+                 github_pages_build_type: str | None = None,
+                 pages_workflow_file: str | None = None) -> Iterator[str]:
     if not settings['want_docs'] or settings['private']:
         return
     if settings['project_type'] == 'python':
         yield (f"[![Documentation Status](https://readthedocs.org/projects/"
                f"{settings['github_project_name']}"
                f"/badge/?version=latest)]({settings['documentation_uri']}/?badge=latest)")
-    elif settings['using_github']:
+    elif settings['using_github'] and github_pages_build_type is not None:
         gh = settings['github']['username']
         name = settings['github_project_name']
-        yield (f'[![GitHub Pages](https://github.com/{gh}/{name}/actions/workflows/'
-               f'pages.yml/badge.svg)](https://{gh.lower()}.github.io/{name}/)')
+        pages_uri = f'https://{gh.lower()}.github.io/{name}/'
+        if github_pages_build_type == 'legacy':
+            yield (f'[![pages-build-deployment](https://github.com/{gh}/{name}/actions/workflows/'
+                   f'pages/pages-build-deployment/badge.svg)]({pages_uri})')
+        elif pages_workflow_file:
+            repo_uri = settings['repository_uri']
+            yield (f'[![GitHub Pages]({repo_uri}/actions/workflows/'
+                   f'{pages_workflow_file}/badge.svg)]({pages_uri})')
 
 
 def _python_tool_badges(settings: Settings) -> Iterator[str]:
@@ -773,18 +784,31 @@ async def _replace_badge_section(readme: anyio.Path, lines: Sequence[str], expec
     await _replace_badge_section_legacy(readme, lines, expected, social_expected)
 
 
-async def _check_readme_badges(settings: Settings) -> None:
+async def _check_readme_badges(settings: Settings, *, session: AsyncSession | None = None) -> None:
     log.debug('Checking README.md badges.')
     readme = anyio.Path('README.md')
     if not await readme.exists():
         log.debug('README.md is missing; skipping badge check.')
         return
+    build_type: str | None = None
+    pages_workflow_file: str | None = None
+    if (session is not None and settings['using_github'] and not settings['private']
+            and settings['want_docs']):
+        build_type = await get_github_pages_build_type(session, settings)
+    if build_type == 'workflow':
+        workflows_dir = anyio.Path('.github/workflows')
+        if await workflows_dir.is_dir():
+            async for wf in workflows_dir.glob('*.yml'):
+                if _RE_DEPLOY_PAGES.search(await wf.read_text(encoding='utf-8')):
+                    pages_workflow_file = wf.name
+                    break
     await _replace_badge_section(
         readme, (await readme.read_text(encoding='utf-8')).split('\n'),
         (*_custom_project_badges(settings, negative=True), *_project_type_badges(settings),
-         *_github_badges(settings), *_docs_badges(settings), *_python_tool_badges(settings),
-         *_misc_badges(settings), *_typescript_badges(settings), *_custom_project_badges(settings)),
-        list(_social_badges(settings)))
+         *_github_badges(settings), *_docs_badges(
+             settings, github_pages_build_type=build_type, pages_workflow_file=pages_workflow_file),
+         *_python_tool_badges(settings), *_misc_badges(settings), *_typescript_badges(settings),
+         *_custom_project_badges(settings)), list(_social_badges(settings)))
     log.debug('Updated README.md badges.')
 
 
@@ -936,7 +960,8 @@ async def post_process_steps(settings: Settings,
             if await qa_yml.exists() and 'jobs: {}' in (await qa_yml.read_text(encoding='utf-8')):
                 await qa_yml.unlink(missing_ok=True)
             log.warning('No post-processing steps for project type `%s`.', settings['project_type'])
-    await asyncio.gather(_check_readme_badges(settings), _refresh_changelog_reference_urls(session))
+    await asyncio.gather(_check_readme_badges(settings, session=session),
+                         _refresh_changelog_reference_urls(session))
     package_json = anyio.Path('package.json')
     await package_json.write_text(json.dumps(json.loads(await
                                                         package_json.read_text(encoding='utf-8')),
