@@ -32,6 +32,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- QA badge is no longer rendered in the README when `.github/workflows/qa.yml` does not exist
+  (e.g. C++ projects that use `clang-format.yml` instead).
 - Generated PyPI publish workflow no longer gates on the Tests workflow for `stubs_only` packages,
   which do not have tests.
 - Hatchling sdist `include` now adds `man` when `want_man` is true, so generated sdists for

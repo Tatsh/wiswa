@@ -552,7 +552,7 @@ def _project_type_badges(settings: Settings) -> Iterator[str]:
                                       'https://developer.apple.com/xcode/')
 
 
-def _github_badges(settings: Settings) -> Iterator[str]:
+def _github_badges(settings: Settings, *, has_qa_workflow: bool = True) -> Iterator[str]:
     if not settings['using_github']:
         return
     gh = settings['github']['username']
@@ -570,8 +570,9 @@ def _github_badges(settings: Settings) -> Iterator[str]:
     if settings['want_codeql']:
         yield (f'[![CodeQL]({repo_uri}/actions/workflows/codeql.yml/badge.svg)]'
                f'({repo_uri}/actions/workflows/codeql.yml)')
-    yield (f'[![QA]({repo_uri}/actions/workflows/qa.yml/badge.svg)]'
-           f'({repo_uri}/actions/workflows/qa.yml)')
+    if has_qa_workflow:
+        yield (f'[![QA]({repo_uri}/actions/workflows/qa.yml/badge.svg)]'
+               f'({repo_uri}/actions/workflows/qa.yml)')
     if settings['want_tests']:
         yield (f'[![Tests]({repo_uri}/actions/workflows/tests.yml/badge.svg)]'
                f'({repo_uri}/actions/workflows/tests.yml)')
@@ -792,6 +793,7 @@ async def _check_readme_badges(settings: Settings, *, session: AsyncSession | No
         return
     build_type: str | None = None
     pages_workflow_file: str | None = None
+    has_qa_workflow = await anyio.Path('.github/workflows/qa.yml').exists()
     if (session is not None and settings['using_github'] and not settings['private']
             and settings['want_docs']):
         build_type = await get_github_pages_build_type(session, settings)
@@ -805,7 +807,7 @@ async def _check_readme_badges(settings: Settings, *, session: AsyncSession | No
     await _replace_badge_section(
         readme, (await readme.read_text(encoding='utf-8')).split('\n'),
         (*_custom_project_badges(settings, negative=True), *_project_type_badges(settings),
-         *_github_badges(settings), *_docs_badges(
+         *_github_badges(settings, has_qa_workflow=has_qa_workflow), *_docs_badges(
              settings, github_pages_build_type=build_type, pages_workflow_file=pages_workflow_file),
          *_python_tool_badges(settings), *_misc_badges(settings), *_typescript_badges(settings),
          *_custom_project_badges(settings)), list(_social_badges(settings)))

@@ -1340,6 +1340,9 @@ async def test_post_process_steps_badges_no_codeql_no_tests(tmp_path: Path,
                                                             mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
+    workflows_dir = tmp_path / '.github' / 'workflows'
+    workflows_dir.mkdir(parents=True, exist_ok=True)
+    (workflows_dir / 'qa.yml').write_text('name: QA\n', encoding='utf-8')
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
     _mock_subprocess(mocker)
@@ -1350,6 +1353,20 @@ async def test_post_process_steps_badges_no_codeql_no_tests(tmp_path: Path,
     assert 'CodeQL' not in content
     assert 'Tests' not in content
     assert 'QA' in content
+
+
+async def test_post_process_steps_badges_no_qa_workflow(tmp_path: Path,
+                                                        monkeypatch: pytest.MonkeyPatch,
+                                                        mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings(_readme_existed=True))
+    await post_process_steps(settings)
+    content = readme.read_text(encoding='utf-8')
+    assert 'qa.yml' not in content
 
 
 async def test_post_process_steps_badges_docs_non_python_non_github(tmp_path: Path,
