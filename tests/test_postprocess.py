@@ -1335,6 +1335,21 @@ async def test_post_process_steps_clang_format_skipped_when_no_paths(
     assert clang == []
 
 
+async def test_post_process_steps_non_python_removes_empty_qa_yml(tmp_path: Path,
+                                                                  monkeypatch: pytest.MonkeyPatch,
+                                                                  mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
+    workflows_dir = tmp_path / '.github' / 'workflows'
+    workflows_dir.mkdir(parents=True, exist_ok=True)
+    qa_yml = workflows_dir / 'qa.yml'
+    qa_yml.write_text('jobs: {}', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings(project_type='c++', _readme_existed=False))
+    await post_process_steps(settings)
+    assert not qa_yml.exists()
+
+
 async def test_post_process_steps_badges_no_codeql_no_tests(tmp_path: Path,
                                                             monkeypatch: pytest.MonkeyPatch,
                                                             mocker: MockerFixture) -> None:
