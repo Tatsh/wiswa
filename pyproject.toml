@@ -6,9 +6,9 @@ requires = ["hatchling"]
 dev = [
   "commitizen>=4.13.10",
   "cz-path>=0.0.6",
-  "mypy>=1.20.0",
-  "ruff>=0.15.10",
-  "ty>=0.0.29",
+  "mypy>=1.20.1",
+  "ruff==0.15.10",
+  "ty>=0.0.30",
   "types-jsonnet>=0.22.0.20260408",
   "yapf>=0.43.0",
 ]
@@ -51,15 +51,15 @@ dependencies = [
   "anyio>=4.13.0",
   "bascom>=0.1.2",
   "click>=8.3.2",
-  "fastmcp>=3.2.3",
+  "fastmcp>=3.2.4",
   "jinja2>=3.1.6",
   "jsonnet>=0.22.0",
   "keyring>=25.7.0",
-  "niquests-cache>=0.2.0",
-  "niquests>=3.18.5",
+  "niquests-cache>=0.0.3",
+  "niquests>=3.18.6",
   "platformdirs>=4.9.6",
   "python-gitlab>=8.2.0",
-  "rich>=14.3.4",
+  "rich>=15.0.0",
   "tomlkit>=0.14.0",
   "typing-extensions>=4.15.0",
 ]
@@ -132,7 +132,7 @@ omit = [
 max-line-length = 100
 
 [tool.hatch.build.targets.sdist]
-include = ["wiswa", "tests"]
+include = ["wiswa", "man", "tests"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["wiswa", "wiswa-jsonnet"]

@@ -5,7 +5,8 @@ Reflects changes made to Wiswa-managed files back into `.wiswa.jsonnet`.
 ## Role
 
 When a managed file is modified directly (e.g. `uv add`, manual
-`pyproject.toml` edits, etc.), you update `.wiswa.jsonnet` so that running Wiswa
+`pyproject.toml` edits, etc.), you
+update `.wiswa.jsonnet` so that running Wiswa
 again would produce the same result.
 
 ## Context
@@ -101,7 +102,8 @@ For example, if `[tool.ruff.lint.pylint]` in `pyproject.toml` changes, the overr
 
 1. **Read the current `.wiswa.jsonnet`** to understand existing overrides.
 
-2. **Read the changed managed files** (e.g. `pyproject.toml`, `package.json`) to identify what changed.
+2. **Read the changed managed files** (e.g. `pyproject.toml`, `package.json`)
+   to identify what changed.
 
 3. **Read the relevant defaults** (`defaults.libsonnet`, `defaults/python-deps.libsonnet`, etc.)
    to determine what is already provided by Wiswa.
