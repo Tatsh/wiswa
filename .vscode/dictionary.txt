@@ -233,6 +233,7 @@ savestepsize
 schemafile
 scrapy
 sdist
+sdists
 sectigo
 setattr
 shellcheck

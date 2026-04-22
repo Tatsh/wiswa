@@ -1302,6 +1302,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                  targets: {
                    sdist: {
                      include: std.set([std.split(m, '.')[0] for m in settings.modules]) +
+                              (if settings.want_man then ['man'] else []) +
                               (if settings.want_tests then ['tests'] else []),
                    },
                    wheel: {

@@ -28,6 +28,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Generated PyPI publish workflow no longer gates on the Tests workflow for `stubs_only` packages,
   which do not have tests.
+- Hatchling sdist `include` now adds `man` when `want_man` is true, so generated sdists for
+  uv/Hatchling projects include man pages (previously only Poetry-based projects included them).
 
 ### Removed
 
