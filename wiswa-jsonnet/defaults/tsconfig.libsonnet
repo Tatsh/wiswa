@@ -11,8 +11,6 @@
     allowJs: true,
     /** @brief Enable all strict type-checking options. */
     alwaysStrict: true,
-    /** @brief Base directory to resolve non-relative module names. */
-    baseUrl: 'src',
     /** @brief Disable loading of referenced projects. */
     disableReferencedProjectLoad: true,
     /** @brief Disable searching for solutions. */
@@ -30,7 +28,7 @@
     /** @brief Module code generation method. */
     module: 'commonjs',
     /** @brief Module resolution strategy. */
-    moduleResolution: 'node',
+    moduleResolution: 'bundler',
     /** @brief Disable truncation of error messages. */
     noErrorTruncation: true,
     /** @brief Report errors for fallthrough cases in switch statements. */
