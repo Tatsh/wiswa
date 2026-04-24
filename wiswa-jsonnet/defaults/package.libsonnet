@@ -153,7 +153,6 @@ local utils = import 'utils.libsonnet';
       'prettier-plugin-toml': utils.latestNpmPackageVersionCaret('prettier-plugin-toml'),
     } + if settings.project_type == 'python' then python_npm_dev_deps(settings) else
       {} + if settings.project_type == 'typescript' then top.typescript_dev_deps(settings) else {},
-    engines: { node: settings.node_engine },
     files: ['LICENSE.txt', 'README.md'] + man,
     'markdownlint-cli2': {
       config: {

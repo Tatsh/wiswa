@@ -9,6 +9,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- `engines.node` field from generated `package.json` files.
+
 ## [0.2.2] - 2026-04-23
 
 ### Added
