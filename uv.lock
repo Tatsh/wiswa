@@ -9,7 +9,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-04-17T00:39:40.182788626Z"
+exclude-newer = "2026-04-17T00:44:45.469382737Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
@@ -3557,7 +3557,7 @@ wheels = [
 
 [[package]]
 name = "wiswa"
-version = "0.2.1"
+version = "0.2.2"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
