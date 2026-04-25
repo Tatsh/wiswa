@@ -23,6 +23,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     self.want_sqlfluff,
     self.want_ty,
     self.supported_python_versions[0],
+    'tomlkit' in self.python_deps.main,
   ),
   local is_uv = self.package_manager == 'uv',
   local github = if settings.using_github then pre_commit_configs.github else [],

@@ -9,8 +9,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- `tomlkit` is no longer added to default docs dependencies for Python projects below 3.11 when
+  the project already lists `tomlkit` in its main dependencies.
+
 ### Removed
 
+- `docutils<0.22` constraint and `numpydoc` from default docs dependencies.
 - `engines.node` field from generated `package.json` files.
 
 ## [0.2.2] - 2026-04-23
