@@ -115,64 +115,64 @@ def _desired_gitlab_badges(settings: Settings) -> list[dict[str, str]]:
     badges: list[dict[str, str]] = [{
         'image_url': f'{project}/badges/{branch}/pipeline.svg?ignore_skipped=true',
         'link_url': pipelines_link,
-        'name': 'QA',
+        'name': 'QA'
     }]
     if settings['want_tests']:
         badges.append({
             'image_url': f'{project}/badges/{branch}/coverage.svg?ignore_skipped=true',
             'link_url': pipelines_link,
-            'name': 'Coverage',
+            'name': 'Coverage'
         })
     badges.append({
         'image_url': f'{project}/-/badges/release.svg',
         'link_url': f'{project}/-/releases',
-        'name': 'Latest Release',
+        'name': 'Latest Release'
     })
     if settings['project_type'] == 'python':
         if settings['using_django']:
             badges.append({
                 'image_url': 'https://img.shields.io/badge/django-092E20?logo=django',
                 'link_url': 'https://djangoproject.com',
-                'name': 'Django',
+                'name': 'Django'
             })
         badges.append({
             'image_url': 'https://www.mypy-lang.org/static/mypy_badge.svg',
             'link_url': 'https://mypy-lang.org/',
-            'name': 'mypy',
+            'name': 'mypy'
         })
         if settings['package_manager'] == 'uv':
             badges.append({
                 'image_url': 'https://img.shields.io/badge/uv-261230?logo=astral',
                 'link_url': 'https://docs.astral.sh/uv/',
-                'name': 'uv',
+                'name': 'uv'
             })
         else:
             badges.append({
                 'image_url': 'https://img.shields.io/badge/Poetry-242d3e?logo=poetry',
                 'link_url': 'https://python-poetry.org',
-                'name': 'Poetry',
+                'name': 'Poetry'
             })
         if settings['want_tests'] and not settings['stubs_only']:
             badges.append({
                 'image_url': ('https://img.shields.io/badge/pytest-zz'
                               '?logo=Pytest&labelColor=black&color=black'),
                 'link_url': 'https://docs.pytest.org/en/stable/',
-                'name': 'pytest',
+                'name': 'pytest'
             })
         badges.append({
             'image_url': ('https://img.shields.io/endpoint?url=https://raw.githubusercontent.com'
                           '/astral-sh/ruff/main/assets/badge/v2.json'),
             'link_url': 'https://github.com/astral-sh/ruff',
-            'name': 'Ruff',
+            'name': 'Ruff'
         })
     badges.extend(({
         'image_url': 'https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit',
         'link_url': 'https://github.com/pre-commit/pre-commit',
-        'name': 'pre-commit',
+        'name': 'pre-commit'
     }, {
         'image_url': 'https://img.shields.io/badge/Prettier-black?logo=prettier',
         'link_url': 'https://prettier.io/',
-        'name': 'Prettier',
+        'name': 'Prettier'
     }))
     return badges
 
@@ -232,15 +232,11 @@ def _configure_gitlab_project_sync(settings: Settings, token: str) -> None:
     project.pushrules.update(None, push_rules)
     project.approvals.update(None, project_approvals)
     branches = project.branches.list()
-    default_branch_name = next(
-        (b.name for b in branches if b.attributes.get('default')),
-        settings['default_branch'],
-    )
+    default_branch_name = next((b.name for b in branches if b.attributes.get('default')),
+                               settings['default_branch'])
     encoded_branch = quote(default_branch_name, safe='')
-    gl.http_patch(
-        f'/projects/{project.get_id()}/protected_branches/{encoded_branch}',
-        post_data=default_branch_protection,
-    )
+    gl.http_patch(f'/projects/{project.get_id()}/protected_branches/{encoded_branch}',
+                  post_data=default_branch_protection)
     _sync_gitlab_badges(project, _desired_gitlab_badges(settings))
 
 

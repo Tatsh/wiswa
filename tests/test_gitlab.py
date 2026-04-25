@@ -38,7 +38,7 @@ def _make_settings(**overrides: Any) -> Settings:
         'stubs_only': False,
         'using_django': False,
         'using_gitlab': True,
-        'want_tests': True,
+        'want_tests': True
     }
     base |= overrides
     return cast('Settings', base)
@@ -46,9 +46,8 @@ def _make_settings(**overrides: Any) -> Settings:
 
 def test_gitlab_defaults_libsonnet_merge_preserves_other_project_settings() -> None:
     merged = json.loads(
-        _jsonnet.evaluate_snippet(
-            '',
-            """
+        _jsonnet.evaluate_snippet('',
+                                  """
             local g = import "defaults/gitlab.libsonnet";
             g + {
               project_settings+: {
@@ -56,8 +55,7 @@ def test_gitlab_defaults_libsonnet_merge_preserves_other_project_settings() -> N
               },
             }
             """,
-            jpathdir=[str(_WISWA_JSONNET)],
-        ))
+                                  jpathdir=[str(_WISWA_JSONNET)]))
     assert merged['project_settings']['merge_method'] == 'merge'
     assert merged['project_settings']['issues_enabled'] == 'true'
 
@@ -77,7 +75,7 @@ def test_gitlab_merged_remote_tables_returns_gitlab_subsections() -> None:
         },
         'push_rules': {
             'prevent_secrets': 'false'
-        },
+        }
     }
     ps, pr, pa, dbp = gitlab_merged_remote_tables(_make_settings(gitlab=gitlab))
     assert ps == gitlab['project_settings']
@@ -254,11 +252,7 @@ async def test_setup_gitlab_project_applies_project_settings_from_merged_setting
     mocker.patch('wiswa.utils.gitlab.gitlab.Gitlab', return_value=mock_gl)
     mocker.patch('wiswa.utils.gitlab.run_sync', side_effect=lambda fn: fn())
     session = MagicMock()
-    settings = _make_settings(gitlab={
-        'project_settings': {
-            'issues_enabled': 'false',
-        },
-    })
+    settings = _make_settings(gitlab={'project_settings': {'issues_enabled': 'false'}})
     await setup_gitlab_project(session, settings)
     assert mock_project.issues_enabled == 'false'
 

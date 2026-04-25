@@ -20,10 +20,10 @@ def _make_settings(**overrides: Any) -> Settings:
         'keywords': ['test', 'example project'],
         'github': {
             'immutable_releases': True,
-            'username': 'testuser',
+            'username': 'testuser'
         },
         'repository_uri': 'https://github.com/testuser/testrepo',
-        'using_github': True,
+        'using_github': True
     }
     base |= overrides
     return cast('Settings', base)

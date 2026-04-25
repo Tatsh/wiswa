@@ -209,19 +209,14 @@ async def _configure_github_repo(session: niquests.AsyncSession, host: str, repo
     await _append_on_http_error('repository settings', _patch_repo())
 
     async def _put_topics() -> None:
-        r = await session.put(
-            f'{host}/repos/{repo_name}/topics',
-            json={'names': [x.replace(' ', '-') for x in settings['keywords']]},
-        )
+        r = await session.put(f'{host}/repos/{repo_name}/topics',
+                              json={'names': [x.replace(' ', '-') for x in settings['keywords']]})
         r.raise_for_status()
 
     await _append_on_http_error('repository topics', _put_topics())
 
-    for ep in (
-            'automated-security-fixes',
-            'private-vulnerability-reporting',
-            'vulnerability-alerts',
-    ):
+    for ep in ('automated-security-fixes', 'private-vulnerability-reporting',
+               'vulnerability-alerts'):
 
         async def _put_security(endpoint: str = ep) -> None:
             r = await session.put(f'{host}/repos/{repo_name}/{endpoint}')
@@ -268,7 +263,7 @@ _DESIRED_RULESETS: list[dict[str, Any]] = [{
         'type': 'update'
     }, {
         'type': 'required_signatures'
-    }],
+    }]
 }, {
     'name':
         'Protect default branch',
@@ -301,7 +296,7 @@ _DESIRED_RULESETS: list[dict[str, Any]] = [{
             'required_review_thread_resolution': True
         },
         'type': 'pull_request'
-    }],
+    }]
 }, {
     'name': 'Copilot review for default branch',
     'target': 'branch',
@@ -325,7 +320,7 @@ _DESIRED_RULESETS: list[dict[str, Any]] = [{
         'actor_id': 5,
         'actor_type': 'RepositoryRole',
         'bypass_mode': 'always'
-    }],
+    }]
 }]
 
 
@@ -394,8 +389,7 @@ async def setup_github_project(session: niquests.AsyncSession, settings: Setting
                 json={'source': {
                     'branch': settings['default_branch'],
                     'path': '/'
-                }},
-            )
+                }})
             r.raise_for_status()
 
         await _append_on_http_error('GitHub Pages', _configure_pages())

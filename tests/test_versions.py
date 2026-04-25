@@ -353,20 +353,17 @@ async def test_get_github_release_latest_tag_npm_age_picks_older_published_relea
     old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=14)).strftime('%Y-%m-%dT%H:%M:%SZ')
     new_pub = (datetime.now(tz=timezone.utc) - timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
     releases = _make_response(ok=True,
-                              json_data=[
-                                  {
-                                      'tag_name': 'v2.0.0',
-                                      'draft': False,
-                                      'prerelease': False,
-                                      'published_at': new_pub,
-                                  },
-                                  {
-                                      'tag_name': 'v1.0.0',
-                                      'draft': False,
-                                      'prerelease': False,
-                                      'published_at': old_pub,
-                                  },
-                              ])
+                              json_data=[{
+                                  'tag_name': 'v2.0.0',
+                                  'draft': False,
+                                  'prerelease': False,
+                                  'published_at': new_pub
+                              }, {
+                                  'tag_name': 'v1.0.0',
+                                  'draft': False,
+                                  'prerelease': False,
+                                  'published_at': old_pub
+                              }])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(side_effect=[releases])
     result = await get_github_release_latest_tag(mock_session,
@@ -411,7 +408,7 @@ async def test_get_github_release_latest_tag_npm_age_no_match_logs_and_falls_bac
                                   'tag_name': 'v5.0.0',
                                   'draft': False,
                                   'prerelease': False,
-                                  'published_at': new_pub,
+                                  'published_at': new_pub
                               }])
     latest = _make_response(ok=True, json_data={'tag_name': 'v5.0.0'})
     mock_session = MagicMock()
@@ -430,45 +427,37 @@ async def test_get_github_release_latest_tag_npm_age_skips_non_qualifying_releas
     old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=30)).strftime('%Y-%m-%dT%H:%M:%SZ')
     new_pub = (datetime.now(tz=timezone.utc) - timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
     batch = [
-        'not-a-dict',
-        {
+        'not-a-dict', {
             'draft': True,
             'tag_name': 'v9.0.0',
-            'published_at': old_pub,
-        },
-        {
+            'published_at': old_pub
+        }, {
             'prerelease': True,
             'tag_name': 'v8.0.0',
-            'published_at': old_pub,
-        },
-        {
+            'published_at': old_pub
+        }, {
             'tag_name': '',
-            'published_at': old_pub,
-        },
-        {
+            'published_at': old_pub
+        }, {
             'tag_name': 'v7.0.0',
-            'published_at': 7,
-        },
-        {
+            'published_at': 7
+        }, {
             'tag_name': 'v6.0.0',
-            'published_at': 'not-a-date',
-        },
-        {
+            'published_at': 'not-a-date'
+        }, {
             'tag_name': 'v5.0.0',
-            'published_at': new_pub,
-        },
-        {
+            'published_at': new_pub
+        }, {
             'tag_name': 'vvvv',
             'draft': False,
             'prerelease': False,
-            'published_at': old_pub,
-        },
-        {
+            'published_at': old_pub
+        }, {
             'tag_name': 'v2.0.0',
             'draft': False,
             'prerelease': False,
-            'published_at': old_pub,
-        },
+            'published_at': old_pub
+        }
     ]
     releases = _make_response(ok=True, json_data=batch)
     mock_session = MagicMock()
@@ -528,18 +517,13 @@ async def test_get_github_release_latest_tag_npm_age_second_release_page() -> No
         'tag_name': f'v0.{i}.0',
         'draft': False,
         'prerelease': False,
-        'published_at': new_pub,
+        'published_at': new_pub
     } for i in range(100)]
-    page2 = [{
-        'tag_name': 'v10.0.0',
-        'draft': False,
-        'prerelease': False,
-        'published_at': old_pub,
-    }]
+    page2 = [{'tag_name': 'v10.0.0', 'draft': False, 'prerelease': False, 'published_at': old_pub}]
     mock_session = MagicMock()
     mock_session.get = AsyncMock(side_effect=[
         _make_response(ok=True, json_data=page1),
-        _make_response(ok=True, json_data=page2),
+        _make_response(ok=True, json_data=page2)
     ])
     result = await get_github_release_latest_tag(mock_session,
                                                  'o',
@@ -562,7 +546,7 @@ async def test_get_github_release_latest_tag_npm_age_omits_minutes_uses_yarnrc(
                                   'tag_name': 'v1.0.0',
                                   'draft': False,
                                   'prerelease': False,
-                                  'published_at': old_pub,
+                                  'published_at': old_pub
                               }])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(side_effect=[releases])
@@ -575,12 +559,7 @@ async def test_get_github_release_latest_tag_npm_age_omits_minutes_uses_yarnrc(
 
 async def test_get_github_release_latest_tag_npm_age_google_yapf_old_release() -> None:
     old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=14)).strftime('%Y-%m-%dT%H:%M:%SZ')
-    batch = [{
-        'tag_name': 'v0.41.0',
-        'draft': False,
-        'prerelease': False,
-        'published_at': old_pub,
-    }]
+    batch = [{'tag_name': 'v0.41.0', 'draft': False, 'prerelease': False, 'published_at': old_pub}]
     releases = _make_response(ok=True, json_data=batch)
     mock_session = MagicMock()
     mock_session.get = AsyncMock(side_effect=[releases])
@@ -595,20 +574,17 @@ async def test_get_github_release_latest_tag_npm_age_google_yapf_old_release() -
 
 async def test_get_github_release_latest_tag_npm_age_google_yapf_no_digit_suffix() -> None:
     old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=14)).strftime('%Y-%m-%dT%H:%M:%SZ')
-    batch = [
-        {
-            'tag_name': 'v0.40.0-beta',
-            'draft': False,
-            'prerelease': False,
-            'published_at': old_pub,
-        },
-        {
-            'tag_name': 'v0.40.0',
-            'draft': False,
-            'prerelease': False,
-            'published_at': old_pub,
-        },
-    ]
+    batch = [{
+        'tag_name': 'v0.40.0-beta',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub
+    }, {
+        'tag_name': 'v0.40.0',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub
+    }]
     releases = _make_response(ok=True, json_data=batch)
     mock_session = MagicMock()
     mock_session.get = AsyncMock(side_effect=[releases])
@@ -623,20 +599,17 @@ async def test_get_github_release_latest_tag_npm_age_google_yapf_no_digit_suffix
 
 async def test_get_github_release_latest_tag_npm_age_prefers_highest_eligible_version() -> None:
     old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
-    batch = [
-        {
-            'tag_name': 'v1.0.0',
-            'draft': False,
-            'prerelease': False,
-            'published_at': old_pub,
-        },
-        {
-            'tag_name': 'v2.0.0',
-            'draft': False,
-            'prerelease': False,
-            'published_at': old_pub,
-        },
-    ]
+    batch = [{
+        'tag_name': 'v1.0.0',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub
+    }, {
+        'tag_name': 'v2.0.0',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub
+    }]
     releases = _make_response(ok=True, json_data=batch)
     mock_session = MagicMock()
     mock_session.get = AsyncMock(side_effect=[releases])
@@ -651,26 +624,22 @@ async def test_get_github_release_latest_tag_npm_age_prefers_highest_eligible_ve
 
 async def test_get_github_release_latest_tag_npm_age_skips_invalid_and_prerelease_tags() -> None:
     old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
-    batch = [
-        {
-            'tag_name': 'v!!!!',
-            'draft': False,
-            'prerelease': False,
-            'published_at': old_pub,
-        },
-        {
-            'tag_name': 'v3.0.0rc1',
-            'draft': False,
-            'prerelease': False,
-            'published_at': old_pub,
-        },
-        {
-            'tag_name': 'v3.0.0',
-            'draft': False,
-            'prerelease': False,
-            'published_at': old_pub,
-        },
-    ]
+    batch = [{
+        'tag_name': 'v!!!!',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub
+    }, {
+        'tag_name': 'v3.0.0rc1',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub
+    }, {
+        'tag_name': 'v3.0.0',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub
+    }]
     releases = _make_response(ok=True, json_data=batch)
     mock_session = MagicMock()
     mock_session.get = AsyncMock(side_effect=[releases])
@@ -689,7 +658,7 @@ async def test_get_github_release_latest_tag_npm_age_partial_release_page() -> N
         'tag_name': 'v1.1.0',
         'draft': False,
         'prerelease': False,
-        'published_at': old_pub,
+        'published_at': old_pub
     }]
     mock_session = MagicMock()
     mock_session.get = AsyncMock(side_effect=[_make_response(ok=True, json_data=page_short)])
@@ -709,14 +678,11 @@ async def test_get_github_release_latest_tag_npm_age_full_page_exhausts_without_
         'tag_name': f'v50.{i}.0',
         'draft': False,
         'prerelease': False,
-        'published_at': new_pub,
+        'published_at': new_pub
     } for i in range(100)]
     latest = _make_response(ok=True, json_data={'tag_name': 'v50.0.0'})
     mock_session = MagicMock()
-    mock_session.get = AsyncMock(side_effect=[
-        _make_response(ok=True, json_data=page1),
-        latest,
-    ])
+    mock_session.get = AsyncMock(side_effect=[_make_response(ok=True, json_data=page1), latest])
     result = await get_github_release_latest_tag(mock_session,
                                                  'o',
                                                  'r',
@@ -727,20 +693,17 @@ async def test_get_github_release_latest_tag_npm_age_full_page_exhausts_without_
 
 async def test_get_github_release_latest_tag_npm_age_invalid_semver_suffixes_allowed() -> None:
     old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
-    batch = [
-        {
-            'tag_name': 'v!!!!',
-            'draft': False,
-            'prerelease': False,
-            'published_at': old_pub,
-        },
-        {
-            'tag_name': 'v2.0.0',
-            'draft': False,
-            'prerelease': False,
-            'published_at': old_pub,
-        },
-    ]
+    batch = [{
+        'tag_name': 'v!!!!',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub
+    }, {
+        'tag_name': 'v2.0.0',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub
+    }]
     releases = _make_response(ok=True, json_data=batch)
     mock_session = MagicMock()
     mock_session.get = AsyncMock(side_effect=[releases])
@@ -755,20 +718,17 @@ async def test_get_github_release_latest_tag_npm_age_invalid_semver_suffixes_all
 
 async def test_get_github_release_latest_tag_npm_age_google_yapf_rejects_non_v_tag() -> None:
     old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
-    batch = [
-        {
-            'tag_name': 'release-0.40',
-            'draft': False,
-            'prerelease': False,
-            'published_at': old_pub,
-        },
-        {
-            'tag_name': 'v0.40.0',
-            'draft': False,
-            'prerelease': False,
-            'published_at': old_pub,
-        },
-    ]
+    batch = [{
+        'tag_name': 'release-0.40',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub
+    }, {
+        'tag_name': 'v0.40.0',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub
+    }]
     releases = _make_response(ok=True, json_data=batch)
     mock_session = MagicMock()
     mock_session.get = AsyncMock(side_effect=[releases])
@@ -783,20 +743,17 @@ async def test_get_github_release_latest_tag_npm_age_google_yapf_rejects_non_v_t
 
 async def test_get_github_release_latest_tag_npm_age_skips_older_version_when_max_seen() -> None:
     old_pub = (datetime.now(tz=timezone.utc) - timedelta(days=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
-    batch = [
-        {
-            'tag_name': 'v3.0.0',
-            'draft': False,
-            'prerelease': False,
-            'published_at': old_pub,
-        },
-        {
-            'tag_name': 'v2.0.0',
-            'draft': False,
-            'prerelease': False,
-            'published_at': old_pub,
-        },
-    ]
+    batch = [{
+        'tag_name': 'v3.0.0',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub
+    }, {
+        'tag_name': 'v2.0.0',
+        'draft': False,
+        'prerelease': False,
+        'published_at': old_pub
+    }]
     releases = _make_response(ok=True, json_data=batch)
     mock_session = MagicMock()
     mock_session.get = AsyncMock(side_effect=[releases])
@@ -813,10 +770,7 @@ async def test_get_github_release_disk_store_memo_avoids_second_file_read(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     cache_dir = tmp_path / 'xdg-cache' / 'wiswa'
     cache_dir.mkdir(parents=True)
-    store = {
-        'gh_aa/bb_False_True': 'v1.0.0',
-        'gh_cc/dd_False_True': 'v2.0.0',
-    }
+    store = {'gh_aa/bb_False_True': 'v1.0.0', 'gh_cc/dd_False_True': 'v2.0.0'}
     (cache_dir / 'github_tag_cache.json').write_text(json.dumps(store) + '\n', encoding='utf-8')
     reads: list[Path] = []
     real_read = Path.read_text
@@ -842,10 +796,7 @@ async def test_get_pypi_latest_package_version_uv_toml_global_parses_timestamp(
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('exclude-newer = "2025-01-15T12:00:00Z"\n', encoding='utf-8')
-    data = _make_pypi_json([
-        ('2.0.0', '2025-06-01T00:00:00Z'),
-        ('1.0.0', '2024-01-01T00:00:00Z'),
-    ])
+    data = _make_pypi_json([('2.0.0', '2025-06-01T00:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'toml-parse-pkg')
@@ -865,7 +816,7 @@ async def test_get_pypi_exclude_newer_duration_forms(
         mocker: MockerFixture,
         toml_value: str,
         pkg: str,
-        use_bare_int: bool,  # noqa: FBT001
+        use_bare_int: bool  # noqa: FBT001
 ) -> None:
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
@@ -875,10 +826,7 @@ async def test_get_pypi_exclude_newer_duration_forms(
     fixed_now = datetime(2025, 8, 1, 12, 0, 0, tzinfo=timezone.utc)
     mocker.patch('wiswa.utils.versions.datetime', wraps=datetime)
     mocker.patch('wiswa.utils.versions.datetime.now', return_value=fixed_now)
-    data = _make_pypi_json([
-        ('2.0.0', '2025-08-01T10:00:00Z'),
-        ('1.0.0', '2024-01-01T00:00:00Z'),
-    ])
+    data = _make_pypi_json([('2.0.0', '2025-08-01T10:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, pkg)
@@ -907,10 +855,7 @@ async def test_get_pypi_per_package_uv_toml_skips_invalid_timestamp(tmp_path: Pa
     (uv_dir / 'uv.toml').write_text(
         '[exclude-newer-package]\nkeep = "2025-02-01T00:00:00Z"\ndrop = "not-a-timestamp"\n',
         encoding='utf-8')
-    data = _make_pypi_json([
-        ('2.0.0', '2025-03-01T00:00:00Z'),
-        ('1.0.0', '2024-01-01T00:00:00Z'),
-    ])
+    data = _make_pypi_json([('2.0.0', '2025-03-01T00:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'keep')
@@ -935,10 +880,7 @@ async def test_get_pypi_uv_toml_read_os_error_falls_back_to_no_cutoff(
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('valid = true', encoding='utf-8')
     mocker.patch('pathlib.Path.read_text', side_effect=OSError('Permission denied'))
-    data = _make_pypi_json([
-        ('2.0.0', '2025-01-01T00:00:00Z'),
-        ('1.0.0', '2024-01-01T00:00:00Z'),
-    ])
+    data = _make_pypi_json([('2.0.0', '2025-01-01T00:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'read-error-pkg')
@@ -947,13 +889,13 @@ async def test_get_pypi_uv_toml_read_os_error_falls_back_to_no_cutoff(
 
 def test_resolve_npm_minimal_age_gate_minutes_prefers_merged_settings() -> None:
     assert resolve_npm_minimal_age_gate_minutes(settings={'yarnrc': {
-        'npmMinimalAgeGate': 42,
+        'npmMinimalAgeGate': 42
     }}) == 42
 
 
 def test_resolve_npm_minimal_age_gate_minutes_settings_over_snippet() -> None:
     assert resolve_npm_minimal_age_gate_minutes(settings={'yarnrc': {
-        'npmMinimalAgeGate': 55,
+        'npmMinimalAgeGate': 55
     }},
                                                 project_snippet='npmMinimalAgeGate: 99\n') == 55
 
@@ -1005,7 +947,7 @@ def test_resolve_npm_minimal_age_gate_minutes_settings_yarnrc_list_type(
 
 def test_resolve_npm_minimal_age_gate_minutes_settings_gate_string() -> None:
     assert resolve_npm_minimal_age_gate_minutes(settings={'yarnrc': {
-        'npmMinimalAgeGate': '321',
+        'npmMinimalAgeGate': '321'
     }}) == 321
 
 
@@ -1013,10 +955,9 @@ def test_resolve_npm_minimal_age_gate_minutes_settings_non_numeric_skips_to_yarn
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / '.yarnrc.yml').write_text('npmMinimalAgeGate: 15\n', encoding='utf-8')
-    assert resolve_npm_minimal_age_gate_minutes(
-        settings={'yarnrc': {
-            'npmMinimalAgeGate': math.pi,
-        }}) == 15
+    assert resolve_npm_minimal_age_gate_minutes(settings={'yarnrc': {
+        'npmMinimalAgeGate': math.pi
+    }}) == 15
 
 
 def test_resolve_npm_minimal_age_gate_minutes_snippet_without_key_reads_yarnrc(
@@ -1164,14 +1105,14 @@ async def test_get_npm_latest_package_version_picks_oldest_stable() -> None:
             },
             'versions': {
                 '1.0.0': {},
-                '2.0.0': {},
+                '2.0.0': {}
             },
             'time': {
                 'created': '2020-01-01T00:00:00Z',
                 'modified': '2025-01-01T00:00:00Z',
                 '1.0.0': old_date,
-                '2.0.0': new_date,
-            },
+                '2.0.0': new_date
+            }
         }))
     result = await get_npm_latest_package_version(mock_session, 'test-pkg')
     assert result == '1.0.0'
@@ -1186,11 +1127,11 @@ async def test_get_npm_latest_package_version_all_too_new_falls_back_to_latest()
                 'latest': '3.0.0'
             },
             'versions': {
-                '3.0.0': {},
+                '3.0.0': {}
             },
             'time': {
-                '3.0.0': new_date,
-            },
+                '3.0.0': new_date
+            }
         }))
     result = await get_npm_latest_package_version(mock_session, 'new-only-pkg')
     assert result == '3.0.0'
@@ -1206,12 +1147,12 @@ async def test_get_npm_latest_package_version_skips_prerelease() -> None:
             },
             'versions': {
                 '1.0.0': {},
-                '2.0.0-beta.1': {},
+                '2.0.0-beta.1': {}
             },
             'time': {
                 '1.0.0': old_date,
-                '2.0.0-beta.1': old_date,
-            },
+                '2.0.0-beta.1': old_date
+            }
         }))
     result = await get_npm_latest_package_version(mock_session, 'pre-pkg')
     assert result == '1.0.0'
@@ -1227,12 +1168,12 @@ async def test_get_npm_latest_package_version_skips_invalid_versions() -> None:
             },
             'versions': {
                 'not-a-version': {},
-                '1.0.0': {},
+                '1.0.0': {}
             },
             'time': {
                 'not-a-version': old_date,
-                '1.0.0': old_date,
-            },
+                '1.0.0': old_date
+            }
         }))
     result = await get_npm_latest_package_version(mock_session, 'invalid-ver-pkg')
     assert result == '1.0.0'
@@ -1248,12 +1189,12 @@ async def test_get_npm_latest_package_version_skips_invalid_dates() -> None:
             },
             'versions': {
                 '1.0.0': {},
-                '2.0.0': {},
+                '2.0.0': {}
             },
             'time': {
                 '1.0.0': old_date,
-                '2.0.0': 'not-a-date',
-            },
+                '2.0.0': 'not-a-date'
+            }
         }))
     result = await get_npm_latest_package_version(mock_session, 'bad-date-pkg')
     assert result == '1.0.0'
@@ -1268,11 +1209,11 @@ async def test_get_npm_latest_package_version_cache_hit() -> None:
                 'latest': '1.0.0'
             },
             'versions': {
-                '1.0.0': {},
+                '1.0.0': {}
             },
             'time': {
                 '1.0.0': old_date
-            },
+            }
         }))
     result1 = await get_npm_latest_package_version(mock_session, 'cached-npm')
     result2 = await get_npm_latest_package_version(mock_session, 'cached-npm')
@@ -1291,13 +1232,13 @@ async def test_get_npm_latest_package_version_picks_highest_version() -> None:
             'versions': {
                 '1.0.0': {},
                 '2.0.0': {},
-                '3.0.0': {},
+                '3.0.0': {}
             },
             'time': {
                 '1.0.0': old_date,
                 '2.0.0': old_date,
-                '3.0.0': old_date,
-            },
+                '3.0.0': old_date
+            }
         }))
     result = await get_npm_latest_package_version(mock_session, 'multi-ver-pkg')
     assert result == '3.0.0'
@@ -1312,12 +1253,12 @@ async def test_get_npm_latest_package_version_skips_unpublished_versions() -> No
                 'latest': '2.0.0'
             },
             'versions': {
-                '1.0.0': {},
+                '1.0.0': {}
             },
             'time': {
                 '1.0.0': old_date,
-                '2.0.0': old_date,
-            },
+                '2.0.0': old_date
+            }
         }))
     result = await get_npm_latest_package_version(mock_session, 'unpublished-pkg')
     assert result == '1.0.0'
@@ -1335,8 +1276,8 @@ async def test_get_npm_latest_package_version_all_unpublished_falls_back_to_late
             'time': {
                 '1.0.0': old_date,
                 '2.0.0': old_date,
-                '3.0.0': old_date,
-            },
+                '3.0.0': old_date
+            }
         }))
     result = await get_npm_latest_package_version(mock_session, 'all-unpublished-pkg')
     assert result == '3.0.0'
@@ -1350,8 +1291,8 @@ async def test_get_npm_latest_package_version_no_versions_key_falls_back_to_late
             'latest': '1.0.0'
         },
         'time': {
-            '1.0.0': old_date,
-        },
+            '1.0.0': old_date
+        }
     }))
     result = await get_npm_latest_package_version(mock_session, 'no-versions-key-pkg')
     assert result == '1.0.0'
@@ -1367,7 +1308,7 @@ async def test_get_npm_latest_package_version_mixed_published_unpublished() -> N
             },
             'versions': {
                 '1.0.0': {},
-                '3.0.0': {},
+                '3.0.0': {}
             },
             'time': {
                 'created': '2020-01-01T00:00:00Z',
@@ -1375,8 +1316,8 @@ async def test_get_npm_latest_package_version_mixed_published_unpublished() -> N
                 '1.0.0': old_date,
                 '2.0.0': old_date,
                 '3.0.0': old_date,
-                '4.0.0': old_date,
-            },
+                '4.0.0': old_date
+            }
         }))
     result = await get_npm_latest_package_version(mock_session, 'mixed-pub-pkg')
     assert result == '3.0.0'
@@ -1403,15 +1344,15 @@ async def test_get_npm_latest_package_version_respects_node_engine() -> None:
                 },
                 '11.0.0': {
                     'engines': {}
-                },
+                }
             },
             'time': {
                 'created': '2025-01-01T00:00:00Z',
                 'modified': '2025-01-01T00:00:00Z',
                 '9.5.0': old_date,
                 '10.0.0': old_date,
-                '11.0.0': old_date,
-            },
+                '11.0.0': old_date
+            }
         }))
     result = await get_npm_latest_package_version(mock_session,
                                                   'engines-pkg',
@@ -1437,14 +1378,14 @@ async def test_get_npm_latest_package_version_node_engine_invalid_constraint() -
                     'engines': {
                         'node': ''
                     }
-                },
+                }
             },
             'time': {
                 'created': '2025-01-01T00:00:00Z',
                 'modified': '2025-01-01T00:00:00Z',
                 '1.0.0': old_date,
-                '2.0.0': old_date,
-            },
+                '2.0.0': old_date
+            }
         }))
     result = await get_npm_latest_package_version(mock_session,
                                                   'invalid-engines-pkg',
@@ -1463,10 +1404,7 @@ def _make_pypi_json(versions: list[tuple[str, str]]) -> dict[str, Any]:
 
 
 async def test_get_pypi_latest_package_version_no_cutoff() -> None:
-    data = _make_pypi_json([
-        ('2.0.0', '2025-01-01T00:00:00Z'),
-        ('1.0.0', '2024-01-01T00:00:00Z'),
-    ])
+    data = _make_pypi_json([('2.0.0', '2025-01-01T00:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'no-cutoff-pkg')
@@ -1477,10 +1415,7 @@ async def test_get_pypi_latest_package_version_global_cutoff(tmp_path: Path) -> 
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('exclude-newer = "2024-06-01T00:00:00Z"\n', encoding='utf-8')
-    data = _make_pypi_json([
-        ('2.0.0', '2025-01-01T00:00:00Z'),
-        ('1.0.0', '2024-01-01T00:00:00Z'),
-    ])
+    data = _make_pypi_json([('2.0.0', '2025-01-01T00:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'global-cutoff-pkg')
@@ -1494,10 +1429,7 @@ async def test_get_pypi_latest_package_version_per_package_cutoff(tmp_path: Path
         'exclude-newer = "2020-01-01T00:00:00Z"\n\n'
         '[exclude-newer-package]\nmy-pkg = "2024-06-01T00:00:00Z"\n',
         encoding='utf-8')
-    data = _make_pypi_json([
-        ('2.0.0', '2025-01-01T00:00:00Z'),
-        ('1.0.0', '2024-01-01T00:00:00Z'),
-    ])
+    data = _make_pypi_json([('2.0.0', '2025-01-01T00:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'my-pkg')
@@ -1508,10 +1440,7 @@ async def test_get_pypi_latest_package_version_all_filtered_fallback(tmp_path: P
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('exclude-newer = "2020-01-01T00:00:00Z"\n', encoding='utf-8')
-    data = _make_pypi_json([
-        ('2.0.0', '2025-01-01T00:00:00Z'),
-        ('1.0.0', '2024-01-01T00:00:00Z'),
-    ])
+    data = _make_pypi_json([('2.0.0', '2025-01-01T00:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'all-filtered-pkg')
@@ -1529,10 +1458,7 @@ async def test_get_pypi_latest_package_version_no_releases_raises() -> None:
 
 
 async def test_get_pypi_latest_package_version_skips_prerelease() -> None:
-    data = _make_pypi_json([
-        ('2.0.0a1', '2025-01-01T00:00:00Z'),
-        ('1.0.0', '2024-01-01T00:00:00Z'),
-    ])
+    data = _make_pypi_json([('2.0.0a1', '2025-01-01T00:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'prerelease-pkg')
@@ -1540,10 +1466,7 @@ async def test_get_pypi_latest_package_version_skips_prerelease() -> None:
 
 
 async def test_get_pypi_latest_package_version_skips_yanked() -> None:
-    data = _make_pypi_json([
-        ('8.3.0', '2025-01-01T00:00:00Z'),
-        ('8.2.0', '2024-01-01T00:00:00Z'),
-    ])
+    data = _make_pypi_json([('8.3.0', '2025-01-01T00:00:00Z'), ('8.2.0', '2024-01-01T00:00:00Z')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'sphinx')
@@ -1561,10 +1484,8 @@ async def test_get_pypi_latest_package_version_cache_hit() -> None:
 
 
 async def test_get_pypi_latest_package_version_only_prerelease_raises() -> None:
-    data = _make_pypi_json([
-        ('2.0.0a1', '2025-01-01T00:00:00Z'),
-        ('1.0.0rc1', '2024-01-01T00:00:00Z'),
-    ])
+    data = _make_pypi_json([('2.0.0a1', '2025-01-01T00:00:00Z'),
+                            ('1.0.0rc1', '2024-01-01T00:00:00Z')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     with pytest.raises(ValueError, match='No versions found'):
@@ -1595,9 +1516,9 @@ async def test_get_pypi_latest_package_version_filters_by_python() -> None:
             }],
             '2.0.0': [{
                 'upload_time_iso_8601': '2025-01-01T00:00:00Z',
-                'requires_python': '>=3.13',
-            }],
-        },
+                'requires_python': '>=3.13'
+            }]
+        }
     }
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
@@ -1617,9 +1538,9 @@ async def test_get_pypi_latest_package_version_python_empty_skips_filter() -> No
             }],
             '2.0.0': [{
                 'upload_time_iso_8601': '2025-01-01T00:00:00Z',
-                'requires_python': '>=3.13',
-            }],
-        },
+                'requires_python': '>=3.13'
+            }]
+        }
     }
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
@@ -1635,9 +1556,9 @@ async def test_get_pypi_latest_package_version_python_no_compatible_raises() -> 
         'releases': {
             '1.0.0': [{
                 'upload_time_iso_8601': '2024-01-01T00:00:00Z',
-                'requires_python': '>=3.13',
-            }],
-        },
+                'requires_python': '>=3.13'
+            }]
+        }
     }
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
@@ -1653,8 +1574,8 @@ async def test_get_pypi_latest_package_version_python_missing_requires_passes() 
         'releases': {
             '1.0.0': [{
                 'upload_time_iso_8601': '2024-01-01T00:00:00Z'
-            }],
-        },
+            }]
+        }
     }
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
@@ -1670,13 +1591,13 @@ async def test_get_pypi_latest_package_version_python_upper_bound() -> None:
         'releases': {
             '1.0.0': [{
                 'upload_time_iso_8601': '2024-01-01T00:00:00Z',
-                'requires_python': '>=3.9,<3.11',
+                'requires_python': '>=3.9,<3.11'
             }],
             '2.0.0': [{
                 'upload_time_iso_8601': '2025-01-01T00:00:00Z',
-                'requires_python': '<4.0,>=3.10',
-            }],
-        },
+                'requires_python': '<4.0,>=3.10'
+            }]
+        }
     }
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
@@ -1692,9 +1613,9 @@ async def test_get_pypi_latest_package_version_python_invalid_specifier_passes()
         'releases': {
             '1.0.0': [{
                 'upload_time_iso_8601': '2024-01-01T00:00:00Z',
-                'requires_python': '>>>broken<<<',
-            }],
-        },
+                'requires_python': '>>>broken<<<'
+            }]
+        }
     }
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
@@ -1710,9 +1631,9 @@ async def test_get_pypi_latest_package_version_python_empty_requires_passes() ->
         'releases': {
             '1.0.0': [{
                 'upload_time_iso_8601': '2024-01-01T00:00:00Z',
-                'requires_python': '',
-            }],
-        },
+                'requires_python': ''
+            }]
+        }
     }
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
@@ -1728,9 +1649,9 @@ async def test_get_pypi_latest_package_version_python_non_string_requires_passes
         'releases': {
             '1.0.0': [{
                 'upload_time_iso_8601': '2024-01-01T00:00:00Z',
-                'requires_python': None,
-            }],
-        },
+                'requires_python': None
+            }]
+        }
     }
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
@@ -1739,14 +1660,7 @@ async def test_get_pypi_latest_package_version_python_non_string_requires_passes
 
 
 async def test_get_pypi_latest_package_version_empty_files_with_python_passes() -> None:
-    data: dict[str, Any] = {
-        'info': {
-            'version': '1.0.0'
-        },
-        'releases': {
-            '1.0.0': [],
-        },
-    }
+    data: dict[str, Any] = {'info': {'version': '1.0.0'}, 'releases': {'1.0.0': []}}
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'empty-files-pkg', python='3.10')
@@ -1764,8 +1678,8 @@ async def test_get_pypi_latest_package_version_skips_invalid_version_key() -> No
             }],
             '1.0.0': [{
                 'upload_time_iso_8601': '2024-01-01T00:00:00Z'
-            }],
-        },
+            }]
+        }
     }
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
@@ -1783,15 +1697,12 @@ async def test_get_pypi_latest_package_version_earliest_upload_multiple_files(
             'version': '1.0.0'
         },
         'releases': {
-            '1.0.0': [
-                {
-                    'upload_time_iso_8601': '2024-01-01T00:00:00Z'
-                },
-                {
-                    'upload_time_iso_8601': '2024-03-01T00:00:00Z'
-                },
-            ],
-        },
+            '1.0.0': [{
+                'upload_time_iso_8601': '2024-01-01T00:00:00Z'
+            }, {
+                'upload_time_iso_8601': '2024-03-01T00:00:00Z'
+            }]
+        }
     }
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
@@ -1814,8 +1725,8 @@ async def test_get_pypi_latest_package_version_upload_time_non_string_skipped(
             }],
             '2.0.0': [{
                 'upload_time_iso_8601': '2024-01-01T00:00:00Z'
-            }],
-        },
+            }]
+        }
     }
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
@@ -1838,8 +1749,8 @@ async def test_get_pypi_latest_package_version_upload_time_invalid_date_skipped(
             }],
             '2.0.0': [{
                 'upload_time_iso_8601': '2024-01-01T00:00:00Z'
-            }],
-        },
+            }]
+        }
     }
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))

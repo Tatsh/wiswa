@@ -47,14 +47,12 @@ _SPINNER_CHOICE_POOL: tuple[str, ...] = (tuple(name for name in _DOT_SPINNER_NAM
 :meta hide-value:
 """
 
-_BANNER_LINES = (
-    '██╗    ██╗  ██╗  ███████╗  ██╗    ██╗   █████╗ ',
-    '██║    ██║  ██║  ██╔════╝  ██║    ██║  ██╔══██╗',
-    '██║ █╗ ██║  ██║  ███████╗  ██║ █╗ ██║  ███████║',
-    '██║███╗██║  ██║  ╚════██║  ██║███╗██║  ██╔══██║',
-    '╚███╔███╔╝  ██║  ███████║  ╚███╔███╔╝  ██║  ██║',
-    ' ╚══╝╚══╝   ╚═╝  ╚══════╝   ╚══╝╚══╝   ╚═╝  ╚═╝',
-)
+_BANNER_LINES = ('██╗    ██╗  ██╗  ███████╗  ██╗    ██╗   █████╗ ',
+                 '██║    ██║  ██║  ██╔════╝  ██║    ██║  ██╔══██╗',
+                 '██║ █╗ ██║  ██║  ███████╗  ██║ █╗ ██║  ███████║',
+                 '██║███╗██║  ██║  ╚════██║  ██║███╗██║  ██╔══██║',
+                 '╚███╔███╔╝  ██║  ███████║  ╚███╔███╔╝  ██║  ██║',
+                 ' ╚══╝╚══╝   ╚═╝  ╚══════╝   ╚══╝╚══╝   ╚═╝  ╚═╝')
 """Unicode block-letter banner for the progress header.
 
 :meta hide-value:
@@ -118,15 +116,14 @@ class _Task:
     message: str = ''
 
 
-_DEFAULT_TASKS: tuple[tuple[TaskId, str], ...] = (
-    (TaskId.EVALUATE_SETTINGS, 'Evaluate settings'),
-    (TaskId.EVALUATE_PROJECT, 'Evaluate project'),
-    (TaskId.WRITE_TEMPLATES, 'Write templated files'),
-    (TaskId.DOWNLOAD_YARN, 'Download Yarn'),
-    (TaskId.COPY_STATIC, 'Copy static files'),
-    (TaskId.POST_PROCESS, 'Post-process'),
-    (TaskId.CONFIGURE_REMOTE, 'Configure remote'),
-)
+_DEFAULT_TASKS: tuple[tuple[TaskId, str],
+                      ...] = ((TaskId.EVALUATE_SETTINGS,
+                               'Evaluate settings'), (TaskId.EVALUATE_PROJECT, 'Evaluate project'),
+                              (TaskId.WRITE_TEMPLATES, 'Write templated files'),
+                              (TaskId.DOWNLOAD_YARN, 'Download Yarn'), (TaskId.COPY_STATIC,
+                                                                        'Copy static files'),
+                              (TaskId.POST_PROCESS, 'Post-process'), (TaskId.CONFIGURE_REMOTE,
+                                                                      'Configure remote'))
 
 
 @dataclass

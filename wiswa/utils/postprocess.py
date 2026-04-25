@@ -39,10 +39,7 @@ _README_GENERATED_STOP = '<!-- WISWA-GENERATED-README:STOP -->'
 
 _GIT_CONFIG_NO_HOOKS = ('-c', f'core.hooksPath={os.devnull}')
 
-_FORMAT_DEFAULT_FILENAMES = {
-    'cyclonedx1.5': 'cyclonedx.json',
-    'pylock.toml': 'pylock.toml',
-}
+_FORMAT_DEFAULT_FILENAMES = {'cyclonedx1.5': 'cyclonedx.json', 'pylock.toml': 'pylock.toml'}
 _LEGACY_WISWA_AI_PATHS = ('.cursor/permissions.json.dist', '.cursor/rules/general.mdc',
                           '.cursor/rules/json-yaml.mdc', '.cursor/rules/markdown.mdc',
                           '.cursor/rules/toml-ini.mdc', '.cursor/rules/cpp.mdc',
@@ -681,7 +678,7 @@ def _social_badges(settings: Settings) -> Iterator[str]:
         'ffmpeg': ('FFmpeg', 'ffmpeg', 'FFmpeg', 'orange', 'https://ffmpeg.org/'),
         'kde': ('KDE Plasma', 'kdeplasma', 'KDE Plasma', 'blue', 'https://kde.org/'),
         'qt': ('Qt', 'qt', 'Qt', '41cd52', 'https://www.qt.io/'),
-        'swift': ('Swift', 'swift', 'Swift', 'F05138', 'https://swift.org/'),
+        'swift': ('Swift', 'swift', 'Swift', 'F05138', 'https://swift.org/')
     }
     for keyword, args in keywords_to_args.items():
         if keyword in settings['keywords']:

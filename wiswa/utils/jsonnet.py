@@ -246,7 +246,7 @@ def _make_native_callbacks(
         return {
             'githubCliUsername': github_cli_username_cb,
             'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
-            'year': ((), lambda: datetime.now(tz=timezone.utc).year),
+            'year': ((), lambda: datetime.now(tz=timezone.utc).year)
         }
     # Jsonnet native callbacks are sync, but our HTTP functions are async. These callbacks run
     # inside run_sync, so we use :func:`anyio.from_thread.run` to schedule the async
@@ -287,7 +287,7 @@ def _make_native_callbacks(
         'latestPypiPackageVersion': (('p', 'h', 'py'), lambda p, h='pypi.org', py='': _sync_wrap(
             get_pypi_latest_package_version, session, p, host=h, python=py or None)),
         'latestYarnVersion': ((), lambda: _sync_wrap(get_latest_yarn_version, session)),
-        'year': ((), lambda: datetime.now(tz=timezone.utc).year),
+        'year': ((), lambda: datetime.now(tz=timezone.utc).year)
     }
 
 
@@ -426,7 +426,7 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
             tla_codes={
                 'defaults': defaults_text,
                 'settings': settings,
-                'user_defaults': user_overlay,
+                'user_defaults': user_overlay
             }))
         log.debug('Jsonnet evaluation (merged settings) took %.3fs.', time.perf_counter() - t0)
         return result
@@ -480,7 +480,7 @@ async def resolve_defaults_only(jpathdir: Sequence[str],
         tla_codes={
             'defaults': defaults_text,
             'settings': '{}',
-            'user_defaults': '{}',
+            'user_defaults': '{}'
         }))
     log.debug('Jsonnet evaluation (defaults only) took %.3fs.', time.perf_counter() - t0)
     result: dict[str, Any] = json.loads(s)

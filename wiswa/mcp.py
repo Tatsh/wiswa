@@ -202,7 +202,7 @@ async def lookup_setting(key_path: str) -> str:
         'default_value': value,
         'type': value_type,
         'override_snippet': snippet,
-        'notes': notes,
+        'notes': notes
     })
 
 

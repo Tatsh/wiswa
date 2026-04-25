@@ -63,7 +63,7 @@ def _social_networks() -> dict[str, Any]:
             'uri': ''
         },
         'buymeacoffee': '',
-        'libera_irc': '',
+        'libera_irc': ''
     }
 
 
@@ -100,7 +100,7 @@ def _export_requirements_defaults() -> dict[str, Any]:
         'package': [],
         'prune': [],
         'script': '',
-        'with_hashes': True,
+        'with_hashes': True
     }
 
 
@@ -119,7 +119,7 @@ def _pyinstaller_defaults() -> dict[str, Any]:
         'vcpkg': {
             'enabled': False,
             'targets': {}
-        },
+        }
     }
 
 
@@ -133,7 +133,7 @@ def _appimage_defaults() -> dict[str, Any]:
         'terminal': True,
         'test_commands': [],
         'uv_sync_args': [],
-        'requirements_filter': '',
+        'requirements_filter': ''
     }
 
 
@@ -145,7 +145,7 @@ def _github_defaults() -> dict[str, Any]:
             'windows': {
                 'signing_certificate': 'WINDOWS_SIGNING_CERTIFICATE',
                 'signing_password': 'WINDOWS_SIGNING_PASSWORD',
-                'timestamp_url': 'WINDOWS_TIMESTAMP_URL',
+                'timestamp_url': 'WINDOWS_TIMESTAMP_URL'
             },
             'apple': {
                 'signing_certificate': 'APPLE_SIGNING_CERTIFICATE',
@@ -153,8 +153,8 @@ def _github_defaults() -> dict[str, Any]:
                 'signing_identity': 'APPLE_SIGNING_IDENTITY',
                 'apple_id': 'APPLE_ID',
                 'app_specific_password': 'APPLE_APP_SPECIFIC_PASSWORD',
-                'team_id': 'APPLE_TEAM_ID',
-            },
+                'team_id': 'APPLE_TEAM_ID'
+            }
         },
         'workflows': {
             'appimage': {
@@ -166,26 +166,26 @@ def _github_defaults() -> dict[str, Any]:
             'publish_npm_any': {
                 'node_version': '24',
                 'runs_on': 'ubuntu-latest',
-                'registry_url': 'https://registry.npmjs.org/',
+                'registry_url': 'https://registry.npmjs.org/'
             },
             'publish_pypi_any': {
                 'python_version': '3.13',
-                'runs_on': 'ubuntu-latest',
+                'runs_on': 'ubuntu-latest'
             },
             'publish_winget': {
                 'identifier': 'test.testproject',
-                'max_versions_to_keep': 3,
+                'max_versions_to_keep': 3
             },
             'qa': {
                 'allow_pyright_failure': False,
                 'allow_ty_failure': False,
-                'apt_packages': [],
+                'apt_packages': []
             },
             'tests': {
                 'apt_packages': []
             },
-            'release_gate_workflows': [],
-        },
+            'release_gate_workflows': []
+        }
     }
 
 
@@ -196,7 +196,7 @@ def _cmake_defaults() -> dict[str, Any]:
         'uses_ecm': False,
         'uses_qt': False,
         'want_feature_summary': True,
-        'want_cpack': True,
+        'want_cpack': True
     }
 
 
@@ -204,15 +204,14 @@ def _eslint_defaults() -> list[dict[str, Any]]:
     return [{
         'rules': {
             '@typescript-eslint/no-unused-vars': [
-                'error',
-                {
+                'error', {
                     'argsIgnorePattern': '^_',
                     'caughtErrorsIgnorePattern': '^_',
                     'destructuredArrayIgnorePattern': '^_',
-                    'varsIgnorePattern': '^_',
-                },
-            ],
-        },
+                    'varsIgnorePattern': '^_'
+                }
+            ]
+        }
     }]
 
 
@@ -220,13 +219,9 @@ def _docs_conf_defaults() -> dict[str, Any]:
     return {
         'environment_variables': {},
         'extensions': [
-            'sphinx.ext.autodoc',
-            'sphinx.ext.intersphinx',
-            'sphinx.ext.napoleon',
-            'sphinx_datatables',
-            'sphinx_immaterial',
-            'sphinxcontrib.autodoc_pydantic',
-            'sphinxcontrib.jquery',
+            'sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx.ext.napoleon',
+            'sphinx_datatables', 'sphinx_immaterial', 'sphinxcontrib.autodoc_pydantic',
+            'sphinxcontrib.jquery'
         ],
         'django': {
             'monkeypatch': True,
@@ -235,19 +230,16 @@ def _docs_conf_defaults() -> dict[str, Any]:
                 'DATABASES': {
                     'default': {
                         'ENGINE': 'django.db.backends.sqlite3',
-                        'NAME': ':memory:',
-                    },
+                        'NAME': ':memory:'
+                    }
                 },
                 'INSTALLED_APPS': [
-                    'django.contrib.admin',
-                    'django.contrib.auth',
-                    'django.contrib.contenttypes',
-                    'django.contrib.sessions',
-                    'django.contrib.messages',
-                    'django.contrib.staticfiles',
+                    'django.contrib.admin', 'django.contrib.auth', 'django.contrib.contenttypes',
+                    'django.contrib.sessions', 'django.contrib.messages',
+                    'django.contrib.staticfiles'
                 ],
-                'PATH_PREFIX': '',
-            },
+                'PATH_PREFIX': ''
+            }
         },
         'config': {
             'datatables_class': 'sphinx-datatable',
@@ -256,68 +248,54 @@ def _docs_conf_defaults() -> dict[str, Any]:
             },
             'datatables_version': '1.13.4',
             'intersphinx_mapping': {
-                'python': ['https://docs.python.org/3', None],
+                'python': ['https://docs.python.org/3', None]
             },
             'html_theme': 'sphinx_immaterial',
             'html_theme_options': {
                 'features': [
-                    'announce.dismiss',
-                    'content.action.edit',
-                    'content.action.view',
-                    'content.code.copy',
-                    'content.tabs.link',
-                    'content.tooltips',
-                    'navigation.expand',
-                    'navigation.footer',
-                    'navigation.sections',
-                    'navigation.top',
-                    'search.share',
-                    'search.suggest',
-                    'toc.follow',
-                    'toc.sticky',
+                    'announce.dismiss', 'content.action.edit', 'content.action.view',
+                    'content.code.copy', 'content.tabs.link', 'content.tooltips',
+                    'navigation.expand', 'navigation.footer', 'navigation.sections',
+                    'navigation.top', 'search.share', 'search.suggest', 'toc.follow', 'toc.sticky'
                 ],
                 'font': False,
                 'icon': {
                     'edit': 'material/file-edit-outline',
-                    'repo': 'fontawesome/brands/github',
+                    'repo': 'fontawesome/brands/github'
                 },
                 'globaltoc_collapse': True,
-                'palette': [
-                    {
-                        'media': '(prefers-color-scheme)',
-                        'toggle': {
-                            'icon': 'material/brightness-auto',
-                            'name': 'Switch to light mode',
-                        },
-                    },
-                    {
-                        'media': '(prefers-color-scheme: light)',
-                        'scheme': 'default',
-                        'primary': 'teal',
-                        'accent': 'light-blue',
-                        'toggle': {
-                            'icon': 'material/lightbulb',
-                            'name': 'Switch to dark mode',
-                        },
-                    },
-                    {
-                        'media': '(prefers-color-scheme: dark)',
-                        'scheme': 'slate',
-                        'primary': 'black',
-                        'accent': 'blue',
-                        'toggle': {
-                            'icon': 'material/lightbulb-outline',
-                            'name': 'Switch to system preference',
-                        },
-                    },
-                ],
+                'palette': [{
+                    'media': '(prefers-color-scheme)',
+                    'toggle': {
+                        'icon': 'material/brightness-auto',
+                        'name': 'Switch to light mode'
+                    }
+                }, {
+                    'media': '(prefers-color-scheme: light)',
+                    'scheme': 'default',
+                    'primary': 'teal',
+                    'accent': 'light-blue',
+                    'toggle': {
+                        'icon': 'material/lightbulb',
+                        'name': 'Switch to dark mode'
+                    }
+                }, {
+                    'media': '(prefers-color-scheme: dark)',
+                    'scheme': 'slate',
+                    'primary': 'black',
+                    'accent': 'blue',
+                    'toggle': {
+                        'icon': 'material/lightbulb-outline',
+                        'name': 'Switch to system preference'
+                    }
+                }],
                 'toc_title_is_page_title': True,
                 'edit_uri': '/tree/master/docs',
                 'repo_name': 'testdir',
                 'repo_url': 'https://github.com/test/testproject',
-                'site_url': 'https://example.com/docs',
-            },
-        },
+                'site_url': 'https://example.com/docs'
+            }
+        }
     }
 
 
@@ -406,7 +384,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'pyinstaller': _pyinstaller_defaults(),
         'appimage': _appimage_defaults(),
         'docs_conf': _docs_conf_defaults(),
-        'using_drf': False,
+        'using_drf': False
     }
     merged = base | overrides
     branch = str(merged['default_branch'])

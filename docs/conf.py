@@ -79,5 +79,5 @@ intersphinx_mapping = {
     'jinja2': ('https://jinja.palletsprojects.com/en/latest', None),
     'niquests': ('https://niquests.readthedocs.io/en/latest', None),
     'niquests-cache': ('https://niquests-cache.readthedocs.io/en/latest', None),
-    'python': ('https://docs.python.org/3', None),
+    'python': ('https://docs.python.org/3', None)
 }

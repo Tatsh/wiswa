@@ -32,9 +32,7 @@ __all__ = ('clear_resolution_caches', 'download_yarn', 'download_yarn_plugins',
 
 log = logging.getLogger(__name__)
 
-_PYPI_YANKED_RELEASES = {
-    'sphinx-8.3.0',
-}
+_PYPI_YANKED_RELEASES = {'sphinx-8.3.0'}
 
 _cache: dict[str, str] = {}
 

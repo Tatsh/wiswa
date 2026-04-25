@@ -62,8 +62,7 @@ def _template_env(module_path: Path,
     # Local import: ``wiswa.extensions`` may import ``wiswa.utils.versions``, which loads this
     # package's ``__init__`` before ``templating`` has finished initializing.
     from wiswa.extensions import (  # noqa: I001, PLC0415
-        GithubAPIExtension, ParseMarkdownBadgeExtension, ShellExtension, ToPythonExtension,
-    )
+        GithubAPIExtension, ParseMarkdownBadgeExtension, ShellExtension, ToPythonExtension)
 
     env = jinja2.Environment(autoescape=jinja2.select_autoescape(),
                              enable_async=True,
@@ -180,13 +179,8 @@ async def _write_templated_files_typescript(settings: Settings, templates_dir: P
 
 
 _PYTHON_ONLY_AGENTS = frozenset({
-    'click-auditor',
-    'coverage-improver',
-    'docstring-fixer',
-    'mypy-fixer',
-    'python-expert',
-    'python-moderniser',
-    'test-writer',
+    'click-auditor', 'coverage-improver', 'docstring-fixer', 'mypy-fixer', 'python-expert',
+    'python-moderniser', 'test-writer'
 })
 
 _PYTHON_RULE_TEMPLATE = 'python.md.j2'
@@ -324,7 +318,7 @@ async def write_templated_files(module_path: Path,
     keep_url, semver_url = await resolve_changelog_boilerplate_urls(session)
     changelog_context: dict[str, Any] = {
         'changelog_keep_a_changelog_url': keep_url,
-        'changelog_semver_spec_url': semver_url,
+        'changelog_semver_spec_url': semver_url
     }
 
     async def _write_one_common(template_name: str, *, overwrite: bool) -> None:

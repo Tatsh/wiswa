@@ -32,7 +32,7 @@ def _eval_merged_return(**overrides: Any) -> tuple[dict[str, Any], dict[str, Any
         'stubs_only': False,
         'yarn_version': '1.0.0',
         'using_github': True,
-        'using_gitlab': False,
+        'using_gitlab': False
     }
     merged.update(overrides)
     return merged, merged
@@ -444,22 +444,22 @@ def test_main_legacy_poetry_deps_warning(mocker: MockerFixture, tmp_path: Path) 
                      'package_manager': 'uv',
                      'python_deps': {
                          'main': {
-                             'click': '>=8',
-                         },
+                             'click': '>=8'
+                         }
                      },
                      'pyproject': {
                          'project': {
-                             'dependencies': ['click>=8', 'requests>=2'],
+                             'dependencies': ['click>=8', 'requests>=2']
                          },
                          'dependency-groups': {},
                          'tool': {
                              'poetry': {
                                  'dependencies': {
-                                     'requests': '^2',
-                                 },
-                             },
-                         },
-                     },
+                                     'requests': '^2'
+                                 }
+                             }
+                         }
+                     }
                  }))
     mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
     mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
@@ -506,11 +506,11 @@ def test_main_legacy_poetry_group_deps_warning(mocker: MockerFixture, tmp_path: 
                      'using_gitlab': False,
                      'package_manager': 'uv',
                      'python_deps': {
-                         'main': {},
+                         'main': {}
                      },
                      'pyproject': {
                          'project': {
-                             'dependencies': [],
+                             'dependencies': []
                          },
                          'dependency-groups': {},
                          'tool': {
@@ -518,13 +518,13 @@ def test_main_legacy_poetry_group_deps_warning(mocker: MockerFixture, tmp_path: 
                                  'group': {
                                      'dev': {
                                          'dependencies': {
-                                             'pytest': '^8',
-                                         },
-                                     },
-                                 },
-                             },
-                         },
-                     },
+                                             'pytest': '^8'
+                                         }
+                                     }
+                                 }
+                             }
+                         }
+                     }
                  }))
     mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
     mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
@@ -572,15 +572,15 @@ def test_main_no_legacy_deps_no_warning(mocker: MockerFixture, tmp_path: Path) -
                      'package_manager': 'uv',
                      'python_deps': {
                          'main': {
-                             'click': '>=8',
-                         },
+                             'click': '>=8'
+                         }
                      },
                      'pyproject': {
                          'project': {
-                             'dependencies': ['click>=8'],
+                             'dependencies': ['click>=8']
                          },
-                         'dependency-groups': {},
-                     },
+                         'dependency-groups': {}
+                     }
                  }))
     mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
     mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)
@@ -844,7 +844,7 @@ def test_main_new_skip_flags(skip_flag: str, func_name: str, mocker: MockerFixtu
     mocks = {
         'download_yarn': mock_download_yarn,
         'copy_static_files': mock_copy_static,
-        'post_process_steps': mock_post_process,
+        'post_process_steps': mock_post_process
     }
     assert not mocks[func_name].called
     if func_name == 'post_process_steps':
@@ -1061,9 +1061,9 @@ def test_main_has_legacy_poetry_deps_not_uv(mocker: MockerFixture, tmp_path: Pat
                      'using_gitlab': False,
                      'package_manager': 'poetry',
                      'python_deps': {
-                         'main': {},
+                         'main': {}
                      },
-                     'pyproject': {},
+                     'pyproject': {}
                  }))
     mocker.patch('wiswa.main.evaluate_jsonnet_project', new_callable=AsyncMock)
     mocker.patch('wiswa.main.write_templated_files', new_callable=AsyncMock)

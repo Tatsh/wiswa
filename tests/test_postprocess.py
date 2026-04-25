@@ -51,22 +51,22 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'repository_uri': 'https://github.com/testuser/myproject',
         'github': {
             'username': 'testuser',
-            'immutable_releases': True,
+            'immutable_releases': True
         },
         'social': {},
         'keywords': [],
         'documentation_uri': 'https://myproject.readthedocs.io',
         'package_json': {
             'dependencies': {},
-            'devDependencies': {},
+            'devDependencies': {}
         },
         'python_deps': {
-            'main': {},
+            'main': {}
         },
         'pyproject': {
             'project': {
-                'dependencies': [],
-            },
+                'dependencies': []
+            }
         },
         'export_requirements': {
             'enabled': False,
@@ -96,16 +96,16 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
             'package': [],
             'prune': [],
             'script': '',
-            'with_hashes': True,
+            'with_hashes': True
         },
         'vscode': {
-            'launch': None,
+            'launch': None
         },
         'regenerate_yarn_lock': False,
         '_readme_existed': False,
         '_has_established_pytest_modules': False,
         'want_ai': True,
-        'want_appimage': True,
+        'want_appimage': True
     }
     return base | overrides
 
@@ -160,8 +160,8 @@ async def test_apply_python_pyproject_manifest_edits_preserves_sphinx_fail_on_wa
             'check-formatting': 'old',
             'format': 'old',
             'gen-docs': gen_docs,
-            'gen-manpage': gen_manpage,
-        },
+            'gen-manpage': gen_manpage
+        }
     }),
                                            encoding='utf-8')
     settings = cast('Any', _make_settings(package_manager=package_manager, want_yapf=False))
@@ -297,13 +297,11 @@ async def test_post_process_steps_python_no_tests_removes_launch_json(
     settings = cast(
         'Any',
         _make_settings(want_tests=False,
-                       vscode={
-                           'launch': {
-                               'configurations': [{
-                                   'name': 'Run tests'
-                               }],
-                           },
-                       }))
+                       vscode={'launch': {
+                           'configurations': [{
+                               'name': 'Run tests'
+                           }]
+                       }}))
     await post_process_steps(settings)
     assert not (tmp_path / '.vscode/launch.json').exists()
 
@@ -652,9 +650,7 @@ async def test_post_process_steps_python_no_tests_no_launch_vscode(tmp_path: Pat
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     _mock_subprocess(mocker)
-    settings = cast('Any', _make_settings(want_tests=False, vscode={
-        'launch': None,
-    }))
+    settings = cast('Any', _make_settings(want_tests=False, vscode={'launch': None}))
     await post_process_steps(settings)
 
 
@@ -667,16 +663,15 @@ async def test_post_process_steps_python_no_tests_multiple_launch_configs(
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(want_tests=False,
-                       vscode={
-                           'launch': {
-                               'configurations': [{
-                                   'name': 'Run tests'
-                               }, {
-                                   'name': 'Debug'
-                               }],
-                           },
-                       }))
+        _make_settings(
+            want_tests=False,
+            vscode={'launch': {
+                'configurations': [{
+                    'name': 'Run tests'
+                }, {
+                    'name': 'Debug'
+                }]
+            }}))
     await post_process_steps(settings)
     assert (tmp_path / '.vscode/launch.json').exists()
 
@@ -901,7 +896,7 @@ async def test_post_process_steps_badges_python_poetry_django(tmp_path: Path,
                        using_django=True,
                        package_manager='poetry',
                        python_deps={'main': {
-                           'numpy': '>=1',
+                           'numpy': '>=1'
                        }}))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
@@ -940,7 +935,7 @@ async def test_post_process_steps_badges_private_python_skips_numpy_pypi_badge(
     settings = cast(
         'Any',
         _make_settings(_readme_existed=True, private=True, python_deps={'main': {
-            'numpy': '>=1',
+            'numpy': '>=1'
         }}))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
@@ -962,12 +957,12 @@ async def test_post_process_steps_badges_typescript_project(tmp_path: Path,
                        package_json={
                            'dependencies': {
                                'react': '^18',
-                               'next': '^14',
+                               'next': '^14'
                            },
                            'devDependencies': {
                                'eslint': '^8',
-                               'jest': '^29',
-                           },
+                               'jest': '^29'
+                           }
                        }))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
@@ -989,12 +984,12 @@ async def test_post_process_steps_badges_typescript_private_skips_npm_badges(
                        package_json={
                            'dependencies': {
                                'react': '^18',
-                               'next': '^14',
+                               'next': '^14'
                            },
                            'devDependencies': {
                                'eslint': '^8',
-                               'jest': '^29',
-                           },
+                               'jest': '^29'
+                           }
                        }))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
@@ -1048,21 +1043,21 @@ async def test_post_process_steps_social_badges(tmp_path: Path, monkeypatch: pyt
                            'buymeacoffee': 'testuser',
                            'calendly': {
                                'text': 'Book a call',
-                               'uri': 'https://calendly.com/test',
+                               'uri': 'https://calendly.com/test'
                            },
                            'cashapp': '$testuser',
                            'libera_irc': 'testuser',
                            'mastodon': {
                                'id': '123456',
-                               'domain': 'mastodon.social',
+                               'domain': 'mastodon.social'
                            },
                            'patreon': 'testuser',
                            'slashdot': 'testuser',
                            'youtube': {
                                'text': 'My Channel',
-                               'uri': 'https://youtube.com/@test',
+                               'uri': 'https://youtube.com/@test'
                            },
-                           'custom_badges': ['[![Custom](http://example.com)]'],
+                           'custom_badges': ['[![Custom](http://example.com)]']
                        }))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
@@ -1092,19 +1087,16 @@ async def test_post_process_steps_python_uv_with_deps(tmp_path: Path,
     _mock_subprocess(mocker)
     settings = cast(
         'Any',
-        _make_settings(_readme_existed=True,
-                       python_deps={
-                           'main': {
-                               'jinja': '>=3',
-                               'pydantic': '>=2',
-                               'sqlalchemy': '>=2',
-                           },
-                       },
-                       pyproject={
-                           'project': {
-                               'dependencies': ['pandas>=2', 'scrapy>=2'],
-                           },
-                       }))
+        _make_settings(
+            _readme_existed=True,
+            python_deps={'main': {
+                'jinja': '>=3',
+                'pydantic': '>=2',
+                'sqlalchemy': '>=2'
+            }},
+            pyproject={'project': {
+                'dependencies': ['pandas>=2', 'scrapy>=2']
+            }}))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'Jinja' in content or 'jinja' in content
@@ -1256,18 +1248,15 @@ async def test_post_process_steps_custom_project_badges(tmp_path: Path,
     settings = cast(
         'Any',
         _make_settings(_readme_existed=True,
-                       custom_project_badges=[
-                           {
-                               'anchor': '[![High Priority](http://example.com/high.svg)',
-                               'href': 'http://example.com/high',
-                               'priority': -1,
-                           },
-                           {
-                               'anchor': '[![Low Priority](http://example.com/low.svg)',
-                               'href': 'http://example.com/low',
-                               'priority': 1,
-                           },
-                       ]))
+                       custom_project_badges=[{
+                           'anchor': '[![High Priority](http://example.com/high.svg)',
+                           'href': 'http://example.com/high',
+                           'priority': -1
+                       }, {
+                           'anchor': '[![Low Priority](http://example.com/low.svg)',
+                           'href': 'http://example.com/low',
+                           'priority': 1
+                       }]))
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'High Priority' in content
@@ -1443,7 +1432,7 @@ def _export_settings(**overrides: Any) -> dict[str, Any]:
         'package': [],
         'prune': [],
         'script': '',
-        'with_hashes': True,
+        'with_hashes': True
     }
     return er | overrides
 

@@ -34,20 +34,20 @@ MOCK_DEFAULTS: dict[str, Any] = {
         'tool': {
             'ruff': {
                 'line-length': 100,
-                'target-version': 'py310',
-            },
+                'target-version': 'py310'
+            }
         },
         'project': {
-            'name': 'test',
-        },
+            'name': 'test'
+        }
     },
     'social': {
         'bsky': '',
         'mastodon': {
             'id': '',
-            'domain': 'hostux.social',
-        },
-    },
+            'domain': 'hostux.social'
+        }
+    }
 }
 
 

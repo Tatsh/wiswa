@@ -343,11 +343,9 @@ async def _main_async(file: Path,
               '--quiet',
               is_flag=True,
               help='Suppress the progress spinner and the final Done message.')
-@click.option(
-    '--skip-remote',
-    is_flag=True,
-    help='Skip configuring the remote Git host (GitHub or GitLab project API).',
-)
+@click.option('--skip-remote',
+              is_flag=True,
+              help='Skip configuring the remote Git host (GitHub or GitLab project API).')
 @click.option(
     '--skip-jsonnet',
     is_flag=True,
