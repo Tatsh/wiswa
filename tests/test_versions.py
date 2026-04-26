@@ -32,6 +32,7 @@ def clear_version_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None
     clear_resolution_caches()
     monkeypatch.setenv('XDG_CACHE_HOME', str(tmp_path / 'xdg-cache'))
     monkeypatch.setenv('XDG_CONFIG_HOME', str(tmp_path / '.config'))
+    monkeypatch.chdir(tmp_path)
 
 
 def _make_response(
@@ -885,6 +886,69 @@ async def test_get_pypi_uv_toml_read_os_error_falls_back_to_no_cutoff(
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'read-error-pkg')
     assert result == '2.0.0'
+
+
+async def test_get_pypi_project_pyproject_overrides_user_uv_toml(tmp_path: Path) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text('exclude-newer = "2024-06-01T00:00:00Z"\n', encoding='utf-8')
+    (tmp_path / 'pyproject.toml').write_text('[tool.uv]\nexclude-newer = "2030-01-01T00:00:00Z"\n',
+                                             encoding='utf-8')
+    data = _make_pypi_json([('2.0.0', '2025-01-01T00:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'project-override-pkg')
+    assert result == '2.0.0'
+
+
+async def test_get_pypi_project_pyproject_per_package_false_bypasses_global(tmp_path: Path) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text('exclude-newer = "2024-06-01T00:00:00Z"\n', encoding='utf-8')
+    (tmp_path / 'pyproject.toml').write_text('[tool.uv.exclude-newer-package]\nfree-pass = false\n',
+                                             encoding='utf-8')
+    data = _make_pypi_json([('2.0.0', '2025-01-01T00:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'free-pass')
+    assert result == '2.0.0'
+
+
+async def test_get_pypi_per_package_true_is_ignored(tmp_path: Path) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text(
+        'exclude-newer = "2024-06-01T00:00:00Z"\n'
+        '[exclude-newer-package]\nlocked = true\n',
+        encoding='utf-8')
+    data = _make_pypi_json([('2.0.0', '2025-01-01T00:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'locked')
+    assert result == '1.0.0'
+
+
+async def test_get_pypi_global_exclude_newer_invalid_string_ignored(tmp_path: Path) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text('exclude-newer = "not-a-timestamp"\n', encoding='utf-8')
+    data = _make_pypi_json([('2.0.0', '2025-01-01T00:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'invalid-cutoff-pkg')
+    assert result == '2.0.0'
+
+
+async def test_get_pypi_project_pyproject_no_tool_uv_section(tmp_path: Path) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text('exclude-newer = "2024-06-01T00:00:00Z"\n', encoding='utf-8')
+    (tmp_path / 'pyproject.toml').write_text('[project]\nname = "x"\n', encoding='utf-8')
+    data = _make_pypi_json([('2.0.0', '2025-01-01T00:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'no-tool-uv-pkg')
+    assert result == '1.0.0'
 
 
 def test_resolve_npm_minimal_age_gate_minutes_prefers_merged_settings() -> None:

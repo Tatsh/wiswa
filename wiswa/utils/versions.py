@@ -230,36 +230,108 @@ def _parse_exclude_newer(value: str) -> datetime | None:
             return None
 
 
-@cache
-def _get_uv_config() -> tuple[datetime | None, dict[str, datetime]]:
+def _coerce_per_package_value(val: Any) -> tuple[bool, datetime | None]:
     """
-    Read ``exclude-newer`` and ``exclude-newer-package`` from uv's user ``uv.toml``.
+    Coerce a raw ``exclude-newer-package`` entry to a ``(present, cutoff)`` tuple.
 
-    The path is ``platformdirs.user_config_path('uv', appauthor=False) / 'uv.toml'``.
+    A value of ``False`` means the package is *explicitly opted out* of the global cutoff;
+    in that case the entry is present but the cutoff is :py:data:`None`. A timestamp string
+    or duration produces a parsed :py:class:`~datetime.datetime`. Anything else (``True``,
+    invalid strings) is treated as not-present so the global cutoff continues to apply.
+
+    Parameters
+    ----------
+    val : Any
+        The raw value from the TOML mapping.
 
     Returns
     -------
-    tuple[datetime | None, dict[str, datetime]]
-        A global cutoff and a per-package mapping of cutoff datetimes.
+    tuple[bool, datetime | None]
+        ``(present, cutoff)``. ``present=False`` means the entry should be ignored;
+        ``present=True, cutoff=None`` means the package bypasses the cutoff entirely.
     """
-    uv_toml = platformdirs.user_config_path('uv', appauthor=False) / 'uv.toml'
-    if not uv_toml.exists():
-        return None, {}
-    try:
-        data = tomlkit.loads(uv_toml.read_text(encoding='utf-8')).unwrap()
-    except OSError:
-        return None, {}
-    global_cutoff: datetime | None = None
-    raw = data.get('exclude-newer')
+    if isinstance(val, bool):
+        return (True, None) if val is False else (False, None)
+    dt = _parse_exclude_newer(str(val))
+    if dt is None:
+        return False, None
+    return True, dt
+
+
+def _apply_uv_section(section: Mapping[str, Any], global_cutoff: datetime | None,
+                      per_package: dict[str, datetime | None]) -> datetime | None:
+    """
+    Merge a single ``[tool.uv]``/``uv.toml`` section into the running config.
+
+    Parameters
+    ----------
+    section : Mapping[str, Any]
+        The mapping to read ``exclude-newer`` and ``exclude-newer-package`` from.
+    global_cutoff : datetime | None
+        The current global cutoff; returned unchanged when the section does not set one.
+    per_package : dict[str, datetime | None]
+        Per-package map, mutated in place. ``None`` values mean "explicitly opted out".
+
+    Returns
+    -------
+    datetime | None
+        The (possibly updated) global cutoff.
+    """
+    raw = section.get('exclude-newer')
     if raw is not None:
-        global_cutoff = _parse_exclude_newer(str(raw))
-    per_package: dict[str, datetime] = {}
-    pkg_map = data.get('exclude-newer-package')
+        parsed = _parse_exclude_newer(str(raw))
+        if parsed is not None:
+            global_cutoff = parsed
+    pkg_map = section.get('exclude-newer-package')
     if isinstance(pkg_map, dict):
         for pkg, val in pkg_map.items():
-            dt = _parse_exclude_newer(str(val))
-            if dt is not None:
-                per_package[str(pkg)] = dt
+            present, cutoff = _coerce_per_package_value(val)
+            if present:
+                per_package[str(pkg)] = cutoff
+    return global_cutoff
+
+
+def _read_toml(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    try:
+        return tomlkit.loads(path.read_text(encoding='utf-8')).unwrap()
+    except OSError:
+        return None
+
+
+@cache
+def _get_uv_config(
+        project_root: Path | None = None) -> tuple[datetime | None, dict[str, datetime | None]]:
+    """
+    Read ``exclude-newer`` and ``exclude-newer-package`` from uv's configuration.
+
+    Reads the user-level ``uv.toml`` (resolved via
+    :func:`platformdirs.user_config_path`) first, then merges the project's
+    ``pyproject.toml`` ``[tool.uv]`` section on top so project values override the user
+    config — matching uv's own precedence.
+
+    Parameters
+    ----------
+    project_root : Path | None
+        Directory to search for ``pyproject.toml``. Defaults to :py:meth:`Path.cwd`.
+
+    Returns
+    -------
+    tuple[datetime | None, dict[str, datetime | None]]
+        The global cutoff (or :py:data:`None`) and the per-package map. A per-package
+        value of :py:data:`None` means the package is explicitly exempt from any cutoff.
+    """
+    global_cutoff: datetime | None = None
+    per_package: dict[str, datetime | None] = {}
+    user_toml = _read_toml(platformdirs.user_config_path('uv', appauthor=False) / 'uv.toml')
+    if user_toml is not None:
+        global_cutoff = _apply_uv_section(user_toml, global_cutoff, per_package)
+    project_pyproject = _read_toml((project_root or Path.cwd()) / 'pyproject.toml')
+    if project_pyproject is not None:
+        tool_uv = project_pyproject.get('tool', {}).get('uv')
+        if isinstance(tool_uv, dict):
+            global_cutoff = _apply_uv_section(tool_uv, global_cutoff, per_package)
     return global_cutoff, per_package
 
 
@@ -756,8 +828,7 @@ async def get_github_release_latest_tag(session: niquests.AsyncSession,
             if disk_tag:
                 log.warning(
                     'Using disk-cached GitHub tag %s for %s/%s after HTTP %d '
-                    '(for example rate limiting or missing token).', disk_tag, owner, repo,
-                    blocked_status)
+                    '(likely due to rate limiting).', disk_tag, owner, repo, blocked_status)
                 _cache[key] = disk_tag
                 return disk_tag
         msg = f'Could not get latest tag for {owner}/{repo}.'

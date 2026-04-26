@@ -13,6 +13,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `tomlkit` is no longer added to default docs dependencies for Python projects below 3.11 when
   the project already lists `tomlkit` in its main dependencies.
+- `latestPypiPackageVersion` (and the caret/ge/tilde wrappers) now read the project's
+  `pyproject.toml` `[tool.uv]` section in addition to the user-level `uv.toml`, with project
+  values overriding user values. This matches uv's own precedence so per-project overrides take
+  effect during Wiswa runs.
+
+### Fixed
+
+- `[tool.uv.exclude-newer-package].<package> = false` now correctly exempts that package from any
+  global `exclude-newer` cutoff during PyPI version resolution. Previously this entry was
+  ignored, so the global cutoff still filtered out releases of the named package.
 
 ### Removed
 
