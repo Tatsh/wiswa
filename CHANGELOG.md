@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-04-26
+
 ### Changed
 
 - `tomlkit` is no longer added to default docs dependencies for Python projects below 3.11 when
