@@ -83,6 +83,7 @@ endcode
 endfor
 endmacro
 endraw
+errexit
 esac
 esbenp
 esbonio
@@ -162,6 +163,7 @@ makecert
 manylinux
 maxwidth
 mdfile
+metacharacters
 mktemp
 modindex
 monkeypatch
@@ -183,6 +185,7 @@ notarytool
 notint
 npmage
 npmjs
+nsis
 nsucz
 nullptr
 numpy
