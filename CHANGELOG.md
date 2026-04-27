@@ -9,6 +9,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Generated `publish-*` workflows (`publish-pypi-any`, `publish-luarocks`, `publish-winget`,
+  `publish-npm-any`) and the `release` workflow gate no longer treat freshly-queued tag-triggered
+  workflows as "missing" and silently skip them. Watched workflows are split at template time into
+  a required list (build artefacts plus user-supplied `release_gate_workflows`) that must register
+  a run before the gate clears, and an optional list (`Prettier`, `QA`, `Spelling`,
+  `markdownlint`, and `Tests` when applicable) that is master- or PR-triggered and is skipped
+  silently when absent. Previously, when GitHub's API had not yet indexed the freshly-queued runs
+  on a tag push, the gate could exit on its first iteration and let `pypa/gh-action-pypi-publish`
+  upload a wheel before the build matrix had finished.
+- Workflow names with spaces or shell metacharacters (for example `Windows Installer (NSIS)`) now
+  round-trip through the gate scripts intact: the bash uses real arrays with `"${arr[@]}"`
+  instead of word-splitting a space-delimited string.
+- The `process_workflow` helper returns code `2` to signal "pending". Under GitHub Actions' default
+  `bash -e` shells, that non-zero return previously aborted the gate script before the caller could
+  inspect `$?`, so the loop exited with code 2 instead of retrying. Each call site now uses the
+  `rc=0; cmd || rc=$?` idiom so the helper's return code is captured without tripping `errexit`.
+
 ## [0.3.1] - 2026-04-27
 
 ### Changed
@@ -517,7 +536,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First version.
 
-[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.2.2...HEAD
+[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/Tatsh/wiswa/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/Tatsh/wiswa/compare/v0.2.3...v0.3.0
+[0.2.3]: https://github.com/Tatsh/wiswa/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/Tatsh/wiswa/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Tatsh/wiswa/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Tatsh/wiswa/compare/v0.1.0...v0.2.0
