@@ -57,6 +57,7 @@ function(settings)
               HEAD_SHA: '${{ github.event.workflow_run.head_sha }}',
             },
             run: |||
+              set +e
               tag="$HEAD_BRANCH"
               sha="$HEAD_SHA"
               required_workflows=(%(required)s)

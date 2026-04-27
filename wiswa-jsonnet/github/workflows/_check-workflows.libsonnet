@@ -24,6 +24,7 @@ local utils = import 'utils.libsonnet';
           COMMIT_SHA: '${{ github.sha }}',
         },
         run: |||
+          set +e
           sha="$COMMIT_SHA"
           required_workflows=(%(required)s)
           optional_workflows=(%(optional)s)
