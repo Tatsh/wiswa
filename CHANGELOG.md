@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- `node_engine` now defaults to an empty string. Generated projects no longer carry a `>=20.0`
+  Node-engine constraint by default, and the npm version resolver skips Node-engine filtering
+  unless a project sets `node_engine` explicitly.
+
 ## [0.3.0] - 2026-04-27
 
 ### Added

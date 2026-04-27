@@ -114,7 +114,6 @@ _PROJECT_USES_USER_DEFAULTS = re.compile(r'uses_user_defaults\s*:\s*true\b')
 
 _GH_USERNAME_TIMEOUT_SEC = 10
 _UNKNOWN_GITHUB_USER = 'unknown'
-_DEFAULT_NODE_ENGINE = '>=20.0'
 
 
 def _github_cli_username() -> str | None:
@@ -258,7 +257,7 @@ def _make_native_callbacks(
 
     npm_age_gate = resolve_npm_minimal_age_gate_minutes(settings=merged_settings,
                                                         project_snippet=project_settings_snippet)
-    node_engine = merged_settings['node_engine'] if merged_settings else _DEFAULT_NODE_ENGINE
+    node_engine = merged_settings['node_engine'] if merged_settings else ''
     gh_action = partial(get_github_release_latest_tag,
                         session,
                         skip_releases=True,

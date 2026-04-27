@@ -664,10 +664,10 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    *
    * Written into `package_json.engines.node`, and also consulted by
    * `utils.latestNpmPackageVersion*` to filter out candidate npm releases whose own
-   * `engines.node` requires a newer Node major. Defaults to `>=20.0` so generated projects
-   * stay compatible with GitHub's default `ubuntu-latest` runner image.
+   * `engines.node` requires a newer Node major. Defaults to an empty string so no Node-engine
+   * filtering is applied unless a project explicitly opts in.
    */
-  node_engine: '>=20.0',
+  node_engine: '',
   /** @brief Depth of the Python package index (for Pyright and Pylance). */
   python_package_index_depth: 100,
 
