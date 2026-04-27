@@ -5,9 +5,11 @@ function(settings)
                           (settings.supported_platforms == 'all' ||
                            std.member(settings.supported_platforms, 'windows') ||
                            std.member(settings.supported_platforms, 'macos'));
-  local watched_workflows = std.set(
-    ['QA', 'Prettier', 'Spelling', 'markdownlint'] +
-    (if settings.want_tests then ['Tests'] else []) +
+  local optional_workflows = std.set(
+    ['Prettier', 'QA', 'Spelling', 'markdownlint'] +
+    (if settings.want_tests then ['Tests'] else [])
+  );
+  local required_workflows = std.set(
     (if !settings.private then ['Publish'] else []) +
     (if settings.want_appimage then ['AppImage'] else []) +
     (if utils.wantFlatpakOutputs(settings) then ['Flatpak'] else []) +
@@ -15,6 +17,7 @@ function(settings)
     (if settings.want_snap then ['Snap'] else []) +
     settings.github.workflows.release_gate_workflows
   );
+  local watched_workflows = std.set(required_workflows + optional_workflows);
   {
     jobs: {
       'publish-release': {
@@ -56,40 +59,64 @@ function(settings)
             run: |||
               tag="$HEAD_BRANCH"
               sha="$HEAD_SHA"
+              required_workflows=(%(required)s)
+              optional_workflows=(%(optional)s)
               all_success=true
-              for workflow in %(workflows)s; do
+              process_workflow() {
+                local workflow="$1" treat_missing="$2"
+                local run status conclusion
                 run=$(gh run list --workflow "$workflow" --commit "$sha" --json status,conclusion --jq '.[0]')
                 if [[ -z "$run" || "$run" == 'null' ]]; then
-                  echo "Workflow '$workflow' did not run for this commit; treating as optional."
-                  continue
+                  if [[ "$treat_missing" == 'pending' ]]; then
+                    echo "Required workflow '$workflow' has not registered a run yet."
+                    return 2
+                  fi
+                  echo "Optional workflow '$workflow' did not run for this commit; skipping."
+                  return 0
                 fi
                 status=$(echo "$run" | jq -r '.status')
                 conclusion=$(echo "$run" | jq -r '.conclusion')
                 case "$conclusion" in
                   failure|cancelled|timed_out|startup_failure|action_required)
                     echo "::error::Workflow '$workflow' ${conclusion}."
-                    exit 1
+                    return 1
                     ;;
                   success|skipped|neutral)
+                    return 0
                     ;;
                   *)
                     if [[ "$status" == 'completed' ]]; then
                       echo "::error::Workflow '$workflow' completed with unexpected conclusion '${conclusion}'."
-                      exit 1
+                      return 1
                     fi
                     echo "Workflow '$workflow' still pending (status=${status})."
-                    all_success=false
+                    return 2
                     ;;
                 esac
+              }
+              for workflow in "${required_workflows[@]}"; do
+                process_workflow "$workflow" pending
+                rc=$?
+                [[ $rc -eq 1 ]] && exit 1
+                [[ $rc -eq 2 ]] && all_success=false
+              done
+              for workflow in "${optional_workflows[@]}"; do
+                process_workflow "$workflow" skip
+                rc=$?
+                [[ $rc -eq 1 ]] && exit 1
+                [[ $rc -eq 2 ]] && all_success=false
               done
               if [[ "$all_success" != 'true' ]]; then
-                echo 'Not all workflows have completed yet.'
+                echo 'Not all required workflows have completed yet.'
                 exit 0
               fi
               echo "All required workflows succeeded for ${tag}."
               echo "tag=${tag}" >> "$GITHUB_ENV"
               echo "ready=true" >> "$GITHUB_OUTPUT"
-            ||| % { workflows: std.join(' ', watched_workflows) },
+            ||| % {
+              required: std.join(' ', ["'" + w + "'" for w in required_workflows]),
+              optional: std.join(' ', ["'" + w + "'" for w in optional_workflows]),
+            },
           },
           {
             'if': "steps.check.outputs.ready == 'true'",

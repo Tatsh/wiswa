@@ -3,14 +3,14 @@ local check_workflows = import 'github/workflows/_check-workflows.libsonnet';
 local utils = import 'utils.libsonnet';
 
 function(settings)
-  local watched_workflows = std.set(
+  local optional_workflows = std.set(
     ['Prettier', 'QA', 'Spelling', 'markdownlint'] +
-    (if settings.want_tests then ['Tests'] else []) +
-    settings.github.workflows.release_gate_workflows
+    (if settings.want_tests then ['Tests'] else [])
   );
+  local required_workflows = std.set(settings.github.workflows.release_gate_workflows);
   {
     jobs: {
-      check: check_workflows.job(watched_workflows),
+      check: check_workflows.job(required_workflows, optional_workflows),
       publish: {
         needs: ['check'],
         permissions: {
