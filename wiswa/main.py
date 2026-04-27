@@ -222,6 +222,7 @@ async def _run_workflow(progress: ProgressDisplay, *, debug: bool, file: Path,
         progress.skip(TaskId.POST_PROCESS)
     await _run_configure_remote(progress, loaded=loaded, session=session, skip_remote=skip_remote)
     await write_wiswa_run_metadata(
+        enabled=bool(loaded.get('wiswa_tag', True)),
         on_command=lambda cmd: progress.update_message(f'Running `{cmd}` ...'))
 
 

@@ -177,39 +177,7 @@ def _invocation_command_line() -> str:
     return shlex_join([Path(argv[0]).name, *argv[1:]])
 
 
-async def write_wiswa_run_metadata(*, on_command: Callable[[str], None] | None = None) -> None:
-    """
-    Append ``_wiswa`` metadata at the end of ``package.json`` and reformat with Prettier.
-
-    Writes ``_wiswa.version`` (the wiswa version or short SHA from
-    :py:func:`get_wiswa_version_or_sha`), ``_wiswa.lastRun`` (a UTC ISO 8601 timestamp
-    accurate to the second), and ``_wiswa.commandLine`` (the invocation rendered with
-    only the ``argv[0]`` basename, shell-quoted via :py:func:`shlex.join`). Re-emits
-    ``package.json`` without sorting keys so the ``_wiswa`` block remains the last
-    property, then runs ``yarn prettier --write package.json`` to produce a canonical
-    file. Skips silently when ``package.json`` is missing.
-
-    Parameters
-    ----------
-    on_command : Callable[[str], None] | None
-        Optional callback invoked with the Prettier command string before it runs.
-    """
-    package_json = anyio.Path('package.json')
-    if not await package_json.is_file():
-        log.debug('No `package.json` found; skipping Wiswa run metadata write.')
-        return
-    raw = await package_json.read_text(encoding='utf-8')
-    data = json.loads(raw)
-    if not isinstance(data, dict):
-        log.debug('`package.json` is not a JSON object; skipping Wiswa run metadata write.')
-        return
-    data.pop('_wiswa', None)
-    data['_wiswa'] = {
-        'commandLine': _invocation_command_line(),
-        'lastRun': _utc_iso_timestamp(),
-        'version': await get_wiswa_version_or_sha(),
-    }
-    await package_json.write_text(f'{json.dumps(data, indent=2)}\n', encoding='utf-8')
+async def _run_prettier_on_package_json(on_command: Callable[[str], None] | None) -> None:
     cmd = ('yarn', 'prettier', '--write', '--ignore-unknown', 'package.json')
     cmd_str = ' '.join(cmd)
     log.debug('Running command: `%s`.', cmd_str)
@@ -223,3 +191,55 @@ async def write_wiswa_run_metadata(*, on_command: Callable[[str], None] | None =
     await proc.communicate()
     if proc.returncode != 0:
         log.debug('Prettier on `package.json` exited with status %d.', proc.returncode)
+
+
+async def write_wiswa_run_metadata(*,
+                                   enabled: bool = True,
+                                   on_command: Callable[[str], None] | None = None) -> None:
+    """
+    Append or remove the ``_wiswa`` metadata block in ``package.json``.
+
+    When *enabled* is :py:data:`True`, writes ``_wiswa.commandLine`` (the invocation rendered
+    with only the ``argv[0]`` basename, shell-quoted via :py:func:`shlex.join`),
+    ``_wiswa.lastRun`` (a UTC ISO 8601 timestamp accurate to the second), and
+    ``_wiswa.version`` (the wiswa version or short SHA from
+    :py:func:`get_wiswa_version_or_sha`). Re-emits ``package.json`` without sorting keys so
+    the ``_wiswa`` block remains the last property, then runs
+    ``yarn prettier --write package.json`` to produce a canonical file.
+
+    When *enabled* is :py:data:`False`, removes any existing ``_wiswa`` block, rewriting and
+    reformatting only when the file actually changes. Skips silently when ``package.json``
+    is missing.
+
+    Parameters
+    ----------
+    enabled : bool
+        Whether to write the ``_wiswa`` block. When :py:data:`False`, an existing block is
+        deleted on the next run.
+    on_command : Callable[[str], None] | None
+        Optional callback invoked with the Prettier command string before it runs.
+    """
+    package_json = anyio.Path('package.json')
+    if not await package_json.is_file():
+        log.debug('No `package.json` found; skipping Wiswa run metadata write.')
+        return
+    raw = await package_json.read_text(encoding='utf-8')
+    data = json.loads(raw)
+    if not isinstance(data, dict):
+        log.debug('`package.json` is not a JSON object; skipping Wiswa run metadata write.')
+        return
+    if not enabled:
+        if '_wiswa' not in data:
+            return
+        del data['_wiswa']
+        await package_json.write_text(f'{json.dumps(data, indent=2)}\n', encoding='utf-8')
+        await _run_prettier_on_package_json(on_command)
+        return
+    data.pop('_wiswa', None)
+    data['_wiswa'] = {
+        'commandLine': _invocation_command_line(),
+        'lastRun': _utc_iso_timestamp(),
+        'version': await get_wiswa_version_or_sha(),
+    }
+    await package_json.write_text(f'{json.dumps(data, indent=2)}\n', encoding='utf-8')
+    await _run_prettier_on_package_json(on_command)

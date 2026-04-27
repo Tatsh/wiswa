@@ -435,6 +435,12 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   /** @brief If the project should have a `CITATION.cff` file. */
   want_cff: true,
   /**
+   * @brief If the generated ``package.json`` should include a ``_wiswa`` block recording
+   *     ``commandLine``, ``lastRun``, and ``version`` after every successful run.
+   * @var boolean
+   */
+  wiswa_tag: true,
+  /**
    * @brief If the project should include ``AGENTS.md``, ``CLAUDE.md``, and the ``.claude/`` tree.
    * @var boolean
    */

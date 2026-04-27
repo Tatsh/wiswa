@@ -16,6 +16,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the file. The version is the seven-character commit SHA (suffixed `-dirty` when the working
   tree has uncommitted changes) when Wiswa runs from a source checkout, otherwise the installed
   package version reported by `importlib.metadata`.
+- `wiswa_tag` setting (default `true`) controls whether the `_wiswa` block is written. Setting it
+  to `false` removes the block from `package.json` on the next run.
 
 ## [0.2.3] - 2026-04-26
 

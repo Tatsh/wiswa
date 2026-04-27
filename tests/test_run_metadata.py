@@ -381,6 +381,36 @@ async def test_write_wiswa_run_metadata_logs_when_prettier_fails(tmp_path: Path,
     assert data['_wiswa']['version'] == '1234567'
 
 
+async def test_write_wiswa_run_metadata_disabled_removes_existing_block(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'package.json').write_text(json.dumps({
+        '_wiswa': {
+            'commandLine': 'wiswa',
+            'lastRun': '2026-04-27T08:27:53Z',
+            'version': '1234567',
+        },
+        'name': 'demo',
+    }),
+                                           encoding='utf-8')
+    create = _mock_async_subprocess(mocker)
+    await write_wiswa_run_metadata(enabled=False)
+    data = json.loads((tmp_path / 'package.json').read_text(encoding='utf-8'))
+    assert '_wiswa' not in data
+    assert data['name'] == 'demo'
+    invocations = [tuple(call.args) for call in create.call_args_list]
+    assert any(args[:1] == ('yarn',) and 'prettier' in args for args in invocations)
+
+
+async def test_write_wiswa_run_metadata_disabled_no_existing_block_skips(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'package.json').write_text(json.dumps({'name': 'demo'}), encoding='utf-8')
+    create = mocker.patch('asyncio.create_subprocess_exec')
+    await write_wiswa_run_metadata(enabled=False)
+    create.assert_not_called()
+
+
 async def test_write_wiswa_run_metadata_records_short_sha(tmp_path: Path,
                                                           monkeypatch: pytest.MonkeyPatch,
                                                           mocker: MockerFixture) -> None:
