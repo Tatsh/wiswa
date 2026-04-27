@@ -34,6 +34,7 @@ from .utils import (
     setup_github_project,
     setup_gitlab_project,
     write_templated_files,
+    write_wiswa_run_metadata,
 )
 
 if TYPE_CHECKING:
@@ -220,6 +221,8 @@ async def _run_workflow(progress: ProgressDisplay, *, debug: bool, file: Path,
     else:
         progress.skip(TaskId.POST_PROCESS)
     await _run_configure_remote(progress, loaded=loaded, session=session, skip_remote=skip_remote)
+    await write_wiswa_run_metadata(
+        on_command=lambda cmd: progress.update_message(f'Running `{cmd}` ...'))
 
 
 async def _main_async(file: Path,

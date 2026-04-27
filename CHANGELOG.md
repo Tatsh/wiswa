@@ -9,6 +9,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- After a successful run, Wiswa records a `_wiswa` block in the generated `package.json` with the
+  invocation `commandLine`, the UTC `lastRun` timestamp, and the `version` of Wiswa that produced
+  the file. The version is the seven-character commit SHA (suffixed `-dirty` when the working
+  tree has uncommitted changes) when Wiswa runs from a source checkout, otherwise the installed
+  package version reported by `importlib.metadata`.
+
 ## [0.2.3] - 2026-04-26
 
 ### Changed
