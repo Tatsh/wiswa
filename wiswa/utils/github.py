@@ -107,7 +107,7 @@ async def get_github_pages_build_type(session: niquests.AsyncSession,
     Parameters
     ----------
     session : ~niquests.AsyncSession
-        HTTP session (auth headers are added per-request, not mutated on the session).
+        HTTP session. Auth headers are added per-request for this call.
     settings : Settings
         Project settings dictionary.
 
