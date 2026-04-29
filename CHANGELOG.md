@@ -27,6 +27,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `bash -e` shells, that non-zero return previously aborted the gate script before the caller could
   inspect `$?`, so the loop exited with code 2 instead of retrying. Each call site now uses the
   `rc=0; cmd || rc=$?` idiom so the helper's return code is captured without tripping `errexit`.
+- Generated `publish-winget` workflow skips the `update-winget` job (with a workflow warning)
+  when the `WINGET_TOKEN` secret is empty, instead of failing the job. Because GitHub Actions
+  does not permit `secrets.X` references in a job-level `if`, the `check` job now reads
+  `WINGET_TOKEN` into an environment variable, exposes its presence as a `has_winget_token`
+  output, and `update-winget` gates on that output.
 
 ## [0.3.1] - 2026-04-27
 
