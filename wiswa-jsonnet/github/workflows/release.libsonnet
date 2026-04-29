@@ -57,7 +57,6 @@ function(settings)
               HEAD_SHA: '${{ github.event.workflow_run.head_sha }}',
             },
             run: |||
-              set +e
               tag="$HEAD_BRANCH"
               sha="$HEAD_SHA"
               required_workflows=(%(required)s)
@@ -66,7 +65,7 @@ function(settings)
               process_workflow() {
                 local workflow="$1" treat_missing="$2"
                 local run status conclusion
-                run=$(gh run list --workflow "$workflow" --commit "$sha" --json status,conclusion --jq '.[0]')
+                run=$(gh run list --workflow "$workflow" --commit "$sha" --json status,conclusion --jq '.[0]') || run=''
                 if [[ -z "$run" || "$run" == 'null' ]]; then
                   if [[ "$treat_missing" == 'pending' ]]; then
                     echo "Required workflow '$workflow' has not registered a run yet."
@@ -75,8 +74,8 @@ function(settings)
                   echo "Optional workflow '$workflow' did not run for this commit; skipping."
                   return 0
                 fi
-                status=$(echo "$run" | jq -r '.status')
-                conclusion=$(echo "$run" | jq -r '.conclusion')
+                status=$(echo "$run" | jq -r '.status') || status=''
+                conclusion=$(echo "$run" | jq -r '.conclusion') || conclusion=''
                 case "$conclusion" in
                   failure|cancelled|timed_out|startup_failure|action_required)
                     echo "::error::Workflow '$workflow' ${conclusion}."

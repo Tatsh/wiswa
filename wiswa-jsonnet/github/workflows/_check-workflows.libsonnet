@@ -24,14 +24,13 @@ local utils = import 'utils.libsonnet';
           COMMIT_SHA: '${{ github.sha }}',
         },
         run: |||
-          set +e
           sha="$COMMIT_SHA"
           required_workflows=(%(required)s)
           optional_workflows=(%(optional)s)
           process_workflow() {
             local workflow="$1" treat_missing="$2"
             local run status conclusion
-            run=$(gh run list --workflow "$workflow" --commit "$sha" --json status,conclusion --jq '.[0]')
+            run=$(gh run list --workflow "$workflow" --commit "$sha" --json status,conclusion --jq '.[0]') || run=''
             if [[ -z "$run" || "$run" == 'null' ]]; then
               if [[ "$treat_missing" == 'pending' ]]; then
                 echo "Required workflow '$workflow' has not registered a run yet; waiting."
@@ -40,8 +39,8 @@ local utils = import 'utils.libsonnet';
               echo "Optional workflow '$workflow' did not run for this commit; skipping."
               return 0
             fi
-            status=$(echo "$run" | jq -r '.status')
-            conclusion=$(echo "$run" | jq -r '.conclusion')
+            status=$(echo "$run" | jq -r '.status') || status=''
+            conclusion=$(echo "$run" | jq -r '.conclusion') || conclusion=''
             case "$conclusion" in
               failure|cancelled|timed_out|startup_failure|action_required)
                 echo "::error::Workflow '$workflow' ${conclusion}."
