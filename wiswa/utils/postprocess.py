@@ -54,7 +54,9 @@ _LEGACY_WISWA_AI_PATHS = ('.cursor/permissions.json.dist', '.cursor/rules/genera
                           '.github/instructions/python-tests.instructions.md')
 
 # Fallbacks for the standard CHANGELOG.md boilerplate when GitHub resolution is unavailable.
-_CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL = 'https://keepachangelog.com/en/1.1.1/'
+# Keep a Changelog publishes its website independently of its GitHub release tags, so the latest
+# release tag may not yet be reachable on keepachangelog.com.
+_CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL = 'https://keepachangelog.com/en/1.1.0/'
 _CHANGELOG_SEMVER_SPEC_FALLBACK_URL = 'https://semver.org/spec/v2.0.0.html'
 _RE_CHANGELOG_KEEP_A_CHANGELOG = re.compile(r'https://keepachangelog\.com/en/\d+\.\d+\.\d+/')
 _RE_CHANGELOG_SEMVER_SPEC = re.compile(r'https://semver\.org/spec/v\d+\.\d+\.\d+\.html')
@@ -78,6 +80,15 @@ def _semver_spec_documentation_url(release_tag: str) -> str:
     return f'https://semver.org/spec/{tag}.html'
 
 
+async def _is_url_reachable(session: AsyncSession, url: str) -> bool:
+    try:
+        resp = await session.head(url, timeout=10, allow_redirects=True)
+    except niquests.RequestException as exc:
+        log.warning('HEAD `%s` failed (%s); treating as unreachable.', url, exc)
+        return False
+    return bool(resp.ok)
+
+
 async def _resolve_keep_a_changelog_url(session: AsyncSession | None) -> str:
     if session is None:
         return _CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL
@@ -86,7 +97,12 @@ async def _resolve_keep_a_changelog_url(session: AsyncSession | None) -> str:
     except _GITHUB_TAG_RESOLUTION_EXC_TYPES as exc:
         log.warning('Keep a Changelog version from GitHub failed (%s); using fallback URL.', exc)
         return _CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL
-    return _keep_a_changelog_documentation_url(tag)
+    candidate = _keep_a_changelog_documentation_url(tag)
+    if await _is_url_reachable(session, candidate):
+        return candidate
+    log.warning('Keep a Changelog URL `%s` is not reachable; using fallback URL `%s`.', candidate,
+                _CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL)
+    return _CHANGELOG_KEEP_A_CHANGELOG_FALLBACK_URL
 
 
 async def _resolve_semver_spec_url(session: AsyncSession | None) -> str:

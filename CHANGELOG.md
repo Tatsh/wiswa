@@ -32,6 +32,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   does not permit `secrets.X` references in a job-level `if`, the `check` job now reads
   `WINGET_TOKEN` into an environment variable, exposes its presence as a `has_winget_token`
   output, and `update-winget` gates on that output.
+- Generated `CHANGELOG.md` and `.claude/agents/changelog.md` no longer link to a 404 Keep a
+  Changelog URL: the resolved `keepachangelog.com/en/<tag>/` URL is HEAD-verified before being
+  emitted (falling back to `1.1.0/` when the tag-derived page is not published), and the Claude
+  changelog agent template now consumes the resolved URL instead of a hardcoded literal.
 
 ## [0.3.1] - 2026-04-27
 

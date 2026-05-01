@@ -870,6 +870,27 @@ async def test_write_templated_files_changelog_urls_use_resolved_boilerplate(
     assert 'https://semver.org/spec/v9.9.9.html' in body
 
 
+async def test_write_templated_files_claude_changelog_agent_uses_resolved_keep_a_changelog_url(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.utils.templating.resolve_changelog_boilerplate_urls',
+                 new_callable=AsyncMock,
+                 return_value=('https://keepachangelog.com/en/1.1.0/',
+                               'https://semver.org/spec/v2.0.0.html'))
+    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+        out = tmp_path / 'proj'
+        out.mkdir()
+        monkeypatch.chdir(out)
+        (out / '.claude').mkdir()
+        (out / '.claude' / 'agents').mkdir()
+        (out / '.claude' / 'agents' / 'changelog.md').write_text(
+            'stale content with https://keepachangelog.com/en/1.1.1/\n', encoding='utf-8')
+        await write_templated_files(
+            module_path, cast('Any', _make_settings(project_type='generic', want_ai=True)))
+    body = (out / '.claude' / 'agents' / 'changelog.md').read_text(encoding='utf-8')
+    assert 'https://keepachangelog.com/en/1.1.0/' in body
+    assert 'https://keepachangelog.com/en/1.1.1/' not in body
+
+
 async def test_write_templated_files_real_env_skips_existing(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     out = tmp_path / 'proj'

@@ -187,7 +187,8 @@ _PYTHON_RULE_TEMPLATE = 'python.md.j2'
 
 
 async def _cleanup_claude_when_disabled(settings: Settings, module_path: Path,
-                                        session: AsyncSession | None) -> None:
+                                        session: AsyncSession | None,
+                                        changelog_context: dict[str, Any]) -> None:
     if settings['want_ai']:
         return
     _, templates_dir, resolve_template, _ = _template_env(module_path, settings, session)
@@ -196,7 +197,8 @@ async def _cleanup_claude_when_disabled(settings: Settings, module_path: Path,
         if not await anyio.Path(template_file).exists():
             return
         template = resolve_template(template_file)
-        expected = f'{(await template.render_async({"settings": settings})).strip()}\n'
+        context: dict[str, Any] = {'settings': settings, **changelog_context}
+        expected = f'{(await template.render_async(context)).strip()}\n'
         aio = anyio.Path(output)
         if await aio.exists() and await aio.read_text(encoding='utf-8') == expected:
             await aio.unlink()
@@ -238,7 +240,8 @@ async def _cleanup_claude_when_disabled(settings: Settings, module_path: Path,
 
 async def _write_templated_files_claude(settings: Settings, templates_dir: Path,
                                         resolve_template: Callable[[Path], jinja2.Template],
-                                        write_file: Callable[..., Awaitable[None]]) -> None:
+                                        write_file: Callable[..., Awaitable[None]],
+                                        changelog_context: dict[str, Any]) -> None:
     tasks: list[Awaitable[None]] = []
     rules_aio = anyio.Path(templates_dir / 'claude/rules')
     if await rules_aio.is_dir():
@@ -261,7 +264,12 @@ async def _write_templated_files_claude(settings: Settings, templates_dir: Path,
             if agent_name in _PYTHON_ONLY_AGENTS and settings['project_type'] != 'python':
                 await anyio.Path(output).unlink(missing_ok=True)
             else:
-                tasks.append(write_file(resolve_template(file_path), output, overwrite=True))
+                extra = changelog_context if agent_name == 'changelog' else None
+                tasks.append(
+                    write_file(resolve_template(file_path),
+                               output,
+                               overwrite=True,
+                               extra_context=extra))
     skills_aio = anyio.Path(templates_dir / 'claude/skills')
     if await skills_aio.is_dir():
         skill_subdirs: list[Path] = [
@@ -307,19 +315,20 @@ async def write_templated_files(module_path: Path,
     session : AsyncSession | None
         Optional HTTP session for callbacks in templates.
     """
-    await _cleanup_claude_when_disabled(settings, module_path, session)
-    _, templates_dir, resolve_template, write_file = _template_env(module_path, settings, session)
-    if settings['want_ai']:
-        await _write_templated_files_claude(settings, templates_dir, resolve_template, write_file)
-    contributing_overwrite = await _should_overwrite_contributing(settings)
-    common_templates = (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', contributing_overwrite), *(
-        (('LICENSE.txt.j2', not settings['private']),) if settings.get('license') == 'MIT' else
-        ()), ('SECURITY.md.j2', True), ('CHANGELOG.md.j2', False), ('README.md.j2', False))
     keep_url, semver_url = await resolve_changelog_boilerplate_urls(session)
     changelog_context: dict[str, Any] = {
         'changelog_keep_a_changelog_url': keep_url,
         'changelog_semver_spec_url': semver_url
     }
+    await _cleanup_claude_when_disabled(settings, module_path, session, changelog_context)
+    _, templates_dir, resolve_template, write_file = _template_env(module_path, settings, session)
+    if settings['want_ai']:
+        await _write_templated_files_claude(settings, templates_dir, resolve_template, write_file,
+                                            changelog_context)
+    contributing_overwrite = await _should_overwrite_contributing(settings)
+    common_templates = (('CODEOWNERS.j2', True), ('CONTRIBUTING.md.j2', contributing_overwrite), *(
+        (('LICENSE.txt.j2', not settings['private']),) if settings.get('license') == 'MIT' else
+        ()), ('SECURITY.md.j2', True), ('CHANGELOG.md.j2', False), ('README.md.j2', False))
 
     async def _write_one_common(template_name: str, *, overwrite: bool) -> None:
         extra = changelog_context if template_name == 'CHANGELOG.md.j2' else None
