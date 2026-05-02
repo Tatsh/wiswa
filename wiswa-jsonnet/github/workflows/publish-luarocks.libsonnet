@@ -18,6 +18,12 @@ function(settings)
             uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
           },
           {
+            uses: 'leafo/gh-actions-lua@' + utils.githubLatestActionTag('leafo', 'gh-actions-lua'),
+            with: {
+              luaVersion: '5.1',
+            },
+          },
+          {
             uses: 'leafo/gh-actions-luarocks@' + utils.githubLatestActionTag('leafo', 'gh-actions-luarocks'),
           },
           {

@@ -9,6 +9,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Generated `publish-luarocks` workflow now installs Lua 5.1 via `leafo/gh-actions-lua` immediately
+  after `actions/checkout`, before invoking `leafo/gh-actions-luarocks`. The LuaRocks setup action
+  expects a `lua` binary already on the runner, so without the preceding Lua install step the
+  workflow failed at LuaRocks setup for downstream Lua projects.
+
 ## [0.3.2] - 2026-05-02
 
 ### Added
