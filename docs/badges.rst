@@ -16,8 +16,8 @@
       :target: https://github.com/Tatsh/wiswa/blob/master/LICENSE.txt
       :alt: License
 
-   .. image:: https://img.shields.io/github/commits-since/Tatsh/wiswa/v0.3.1/master
-      :target: https://github.com/Tatsh/wiswa/compare/v0.3.1...master
+   .. image:: https://img.shields.io/github/commits-since/Tatsh/wiswa/v0.3.2/master
+      :target: https://github.com/Tatsh/wiswa/compare/v0.3.2...master
       :alt: GitHub commits since latest release (by SemVer including pre-releases)
 
    .. image:: https://github.com/Tatsh/wiswa/actions/workflows/codeql.yml/badge.svg

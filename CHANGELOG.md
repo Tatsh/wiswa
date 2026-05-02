@@ -9,9 +9,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-05-02
+
 ### Added
 
-- Generated TypeScript projects published on npm now include "NPM Version" and "NPM Downloads"
+- Generated TypeScript projects published on npm now include 'NPM Version' and 'NPM Downloads'
   badges in `README.md`, linking to the package page on npmjs.com. Private TypeScript projects do
   not get them.
 - Generated TypeScript projects' Dependabot npm-ecosystem config now ignores `typescript` versions
@@ -21,7 +23,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Generated `publish-*` workflows (`publish-pypi-any`, `publish-luarocks`, `publish-winget`,
   `publish-npm-any`) and the `release` workflow gate no longer treat freshly-queued tag-triggered
-  workflows as "missing" and silently skip them. Watched workflows are split at template time into
+  workflows as 'missing' and silently skip them. Watched workflows are split at template time into
   a required list (build artefacts plus user-supplied `release_gate_workflows`) that must register
   a run before the gate clears, and an optional list (`Prettier`, `QA`, `Spelling`,
   `markdownlint`, and `Tests` when applicable) that is master- or PR-triggered and is skipped
@@ -31,7 +33,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Workflow names with spaces or shell metacharacters (for example `Windows Installer (NSIS)`) now
   round-trip through the gate scripts intact: the bash uses real arrays with `"${arr[@]}"`
   instead of word-splitting a space-delimited string.
-- The `process_workflow` helper returns code `2` to signal "pending". Under GitHub Actions' default
+- The `process_workflow` helper returns code `2` to signal 'pending'. Under GitHub Actions' default
   `bash -e` shells, that non-zero return previously aborted the gate script before the caller could
   inspect `$?`, so the loop exited with code 2 instead of retrying. Each call site now uses the
   `rc=0; cmd || rc=$?` idiom so the helper's return code is captured without tripping `errexit`.
