@@ -14,6 +14,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Generated TypeScript projects published on npm now include "NPM Version" and "NPM Downloads"
   badges in `README.md`, linking to the package page on npmjs.com. Private TypeScript projects do
   not get them.
+- Generated TypeScript projects' Dependabot npm-ecosystem config now ignores `typescript` versions
+  `>=6.0.0`, preventing Dependabot from opening PRs that bump TypeScript past major version 6.
 
 ### Fixed
 

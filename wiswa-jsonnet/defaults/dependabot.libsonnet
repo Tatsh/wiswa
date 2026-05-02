@@ -33,7 +33,12 @@
         groups: groups,
         'package-ecosystem': 'npm',
         schedule: schedule,
-      },
+      } + (if settings.project_type == 'typescript' then {
+             ignore: [{
+               'dependency-name': 'typescript',
+               versions: ['>=6.0.0'],
+             }],
+           } else {}),
       {
         directory: '/',
         groups: {
