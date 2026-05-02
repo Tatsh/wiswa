@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-05-02
+
 ### Fixed
 
 - Generated `publish-luarocks` workflow now installs Lua 5.1 via `leafo/gh-actions-lua` immediately
@@ -562,7 +564,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First version.
 
-[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.3.1...HEAD
+[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/Tatsh/wiswa/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/Tatsh/wiswa/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/Tatsh/wiswa/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Tatsh/wiswa/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/Tatsh/wiswa/compare/v0.2.2...v0.2.3
