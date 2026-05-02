@@ -1022,6 +1022,9 @@ async def test_post_process_steps_badges_typescript_project(tmp_path: Path,
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'TypeScript' in content
+    assert 'https://img.shields.io/npm/v/myproject' in content
+    assert 'https://img.shields.io/npm/dm/myproject' in content
+    assert 'https://www.npmjs.com/package/myproject' in content
 
 
 async def test_post_process_steps_badges_typescript_private_skips_npm_badges(

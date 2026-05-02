@@ -553,6 +553,11 @@ def _project_type_badges(settings: Settings) -> Iterator[str]:
                    "(https://www.python.org/)")
             yield (f"[![PyPI - Version](https://img.shields.io/pypi/v/{settings['project_name']})]"
                    f"(https://pypi.org/project/{settings['pypi_project_name']}/)")
+        case 'typescript' if not settings['private']:
+            yield (f"[![NPM Version](https://img.shields.io/npm/v/{settings['project_name']})]"
+                   f"(https://www.npmjs.com/package/{settings['project_name']})")
+            yield (f"[![NPM Downloads](https://img.shields.io/npm/dm/{settings['project_name']})]"
+                   f"(https://www.npmjs.com/package/{settings['project_name']})")
         case 'c':
             yield _simple_icons_badge('C', 'c', 'C', '00599C',
                                       'https://en.wikipedia.org/wiki/C_(programming_language)')

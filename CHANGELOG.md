@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Generated TypeScript projects published on npm now include "NPM Version" and "NPM Downloads"
+  badges in `README.md`, linking to the package page on npmjs.com. Private TypeScript projects do
+  not get them.
+
 ### Fixed
 
 - Generated `publish-*` workflows (`publish-pypi-any`, `publish-luarocks`, `publish-winget`,
