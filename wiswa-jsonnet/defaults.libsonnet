@@ -1401,10 +1401,11 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     version: settings.version,
   } + {
     local run_cmd = if is_uv then 'uv run' else 'poetry run',
+    local fail_on_warning_flag = if settings.sphinx_fail_on_warning then '--fail-on-warning ' else '',
     scripts+: if settings.want_docs && settings.project_type == 'python' then {
-      'gen-docs': '%s sphinx-build --fresh-env --fail-on-warning --builder html --doctree-dir docs/_build/doctrees --define language=en docs docs/_build/html' % run_cmd,
+      'gen-docs': '%s sphinx-build --fresh-env %s--builder html --doctree-dir docs/_build/doctrees --define language=en docs docs/_build/html' % [run_cmd, fail_on_warning_flag],
     } + if settings.want_man && settings.project_type == 'python' then {
-      'gen-manpage': '%s sphinx-build --fresh-env --fail-on-warning --builder man --doctree-dir docs/_build/doctrees --define language=en docs man' % run_cmd,
+      'gen-manpage': '%s sphinx-build --fresh-env %s--builder man --doctree-dir docs/_build/doctrees --define language=en docs man' % [run_cmd, fail_on_warning_flag],
     } else {}
     else {},
   },

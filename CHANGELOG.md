@@ -13,6 +13,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Generated `README.md` KDE Plasma badge now renders: the shields.io label is percent-encoded
   (`KDE%20Plasma`) so the space no longer breaks the Markdown image URL.
+- Generated `yarn gen-docs` and `yarn gen-manpage` scripts now respect the `sphinx_fail_on_warning`
+  setting: the `sphinx-build --fail-on-warning` flag is included only when the setting is true (the
+  default), so projects that opt out get `sphinx-build` invocations without it. Previously the flag
+  was always emitted regardless of the setting, which already governed the generated ReadTheDocs
+  config.
 
 ## [0.3.3] - 2026-05-02
 
