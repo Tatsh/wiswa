@@ -9,6 +9,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Generated `README.md` KDE Plasma badge now renders: the shields.io label is percent-encoded
+  (`KDE%20Plasma`) so the space no longer breaks the Markdown image URL.
+
 ## [0.3.3] - 2026-05-02
 
 ### Fixed

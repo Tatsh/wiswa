@@ -697,7 +697,7 @@ def _social_badges(settings: Settings) -> Iterator[str]:
     keywords_to_args: dict[str, tuple[str, str, str, str, str]] = {
         'dotnet': ('.NET', 'dotnet', '.NET', '512BD4', 'https://dotnet.microsoft.com/'),
         'ffmpeg': ('FFmpeg', 'ffmpeg', 'FFmpeg', 'orange', 'https://ffmpeg.org/'),
-        'kde': ('KDE Plasma', 'kdeplasma', 'KDE Plasma', 'blue', 'https://kde.org/'),
+        'kde': ('KDE Plasma', 'kdeplasma', 'KDE%20Plasma', 'blue', 'https://kde.org/'),
         'qt': ('Qt', 'qt', 'Qt', '41cd52', 'https://www.qt.io/'),
         'swift': ('Swift', 'swift', 'Swift', 'F05138', 'https://swift.org/')
     }

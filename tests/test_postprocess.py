@@ -1121,6 +1121,8 @@ async def test_post_process_steps_social_badges(tmp_path: Path, monkeypatch: pyt
     content = readme.read_text(encoding='utf-8')
     assert '@testuser' in content
     assert 'Buy Me' in content or 'buymeacoffee' in content
+    assert 'KDE%20Plasma-blue' in content
+    assert 'KDE Plasma-blue' not in content
 
 
 async def test_post_process_steps_social_badges_empty(tmp_path: Path,
