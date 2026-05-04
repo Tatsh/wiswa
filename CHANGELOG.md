@@ -9,6 +9,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Generated `publish-winget` workflow now triggers off the `Release` workflow's completion
+  (`workflow_run` against `Release`) instead of GitHub's native `release` event. The `check` job
+  no longer waits on the shared required/optional workflow lists; it gates on
+  `workflow_run.conclusion == 'success'`, `workflow_run.event == 'push'`, and
+  `startsWith(workflow_run.head_branch, 'v')`, then exposes `has_winget_token` and `tag` outputs.
+  The `update-winget` step passes `release-tag` to `vedantmgoyal9/winget-releaser` so the publish
+  targets the resolved tag explicitly rather than implicitly the latest release.
+
 ### Fixed
 
 - Generated `README.md` KDE Plasma badge now renders: the shields.io label is percent-encoded
@@ -18,6 +28,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   default), so projects that opt out get `sphinx-build` invocations without it. Previously the flag
   was always emitted regardless of the setting, which already governed the generated ReadTheDocs
   config.
+- Generated `release` workflow now resolves the release tag via the GitHub API instead of
+  `github.event.workflow_run.head_branch`, which was unreliable for chained `workflow_run`
+  triggers. The "Check trigger conditions" step queries `repos/${REPO}/git/matching-refs/tags/v`
+  and walks each ref to find the tag whose target SHA matches the triggering `HEAD_SHA` (following
+  annotated tags through `git/tags/{obj_sha}` to their commit), exposing the resolved tag as
+  `steps.guard.outputs.tag`. The next step now consumes `TAG` instead of `HEAD_BRANCH`, so the
+  gate clears reliably on tag pushes that arrive via `workflow_run` chains where `head_branch`
+  was being lost or misreported.
 
 ## [0.3.3] - 2026-05-02
 
