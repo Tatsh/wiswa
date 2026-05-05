@@ -21,6 +21,7 @@ local utils = import 'utils.libsonnet';
   },
   shared_ignore+: ['/docs/_build*/'],
   prettierignore+: ['*.adoc', 'Doxyfile'],
+  security_policy_supported_versions: { '0.3.x': ':white_check_mark:' },
   package_json+: {
     cspell+: {
       ignorePaths+: ['*.html'],
