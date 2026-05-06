@@ -242,6 +242,7 @@ setattr
 shellcheck
 shellformat
 signtool
+sigstore
 snapcore
 snapcraft
 softprops
