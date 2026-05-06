@@ -32,6 +32,13 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   local cspell_hooks = if settings.cspell_pre_commit_hook then [import 'defaults/pre-commit-config/cspell.libsonnet'] else [],
   local rtd = import 'defaults/readthedocs.libsonnet',
   local settings = self,
+  local _publish_registry = if std.objectHas(self.package_json, 'publishConfig') &&
+                               std.objectHas(self.package_json.publishConfig, 'registry') then
+    self.package_json.publishConfig.registry
+  else
+    '',
+  local _custom_npm_registry = _publish_registry != '' &&
+                               !std.startsWith(_publish_registry, 'https://registry.npmjs.org'),
 
   /** @brief Package manager. Valid values: poetry, uv. */
   package_manager: 'uv',
@@ -925,12 +932,27 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
       },
       /** @brief NPM publishing settings. */
       publish_npm_any: {
+        /**
+         * @brief Build command run before `yarn npm publish`.
+         *
+         * Defaults to `yarn tsc` so projects that emit declarations or per-file output keep
+         * working. Projects that bundle (for example with webpack) should override to
+         * `yarn webpack` so the published `dist/` matches the bundle the package's `bin` or
+         * `main` field points at.
+         */
+        build_command: 'yarn tsc',
         /** @brief Node version to use for the build. */
         node_version: '24',
         /** @brief Operating system. */
         runs_on: 'ubuntu-latest',
-        /** @brief Registry URI. */
-        registry_url: 'https://registry.npmjs.org/',
+        /**
+         * @brief Registry URI.
+         *
+         * Defaults to `package_json.publishConfig.registry` when set so the workflow's
+         * `actions/setup-node` writes `.npmrc` for the same registry the package targets;
+         * otherwise falls back to `https://registry.npmjs.org/`.
+         */
+        registry_url: if _publish_registry != '' then _publish_registry else 'https://registry.npmjs.org/',
       },
       /** @brief PyPI publishing settings. */
       publish_pypi_any: {
@@ -1480,7 +1502,19 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   yarnrc: (import 'defaults/yarnrc.libsonnet') + {
     npmPreapprovedPackages: settings.npm_age_gate_exclude_packages,
     yarnPath: '.yarn/releases/yarn-%s.cjs' % settings.yarn_version,
-  },
+  } + (if _custom_npm_registry then {
+         // npm provenance is an npmjs.org Sigstore feature; non-default registries reject the
+         // OIDC dance, so disable it whenever the project targets a different registry.
+         npmPublishProvenance: false,
+         npmRegistries: {
+           // The bash-style `${VAR-default}` fallback prevents Yarn from raising a hard error on
+           // local invocations where `NODE_AUTH_TOKEN` is unset; CI exports it for real auth.
+           [_publish_registry]: {
+             npmAlwaysAuth: true,
+             npmAuthToken: '${NODE_AUTH_TOKEN-}',
+           },
+         },
+       } else {}),
 
   /**
    * @brief Array of configuration lines.

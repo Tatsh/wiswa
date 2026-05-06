@@ -16,6 +16,7 @@ function(settings)
         permissions: {
           contents: 'write',
           'id-token': 'write',
+          packages: 'write',
         },
         'runs-on': settings.github.workflows.publish_npm_any.runs_on,
         steps: [
@@ -41,7 +42,7 @@ function(settings)
           },
           {
             name: 'Build',
-            run: 'yarn tsc',
+            run: settings.github.workflows.publish_npm_any.build_command,
           },
           {
             name: 'Publish to NPM',
@@ -70,5 +71,6 @@ function(settings)
     permissions: {
       contents: 'write',
       'id-token': 'write',
+      packages: 'write',
     },
   }
