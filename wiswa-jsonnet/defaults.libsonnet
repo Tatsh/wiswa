@@ -1426,7 +1426,10 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     packageManager: 'yarn@%s' % settings.yarn_version,
     repository: {
       type: 'git',
-      url: if settings.using_github then utils.gitHubGitSshUri(settings.github_username, settings.github_project_name) else '%s.git' % settings.repository_uri,
+      // Use the `git+https://` form rather than SSH so GitHub Packages can auto-link a
+      // freshly published package to the repository on first publish; the SSH form is silently
+      // ignored by the linker and yields `permission_denied: write_package`.
+      url: if settings.using_github then 'git+%s.git' % utils.gitHubRepositoryUri(settings.github_username, settings.github_project_name) else '%s.git' % settings.repository_uri,
     },
     version: settings.version,
   } + {
