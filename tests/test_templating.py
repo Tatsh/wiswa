@@ -808,7 +808,7 @@ async def test_write_templated_files_ts_with_tests(tmp_path: Path,
                            want_tests=True,
                            want_ai=False))
     assert (out / 'src/index.ts').exists()
-    assert (out / 'jest.config.ts').exists()
+    assert (out / 'vitest.config.ts').exists()
     assert (out / 'eslint.config.mjs').exists()
 
 

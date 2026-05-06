@@ -1016,7 +1016,7 @@ async def test_post_process_steps_badges_typescript_project(tmp_path: Path,
                            },
                            'devDependencies': {
                                'eslint': '^8',
-                               'jest': '^29'
+                               'vitest': '^4'
                            }
                        }))
     await post_process_steps(settings)
@@ -1046,7 +1046,7 @@ async def test_post_process_steps_badges_typescript_private_skips_npm_badges(
                            },
                            'devDependencies': {
                                'eslint': '^8',
-                               'jest': '^29'
+                               'vitest': '^4'
                            }
                        }))
     await post_process_steps(settings)

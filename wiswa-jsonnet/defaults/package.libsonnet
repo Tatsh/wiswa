@@ -81,9 +81,8 @@ local utils = import 'utils.libsonnet';
     'typescript-eslint': utils.latestNpmPackageVersionCaret('typescript-eslint'),
     typescript: utils.latestNpmPackageVersionCaret('typescript'),
   } + if settings.want_tests then {
-    '@types/jest': utils.latestNpmPackageVersionCaret('@types/jest'),
-    jest: utils.latestNpmPackageVersionCaret('jest'),
-    'ts-jest': utils.latestNpmPackageVersionCaret('ts-jest'),
+    '@vitest/coverage-v8': utils.latestNpmPackageVersionCaret('@vitest/coverage-v8'),
+    vitest: utils.latestNpmPackageVersionCaret('vitest'),
   } else {},
   typescript_scripts(settings):: {
     'check-formatting': 'prettier --check . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2',
@@ -91,7 +90,7 @@ local utils = import 'utils.libsonnet';
     'dict:update': dictionary_update,
     format: 'prettier --write . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix',
     qa: 'eslint && yarn check-spelling && yarn check-formatting',
-  } + if settings.want_tests then { test: 'jest' } else {},
+  } + if settings.want_tests then { test: 'vitest run' } else {},
   local top = self,
 
   /**

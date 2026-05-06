@@ -32,7 +32,7 @@ function(settings)
           },
           {
             name: 'Tests',
-            run: 'yarn jest --coverage',
+            run: 'yarn vitest run --coverage',
           },
         ] + (if settings.want_coveralls then [{
                name: 'Coveralls',

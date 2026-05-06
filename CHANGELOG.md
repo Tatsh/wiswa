@@ -11,6 +11,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Generated TypeScript projects now use Vitest as the test runner instead of Jest. The default
+  `devDependencies` for `want_tests` projects emit `vitest` and `@vitest/coverage-v8` (replacing
+  `jest`, `ts-jest`, and `@types/jest`); the generated `test` script becomes `vitest run`; the
+  generated `Tests` workflow runs `yarn vitest run --coverage`; and a `vitest.config.ts` template
+  is written in place of `jest.config.ts`. The Vitest npm badge replaces the Jest badge in
+  generated TypeScript READMEs.
 - Generated `publish-winget` workflow now triggers off the `Release` workflow's completion
   (`workflow_run` against `Release`) instead of GitHub's native `release` event. The `check` job
   no longer waits on the shared required/optional workflow lists; it gates on

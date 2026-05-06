@@ -172,7 +172,8 @@ async def _write_templated_files_typescript(settings: Settings, templates_dir: P
     if not settings['stubs_only']:
         await write_file(resolve_template(templates_dir / 'src/index.ts.j2'), 'src/index.ts')
     if settings['want_tests'] and not settings['stubs_only']:
-        await write_file(resolve_template(templates_dir / 'jest.config.ts.j2'), 'jest.config.ts')
+        await write_file(resolve_template(templates_dir / 'vitest.config.ts.j2'),
+                         'vitest.config.ts')
     await write_file(resolve_template(templates_dir / 'eslint.config.mjs.j2'),
                      'eslint.config.mjs',
                      overwrite=True)

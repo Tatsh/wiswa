@@ -667,7 +667,7 @@ def _typescript_badges(settings: Settings) -> list[str]:
                         if dep in settings['package_json'].get('dependencies', {})),
                       *(_simple_icons_badge(dev_dep, dev_dep.replace('-', ''), dev_dep, 'black',
                                             f'https://www.npmjs.com/package/{dev_dep}')
-                        for dev_dep in ('eslint', 'jest')
+                        for dev_dep in ('eslint', 'vitest')
                         if dev_dep in settings['package_json']['devDependencies']))
     return sorted(
         (*npm_badges,
