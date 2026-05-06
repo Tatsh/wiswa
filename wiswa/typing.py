@@ -3,15 +3,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict
 
+from typing_extensions import NotRequired
+
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
 __all__ = ('CustomProjectBadge', 'ExportRequirements', 'GitlabRemoteSettings', 'PackageJSON',
-           'PackageManager', 'ProjectType', 'PyProject', 'PyProjectBuildSystem', 'PyProjectProject',
-           'PyProjectTool', 'PyProjectToolCommitizen', 'PyProjectToolPoetry',
-           'PyProjectToolPoetryPackage', 'PythonDeps', 'Settings', 'SettingsGitHub',
-           'SettingsSocial', 'SettingsSocialMastodon', 'SettingsSocialTextAndURI', 'VSCode',
-           'VSCodeLaunch', 'VSCodeLaunchConfiguration')
+           'PackageJSONPublishConfig', 'PackageManager', 'ProjectType', 'PyProject',
+           'PyProjectBuildSystem', 'PyProjectProject', 'PyProjectTool', 'PyProjectToolCommitizen',
+           'PyProjectToolPoetry', 'PyProjectToolPoetryPackage', 'PythonDeps', 'Settings',
+           'SettingsGitHub', 'SettingsSocial', 'SettingsSocialMastodon', 'SettingsSocialTextAndURI',
+           'VSCode', 'VSCodeLaunch', 'VSCodeLaunchConfiguration')
 
 PackageManager: TypeAlias = Literal['poetry', 'uv']
 """
@@ -228,6 +230,13 @@ class SettingsSocial(TypedDict):
     """The Libera.Chat IRC nickname for the project or its maintainer."""
 
 
+class PackageJSONPublishConfig(TypedDict, total=False):
+    """The ``publishConfig`` block of a ``package.json``."""
+
+    registry: str
+    """The npm registry URL to publish to."""
+
+
 class PackageJSON(TypedDict):
     """Parsed ``package.json``."""
 
@@ -235,6 +244,8 @@ class PackageJSON(TypedDict):
     """A mapping of dependencies and their versions."""
     devDependencies: Mapping[str, str]
     """A mapping of development dependencies and their versions."""
+    publishConfig: NotRequired[PackageJSONPublishConfig]
+    """The publishing configuration."""
 
 
 class ExportRequirements(TypedDict, total=False):
