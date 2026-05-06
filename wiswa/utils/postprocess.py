@@ -554,10 +554,17 @@ def _project_type_badges(settings: Settings) -> Iterator[str]:
             yield (f"[![PyPI - Version](https://img.shields.io/pypi/v/{settings['project_name']})]"
                    f"(https://pypi.org/project/{settings['pypi_project_name']}/)")
         case 'typescript' if not settings['private']:
-            yield (f"[![NPM Version](https://img.shields.io/npm/v/{settings['project_name']})]"
-                   f"(https://www.npmjs.com/package/{settings['project_name']})")
-            yield (f"[![NPM Downloads](https://img.shields.io/npm/dm/{settings['project_name']})]"
-                   f"(https://www.npmjs.com/package/{settings['project_name']})")
+            # The npmjs.com badges only resolve for packages on the public npm registry; for
+            # projects publishing to GitHub Packages or another registry, those endpoints return
+            # 404, so emit the badges only when the project targets npmjs.org (the default).
+            publish_registry = (settings.get('package_json', {}).get('publishConfig', {}).get(
+                'registry', '') or '')
+            if not publish_registry or publish_registry.startswith('https://registry.npmjs.org'):
+                yield (f"[![NPM Version](https://img.shields.io/npm/v/{settings['project_name']})]"
+                       f"(https://www.npmjs.com/package/{settings['project_name']})")
+                yield (
+                    f"[![NPM Downloads](https://img.shields.io/npm/dm/{settings['project_name']})]"
+                    f"(https://www.npmjs.com/package/{settings['project_name']})")
         case 'c':
             yield _simple_icons_badge('C', 'c', 'C', '00599C',
                                       'https://en.wikipedia.org/wiki/C_(programming_language)')
