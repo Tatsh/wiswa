@@ -290,6 +290,7 @@ venv
 vers
 virtualenv
 visualstudioexptteam
+vitest
 vscodeintellicode
 wayou
 werror
