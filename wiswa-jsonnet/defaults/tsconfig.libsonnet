@@ -27,8 +27,6 @@
     lib: ['dom', 'dom.iterable', 'esnext'],
     /** @brief Module code generation method. */
     module: 'commonjs',
-    /** @brief Module resolution strategy. */
-    moduleResolution: 'bundler',
     /** @brief Disable truncation of error messages. */
     noErrorTruncation: true,
     /** @brief Report errors for fallthrough cases in switch statements. */
@@ -41,6 +39,8 @@
     noImplicitThis: true,
     /** @brief Directory to output compiled JavaScript files. */
     outDir: './dist/',
+    /** @brief Root directory of input files; TypeScript 6+ requires this when outDir is set. */
+    rootDir: './src/',
     /** @brief Do not erase const enum declarations in generated code. */
     preserveConstEnums: true,
     /** @brief Enable pretty output. */
