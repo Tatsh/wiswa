@@ -203,6 +203,7 @@ pipefail
 pipx
 platformdirs
 plistlib
+preapproved
 proc
 prodvers
 pushrules
