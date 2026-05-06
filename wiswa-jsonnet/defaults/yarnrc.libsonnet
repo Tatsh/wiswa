@@ -17,6 +17,12 @@
    * @var number
    */
   npmMinimalAgeGate: 10080,
+  /**
+   * @brief List of npm package names exempt from `npmMinimalAgeGate` enforcement so freshly
+   * published trusted dependencies can be installed before the gate window elapses.
+   * @var string[]
+   */
+  npmPreapprovedPackages: [],
   /** @brief Access to use when publishing to the registry. */
   npmPublishAccess: 'public',
   /** @brief Whether to attach a provenance statement when publishing packages to the registry. */

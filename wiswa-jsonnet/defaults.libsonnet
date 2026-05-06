@@ -668,6 +668,14 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    * filtering is applied unless a project explicitly opts in.
    */
   node_engine: '',
+  /**
+   * @brief List of npm package names whose `latestNpmPackageVersion` lookups bypass the
+   * `yarnrc.npmMinimalAgeGate` cutoff. Use this to pin to a freshly published release of a
+   * trusted package (for example, an own-org dependency you just released and need to consume
+   * before the gate window elapses).
+   * @var string[]
+   */
+  npm_age_gate_exclude_packages: [],
   /** @brief Depth of the Python package index (for Pyright and Pylance). */
   python_package_index_depth: 100,
 
@@ -1470,6 +1478,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    * ```
    */
   yarnrc: (import 'defaults/yarnrc.libsonnet') + {
+    npmPreapprovedPackages: settings.npm_age_gate_exclude_packages,
     yarnPath: '.yarn/releases/yarn-%s.cjs' % settings.yarn_version,
   },
 

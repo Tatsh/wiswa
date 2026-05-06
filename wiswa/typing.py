@@ -326,6 +326,12 @@ class Settings(TypedDict):
     Node-engine constraint written into ``package_json.engines.node`` and consulted by
     ``utils.latestNpmPackageVersion*`` to filter candidate npm releases by the target Node major.
     """
+    npm_age_gate_exclude_packages: Iterable[str]
+    """
+    npm package names whose ``utils.latestNpmPackageVersion*`` lookups bypass the
+    ``yarnrc.npmMinimalAgeGate`` cutoff, used when a freshly published trusted dependency must
+    be consumed before the gate window elapses.
+    """
     package_json: PackageJSON
     """Parsed ``package.json``."""
     primary_module: str

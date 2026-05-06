@@ -258,6 +258,8 @@ def _make_native_callbacks(
     npm_age_gate = resolve_npm_minimal_age_gate_minutes(settings=merged_settings,
                                                         project_snippet=project_settings_snippet)
     node_engine = merged_settings['node_engine'] if merged_settings else ''
+    npm_age_gate_exclude: frozenset[str] = frozenset(
+        merged_settings.get('npm_age_gate_exclude_packages', ()) if merged_settings else ())
     gh_action = partial(get_github_release_latest_tag,
                         session,
                         skip_releases=True,
@@ -277,12 +279,12 @@ def _make_native_callbacks(
                                                               npm_age_gate_minutes=npm_age_gate)),
         'githubLatestTag': (('o', 'r'), lambda o, r: _sync_wrap(gh_tag, o, r)),
         'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
-        'latestNpmPackageVersion': (
-            ('p',), lambda p: _sync_wrap(get_npm_latest_package_version,
-                                         session,
-                                         p,
-                                         node_constraint=node_engine,
-                                         npm_age_gate_minutes=npm_age_gate)),
+        'latestNpmPackageVersion': (('p',), lambda p: _sync_wrap(
+            get_npm_latest_package_version,
+            session,
+            p,
+            node_constraint=node_engine,
+            npm_age_gate_minutes=(0 if p in npm_age_gate_exclude else npm_age_gate))),
         'latestPypiPackageVersion': (('p', 'h', 'py'), lambda p, h='pypi.org', py='': _sync_wrap(
             get_pypi_latest_package_version, session, p, host=h, python=py or None)),
         'latestYarnVersion': ((), lambda: _sync_wrap(get_latest_yarn_version, session)),
