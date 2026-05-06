@@ -221,7 +221,6 @@ pytest
 pythonhosted
 qstringbuilder
 qtcore
-ramda
 reflow
 regen
 renderable

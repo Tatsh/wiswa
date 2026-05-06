@@ -376,7 +376,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Post-processing rewrites existing `CHANGELOG.md` boilerplate links from GitHub when an HTTP
   session is available: Keep a Changelog uses the latest `olivierlacan/keep-a-changelog` release tag
   mapped to `keepachangelog.com/en/...`, and Semantic Versioning uses `semver/semver` mapped to
-  `semver.org/spec/...`. Pinned fallbacks are `https://keepachangelog.com/en/1.1.1/` and
+  `semver.org/spec/...`. Pinned fallbacks are `https://keepachangelog.com/en/1.1.0/` and
   `https://semver.org/spec/v2.0.0.html` when there is no session or resolution fails.
 - New projects receive the same resolved Keep a Changelog and SemVer intro URLs when templates are
   rendered (`resolve_changelog_boilerplate_urls`), not only after post-processing.
