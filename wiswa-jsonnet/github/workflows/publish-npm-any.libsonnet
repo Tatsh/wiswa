@@ -46,6 +46,9 @@ function(settings)
           {
             name: 'Publish to NPM',
             run: 'yarn npm publish',
+            env: {
+              NODE_AUTH_TOKEN: '${{ secrets.NODE_AUTH_TOKEN || secrets.GITHUB_TOKEN }}',
+            },
           },
           {
             uses: 'softprops/action-gh-release@' + utils.githubLatestActionTag('softprops', 'action-gh-release'),
