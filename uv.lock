@@ -10,7 +10,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-04-25T21:51:27.298675689Z"
+exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
@@ -548,14 +548,14 @@ wheels = [
 
 [[package]]
 name = "click"
-version = "8.3.2"
+version = "8.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/57/75/31212c6bf2503fdf920d87fee5d7a86a2e3bcf444984126f13d8e4016804/click-8.3.2.tar.gz", hash = "sha256:14162b8b3b3550a7d479eafa77dfd3c38d9dc8951f6f69c78913a8f9a7540fd5", size = 302856, upload-time = "2026-04-03T19:14:45.118Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bb/63/f9e1ea081ce35720d8b92acde70daaedace594dc93b693c869e0d5910718/click-8.3.3.tar.gz", hash = "sha256:398329ad4837b2ff7cbe1dd166a4c0f8900c3ca3a218de04466f38f6497f18a2", size = 328061, upload-time = "2026-04-22T15:11:27.506Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e4/20/71885d8b97d4f3dde17b1fdb92dbd4908b00541c5a3379787137285f602e/click-8.3.2-py3-none-any.whl", hash = "sha256:1924d2c27c5653561cd2cae4548d1406039cb79b858b747cfea24924bbc1616d", size = 108379, upload-time = "2026-04-03T19:14:43.505Z" },
+    { url = "https://files.pythonhosted.org/packages/ae/44/c1221527f6a71a01ec6fbad7fa78f1d50dfa02217385cf0fa3eec7087d59/click-8.3.3-py3-none-any.whl", hash = "sha256:a2bf429bb3033c89fa4936ffb35d5cb471e3719e1f3c8a7c3fff0b8314305613", size = 110502, upload-time = "2026-04-22T15:11:25.044Z" },
 ]
 
 [[package]]
@@ -1795,16 +1795,16 @@ wheels = [
 
 [[package]]
 name = "niquests"
-version = "3.18.6"
+version = "3.18.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "charset-normalizer" },
     { name = "urllib3-future" },
     { name = "wassima", marker = "sys_platform != 'emscripten'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/89/02/ff649fdaf4a9019c4ba71c038ec8355a1404538eb8bde2028a3956003c39/niquests-3.18.6.tar.gz", hash = "sha256:bdf8e945241670608552e8b3c41556aaf532705e3c8f1ed197a102d017f0a54a", size = 1022813, upload-time = "2026-04-13T06:32:38.628Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fb/1d/b40f0c7d62e3543483a8be5c74f9235cf70540fb1ba3480a33a1e8d6cdd6/niquests-3.18.7.tar.gz", hash = "sha256:7587a20e5c0fba0f2474d06b1f95794310585ba3a90e509c9a41f817100011e4", size = 1025148, upload-time = "2026-04-28T05:29:46.076Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0d/3c/78f9a77e4fdd4456088bb7f0a5b2e99ba5d6cbf41fc36f5cbb3f3103a42f/niquests-3.18.6-py3-none-any.whl", hash = "sha256:cb415e31ca18ec69e88f393dcc339bce8baa38d50910e696fd0712d0b9480551", size = 208665, upload-time = "2026-04-13T06:32:37.223Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/0e/840094cf85a375533e0a25e7a6adb88eeb8dc557895f631a8938913c09bf/niquests-3.18.7-py3-none-any.whl", hash = "sha256:6126e20bd5b09d5deaa2c20634e4d9c1c0d0112aaa92cb24be56d6a858b22daa", size = 208486, upload-time = "2026-04-28T05:29:44.535Z" },
 ]
 
 [[package]]
@@ -2220,15 +2220,15 @@ wheels = [
 
 [[package]]
 name = "python-gitlab"
-version = "8.2.0"
+version = "8.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "requests" },
     { name = "requests-toolbelt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/77/9c/ec0073c260812bca170418e8e259a2ed0728200af4b3f7120badf2e6f05a/python_gitlab-8.2.0.tar.gz", hash = "sha256:de874dc538db6dceb48929f4c8fb55d6064dd19cb3ffdad1100190f835c5b674", size = 407110, upload-time = "2026-03-28T01:50:07.66Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/86/00/9a9eb79cf3608f9ab172bc6311b40a7ed128cae7be42dbf2d3830d713a48/python_gitlab-8.3.0.tar.gz", hash = "sha256:2ca67cf64b8d9290fe64463cfef6e77dbde066285dd848db2eb7816d6a7e9ec9", size = 410332, upload-time = "2026-04-28T02:32:30.16Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/ee/a61bb562bdf6f0bc6c51cdcf80ab5503cbb4b2f5053fa4b054cc0a56e48a/python_gitlab-8.2.0-py3-none-any.whl", hash = "sha256:884618d4d60beadb21bb0c5f0cca46e70c6e501784f136bf0b6f85f5bc15ce62", size = 147477, upload-time = "2026-03-28T01:50:06.237Z" },
+    { url = "https://files.pythonhosted.org/packages/df/b1/3e3144c3ada2ae1a60a378396629064ef14e425e356c8e7c1db3a50ef351/python_gitlab-8.3.0-py3-none-any.whl", hash = "sha256:7aace3585d57ee97ebcb74bc776f30af3e861e285290082a91646348aca3f22a", size = 148177, upload-time = "2026-04-28T02:32:28.133Z" },
 ]
 
 [[package]]
