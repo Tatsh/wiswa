@@ -201,6 +201,9 @@ pavelzw
 pepy
 pipefail
 pipx
+pkgbuild
+pkgrel
+pkgver
 platformdirs
 plistlib
 preapproved
