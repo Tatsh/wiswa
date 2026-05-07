@@ -327,6 +327,12 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   want_ty: true,
   /** @brief If the project will publish to WinGet using GitHub Actions (C/C++ only). */
   want_winget: true,
+  /**
+   * @brief If the project should open pull requests against ``msys2/MINGW-packages`` to update its
+   *     ``mingw-w64-{name}`` PKGBUILD on every published GitHub release (C/C++ only). Off by
+   *     default; only meaningful when an upstream MSYS2 package already exists for this project.
+   */
+  want_msys2: false,
 
   /**
    * @brief Social media configuration (for badges).
@@ -970,6 +976,22 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
         identifier: '%s.%s' % [settings.github_username, settings.github_project_name],
         /** @brief Maximum number of versions to keep published. */
         max_versions_to_keep: 3,
+      },
+      /** @brief MSYS2 PKGBUILD-publishing settings. */
+      publish_msys2: {
+        /**
+         * @brief Package directory under ``msys2/MINGW-packages`` (without the ``mingw-w64-``
+         *     prefix). Defaults to the project name.
+         * @var string
+         */
+        package_name: settings.project_name,
+        /**
+         * @brief Repository the workflow's pull request branch is pushed to before opening the PR
+         *     against ``msys2/MINGW-packages``. Should be a fork of MINGW-packages owned by the
+         *     person whose ``MSYS2_TOKEN`` secret authorises the push.
+         * @var string
+         */
+        fork: '%s/MINGW-packages' % settings.github_username,
       },
       /** @brief QA task settings. */
       qa: {

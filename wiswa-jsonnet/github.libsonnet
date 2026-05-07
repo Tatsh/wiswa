@@ -2,6 +2,7 @@ local cleanup = import 'github/workflows/cleanup.libsonnet';
 local codeql = import 'github/workflows/codeql.libsonnet';
 local flatpak_python = import 'github/workflows/flatpak-python.libsonnet';
 local lua_publish = import 'github/workflows/publish-luarocks.libsonnet';
+local msys2_publish = import 'github/workflows/publish-msys2.libsonnet';
 local npm_publish_any = import 'github/workflows/publish-npm-any.libsonnet';
 local pypi_publish_any = import 'github/workflows/publish-pypi-any.libsonnet';
 local winget_publish = import 'github/workflows/publish-winget.libsonnet';
@@ -51,6 +52,10 @@ local utils = import 'utils.libsonnet';
   ) + (
     if (settings.project_type == 'c++' || settings.project_type == 'c') && settings.want_winget then {
       '.github/workflows/publish-winget.yml': utils.manifestYaml(winget_publish(settings)),
+    } else {}
+  ) + (
+    if (settings.project_type == 'c++' || settings.project_type == 'c') && settings.want_msys2 then {
+      '.github/workflows/publish-msys2.yml': utils.manifestYaml(msys2_publish(settings)),
     } else {}
   ) + (
     if utils.wantFlatpakOutputs(settings) && settings.project_type == 'python' then {
