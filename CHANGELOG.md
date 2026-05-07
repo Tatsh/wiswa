@@ -9,6 +9,33 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-05-07
+
+### Added
+
+- Generated `publish-msys2.yml` workflow for C/C++ projects via the new `want_msys2` setting
+  (default `false`). When opted in, it opens a pull request against `msys2/MINGW-packages` to bump
+  the project's `mingw-w64-{name}` PKGBUILD on every published GitHub release. Configuration lives
+  under `github.workflows.publish_msys2` with `package_name` (defaults to `project_name`) and
+  `fork` (defaults to `{github_username}/MINGW-packages`). The trigger is `release: published`, so
+  the run reads the tag from `github.event.release.tag_name` rather than relying on a chained
+  `workflow_run.head_branch` (which is rebound to the default branch at the second hop).
+- Jsonnet `npm_age_gate_exclude_packages` (default `[]`) lists npm packages whose
+  `latestNpmPackageVersion` lookups bypass the `yarnrc.npmMinimalAgeGate` cutoff at Jsonnet
+  evaluation time. The same list cascades into a new `yarnrc.npmPreapprovedPackages` field so Yarn
+  itself skips the gate for those packages on `yarn install`. This unblocks consuming a freshly
+  published trusted dependency without lowering the gate globally.
+- `github.workflows.publish_npm_any.build_command` (default `yarn tsc`) so generated TypeScript
+  projects that bundle (for example via webpack) can override to `yarn webpack` without forking
+  the workflow.
+- Generated `publish-npm-any` workflow now exports `NODE_AUTH_TOKEN` on the `yarn npm publish`
+  step (`secrets.NODE_AUTH_TOKEN || secrets.GITHUB_TOKEN`) so the `${NODE_AUTH_TOKEN}` placeholder
+  that `actions/setup-node` writes into `.npmrc` resolves at publish time. GitHub Packages
+  authenticates through the auto-injected `GITHUB_TOKEN`; npmjs.org continues to work with a
+  project-supplied `NODE_AUTH_TOKEN` secret.
+- `PackageJSONPublishConfig` TypedDict (with `registry: str`) and a `NotRequired` `publishConfig`
+  field on `PackageJSON` in `wiswa.typing`, exported via `__all__`.
+
 ### Changed
 
 - Generated TypeScript projects now use Vitest as the test runner instead of Jest. The default
@@ -24,9 +51,33 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `startsWith(workflow_run.head_branch, 'v')`, then exposes `has_winget_token` and `tag` outputs.
   The `update-winget` step passes `release-tag` to `vedantmgoyal9/winget-releaser` so the publish
   targets the resolved tag explicitly rather than implicitly the latest release.
+- Generated `package.json` `repository.url` for GitHub remotes now uses the npm-conventional
+  `git+https://github.com/.../...git` form instead of `git@github.com:.../...git`. GitHub Packages
+  auto-links a freshly published package to the source repository only when the URL is in the
+  HTTPS form; the SSH form was silently ignored and yielded `permission_denied: write_package`.
+- When `package_json.publishConfig.registry` is set to a non-npmjs.org host (such as
+  `https://npm.pkg.github.com`), Wiswa now auto-configures the publish workflow: defaults
+  `github.workflows.publish_npm_any.registry_url` to that registry, adds a `yarnrc.npmRegistries`
+  entry with `npmAuthToken: ${NODE_AUTH_TOKEN-}` (bash-style fallback so unset tokens do not
+  crash local Yarn), and disables `yarnrc.npmPublishProvenance` (Sigstore provenance is
+  unsupported by GitHub Packages and other third-party registries). The `publish-npm-any`
+  workflow also gains `packages: 'write'` permissions so the auto-injected `GITHUB_TOKEN` can
+  publish to GitHub Packages.
+- Default generated TypeScript `tsconfig.json` now sets `rootDir: './src/'` (TypeScript 6 raises
+  TS5011 when `outDir` is set without an explicit `rootDir`) and drops the
+  `moduleResolution: 'bundler'` default (it conflicted with `module: 'commonjs'`; TypeScript
+  picks `node10` automatically). Projects that prefer `bundler` can opt back in via their own
+  `tsconfig+` override.
+- Generated TypeScript Dependabot config no longer pins `typescript` below `6.0.0`; the previous
+  transitional `ignore` block (added for `ts-jest` compatibility) is removed now that Vitest is
+  the default test runner.
 
 ### Fixed
 
+- Generated TypeScript `README.md` no longer emits `NPM Version` and `NPM Downloads` shields when
+  `package_json.publishConfig.registry` points at a non-default npm registry (for example GitHub
+  Packages), where the `img.shields.io/npm/v/...` and `/dm/...` endpoints return 404. The README
+  template and the post-processing helper both honour the gate.
 - Generated `README.md` KDE Plasma badge now renders: the shields.io label is percent-encoded
   (`KDE%20Plasma`) so the space no longer breaks the Markdown image URL.
 - Generated `yarn gen-docs` and `yarn gen-manpage` scripts now respect the `sphinx_fail_on_warning`
@@ -598,7 +649,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First version.
 
-[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.3.3...HEAD
+[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.3.4...HEAD
+[0.3.4]: https://github.com/Tatsh/wiswa/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/Tatsh/wiswa/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/Tatsh/wiswa/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/Tatsh/wiswa/compare/v0.3.0...v0.3.1

@@ -8,7 +8,7 @@ local utils = import 'utils.libsonnet';
   want_flatpak: true,
   publishing+: { flathub: 'sh.tat.wiswa' },
   project_name: 'wiswa',
-  version: '0.3.3',
+  version: '0.3.4',
   description: 'A highly opinionated way to generate and maintain projects with Jsonnet.',
   keywords: ['command line', 'jsonnet', 'project generator', 'project management', 'scaffolding'],
   github+: {
