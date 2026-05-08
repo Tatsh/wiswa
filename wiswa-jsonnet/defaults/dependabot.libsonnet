@@ -10,6 +10,12 @@
     production: { 'dependency-type': 'production' },
   },
   local schedule = { interval: 'weekly' },
+  local c_cpp_settings = [{
+    cooldown: cooldown,
+    directory: '/',
+    'package-ecosystem': 'vcpkg',
+    schedule: schedule,
+  }],
   local python_settings(settings) = [{
     cooldown: cooldown,
     directory: '/',
@@ -27,22 +33,24 @@
    */
   updates(settings):: {
     updates: [
-      {
-        cooldown: cooldown,
-        directory: '/',
-        groups: groups,
-        'package-ecosystem': 'npm',
-        schedule: schedule,
-      },
-      {
-        directory: '/',
-        groups: {
-          'github-actions': { patterns: ['*'] },
-        },
-        'package-ecosystem': 'github-actions',
-        schedule: schedule,
-      },
-    ] + if settings.project_type == 'python' then python_settings(settings) else [],
+               {
+                 cooldown: cooldown,
+                 directory: '/',
+                 groups: groups,
+                 'package-ecosystem': 'npm',
+                 schedule: schedule,
+               },
+               {
+                 directory: '/',
+                 groups: {
+                   'github-actions': { patterns: ['*'] },
+                 },
+                 'package-ecosystem': 'github-actions',
+                 schedule: schedule,
+               },
+             ]
+             + (if settings.project_type == 'python' then python_settings(settings) else [])
+             + (if settings.project_type == 'c' || settings.project_type == 'c++' then c_cpp_settings else []),
     version: 2,
   },
 }

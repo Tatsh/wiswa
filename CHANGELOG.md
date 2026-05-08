@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Generated `dependabot.yml` now includes a `vcpkg` ecosystem entry for C/C++ projects
+  (`project_type` of `c` or `c++`), so vcpkg manifest baselines are kept up to date alongside the
+  existing `npm`, `github-actions`, and Python ecosystems.
+
 ## [0.3.4] - 2026-05-07
 
 ### Added
