@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     import jinja2
 
 __all__ = ('GithubAPIExtension', 'ParseMarkdownBadgeExtension', 'ShellExtension',
-           'ToPythonExtension')
+           'SortDictsExtension', 'ToPythonExtension')
 
 
 def _topython_str(obj: str, *, convert_strings: bool) -> Any:
@@ -122,6 +122,41 @@ class ParseMarkdownBadgeExtension(Extension):
     def __init__(self, environment: jinja2.Environment) -> None:
         super().__init__(environment)
         environment.filters['parse_md_badge'] = _parse_md_badge
+
+
+def _sort_dicts(value: Iterable[Mapping[str, Any]],
+                key: str,
+                default: Any = 0) -> list[Mapping[str, Any]]:
+    """
+    Sort an iterable of mappings by *key*, falling back to *default* for entries missing the key.
+
+    Jinja2's built-in ``sort(attribute='...')`` raises ``UndefinedError`` under
+    :py:class:`~jinja2.StrictUndefined` when an entry lacks the attribute. This filter mirrors
+    that API but tolerates missing keys, which is needed by templates that sort user-supplied
+    dictionaries whose contract is "optional with a default" rather than "always present".
+
+    Parameters
+    ----------
+    value : Iterable[Mapping[str, Any]]
+        The sequence of mappings to sort.
+    key : str
+        The mapping key to sort by.
+    default : Any
+        Sort-key value used for mappings that do not contain *key*.
+
+    Returns
+    -------
+    list[Mapping[str, Any]]
+        A new list of the input mappings sorted by *key*.
+    """
+    return sorted(value, key=lambda item: item.get(key, default))
+
+
+class SortDictsExtension(Extension):
+    """Extension that exports the ``sort_dicts`` :py:class:`~jinja2.Environment` filter."""
+    def __init__(self, environment: jinja2.Environment) -> None:
+        super().__init__(environment)
+        environment.filters['sort_dicts'] = _sort_dicts
 
 
 class ShellExtension(Extension):

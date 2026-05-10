@@ -62,12 +62,13 @@ def _template_env(module_path: Path,
     # Local import: ``wiswa.extensions`` may import ``wiswa.utils.versions``, which loads this
     # package's ``__init__`` before ``templating`` has finished initializing.
     from wiswa.extensions import (  # noqa: I001, PLC0415
-        GithubAPIExtension, ParseMarkdownBadgeExtension, ShellExtension, ToPythonExtension)
+        GithubAPIExtension, ParseMarkdownBadgeExtension, ShellExtension, SortDictsExtension,
+        ToPythonExtension)
 
     env = jinja2.Environment(autoescape=jinja2.select_autoescape(),
                              enable_async=True,
                              extensions=(GithubAPIExtension, ParseMarkdownBadgeExtension,
-                                         ShellExtension, ToPythonExtension),
+                                         ShellExtension, SortDictsExtension, ToPythonExtension),
                              loader=jinja2.PackageLoader('wiswa'),
                              lstrip_blocks=True,
                              trim_blocks=True,

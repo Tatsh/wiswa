@@ -200,6 +200,48 @@ def test_parse_md_badge_no_match() -> None:
     assert result == {'alt': '', 'image': ''}
 
 
+def test_sort_dicts_orders_by_key() -> None:
+    from wiswa.extensions import SortDictsExtension
+
+    env = jinja2.Environment(extensions=[SortDictsExtension], autoescape=True)
+    sort_dicts = env.filters['sort_dicts']
+    items = [{'priority': 2, 'tag': 'b'}, {'priority': -1, 'tag': 'a'}, {'priority': 5, 'tag': 'c'}]
+    result = sort_dicts(items, 'priority')
+    assert [d['tag'] for d in result] == ['a', 'b', 'c']
+
+
+def test_sort_dicts_defaults_missing_key_to_zero() -> None:
+    from wiswa.extensions import SortDictsExtension
+
+    env = jinja2.Environment(extensions=[SortDictsExtension], autoescape=True)
+    sort_dicts = env.filters['sort_dicts']
+    items = [{'priority': 2, 'tag': 'b'}, {'tag': 'a'}, {'priority': -1, 'tag': 'c'}]
+    result = sort_dicts(items, 'priority')
+    assert [d['tag'] for d in result] == ['c', 'a', 'b']
+
+
+def test_sort_dicts_custom_default() -> None:
+    from wiswa.extensions import SortDictsExtension
+
+    env = jinja2.Environment(extensions=[SortDictsExtension], autoescape=True)
+    sort_dicts = env.filters['sort_dicts']
+    items = [{'priority': 5, 'tag': 'a'}, {'tag': 'b'}]
+    result = sort_dicts(items, 'priority', default=10)
+    assert [d['tag'] for d in result] == ['a', 'b']
+
+
+def test_sort_dicts_strict_undefined_template_with_missing_key() -> None:
+    from wiswa.extensions import SortDictsExtension
+
+    env = jinja2.Environment(extensions=[SortDictsExtension],
+                             undefined=jinja2.StrictUndefined,
+                             autoescape=True)
+    template = env.from_string(
+        "{% for b in items | sort_dicts('priority') %}{{ b.tag }},{% endfor %}")
+    items = [{'priority': 1, 'tag': 'x'}, {'tag': 'y'}]
+    assert template.render(items=items) == 'y,x,'
+
+
 async def test_github_latest_action_tag_no_session() -> None:
     from typing import cast
 

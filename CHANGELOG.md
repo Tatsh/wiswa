@@ -29,6 +29,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   added to the generated `.prettierignore`, and excluded from the `end-of-file-fixer` pre-commit
   hook. Dependabot's vcpkg updater rewrites these files without a trailing newline, so the previous
   behaviour caused an endless loop of formatting-only PRs.
+- Rendering `docs/badges.rst` and `README.md` no longer crashes with
+  `jinja2.exceptions.UndefinedError: 'dict object' has no attribute 'priority'` when
+  `custom_project_badges` contains entries without a `priority` field. The templates now sort via a
+  new `sort_dicts` Jinja2 filter that treats a missing key as `0` (the same default the surrounding
+  `priority` guards already used), so badges with no explicit priority sort alongside the other
+  default-priority entries instead of aborting the render.
 
 ## [0.3.4] - 2026-05-07
 

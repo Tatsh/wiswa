@@ -5,7 +5,7 @@
 {% endmacro %}
 .. only:: html
 
-{% for badge in settings.custom_project_badges | sort(attribute='priority') %}
+{% for badge in settings.custom_project_badges | sort_dicts('priority') %}
 {% if (badge.priority | default(0)) < 0 %}
 {% set parsed = badge.anchor | parse_md_badge %}
 {% if parsed.image %}
@@ -166,7 +166,7 @@
       'https://img.shields.io/badge/Prettier-black?logo=prettier',
       'https://prettier.io/',
       'Prettier') }}
-{% for badge in settings.custom_project_badges | sort(attribute='priority') %}
+{% for badge in settings.custom_project_badges | sort_dicts('priority') %}
 {% if (badge.priority | default(0)) >= 0 %}
 {% set parsed = badge.anchor | parse_md_badge %}
 {% if parsed.image %}

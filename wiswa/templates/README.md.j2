@@ -1,7 +1,7 @@
 # {{ settings.directory_name }}
 
 <!-- WISWA-GENERATED-README:START -->
-{% for badge in settings.custom_project_badges | sort(attribute='priority') %}
+{% for badge in settings.custom_project_badges | sort_dicts('priority') %}
 {% if (badge.priority | default(0)) < 0 %}
 {{ badge.anchor }}({{ badge.href }})
 {% endif %}
@@ -89,7 +89,7 @@
 {% endif %}
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Prettier](https://img.shields.io/badge/Prettier-black?logo=prettier)](https://prettier.io/)
-{% for badge in settings.custom_project_badges | sort(attribute='priority') %}
+{% for badge in settings.custom_project_badges | sort_dicts('priority') %}
 {% if (badge.priority | default(0)) >= 0 %}
 {{ badge.anchor }}({{ badge.href }})
 {% endif %}
