@@ -37,8 +37,8 @@ function(settings)
     '.vscode/c_cpp_properties.json': std.manifestJson(settings.vscode.c_cpp),
     'CMakePresets.json': std.manifestJson(settings.cmake_presets),
     'CMakeUserPresets.json': std.manifestJson(settings.cmake_user_presets),
-    'vcpkg.json': std.manifestJson(settings.vcpkg),
-    'vcpkg-configuration.json': std.manifestJson(settings.vcpkg_config),
+    'vcpkg.json': std.manifestJsonEx(settings.vcpkg, '  '),
+    'vcpkg-configuration.json': std.manifestJsonEx(settings.vcpkg_config, '  '),
   } else {};
   local xcode_items = if settings.project_type == 'xcode' then {
     '.clang-format': utils.manifestYaml(settings.clang_format),
