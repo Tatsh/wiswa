@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeAlias, cast
 from urllib.parse import urlparse
 import configparser
+import fnmatch
 import json
 import logging
 import re
@@ -49,6 +50,16 @@ _FLATPAK_APP_ID_HELP = (
 _REMOTE_HOST_CONFLICT_HELP = (
     'using_github and using_gitlab cannot both be true. Adjust .wiswa.jsonnet '
     '(or repository_uri and using_* overrides) so only one remote host applies.')
+
+_NO_FINAL_NEWLINE_PATTERNS: tuple[str, ...] = ('vcpkg*.json',)
+"""
+Filename globs whose generated output must NOT end with a newline.
+
+Dependabot rewrites these files without a trailing newline; matching its convention prevents an
+endless regen-versus-Dependabot diff loop.
+
+:meta hide-value:
+"""
 
 
 class RemoteHostConflictError(ValueError):
@@ -362,6 +373,12 @@ async def evaluate_jsonnet_project(lib_path: Path,
         The path to the Jsonnet file to evaluate (defaults to ``project.jsonnet`` in the library).
     output_dir : Path | None
         Output directory for generated files (defaults to the current directory).
+
+    Notes
+    -----
+    Generated files are written with a trailing newline, except for filenames matching the globs in
+    ``_NO_FINAL_NEWLINE_PATTERNS`` (for example ``vcpkg*.json``) which are written without one to
+    match Dependabot's formatting and avoid regen-versus-Dependabot diff loops.
     """
     if output_dir:
         await anyio.Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -371,7 +388,12 @@ async def evaluate_jsonnet_project(lib_path: Path,
             jpathdir, file or (lib_path / 'project.jsonnet'), merged_settings, session)).items():
         output_file = anyio.Path(output_dir / filename)
         await output_file.parent.mkdir(parents=True, exist_ok=True)
-        await output_file.write_text(f'{content.strip()}\n')
+        stripped = content.strip()
+        base = Path(filename).name
+        if any(fnmatch.fnmatchcase(base, pat) for pat in _NO_FINAL_NEWLINE_PATTERNS):
+            await output_file.write_text(stripped)
+        else:
+            await output_file.write_text(f'{stripped}\n')
         log.debug('Wrote `%s`.', output_file)
 
 

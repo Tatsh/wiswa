@@ -15,6 +15,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (`project_type` of `c` or `c++`), so vcpkg manifest baselines are kept up to date alongside the
   existing `npm`, `github-actions`, and Python ecosystems.
 
+### Fixed
+
+- Generated `vcpkg.json` and `vcpkg-configuration.json` are now written without a trailing newline,
+  added to the generated `.prettierignore`, and excluded from the `end-of-file-fixer` pre-commit
+  hook. Dependabot's vcpkg updater rewrites these files without a trailing newline, so the previous
+  behaviour caused an endless loop of formatting-only PRs.
+
 ## [0.3.4] - 2026-05-07
 
 ### Added

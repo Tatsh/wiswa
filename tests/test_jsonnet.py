@@ -85,6 +85,45 @@ async def test_evaluate_jsonnet_project_default_output_dir(tmp_path: Path,
     assert (tmp_path / 'generated.txt').read_text().strip() == 'gen content'
 
 
+@pytest.mark.parametrize('filename', ['vcpkg.json', 'vcpkg-configuration.json'])
+async def test_evaluate_jsonnet_project_vcpkg_no_trailing_newline(tmp_path: Path,
+                                                                  monkeypatch: pytest.MonkeyPatch,
+                                                                  mocker: MockerFixture,
+                                                                  filename: str) -> None:
+    monkeypatch.chdir(tmp_path)
+    lib_path = tmp_path / 'lib'
+    lib_path.mkdir()
+    payload = json.dumps({filename: '{\n  "name": "x"\n}'})
+    mocker.patch('wiswa.utils.jsonnet.evaluate_jsonnet_file', return_value=payload)
+    await evaluate_jsonnet_project(lib_path, [str(lib_path)], '{}')
+    written = (tmp_path / filename).read_text()
+    assert not written.endswith('\n')
+
+
+async def test_evaluate_jsonnet_project_other_json_keeps_trailing_newline(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    lib_path = tmp_path / 'lib'
+    lib_path.mkdir()
+    payload = json.dumps({'package.json': '{\n  "name": "x"\n}'})
+    mocker.patch('wiswa.utils.jsonnet.evaluate_jsonnet_file', return_value=payload)
+    await evaluate_jsonnet_project(lib_path, [str(lib_path)], '{}')
+    written = (tmp_path / 'package.json').read_text()
+    assert written.endswith('\n')
+
+
+async def test_evaluate_jsonnet_project_vcpkg_in_subdir_no_trailing_newline(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    lib_path = tmp_path / 'lib'
+    lib_path.mkdir()
+    payload = json.dumps({'nested/dir/vcpkg.json': '{\n  "name": "x"\n}'})
+    mocker.patch('wiswa.utils.jsonnet.evaluate_jsonnet_file', return_value=payload)
+    await evaluate_jsonnet_project(lib_path, [str(lib_path)], '{}')
+    written = (tmp_path / 'nested' / 'dir' / 'vcpkg.json').read_text()
+    assert not written.endswith('\n')
+
+
 def test_validate_flatpak_app_id_skips_when_disabled() -> None:
     validate_flatpak_app_id({'want_flatpak': False})
 

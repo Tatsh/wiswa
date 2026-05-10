@@ -56,6 +56,7 @@ local utils = import 'utils.libsonnet';
         id: 'detect-private-key',
       },
       {
+        exclude: '^vcpkg.*\\.json$',
         id: 'end-of-file-fixer',
       },
       {

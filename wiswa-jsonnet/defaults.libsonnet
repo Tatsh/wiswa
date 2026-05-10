@@ -1483,7 +1483,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   },
 
   local cpp_prettierignore = if self.project_type == 'c++' || self.project_type == 'c' then
-    cpp_ignore + ['*.c', '*.cpp', '*.h', '*.in'] else [],
+    cpp_ignore + ['*.c', '*.cpp', '*.h', '*.in', 'vcpkg*.json'] else [],
   /**
    * @brief Array of patterns to ignore for Prettier.
    * @var string[]
