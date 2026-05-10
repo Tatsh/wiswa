@@ -1491,6 +1491,9 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   prettierignore: std.set(self.shared_ignore +
                           [
                             '*.1',
+                            '*.3',
+                            '*.7',
+                            '*.desktop',
                             '*.j2',
                             '*.jsonnet',
                             '*.libsonnet',

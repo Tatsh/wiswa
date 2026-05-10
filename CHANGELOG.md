@@ -20,6 +20,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `vcpkg-configuration.json` now composes it with `utils.githubLatestReleaseTag` against
   `microsoft/vcpkg` so the `default-registry.baseline` always pins the latest non-pre-release
   vcpkg release rather than a hardcoded SHA.
+- Generated `.prettierignore` now lists `*.3`, `*.7`, and `*.desktop` alongside the existing `*.1`
+  entry, so Prettier no longer touches additional manpage sections or XDG desktop entry files.
 
 ### Fixed
 
