@@ -24,6 +24,7 @@ import platformdirs
 
 from .path import tests_dir_has_pytest_modules_excluding_starter_main
 from .versions import (
+    get_github_ref_commit_sha,
     get_github_release_latest_tag,
     get_latest_yarn_version,
     get_npm_latest_package_version,
@@ -276,6 +277,7 @@ def _make_native_callbacks(
                         skip_releases=True,
                         allow_suffixes=False)
     gh_tag = partial(get_github_release_latest_tag, session, skip_releases=True)
+    gh_ref_sha = partial(get_github_ref_commit_sha, session)
     return {
         # The argument names here cannot conflict with a wrapping function.
         # f(arg):: std.native('f', arg) will fail if it's defined here as 'f': (('arg',), ...).
@@ -289,6 +291,7 @@ def _make_native_callbacks(
                                                               apply_npm_min_release_age=bool(g),
                                                               npm_age_gate_minutes=npm_age_gate)),
         'githubLatestTag': (('o', 'r'), lambda o, r: _sync_wrap(gh_tag, o, r)),
+        'githubRefCommitSha': (('o', 'r', 'f'), lambda o, r, f: _sync_wrap(gh_ref_sha, o, r, f)),
         'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
         'latestNpmPackageVersion': (('p',), lambda p: _sync_wrap(
             get_npm_latest_package_version,

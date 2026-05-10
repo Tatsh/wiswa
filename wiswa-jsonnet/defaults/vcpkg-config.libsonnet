@@ -1,3 +1,5 @@
+local utils = import 'utils.libsonnet';
+
 /**
  * @file vcpkg-config.libsonnet
  * @namespace vcpkg_config
@@ -6,8 +8,14 @@
 {
   /** @brief Default vcpkg registry configuration. */
   'default-registry': {
-    /** @brief Git commit hash for the baseline of the registry. */
-    baseline: '0cf34c184ce990471435b5b9c92edcf7424930b1',
+    /**
+     * @brief Git commit hash for the baseline of the registry. Resolved at regen time to the commit
+     * SHA pointed at by the latest non-pre-release GitHub release of `microsoft/vcpkg` so generated
+     * manifests pin a published vcpkg snapshot rather than an arbitrary `master` tip.
+     */
+    baseline: utils.githubRefCommitSha('microsoft',
+                                       'vcpkg',
+                                       utils.githubLatestReleaseTag('microsoft', 'vcpkg')),
     /** @brief Type of the registry, e.g., "git". */
     kind: 'git',
     /** @brief URL of the vcpkg registry repository. */

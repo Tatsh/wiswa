@@ -311,6 +311,20 @@
    */
   githubLatestActionTag(owner, repo):: std.native('githubLatestActionTag')(owner, repo),
   /**
+   * @brief Resolve a Git ref (branch, tag, or full SHA) to its commit SHA on GitHub.
+   *
+   * Requires a native function `githubRefCommitSha` to be defined in the Jsonnet environment.
+   *
+   * @param owner The repository owner.
+   * @param repo The repository name.
+   * @param ref The Git ref to resolve (branch name, tag name, or full commit SHA).
+   * @returns The 40-character hexadecimal commit SHA the ref resolves to.
+   * @pt string, string, string
+   * @rv string
+   */
+  githubRefCommitSha(owner, repo, ref)::
+    std.native('githubRefCommitSha')(owner, repo, ref),
+  /**
    * @brief Get the latest release tag for a GitHub repository.
    *
    * Requires a native function `githubLatestReleaseTag` to be defined in the Jsonnet environment.

@@ -14,6 +14,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Generated `dependabot.yml` now includes a `vcpkg` ecosystem entry for C/C++ projects
   (`project_type` of `c` or `c++`), so vcpkg manifest baselines are kept up to date alongside the
   existing `npm`, `github-actions`, and Python ecosystems.
+- New Jsonnet helper `utils.githubRefCommitSha(owner, repo, ref)` (backed by a native callback)
+  resolves any Git ref (branch, tag, or full SHA) to its underlying commit SHA via the GitHub API,
+  with in-process and on-disk caching plus rate-limit fallback. The generated
+  `vcpkg-configuration.json` now composes it with `utils.githubLatestReleaseTag` against
+  `microsoft/vcpkg` so the `default-registry.baseline` always pins the latest non-pre-release
+  vcpkg release rather than a hardcoded SHA.
 
 ### Fixed
 

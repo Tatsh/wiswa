@@ -34,6 +34,17 @@ async def test_evaluate_jsonnet_file(mocker: MockerFixture) -> None:
     assert 'githubCliUsername' in native_callbacks
 
 
+async def test_evaluate_jsonnet_file_session_exposes_ref_commit_sha_callback(
+        mocker: MockerFixture) -> None:
+    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet.evaluate_file.return_value = '{}'
+    await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}', session=MagicMock())
+    native_callbacks = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']
+    assert 'githubRefCommitSha' in native_callbacks
+    arg_names, _fn = native_callbacks['githubRefCommitSha']
+    assert arg_names == ('o', 'r', 'f')
+
+
 async def test_evaluate_jsonnet_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
                                         mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)

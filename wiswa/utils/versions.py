@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     import niquests
 
 __all__ = ('clear_resolution_caches', 'download_yarn', 'download_yarn_plugins',
-           'get_github_release_latest_tag', 'get_latest_yarn_version',
+           'get_github_ref_commit_sha', 'get_github_release_latest_tag', 'get_latest_yarn_version',
            'get_npm_latest_package_version', 'get_pypi_latest_package_version',
            'resolve_npm_minimal_age_gate_minutes')
 
@@ -836,3 +836,60 @@ async def get_github_release_latest_tag(session: niquests.AsyncSession,
     _cache[key] = version
     _write_github_tag_disk_entry(key, version)
     return version
+
+
+async def get_github_ref_commit_sha(session: niquests.AsyncSession, owner: str, repo: str,
+                                    ref: str) -> str:
+    """
+    Resolve a Git ref (branch, tag, or full SHA) to its underlying commit SHA on GitHub.
+
+    Uses the ``/repos/{owner}/{repo}/commits/{ref}`` endpoint with
+    ``Accept: application/vnd.github.sha`` so GitHub returns just the SHA as plain text. Annotated
+    tags are followed to the commit they point at; lightweight tags resolve directly. The result is
+    cached in-process for the lifetime of the run, persisted to the on-disk GitHub cache, and falls
+    back to that cache when GitHub responds with 403 or 429 (rate limiting).
+
+    Parameters
+    ----------
+    session : niquests.AsyncSession
+        The HTTP session.
+    owner : str
+        The repository owner.
+    repo : str
+        The repository name.
+    ref : str
+        The Git ref to resolve (branch name, tag name, or full commit SHA).
+
+    Returns
+    -------
+    str
+        The 40-character hexadecimal commit SHA *ref* resolves to.
+
+    Raises
+    ------
+    ValueError
+        If the SHA cannot be retrieved and no cached value is available.
+    """
+    key = f'gh_sha_{owner}/{repo}@{ref}'
+    if key in _cache:
+        return _cache[key]
+    resp = await session.get(f'https://api.github.com/repos/{owner}/{repo}/commits/{ref}',
+                             headers={'Accept': 'application/vnd.github.sha'},
+                             timeout=15)
+    blocked_status = _blocked_github_response_status(resp)
+    if resp.ok:
+        sha = (resp.text or '').strip()
+        if sha:
+            _cache[key] = sha
+            _write_github_tag_disk_entry(key, sha)
+            return sha
+    if blocked_status is not None:
+        disk_sha = _read_github_tag_disk_store().get(key)
+        if disk_sha:
+            log.warning(
+                'Using disk-cached GitHub commit SHA %s for %s/%s@%s after HTTP %d '
+                '(likely due to rate limiting).', disk_sha, owner, repo, ref, blocked_status)
+            _cache[key] = disk_sha
+            return disk_sha
+    msg = f'Could not get commit SHA for {owner}/{repo}@{ref}.'
+    raise ValueError(msg)

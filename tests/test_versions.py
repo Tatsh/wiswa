@@ -15,6 +15,7 @@ from wiswa.utils.versions import (
     clear_resolution_caches,
     download_yarn,
     download_yarn_plugins,
+    get_github_ref_commit_sha,
     get_github_release_latest_tag,
     get_latest_yarn_version,
     get_npm_latest_package_version,
@@ -235,6 +236,64 @@ async def test_get_github_release_latest_tag_google_yapf_special_case() -> None:
                                                  skip_releases=True,
                                                  allow_suffixes=True)
     assert result == 'v0.40.0'
+
+
+async def test_get_github_ref_commit_sha_returns_text_for_tag() -> None:
+    sha = 'a' * 40
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(ok=True, text=f'  {sha}\n'))
+    result = await get_github_ref_commit_sha(mock_session, 'microsoft', 'vcpkg', '2024.11.16')
+    assert result == sha
+    mock_session.get.assert_called_once_with(
+        'https://api.github.com/repos/microsoft/vcpkg/commits/2024.11.16',
+        headers={'Accept': 'application/vnd.github.sha'},
+        timeout=15)
+
+
+async def test_get_github_ref_commit_sha_cache_hit() -> None:
+    sha = 'b' * 40
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(ok=True, text=sha))
+    result1 = await get_github_ref_commit_sha(mock_session, 'microsoft', 'vcpkg', 'master')
+    result2 = await get_github_ref_commit_sha(mock_session, 'microsoft', 'vcpkg', 'master')
+    assert result1 == result2 == sha
+    assert mock_session.get.call_count == 1
+
+
+async def test_get_github_ref_commit_sha_fails_when_response_not_ok() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(ok=False, status_code=404))
+    with pytest.raises(ValueError, match='Could not get commit SHA'):
+        await get_github_ref_commit_sha(mock_session, 'owner', 'missing', 'main')
+
+
+async def test_get_github_ref_commit_sha_empty_body_raises() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(ok=True, text='   \n'))
+    with pytest.raises(ValueError, match='Could not get commit SHA'):
+        await get_github_ref_commit_sha(mock_session, 'owner', 'repo', 'master')
+
+
+async def test_get_github_ref_commit_sha_rate_limited_no_disk_cache_raises() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(ok=False, status_code=429))
+    with pytest.raises(ValueError, match='Could not get commit SHA'):
+        await get_github_ref_commit_sha(mock_session, 'unseen', 'repo', 'master')
+
+
+async def test_get_github_ref_commit_sha_disk_fallback_on_rate_limit(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv('XDG_CACHE_HOME', str(tmp_path / 'xdg-cache'))
+    clear_resolution_caches()
+    sha = 'c' * 40
+    ok_session = MagicMock()
+    ok_session.get = AsyncMock(return_value=_make_response(ok=True, text=sha))
+    assert await get_github_ref_commit_sha(ok_session, 'microsoft', 'vcpkg', 'master') == sha
+    clear_resolution_caches()
+    rate_limited = MagicMock()
+    rate_limited.get = AsyncMock(return_value=_make_response(ok=False, status_code=403))
+    result = await get_github_ref_commit_sha(rate_limited, 'microsoft', 'vcpkg', 'master')
+    assert result == sha
 
 
 async def test_get_github_release_latest_tag_no_suffix_via_fallback() -> None:
