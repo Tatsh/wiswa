@@ -406,7 +406,7 @@ class Settings(TypedDict):
     want_gpg: bool
     """If Git commits and tags should be GPG-signed."""
     claude_settings_local: dict[str, Any]
-    """JSON object written to ``.claude/settings.local.json`` when ``want_ai`` is true."""
+    """JSON object written to ``.claude/settings.json`` when ``want_ai`` is true."""
     custom_project_badges: Sequence[CustomProjectBadge]
     """Custom project badges displayed before the social section in the README."""
     export_requirements: ExportRequirements

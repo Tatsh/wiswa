@@ -242,11 +242,15 @@ async def test_post_process_steps_removes_legacy_wiswa_ai_files(tmp_path: Path,
     legacy_gh = tmp_path / '.github' / 'instructions' / 'python.instructions.md'
     legacy_gh.parent.mkdir(parents=True)
     legacy_gh.write_text('legacy')
+    legacy_claude_dist = tmp_path / '.claude' / 'settings.local.json.dist'
+    legacy_claude_dist.parent.mkdir(parents=True)
+    legacy_claude_dist.write_text('{}\n')
     _mock_subprocess(mocker)
     settings = cast('Any', _make_settings())
     await post_process_steps(settings)
     assert not legacy_cursor.exists()
     assert not legacy_gh.exists()
+    assert not legacy_claude_dist.exists()
 
 
 async def test_post_process_steps_creates_wiswa_ci_cache_dirs(tmp_path: Path,

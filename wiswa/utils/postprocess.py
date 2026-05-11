@@ -40,11 +40,11 @@ _README_GENERATED_STOP = '<!-- WISWA-GENERATED-README:STOP -->'
 _GIT_CONFIG_NO_HOOKS = ('-c', f'core.hooksPath={os.devnull}')
 
 _FORMAT_DEFAULT_FILENAMES = {'cyclonedx1.5': 'cyclonedx.json', 'pylock.toml': 'pylock.toml'}
-_LEGACY_WISWA_AI_PATHS = ('.cursor/permissions.json.dist', '.cursor/rules/general.mdc',
-                          '.cursor/rules/json-yaml.mdc', '.cursor/rules/markdown.mdc',
-                          '.cursor/rules/toml-ini.mdc', '.cursor/rules/cpp.mdc',
-                          '.cursor/rules/python.mdc', '.cursor/rules/python-tests.mdc',
-                          '.github/copilot-instructions.md',
+_LEGACY_WISWA_AI_PATHS = ('.claude/settings.local.json.dist', '.cursor/permissions.json.dist',
+                          '.cursor/rules/general.mdc', '.cursor/rules/json-yaml.mdc',
+                          '.cursor/rules/markdown.mdc', '.cursor/rules/toml-ini.mdc',
+                          '.cursor/rules/cpp.mdc', '.cursor/rules/python.mdc',
+                          '.cursor/rules/python-tests.mdc', '.github/copilot-instructions.md',
                           '.github/instructions/general.instructions.md',
                           '.github/instructions/json-yaml.instructions.md',
                           '.github/instructions/markdown.instructions.md',
@@ -173,8 +173,8 @@ async def _create_wiswa_ci_cache_dirs(settings: Settings) -> None:
 
     Tools launched from Claude Code subprocesses use environment variables (``UV_CACHE_DIR``,
     ``YARN_CACHE_FOLDER``, ``MYPY_CACHE_DIR``, ``RUFF_CACHE_DIR``) set in
-    ``.claude/settings.local.json`` to redirect their caches into this tree so writes land inside
-    the repo (sandbox-writable and gitignored) rather than ``~/.cache``. Pre-creating the
+    ``.claude/settings.json`` to redirect their caches into this tree so writes land inside the
+    repo (sandbox-writable and gitignored) rather than ``~/.cache``. Pre-creating the
     directories keeps tools that refuse to auto-create their cache parent from failing on first
     run.
 

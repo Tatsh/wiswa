@@ -46,8 +46,8 @@ async def test_copy_static_files_creates_claude_rules_and_settings(
     await copy_static_files(settings, module_path)
     assert (tmp_path / '.claude/rules/json-yaml.md').exists()
     assert (tmp_path / '.claude/rules/python-tests.md').exists()
-    assert (tmp_path / '.claude/settings.local.json').exists()
-    assert '"x": 1' in (tmp_path / '.claude/settings.local.json').read_text()
+    assert (tmp_path / '.claude/settings.json').exists()
+    assert '"x": 1' in (tmp_path / '.claude/settings.json').read_text()
 
 
 async def test_copy_static_files_stubs_only_skips_python_rules(
@@ -91,10 +91,8 @@ async def test_copy_static_files_claude_json_written_when_wanted(
     module_path = _setup_module_path(tmp_path)
     settings = cast('Any', _make_settings(want_ai=True, claude_settings_local={'key': 'val'}))
     await copy_static_files(settings, module_path)
-    assert (tmp_path / '.claude/settings.local.json').exists()
-    assert '"key": "val"' in (tmp_path / '.claude/settings.local.json').read_text()
-    assert (tmp_path / '.claude/settings.local.json.dist').exists()
-    assert '"key": "val"' in (tmp_path / '.claude/settings.local.json.dist').read_text()
+    assert (tmp_path / '.claude/settings.json').exists()
+    assert '"key": "val"' in (tmp_path / '.claude/settings.json').read_text()
 
 
 async def test_copy_static_files_cpp_project_type(tmp_path: Path,
@@ -183,14 +181,11 @@ async def test_copy_static_files_claude_not_wanted_removes_matching_json(
     claude_dir = tmp_path / '.claude'
     claude_dir.mkdir(parents=True)
     content = {'key': 'val'}
-    (claude_dir / 'settings.local.json').write_text(f'{json.dumps(content, indent=2)}\n',
-                                                    encoding='utf-8')
-    (claude_dir / 'settings.local.json.dist').write_text(f'{json.dumps(content, indent=2)}\n',
-                                                         encoding='utf-8')
+    (claude_dir / 'settings.json').write_text(f'{json.dumps(content, indent=2)}\n',
+                                              encoding='utf-8')
     settings = cast('Any', _make_settings(want_ai=False, claude_settings_local={'key': 'val'}))
     await copy_static_files(settings, module_path)
-    assert not (claude_dir / 'settings.local.json').exists()
-    assert not (claude_dir / 'settings.local.json.dist').exists()
+    assert not (claude_dir / 'settings.json').exists()
 
 
 async def test_copy_static_files_claude_not_wanted_keeps_different_json(
@@ -199,7 +194,7 @@ async def test_copy_static_files_claude_not_wanted_keeps_different_json(
     module_path = _setup_module_path(tmp_path)
     claude_dir = tmp_path / '.claude'
     claude_dir.mkdir(parents=True)
-    (claude_dir / 'settings.local.json').write_text('{"custom": "content"}\n', encoding='utf-8')
+    (claude_dir / 'settings.json').write_text('{"custom": "content"}\n', encoding='utf-8')
     settings = cast('Any', _make_settings(want_ai=False, claude_settings_local={'key': 'val'}))
     await copy_static_files(settings, module_path)
-    assert (claude_dir / 'settings.local.json').exists()
+    assert (claude_dir / 'settings.json').exists()

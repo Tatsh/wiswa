@@ -465,7 +465,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    * @var boolean
    */
   uses_user_defaults: false,
-  /** @brief JSON object written to ``.claude/settings.local.json.dist`` when ``want_ai`` is true. */
+  /** @brief JSON object written to ``.claude/settings.json`` when ``want_ai`` is true. */
   claude_settings_local: {
     /**
      * @brief Environment variables injected into every Claude Code subprocess.
@@ -1086,7 +1086,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     '/vcpkg_installed/',
   ] else [],
   local claude_ignore = if self.want_ai then [
-    '/.claude/settings.json',
     '/.claude/settings.local.json',
   ] else [],
   local python_ignore = if self.project_type == 'python' then [

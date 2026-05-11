@@ -113,10 +113,7 @@ async def copy_static_files(settings: Settings, module_path: Path) -> None:
                            Path('.claude/rules'),
                            Path('.claude'),
                            wanted=settings['want_ai'])
-    await _sync_json_file(Path('.claude/settings.local.json'),
-                          settings['claude_settings_local'],
-                          wanted=settings['want_ai'])
-    await _sync_json_file(Path('.claude/settings.local.json.dist'),
+    await _sync_json_file(Path('.claude/settings.json'),
                           settings['claude_settings_local'],
                           wanted=settings['want_ai'])
     match settings['project_type']:
