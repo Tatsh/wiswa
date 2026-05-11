@@ -1,4 +1,9 @@
 {% if settings.using_github %}
+---
+name: workflow-shellcheck
+description: Extracts embedded Bash from GitHub Actions YAML, runs ShellCheck, and applies fixes. Use after editing workflow scripts.
+---
+
 # Workflow ShellCheck Agent
 
 Extracts embedded Bash scripts from GitHub Actions workflow files, runs ShellCheck, and applies
@@ -44,6 +49,11 @@ You lint and fix Bash scripts embedded in GitHub Actions workflow YAML files usi
 - Preserve the original indentation of the YAML `run:` block.
 - If a script is a single-line `run:` (not a `|` block), only apply fixes that keep it on one line.
 {% elif settings.using_gitlab %}
+---
+name: workflow-shellcheck
+description: Extracts embedded Bash from GitLab CI YAML, runs ShellCheck, and applies fixes. Use after editing CI scripts.
+---
+
 # CI ShellCheck Agent
 
 Extracts embedded Bash scripts from `.gitlab-ci.yml`, runs ShellCheck, and applies fixes.

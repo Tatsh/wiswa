@@ -1,3 +1,8 @@
+---
+name: release
+description: Drives the release process for the wiswa project: changelog, version bump, pre-commit checks, push, and GitHub release notes. Use when the user asks to cut a release.
+---
+
 # Release Agent
 
 Prepares and publishes a new release for the wiswa project.
