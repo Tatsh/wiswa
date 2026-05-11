@@ -1060,6 +1060,31 @@ async def test_post_process_steps_badges_typescript_private_skips_npm_badges(
     assert 'Next.js' in content
 
 
+async def test_post_process_steps_badges_typescript_non_npmjs_registry_skips_npm_badges(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(project_type='typescript',
+                       _readme_existed=True,
+                       package_json={
+                           'dependencies': {},
+                           'devDependencies': {},
+                           'publishConfig': {
+                               'registry': 'https://npm.pkg.github.com'
+                           }
+                       }))
+    await post_process_steps(settings)
+    content = readme.read_text(encoding='utf-8')
+    assert 'img.shields.io/npm/v/' not in content
+    assert 'img.shields.io/npm/dm/' not in content
+    assert 'TypeScript' in content
+
+
 async def test_post_process_steps_badges_dockerfile_exists(tmp_path: Path,
                                                            monkeypatch: pytest.MonkeyPatch,
                                                            mocker: MockerFixture) -> None:
