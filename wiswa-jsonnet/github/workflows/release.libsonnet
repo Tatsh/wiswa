@@ -133,7 +133,6 @@ function(settings)
                 exit 0
               fi
               echo "All required workflows succeeded for ${tag}."
-              echo "tag=${tag}" >> "$GITHUB_ENV"
               echo "ready=true" >> "$GITHUB_OUTPUT"
             ||| % {
               required: std.join(' ', ["'" + w + "'" for w in required_workflows]),
@@ -145,8 +144,9 @@ function(settings)
             name: 'Publish release',
             env: {
               GH_TOKEN: '${{ github.token }}',
+              TAG: '${{ steps.guard.outputs.tag }}',
             },
-            run: 'gh release edit "$tag" --draft=false',
+            run: 'gh release edit "$TAG" --draft=false',
           },
           {
             'if': 'always()',
