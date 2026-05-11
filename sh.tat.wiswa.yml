@@ -15,8 +15,9 @@ modules:
     buildsystem: 'simple'
     name: 'wiswa'
     sources:
-      - path: '.'
-        type: 'dir'
+      - tag: 'v0.3.5'
+        type: 'git'
+        url: 'https://github.com/Tatsh/wiswa'
 runtime: 'org.freedesktop.Platform'
 runtime-version: '24.08'
 sdk: 'org.freedesktop.Sdk'

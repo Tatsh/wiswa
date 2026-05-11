@@ -8,7 +8,7 @@ local utils = import 'utils.libsonnet';
   want_flatpak: true,
   publishing+: { flathub: 'sh.tat.wiswa' },
   project_name: 'wiswa',
-  version: '0.3.4',
+  version: '0.3.5',
   description: 'A highly opinionated way to generate and maintain projects with Jsonnet.',
   keywords: ['command line', 'jsonnet', 'project generator', 'project management', 'scaffolding'],
   github+: {
@@ -60,6 +60,27 @@ local utils = import 'utils.libsonnet';
           triplet: 'arm64-windows',
           packages: ['openssl'],
         },
+      },
+    },
+  },
+  flatpak+: {
+    modules: [
+      super.modules[0] {
+        sources: [
+          {
+            tag: 'v' + top.version,
+            type: 'git',
+            url: 'https://github.com/Tatsh/wiswa',
+          },
+        ],
+      },
+    ],
+  },
+  snapcraft+: {
+    parts+: {
+      [top.project_name]+: {
+        source: 'https://github.com/Tatsh/wiswa.git',
+        'source-tag': 'v' + top.version,
       },
     },
   },

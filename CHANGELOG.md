@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-05-10
+
 ### Added
 
 - Generated `dependabot.yml` now includes a `vcpkg` ecosystem entry for C/C++ projects
