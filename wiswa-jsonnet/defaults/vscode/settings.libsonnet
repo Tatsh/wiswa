@@ -61,6 +61,12 @@
    * @rv object
    */
   cpp_items(c_cpp_tab_size=4):: {
+    '[**/vcpkg*.json]': {
+      // vcpkg expects its manifests to end without a final newline; matching the
+      // `.prettierignore`, pre-commit `end-of-file-fixer`, and jsonnet-postprocess rules already
+      // enforced elsewhere.
+      'files.insertFinalNewline': false,
+    },
     '[c]': {
       'editor.defaultFormatter': 'ms-vscode.cpptools',
       'editor.tabSize': c_cpp_tab_size,
