@@ -35,6 +35,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   new `sort_dicts` Jinja2 filter that treats a missing key as `0` (the same default the surrounding
   `priority` guards already used), so badges with no explicit priority sort alongside the other
   default-priority entries instead of aborting the render.
+- Generated `release.yml` workflow no longer lists `QA` in its watched `optional_workflows` for
+  project types that do not emit a `QA` workflow. The `QA` workflow is only generated for `python`
+  and `typescript` projects; for `c`, `c++`, `lua`, `xcode`, and other project types, the QA-style
+  workflow is named `clang-format` instead. Previously the release gate enumerated a phantom `QA`
+  run for those projects, so the watched-workflow list referenced a workflow that would never run.
 
 ## [0.3.4] - 2026-05-07
 

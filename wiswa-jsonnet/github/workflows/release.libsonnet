@@ -5,8 +5,11 @@ function(settings)
                           (settings.supported_platforms == 'all' ||
                            std.member(settings.supported_platforms, 'windows') ||
                            std.member(settings.supported_platforms, 'macos'));
+  local has_qa_workflow = settings.project_type == 'python' ||
+                          settings.project_type == 'typescript';
   local optional_workflows = std.set(
-    ['Prettier', 'QA', 'Spelling', 'markdownlint'] +
+    ['Prettier', 'Spelling', 'markdownlint'] +
+    (if has_qa_workflow then ['QA'] else []) +
     (if settings.want_tests then ['Tests'] else [])
   );
   local required_workflows = std.set(
