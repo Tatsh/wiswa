@@ -26,7 +26,7 @@ from .versions import get_github_release_latest_tag
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Iterator, Sequence
 
-    from wiswa.typing import ExportRequirements, Settings
+    from wiswa.tool.typing import ExportRequirements, Settings
 
 __all__ = ('apply_python_pyproject_manifest_edits', 'maybe_revert_uv_lock_if_only_lockfile_changed',
            'post_process_steps', 'resolve_changelog_boilerplate_urls',

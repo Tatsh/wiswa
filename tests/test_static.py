@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from wiswa.utils.static import copy_static_files, copy_static_files_python
+from wiswa.tool.utils.static import copy_static_files, copy_static_files_python
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -111,7 +111,7 @@ async def test_copy_static_files_unknown_project_type_warns(tmp_path: Path,
                                                             mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     module_path = _setup_module_path(tmp_path)
-    mock_log = mocker.patch('wiswa.utils.static.log')
+    mock_log = mocker.patch('wiswa.tool.utils.static.log')
     settings = cast('Any', _make_settings(project_type='generic'))
     await copy_static_files(settings, module_path)
     mock_log.warning.assert_called_once()

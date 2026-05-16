@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from wiswa.utils.misc import create_py_typed_files
+from wiswa.tool.utils.misc import create_py_typed_files
 
 if TYPE_CHECKING:
     from pathlib import Path

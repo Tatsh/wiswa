@@ -27,8 +27,8 @@ local utils = import 'utils.libsonnet';
       ignorePaths+: ['*.html'],
     },
     scripts+: {
-      'check-formatting': super['check-formatting'] + ' && jsonnetfmt --string-style s --no-pad-arrays --test -- .wiswa.jsonnet wiswa-jsonnet/**/*.*sonnet',
-      format: super.format + ' && jsonnetfmt --string-style s --no-pad-arrays --in-place -- .wiswa.jsonnet wiswa-jsonnet/**/*.*sonnet',
+      'check-formatting': super['check-formatting'] + ' && jsonnetfmt --string-style s --no-pad-arrays --test -- .wiswa.jsonnet wiswa/jsonnet/**/*.*sonnet',
+      format: super.format + ' && jsonnetfmt --string-style s --no-pad-arrays --in-place -- .wiswa.jsonnet wiswa/jsonnet/**/*.*sonnet',
     },
   },
   pre_commit_config+: {
@@ -51,8 +51,6 @@ local utils = import 'utils.libsonnet';
     ],
   },
   pyinstaller+: {
-    collect_data+: ['fastmcp'],
-    copy_metadata+: ['fastmcp'],
     vcpkg: {
       enabled: true,
       targets: {
@@ -87,7 +85,6 @@ local utils = import 'utils.libsonnet';
   python_deps+: {
     main+: {
       anyio: utils.latestPypiPackageVersionCaret('anyio'),
-      fastmcp: utils.latestPypiPackageVersionCaret('fastmcp'),
       jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
       jsonnet: utils.latestPypiPackageVersionCaret('jsonnet'),
       keyring: utils.latestPypiPackageVersionCaret('keyring'),
@@ -108,7 +105,7 @@ local utils = import 'utils.libsonnet';
   pyproject+: {
     project+: {
       scripts+: {
-        'wiswa-mcp': 'wiswa.mcp:main',
+        wiswa: 'wiswa.tool.main:main',
       },
     },
     tool+: {
@@ -126,13 +123,13 @@ local utils = import 'utils.libsonnet';
         build+: {
           targets+: {
             wheel+: {
-              packages: [top.primary_module, '%s-jsonnet' % top.primary_module],
+              packages: [top.primary_module],
             },
           },
         },
       },
       ruff+: {
-        'namespace-packages'+: ['wiswa/static'],
+        'namespace-packages'+: ['wiswa/tool/static'],
       },
       ty+: {
         src+: {

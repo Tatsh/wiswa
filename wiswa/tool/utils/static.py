@@ -16,7 +16,7 @@ from .path import non_empty_file_exists, primary_module_to_path, remove_empty_di
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
-    from wiswa.typing import Settings
+    from wiswa.tool.typing import Settings
 
 __all__ = ('copy_static_files',)
 

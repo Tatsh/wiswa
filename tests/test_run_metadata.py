@@ -8,8 +8,8 @@ import importlib.metadata
 import json
 import re
 
-from wiswa.utils.run_metadata import get_wiswa_version_or_sha, write_wiswa_run_metadata
-import wiswa
+from wiswa.tool.utils.run_metadata import get_wiswa_version_or_sha, write_wiswa_run_metadata
+import wiswa.tool
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -52,7 +52,7 @@ def _setup_fake_wiswa_checkout(tmp_path: Path,
     git_dir.mkdir()
     if head is not None:
         (git_dir / 'HEAD').write_text(f'{head}\n', encoding='utf-8')
-    monkeypatch.setattr(wiswa, '__file__', str(pkg_dir / '__init__.py'))
+    monkeypatch.setattr(wiswa.tool, '__file__', str(pkg_dir / '__init__.py'))
     if git_raises is not None:
         return cast('AsyncMock',
                     mocker.patch('asyncio.create_subprocess_exec', side_effect=git_raises))
@@ -98,7 +98,7 @@ async def test_get_wiswa_version_or_sha_handles_gitdir_pointer(tmp_path: Path,
     actual_git.mkdir()
     (actual_git / 'HEAD').write_text(f'{sha}\n', encoding='utf-8')
     (tmp_path / '.git').write_text(f'gitdir: {actual_git}\n', encoding='utf-8')
-    monkeypatch.setattr(wiswa, '__file__', str(pkg_dir / '__init__.py'))
+    monkeypatch.setattr(wiswa.tool, '__file__', str(pkg_dir / '__init__.py'))
     _mock_async_subprocess(mocker)
     assert await get_wiswa_version_or_sha() == sha[:7]
 
@@ -120,7 +120,7 @@ async def test_get_wiswa_version_or_sha_falls_back_when_no_git(tmp_path: Path,
     pkg_dir = tmp_path / 'wiswa'
     pkg_dir.mkdir()
     (pkg_dir / '__init__.py').write_text('', encoding='utf-8')
-    monkeypatch.setattr(wiswa, '__file__', str(pkg_dir / '__init__.py'))
+    monkeypatch.setattr(wiswa.tool, '__file__', str(pkg_dir / '__init__.py'))
     mocker.patch.object(importlib.metadata, 'version', return_value='1.2.3')
     assert await get_wiswa_version_or_sha() == '1.2.3'
 
@@ -138,7 +138,7 @@ async def test_get_wiswa_version_or_sha_falls_back_when_repo_missing_pyproject(
     pkg_dir.mkdir()
     (pkg_dir / '__init__.py').write_text('', encoding='utf-8')
     (tmp_path / '.git').mkdir()
-    monkeypatch.setattr(wiswa, '__file__', str(pkg_dir / '__init__.py'))
+    monkeypatch.setattr(wiswa.tool, '__file__', str(pkg_dir / '__init__.py'))
     mocker.patch.object(importlib.metadata, 'version', return_value='4.4.4')
     assert await get_wiswa_version_or_sha() == '4.4.4'
 
@@ -149,7 +149,7 @@ async def test_get_wiswa_version_or_sha_falls_back_when_gitdir_pointer_invalid(
     pkg_dir.mkdir()
     (pkg_dir / '__init__.py').write_text('', encoding='utf-8')
     (tmp_path / '.git').write_text('not a gitdir line\n', encoding='utf-8')
-    monkeypatch.setattr(wiswa, '__file__', str(pkg_dir / '__init__.py'))
+    monkeypatch.setattr(wiswa.tool, '__file__', str(pkg_dir / '__init__.py'))
     mocker.patch.object(importlib.metadata, 'version', return_value='3.3.3')
     assert await get_wiswa_version_or_sha() == '3.3.3'
 
@@ -160,7 +160,7 @@ async def test_get_wiswa_version_or_sha_falls_back_when_gitdir_target_missing(
     pkg_dir.mkdir()
     (pkg_dir / '__init__.py').write_text('', encoding='utf-8')
     (tmp_path / '.git').write_text('gitdir: nonexistent-target\n', encoding='utf-8')
-    monkeypatch.setattr(wiswa, '__file__', str(pkg_dir / '__init__.py'))
+    monkeypatch.setattr(wiswa.tool, '__file__', str(pkg_dir / '__init__.py'))
     mocker.patch.object(importlib.metadata, 'version', return_value='2.2.2')
     assert await get_wiswa_version_or_sha() == '2.2.2'
 
@@ -239,11 +239,11 @@ async def test_get_wiswa_version_or_sha_falls_back_to_module_version(
     pkg_dir = tmp_path / 'wiswa'
     pkg_dir.mkdir()
     (pkg_dir / '__init__.py').write_text('', encoding='utf-8')
-    monkeypatch.setattr(wiswa, '__file__', str(pkg_dir / '__init__.py'))
+    monkeypatch.setattr(wiswa.tool, '__file__', str(pkg_dir / '__init__.py'))
     mocker.patch.object(importlib.metadata,
                         'version',
                         side_effect=importlib.metadata.PackageNotFoundError)
-    assert await get_wiswa_version_or_sha() == wiswa.__version__
+    assert await get_wiswa_version_or_sha() == wiswa.tool.__version__
 
 
 async def test_write_wiswa_run_metadata_appends_keys(tmp_path: Path,
@@ -369,7 +369,7 @@ async def test_write_wiswa_run_metadata_logs_when_prettier_fails(tmp_path: Path,
     (tmp_path / 'src' / '.git').mkdir()
     (tmp_path / 'src' / '.git' / 'HEAD').write_text('1234567abcdef1234567abcdef1234567abcdef1\n',
                                                     encoding='utf-8')
-    monkeypatch.setattr(wiswa, '__file__', str(pkg_dir / '__init__.py'))
+    monkeypatch.setattr(wiswa.tool, '__file__', str(pkg_dir / '__init__.py'))
     monkeypatch.setattr('sys.argv', ['wiswa'])
     mocker.patch('asyncio.create_subprocess_exec',
                  side_effect=[

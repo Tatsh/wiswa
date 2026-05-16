@@ -11,6 +11,7 @@ local qa_python = import 'github/workflows/qa-python.libsonnet';
 local qa_typescript = import 'github/workflows/qa-typescript.libsonnet';
 local release = import 'github/workflows/release.libsonnet';
 local snap_python = import 'github/workflows/snap-python.libsonnet';
+local sync_to_gitlab = import 'github/workflows/sync-to-gitlab.libsonnet';
 local tests_typescript = import 'github/workflows/tests-typescript.libsonnet';
 local tests = import 'github/workflows/tests.libsonnet';
 local utils = import 'utils.libsonnet';
@@ -73,6 +74,10 @@ local utils = import 'utils.libsonnet';
   ) + (
     if settings.private then {
       '.github/workflows/cleanup.yml': utils.manifestYaml(cleanup(settings)),
+    } else {}
+  ) + (
+    if settings.want_gitlab_mirror then {
+      '.github/workflows/sync-to-gitlab.yml': utils.manifestYaml(sync_to_gitlab(settings)),
     } else {}
   ),
 }

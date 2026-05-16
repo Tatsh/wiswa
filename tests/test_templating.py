@@ -11,10 +11,10 @@ import logging
 import re
 import shutil
 
-from wiswa.utils.postprocess import resolve_changelog_boilerplate_urls
-from wiswa.utils.templating import write_templated_files
+from wiswa.tool.utils.postprocess import resolve_changelog_boilerplate_urls
+from wiswa.tool.utils.templating import write_templated_files
 import pytest
-import wiswa
+import wiswa.tool
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
@@ -405,7 +405,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
 
 
 def _copy_wiswa_package(tmp_path: Path) -> Path:
-    src = Path(wiswa.__file__).resolve().parent
+    src = Path(wiswa.tool.__file__).resolve().parent
     dst = tmp_path / 'wiswa_pkg'
     if dst.exists():
         shutil.rmtree(dst)
@@ -468,7 +468,7 @@ async def test_write_templated_files_cleanup_unlinks_when_ai_disabled(
     monkeypatch.chdir(out)
     settings_on = _make_settings(want_ai=True)
     settings_off = _make_settings(want_ai=False)
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         await write_templated_files(module_path, cast('Any', settings_on))
         assert (out / 'AGENTS.md').exists()
         assert (out / '.claude/agents/regen.md').exists()
@@ -501,7 +501,7 @@ async def test_write_templated_files_claude_no_agents_dir(tmp_path: Path,
 @pytest.mark.parametrize('project_type', ['c++', 'c', 'lua', 'typescript'])
 async def test_write_templated_files_dispatches_project_types(
         project_type: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         settings = _make_settings(project_type=project_type)
         out = await _run_write(monkeypatch, tmp_path, module_path, settings)
         match project_type:
@@ -521,17 +521,17 @@ async def test_write_templated_files_dispatches_project_types(
 async def test_write_templated_files_unknown_type_warns(tmp_path: Path,
                                                         monkeypatch: pytest.MonkeyPatch,
                                                         caplog: pytest.LogCaptureFixture) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         settings = _make_settings(project_type='generic')
         caplog.clear()
-        with caplog.at_level(logging.WARNING, logger='wiswa.utils.templating'):
+        with caplog.at_level(logging.WARNING, logger='wiswa.tool.utils.templating'):
             await _run_write(monkeypatch, tmp_path, module_path, settings)
     assert any('No templated files to write' in rec.message for rec in caplog.records)
 
 
 async def test_write_templated_files_contributing_overwrite_uv_with_poetry(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = tmp_path / 'proj'
         out.mkdir()
         monkeypatch.chdir(out)
@@ -546,7 +546,7 @@ async def test_write_templated_files_contributing_overwrite_uv_with_poetry(
 
 async def test_write_templated_files_contributing_no_overwrite_matching(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = tmp_path / 'proj'
         out.mkdir()
         monkeypatch.chdir(out)
@@ -559,7 +559,7 @@ async def test_write_templated_files_contributing_no_overwrite_matching(
 
 async def test_write_templated_files_python_want_docs(tmp_path: Path,
                                                       monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(monkeypatch, tmp_path, module_path,
                                _make_settings(want_docs=True, want_tests=False, want_ai=False))
     assert (out / 'docs/conf.py').exists()
@@ -569,7 +569,7 @@ async def test_write_templated_files_python_want_docs(tmp_path: Path,
 
 async def test_write_templated_files_python_private_badges_rst_omits_public_registries(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
             _make_settings(want_docs=True,
@@ -591,7 +591,7 @@ async def test_write_templated_files_python_private_badges_rst_omits_public_regi
 
 async def test_write_templated_files_docs_badges_rst_includes_poetry_when_not_uv(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
             _make_settings(want_docs=True,
@@ -605,12 +605,12 @@ async def test_write_templated_files_docs_badges_rst_includes_poetry_when_not_uv
 
 async def test_write_templated_files_docs_badges_rst_regenerated_when_stale(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(monkeypatch, tmp_path, module_path,
                                _make_settings(want_docs=True, want_tests=False, want_ai=False))
     badges = out / 'docs/badges.rst'
     badges.write_text('.. STALE-BADGES-MARKER\n', encoding='utf-8')
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         monkeypatch.chdir(out)
         await write_templated_files(
             module_path, cast('Any', _make_settings(want_docs=True, want_tests=False,
@@ -622,7 +622,7 @@ async def test_write_templated_files_docs_badges_rst_regenerated_when_stale(
 
 async def test_write_templated_files_python_no_docs(tmp_path: Path,
                                                     monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(monkeypatch, tmp_path, module_path,
                                _make_settings(want_docs=False, want_tests=False, want_ai=False))
     assert not (out / 'docs').exists()
@@ -630,7 +630,7 @@ async def test_write_templated_files_python_no_docs(tmp_path: Path,
 
 async def test_write_templated_files_python_want_tests_and_main(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
             _make_settings(want_appimage=True,
@@ -647,7 +647,7 @@ async def test_write_templated_files_python_want_tests_and_main(
 
 async def test_write_templated_files_python_skips_test_main_when_established_tests(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
             _make_settings(want_appimage=True,
@@ -665,7 +665,7 @@ async def test_write_templated_files_python_skips_test_main_when_established_tes
 
 async def test_write_templated_files_python_stubs_only(tmp_path: Path,
                                                        monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(monkeypatch, tmp_path, module_path,
                                _make_settings(stubs_only=True, want_tests=False, want_ai=False))
     assert not (out / 'mymod/__init__.py').exists()
@@ -673,7 +673,7 @@ async def test_write_templated_files_python_stubs_only(tmp_path: Path,
 
 async def test_write_templated_files_python_implicit_namespace_writes_qualified_init(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
             _make_settings(primary_module='vendor',
@@ -686,7 +686,7 @@ async def test_write_templated_files_python_implicit_namespace_writes_qualified_
 
 async def test_write_templated_files_python_windows_only(tmp_path: Path,
                                                          monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
             _make_settings(want_main=True,
@@ -699,7 +699,7 @@ async def test_write_templated_files_python_windows_only(tmp_path: Path,
 
 async def test_write_templated_files_python_linux_only(tmp_path: Path,
                                                        monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
             _make_settings(want_appimage=True,
@@ -713,7 +713,7 @@ async def test_write_templated_files_python_linux_only(tmp_path: Path,
 
 async def test_write_templated_files_python_multiple_entry_points(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
             _make_settings(want_appimage=True,
@@ -728,7 +728,7 @@ async def test_write_templated_files_python_multiple_entry_points(
 
 async def test_write_templated_files_python_want_main_no_appimage(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
             _make_settings(want_appimage=False,
@@ -742,7 +742,7 @@ async def test_write_templated_files_python_want_main_no_appimage(
 
 async def test_write_templated_files_cpp_want_main_writes_files(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(monkeypatch, tmp_path, module_path,
                                _make_settings(project_type='c++', want_main=True, want_ai=False))
     assert (out / 'CMakeLists.txt').exists()
@@ -752,7 +752,7 @@ async def test_write_templated_files_cpp_want_main_writes_files(
 
 async def test_write_templated_files_cpp_no_main(tmp_path: Path,
                                                  monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(monkeypatch, tmp_path, module_path,
                                _make_settings(project_type='c++', want_main=False, want_ai=False))
     assert (out / 'CMakeLists.txt').exists()
@@ -761,7 +761,7 @@ async def test_write_templated_files_cpp_no_main(tmp_path: Path,
 
 async def test_write_templated_files_c_want_main_writes_files(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(monkeypatch, tmp_path, module_path,
                                _make_settings(project_type='c', want_main=True, want_ai=False))
     assert (out / 'CMakeLists.txt').exists()
@@ -771,7 +771,7 @@ async def test_write_templated_files_c_want_main_writes_files(
 
 async def test_write_templated_files_c_no_main(tmp_path: Path,
                                                monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(monkeypatch, tmp_path, module_path,
                                _make_settings(project_type='c', want_main=False, want_ai=False))
     assert not (out / 'src/main.c').exists()
@@ -779,7 +779,7 @@ async def test_write_templated_files_c_no_main(tmp_path: Path,
 
 async def test_write_templated_files_lua_writes_files(tmp_path: Path,
                                                       monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(monkeypatch, tmp_path, module_path,
                                _make_settings(project_type='lua', want_ai=False))
     assert (out / '.busted').exists()
@@ -788,7 +788,7 @@ async def test_write_templated_files_lua_writes_files(tmp_path: Path,
 
 async def test_write_templated_files_ts_stubs_only(tmp_path: Path,
                                                    monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
             _make_settings(project_type='typescript',
@@ -800,7 +800,7 @@ async def test_write_templated_files_ts_stubs_only(tmp_path: Path,
 
 async def test_write_templated_files_ts_with_tests(tmp_path: Path,
                                                    monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(
             monkeypatch, tmp_path, module_path,
             _make_settings(project_type='typescript',
@@ -814,7 +814,7 @@ async def test_write_templated_files_ts_with_tests(tmp_path: Path,
 
 async def test_write_templated_files_contributing_overwrite_poetry_with_uv(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = tmp_path / 'proj'
         out.mkdir()
         monkeypatch.chdir(out)
@@ -828,7 +828,7 @@ async def test_write_templated_files_contributing_overwrite_poetry_with_uv(
 
 async def test_write_templated_files_contributing_no_overwrite_no_match(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = tmp_path / 'proj'
         out.mkdir()
         monkeypatch.chdir(out)
@@ -841,7 +841,7 @@ async def test_write_templated_files_contributing_no_overwrite_no_match(
 
 async def test_write_templated_files_real_env_integration(tmp_path: Path,
                                                           monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(monkeypatch, tmp_path, module_path,
                                _make_settings(project_type='generic', want_ai=True))
     assert (out / 'LICENSE.txt').exists()
@@ -855,11 +855,11 @@ async def test_write_templated_files_real_env_integration(tmp_path: Path,
 
 async def test_write_templated_files_changelog_urls_use_resolved_boilerplate(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.templating.resolve_changelog_boilerplate_urls',
+    mocker.patch('wiswa.tool.utils.templating.resolve_changelog_boilerplate_urls',
                  new_callable=AsyncMock,
                  return_value=('https://keepachangelog.com/en/9.9.9/',
                                'https://semver.org/spec/v9.9.9.html'))
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = tmp_path / 'proj'
         out.mkdir()
         monkeypatch.chdir(out)
@@ -872,11 +872,11 @@ async def test_write_templated_files_changelog_urls_use_resolved_boilerplate(
 
 async def test_write_templated_files_claude_changelog_agent_uses_resolved_keep_a_changelog_url(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.templating.resolve_changelog_boilerplate_urls',
+    mocker.patch('wiswa.tool.utils.templating.resolve_changelog_boilerplate_urls',
                  new_callable=AsyncMock,
                  return_value=('https://keepachangelog.com/en/1.1.0/',
                                'https://semver.org/spec/v2.0.0.html'))
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = tmp_path / 'proj'
         out.mkdir()
         monkeypatch.chdir(out)
@@ -899,7 +899,7 @@ async def test_write_templated_files_real_env_skips_existing(
     (out / 'CHANGELOG.md').write_text('existing changelog\n', encoding='utf-8')
     monkeypatch.chdir(out)
     gen_settings = _make_settings(project_type='generic', want_ai=True)
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         await write_templated_files(module_path, cast('Any', gen_settings))
     assert (out / 'README.md').read_text(encoding='utf-8') == 'existing readme content\n'
     assert (out / 'CHANGELOG.md').read_text(encoding='utf-8') == 'existing changelog\n'
@@ -908,7 +908,7 @@ async def test_write_templated_files_real_env_skips_existing(
 async def test_write_templated_files_real_env_with_session(tmp_path: Path,
                                                            monkeypatch: pytest.MonkeyPatch) -> None:
     mock_session = MagicMock()
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = tmp_path / 'proj'
         out.mkdir()
         monkeypatch.chdir(out)
@@ -950,7 +950,7 @@ async def test_write_templated_files_claude_agents_ci_agent_without_vcs(
 
 async def test_write_templated_files_python_want_tests_no_main(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(monkeypatch, tmp_path, module_path,
                                _make_settings(want_tests=True, want_main=False, want_ai=False))
     assert (out / 'tests/conftest.py').exists()
@@ -959,7 +959,7 @@ async def test_write_templated_files_python_want_tests_no_main(
 
 async def test_write_templated_files_non_mit_skips_license(tmp_path: Path,
                                                            monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(monkeypatch, tmp_path, module_path,
                                _make_settings(license='GPL-3.0', want_ai=False))
     assert not (out / 'LICENSE.txt').exists()
@@ -967,7 +967,7 @@ async def test_write_templated_files_non_mit_skips_license(tmp_path: Path,
 
 async def test_write_templated_files_mit_writes_license(tmp_path: Path,
                                                         monkeypatch: pytest.MonkeyPatch) -> None:
-    with importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = await _run_write(monkeypatch, tmp_path, module_path,
                                _make_settings(license='MIT', want_ai=False))
     assert (out / 'LICENSE.txt').exists()

@@ -9,7 +9,7 @@ import anyio
 from .path import primary_module_to_path
 
 if TYPE_CHECKING:
-    from wiswa.typing import Settings
+    from wiswa.tool.typing import Settings
 
 __all__ = ('create_py_typed_files',)
 

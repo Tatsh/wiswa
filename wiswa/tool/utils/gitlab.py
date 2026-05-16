@@ -14,7 +14,7 @@ import keyring
 import keyring.errors
 
 if TYPE_CHECKING:
-    from wiswa.typing import Settings
+    from wiswa.tool.typing import Settings
     import niquests
 
 __all__ = ('gitlab_merged_remote_tables', 'setup_gitlab_project')

@@ -5,11 +5,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
-from wiswa.utils.github import get_github_pages_build_type, setup_github_project
+from wiswa.tool.utils.github import get_github_pages_build_type, setup_github_project
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
-    from wiswa.typing import Settings
+    from wiswa.tool.typing import Settings
 
 
 def _make_settings(**overrides: Any) -> Settings:
@@ -39,8 +39,8 @@ def _make_resp(status: int = 200, json_data: Any = None) -> MagicMock:
 
 
 def _mock_github_session(mocker: MockerFixture) -> MagicMock:
-    mocker.patch('wiswa.utils.github.run_sync', side_effect=lambda fn: fn())
-    mocker.patch('wiswa.utils.github.keyring.get_password', return_value='ghp_test')
+    mocker.patch('wiswa.tool.utils.github.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.tool.utils.github.keyring.get_password', return_value='ghp_test')
     session = MagicMock()
     default_resp = _make_resp()
     session.headers = MagicMock()
@@ -77,8 +77,8 @@ async def test_setup_github_project_skips_when_not_using_github(mocker: MockerFi
 
 
 async def test_setup_github_project_skips_when_no_token(mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.github.run_sync', side_effect=lambda fn: fn())
-    mocker.patch('wiswa.utils.github.keyring.get_password', return_value=None)
+    mocker.patch('wiswa.tool.utils.github.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.tool.utils.github.keyring.get_password', return_value=None)
     session = MagicMock()
     await setup_github_project(session, _make_settings())
     session.patch.assert_not_called()
@@ -94,8 +94,8 @@ async def test_setup_github_project_keyring_tries_host_scoped_before_legacy(
             return 'ghp_host'
         return None
 
-    mocker.patch('wiswa.utils.github.run_sync', side_effect=lambda fn: fn())
-    mocker.patch('wiswa.utils.github.keyring.get_password', side_effect=_fake_get_password)
+    mocker.patch('wiswa.tool.utils.github.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.tool.utils.github.keyring.get_password', side_effect=_fake_get_password)
     session = MagicMock()
     default_resp = _make_resp()
     session.headers = MagicMock()
@@ -117,8 +117,8 @@ async def test_setup_github_project_keyring_falls_back_to_legacy(mocker: MockerF
             return 'ghp_legacy'
         return None
 
-    mocker.patch('wiswa.utils.github.run_sync', side_effect=lambda fn: fn())
-    mocker.patch('wiswa.utils.github.keyring.get_password', side_effect=_fake_get_password)
+    mocker.patch('wiswa.tool.utils.github.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.tool.utils.github.keyring.get_password', side_effect=_fake_get_password)
     session = MagicMock()
     default_resp = _make_resp()
     session.headers = MagicMock()
@@ -246,8 +246,8 @@ async def test_setup_github_project_rulesets_get_skips_cache(mocker: MockerFixtu
 async def test_setup_github_project_returns_none_on_no_keyring(mocker: MockerFixture) -> None:
     import keyring.errors
 
-    mocker.patch('wiswa.utils.github.run_sync', side_effect=lambda fn: fn())
-    mocker.patch('wiswa.utils.github.keyring.get_password',
+    mocker.patch('wiswa.tool.utils.github.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.tool.utils.github.keyring.get_password',
                  side_effect=keyring.errors.NoKeyringError)
     session = MagicMock()
     await setup_github_project(session, _make_settings())
@@ -277,7 +277,7 @@ async def test_setup_github_project_handles_http_error(mocker: MockerFixture) ->
     gh_response.json = MagicMock(return_value={'message': message})
     error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
     session.patch = AsyncMock(return_value=error_resp)
-    mock_log = mocker.patch('wiswa.utils.github.log')
+    mock_log = mocker.patch('wiswa.tool.utils.github.log')
     await setup_github_project(session, _make_settings())
     mock_log.warning.assert_called_once()
     args = mock_log.warning.call_args[0]
@@ -301,7 +301,7 @@ async def test_setup_github_project_http_error_json_message_not_truncated(
     gh_response.json = MagicMock(return_value={'message': long_message})
     error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
     session.patch = AsyncMock(return_value=error_resp)
-    mock_log = mocker.patch('wiswa.utils.github.log')
+    mock_log = mocker.patch('wiswa.tool.utils.github.log')
     await setup_github_project(session, _make_settings())
     args = mock_log.warning.call_args[0]
     assert args[2] == f'HTTP 422 — {long_message}'
@@ -313,7 +313,7 @@ async def test_setup_github_project_http_error_no_response_uses_exception_text(
 
     session = _mock_github_session(mocker)
     session.patch = AsyncMock(side_effect=niquests.HTTPError('connection reset'))
-    mock_log = mocker.patch('wiswa.utils.github.log')
+    mock_log = mocker.patch('wiswa.tool.utils.github.log')
     await setup_github_project(session, _make_settings())
     args = mock_log.warning.call_args[0]
     assert args[2] == 'connection reset'
@@ -325,7 +325,7 @@ async def test_setup_github_project_http_error_empty_exception_string_uses_type_
 
     session = _mock_github_session(mocker)
     session.patch = AsyncMock(side_effect=niquests.HTTPError('   '))
-    mock_log = mocker.patch('wiswa.utils.github.log')
+    mock_log = mocker.patch('wiswa.tool.utils.github.log')
     await setup_github_project(session, _make_settings())
     args = mock_log.warning.call_args[0]
     assert args[2] == 'HTTPError'
@@ -345,7 +345,7 @@ async def test_setup_github_project_http_error_no_status_truncates_plain_body(
     gh_response.text = plain
     error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
     session.patch = AsyncMock(return_value=error_resp)
-    mock_log = mocker.patch('wiswa.utils.github.log')
+    mock_log = mocker.patch('wiswa.tool.utils.github.log')
     await setup_github_project(session, _make_settings())
     args = mock_log.warning.call_args[0]
     msg = args[2]
@@ -368,7 +368,7 @@ async def test_setup_github_project_http_error_json_decode_falls_back_truncated(
     gh_response.json = MagicMock(side_effect=ValueError)
     error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
     session.patch = AsyncMock(return_value=error_resp)
-    mock_log = mocker.patch('wiswa.utils.github.log')
+    mock_log = mocker.patch('wiswa.tool.utils.github.log')
     await setup_github_project(session, _make_settings())
     args = mock_log.warning.call_args[0]
     msg = args[2]
@@ -391,7 +391,7 @@ async def test_setup_github_project_http_error_non_string_message_in_json(
     gh_response.json = MagicMock(return_value={'message': 42})
     error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
     session.patch = AsyncMock(return_value=error_resp)
-    mock_log = mocker.patch('wiswa.utils.github.log')
+    mock_log = mocker.patch('wiswa.tool.utils.github.log')
     await setup_github_project(session, _make_settings())
     args = mock_log.warning.call_args[0]
     assert '42' in args[2]
@@ -412,7 +412,7 @@ async def test_setup_github_project_http_error_json_not_callable_uses_raw_body(
     gh_response.json = None
     error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
     session.patch = AsyncMock(return_value=error_resp)
-    mock_log = mocker.patch('wiswa.utils.github.log')
+    mock_log = mocker.patch('wiswa.tool.utils.github.log')
     await setup_github_project(session, _make_settings())
     args = mock_log.warning.call_args[0]
     out = args[2]
@@ -430,7 +430,7 @@ async def test_setup_github_project_http_error_whitespace_body_returns_status_on
     gh_response.text = '   \n\t  '
     error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
     session.patch = AsyncMock(return_value=error_resp)
-    mock_log = mocker.patch('wiswa.utils.github.log')
+    mock_log = mocker.patch('wiswa.tool.utils.github.log')
     await setup_github_project(session, _make_settings())
     args = mock_log.warning.call_args[0]
     assert args[2] == 'HTTP 400'
@@ -447,7 +447,7 @@ async def test_setup_github_project_http_error_text_not_str_returns_status_only(
     gh_response.text = None
     error_resp.raise_for_status.side_effect = niquests.HTTPError(response=gh_response)
     session.patch = AsyncMock(return_value=error_resp)
-    mock_log = mocker.patch('wiswa.utils.github.log')
+    mock_log = mocker.patch('wiswa.tool.utils.github.log')
     await setup_github_project(session, _make_settings())
     args = mock_log.warning.call_args[0]
     assert args[2] == 'HTTP 400'
@@ -468,8 +468,8 @@ async def test_get_github_pages_build_type_workflow(mocker: MockerFixture) -> No
 
 
 async def test_get_github_pages_build_type_no_token(mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.github.run_sync', side_effect=lambda fn: fn())
-    mocker.patch('wiswa.utils.github.keyring.get_password', return_value=None)
+    mocker.patch('wiswa.tool.utils.github.run_sync', side_effect=lambda fn: fn())
+    mocker.patch('wiswa.tool.utils.github.keyring.get_password', return_value=None)
     session = MagicMock()
     result = await get_github_pages_build_type(session, _make_settings())
     assert result is None

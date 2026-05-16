@@ -11,7 +11,7 @@ import logging
 import math
 import stat
 
-from wiswa.utils.versions import (
+from wiswa.tool.utils.versions import (
     clear_resolution_caches,
     download_yarn,
     download_yarn_plugins,
@@ -732,7 +732,7 @@ async def test_get_github_release_latest_tag_npm_age_partial_release_page() -> N
 
 async def test_get_github_release_latest_tag_npm_age_full_page_exhausts_without_short_read(
         mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.versions._GITHUB_RELEASES_PAGE_CAP', 1)
+    mocker.patch('wiswa.tool.utils.versions._GITHUB_RELEASES_PAGE_CAP', 1)
     new_pub = (datetime.now(tz=timezone.utc) - timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
     page1 = [{
         'tag_name': f'v50.{i}.0',
@@ -884,8 +884,8 @@ async def test_get_pypi_exclude_newer_duration_forms(
             if use_bare_int else f'exclude-newer = "{toml_value}"\n')
     (uv_dir / 'uv.toml').write_text(line, encoding='utf-8')
     fixed_now = datetime(2025, 8, 1, 12, 0, 0, tzinfo=timezone.utc)
-    mocker.patch('wiswa.utils.versions.datetime', wraps=datetime)
-    mocker.patch('wiswa.utils.versions.datetime.now', return_value=fixed_now)
+    mocker.patch('wiswa.tool.utils.versions.datetime', wraps=datetime)
+    mocker.patch('wiswa.tool.utils.versions.datetime.now', return_value=fixed_now)
     data = _make_pypi_json([('2.0.0', '2025-08-01T10:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
@@ -899,8 +899,8 @@ async def test_get_pypi_latest_package_version_uv_toml_duration_exclude_newer(
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('exclude-newer = "P7D"\n', encoding='utf-8')
     fixed_now = datetime(2025, 3, 15, 12, 0, 0, tzinfo=timezone.utc)
-    mocker.patch('wiswa.utils.versions.datetime', wraps=datetime)
-    mocker.patch('wiswa.utils.versions.datetime.now', return_value=fixed_now)
+    mocker.patch('wiswa.tool.utils.versions.datetime', wraps=datetime)
+    mocker.patch('wiswa.tool.utils.versions.datetime.now', return_value=fixed_now)
     data = _make_pypi_json([('1.0.0', '2025-01-01T00:00:00Z')])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))

@@ -15,7 +15,7 @@ import niquests
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
-    from wiswa.typing import Settings
+    from wiswa.tool.typing import Settings
 
 __all__ = ('get_github_pages_build_type', 'setup_github_project')
 

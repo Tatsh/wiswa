@@ -11,7 +11,7 @@ import logging
 import os
 import subprocess
 
-from wiswa.utils.postprocess import (
+from wiswa.tool.utils.postprocess import (
     apply_python_pyproject_manifest_edits,
     maybe_revert_uv_lock_if_only_lockfile_changed,
     post_process_steps,
@@ -215,7 +215,7 @@ def _mock_subprocess(mocker: MockerFixture) -> AsyncMock:
     mock_process = AsyncMock()
     mock_process.communicate = AsyncMock(return_value=(b'', b''))
     mock_process.returncode = 0
-    mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec',
+    mocker.patch('wiswa.tool.utils.postprocess.asyncio.create_subprocess_exec',
                  return_value=mock_process)
     return mock_process
 
@@ -438,7 +438,7 @@ async def test_post_process_steps_unknown_type_warns(tmp_path: Path,
     monkeypatch.chdir(tmp_path)
     (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
     _mock_subprocess(mocker)
-    mock_log = mocker.patch('wiswa.utils.postprocess.log')
+    mock_log = mocker.patch('wiswa.tool.utils.postprocess.log')
     settings = cast('Any', _make_settings(project_type='generic', _readme_existed=False))
     await post_process_steps(settings)
     mock_log.warning.assert_called_once()
@@ -489,7 +489,7 @@ async def test_post_process_steps_readme_badges_replace_delimited_region_only(
 async def test_post_process_steps_readme_badges_unclosed_start_falls_back_to_legacy(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture,
         caplog: pytest.LogCaptureFixture) -> None:
-    caplog.set_level(logging.DEBUG, logger='wiswa.utils.postprocess')
+    caplog.set_level(logging.DEBUG, logger='wiswa.tool.utils.postprocess')
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     readme = tmp_path / 'README.md'
@@ -577,7 +577,7 @@ async def test_post_process_steps_changelog_urls_resolve_from_github(
         '(https://semver.org/spec/v0.0.0.html).\n',
         encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch('wiswa.utils.postprocess.get_github_release_latest_tag',
+    mocker.patch('wiswa.tool.utils.postprocess.get_github_release_latest_tag',
                  new_callable=AsyncMock,
                  side_effect=['v1.1.1', '3.0.0'])
     session = mocker.MagicMock()
@@ -601,7 +601,7 @@ async def test_post_process_steps_changelog_keepachangelog_resolution_failure_fa
         '(https://semver.org/spec/v0.0.0.html).\n',
         encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch('wiswa.utils.postprocess.get_github_release_latest_tag',
+    mocker.patch('wiswa.tool.utils.postprocess.get_github_release_latest_tag',
                  new_callable=AsyncMock,
                  side_effect=[niquests.RequestException('simulated'), 'v2.0.0'])
     settings = cast('Any', _make_settings())
@@ -623,7 +623,7 @@ async def test_post_process_steps_changelog_semver_resolution_failure_fallback(
         '(https://semver.org/spec/v0.0.0.html).\n',
         encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch('wiswa.utils.postprocess.get_github_release_latest_tag',
+    mocker.patch('wiswa.tool.utils.postprocess.get_github_release_latest_tag',
                  new_callable=AsyncMock,
                  side_effect=['v1.1.1', niquests.RequestException('simulated')])
     session = mocker.MagicMock()
@@ -647,7 +647,7 @@ async def test_post_process_steps_changelog_keepachangelog_url_unreachable_fallb
         '(https://semver.org/spec/v0.0.0.html).\n',
         encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch('wiswa.utils.postprocess.get_github_release_latest_tag',
+    mocker.patch('wiswa.tool.utils.postprocess.get_github_release_latest_tag',
                  new_callable=AsyncMock,
                  side_effect=['v1.1.1', '2.0.0'])
     session = mocker.MagicMock()
@@ -672,7 +672,7 @@ async def test_post_process_steps_changelog_keepachangelog_url_head_request_fail
         '(https://semver.org/spec/v0.0.0.html).\n',
         encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch('wiswa.utils.postprocess.get_github_release_latest_tag',
+    mocker.patch('wiswa.tool.utils.postprocess.get_github_release_latest_tag',
                  new_callable=AsyncMock,
                  side_effect=['v1.1.1', '2.0.0'])
     session = mocker.MagicMock()
@@ -693,7 +693,7 @@ async def test_post_process_steps_changelog_skips_rewrite_when_no_matching_links
     original = '# Changelog\n\nNo boilerplate hyperlinks here.\n'
     changelog.write_text(original, encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch('wiswa.utils.postprocess.get_github_release_latest_tag',
+    mocker.patch('wiswa.tool.utils.postprocess.get_github_release_latest_tag',
                  new_callable=AsyncMock,
                  side_effect=['v9.9.9', 'v9.9.9'])
     session = mocker.MagicMock()
@@ -852,7 +852,8 @@ async def test_post_process_steps_badges_docs_github_pages_workflow(tmp_path: Pa
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch('wiswa.utils.postprocess.get_github_pages_build_type', return_value='workflow')
+    mocker.patch('wiswa.tool.utils.postprocess.get_github_pages_build_type',
+                 return_value='workflow')
     settings = cast(
         'Any',
         _make_settings(_readme_existed=True, want_docs=True, project_type='c++', using_github=True))
@@ -871,7 +872,7 @@ async def test_post_process_steps_badges_docs_github_pages_legacy(tmp_path: Path
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch('wiswa.utils.postprocess.get_github_pages_build_type', return_value='legacy')
+    mocker.patch('wiswa.tool.utils.postprocess.get_github_pages_build_type', return_value='legacy')
     settings = cast(
         'Any',
         _make_settings(_readme_existed=True, want_docs=True, project_type='c++', using_github=True))
@@ -889,7 +890,8 @@ async def test_post_process_steps_badges_docs_github_pages_workflow_no_workflow_
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch('wiswa.utils.postprocess.get_github_pages_build_type', return_value='workflow')
+    mocker.patch('wiswa.tool.utils.postprocess.get_github_pages_build_type',
+                 return_value='workflow')
     settings = cast(
         'Any',
         _make_settings(_readme_existed=True, want_docs=True, project_type='c++', using_github=True))
@@ -912,7 +914,8 @@ async def test_post_process_steps_badges_docs_github_pages_workflow_no_matching_
     readme = tmp_path / 'README.md'
     readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
     _mock_subprocess(mocker)
-    mocker.patch('wiswa.utils.postprocess.get_github_pages_build_type', return_value='workflow')
+    mocker.patch('wiswa.tool.utils.postprocess.get_github_pages_build_type',
+                 return_value='workflow')
     settings = cast(
         'Any',
         _make_settings(_readme_existed=True, want_docs=True, project_type='c++', using_github=True))
@@ -1320,7 +1323,8 @@ async def test_post_process_steps_subprocess_failure(tmp_path: Path,
     mock_proc = AsyncMock()
     mock_proc.communicate = AsyncMock(return_value=(b'', b''))
     mock_proc.returncode = 1
-    mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec', return_value=mock_proc)
+    mocker.patch('wiswa.tool.utils.postprocess.asyncio.create_subprocess_exec',
+                 return_value=mock_proc)
     settings = cast('Any', _make_settings())
     with pytest.raises(RuntimeError, match='non-zero exit status'):
         await post_process_steps(settings)
@@ -1360,7 +1364,7 @@ async def test_post_process_steps_yarn_env_has_corepack_flag(tmp_path: Path,
     mock_proc = AsyncMock()
     mock_proc.communicate = AsyncMock(return_value=(b'', b''))
     mock_proc.returncode = 0
-    mock_create = mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec',
+    mock_create = mocker.patch('wiswa.tool.utils.postprocess.asyncio.create_subprocess_exec',
                                return_value=mock_proc)
     settings = cast('Any', _make_settings())
     await post_process_steps(settings)
@@ -1381,7 +1385,7 @@ async def test_post_process_steps_clang_format_expands_globs_and_literals(
     mock_proc = AsyncMock()
     mock_proc.communicate = AsyncMock(return_value=(b'', b''))
     mock_proc.returncode = 0
-    mock_create = mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec',
+    mock_create = mocker.patch('wiswa.tool.utils.postprocess.asyncio.create_subprocess_exec',
                                return_value=mock_proc)
     settings = cast(
         'Any',
@@ -1404,7 +1408,7 @@ async def test_post_process_steps_clang_format_skipped_when_no_paths(
     mock_proc = AsyncMock()
     mock_proc.communicate = AsyncMock(return_value=(b'', b''))
     mock_proc.returncode = 0
-    mock_create = mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec',
+    mock_create = mocker.patch('wiswa.tool.utils.postprocess.asyncio.create_subprocess_exec',
                                return_value=mock_proc)
     settings = cast('Any',
                     _make_settings(project_type='c++', clang_format_args='', _readme_existed=False))
@@ -2122,7 +2126,8 @@ async def test_maybe_revert_uv_lock_skips_when_git_diff_fails(tmp_path: Path,
         await asyncio.sleep(0)
         return _FakeAsyncSubprocess(1, b'')
 
-    mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec', side_effect=fake_exec)
+    mocker.patch('wiswa.tool.utils.postprocess.asyncio.create_subprocess_exec',
+                 side_effect=fake_exec)
     await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
     assert (tmp_path / 'uv.lock').read_text(encoding='utf-8') == 'local\n'
 
@@ -2143,7 +2148,8 @@ async def test_maybe_revert_uv_lock_skips_when_git_diff_uv_lock_fails(
             return _FakeAsyncSubprocess(0, b'uv.lock\npyproject.toml\n')
         return _FakeAsyncSubprocess(1, b'')
 
-    mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec', side_effect=fake_exec)
+    mocker.patch('wiswa.tool.utils.postprocess.asyncio.create_subprocess_exec',
+                 side_effect=fake_exec)
     await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
     assert len(calls) == 2
     assert (tmp_path / 'uv.lock').read_text(encoding='utf-8') == 'local\n'
@@ -2170,7 +2176,8 @@ async def test_maybe_revert_uv_lock_restore_falls_back_to_checkout(tmp_path: Pat
             return _FakeAsyncSubprocess(0, b'')
         return _FakeAsyncSubprocess(1, b'')
 
-    mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec', side_effect=fake_exec)
+    mocker.patch('wiswa.tool.utils.postprocess.asyncio.create_subprocess_exec',
+                 side_effect=fake_exec)
     await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
     hooks = ('-c', f'core.hooksPath={os.devnull}')
     assert recorded[1][0] == 'git'
@@ -2202,7 +2209,8 @@ async def test_maybe_revert_uv_lock_logs_when_restore_and_checkout_fail(
             return _FakeAsyncSubprocess(1, b'restore failed')
         return _FakeAsyncSubprocess(1, b'both failed')
 
-    mocker.patch('wiswa.utils.postprocess.asyncio.create_subprocess_exec', side_effect=fake_exec)
+    mocker.patch('wiswa.tool.utils.postprocess.asyncio.create_subprocess_exec',
+                 side_effect=fake_exec)
     caplog.set_level(logging.WARNING)
     await maybe_revert_uv_lock_if_only_lockfile_changed(settings)
     assert len(calls) == 3

@@ -179,7 +179,7 @@ class GithubAPIExtension(Extension):
         super().__init__(environment)
         # Local import: ``wiswa.utils`` package init imports ``templating``, which only imports
         # this module from inside ``_template_env``, so this module must finish loading first.
-        from wiswa.utils.versions import get_github_release_latest_tag  # noqa: PLC0415
+        from wiswa.tool.utils.versions import get_github_release_latest_tag  # noqa: PLC0415
 
         globs = cast('dict[str, Any]', environment.globals)
 

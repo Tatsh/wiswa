@@ -34,8 +34,8 @@ A highly opinionated way to generate projects with Jsonnet.
 
 ## Installation
 
-We recommend a **global** install so `wiswa` and `wiswa-mcp` are on your `PATH`
-from any working directory:
+We recommend a **global** install so `wiswa` is on your `PATH` from any working
+directory:
 
 ```shell
 uv tool install wiswa
@@ -122,38 +122,11 @@ python -m keyring set 'wiswa-gitlab:gitlab.com' "$(whoami)"
 
 ## MCP Server
 
-Wiswa includes an MCP server (`wiswa-mcp`) that exposes settings discovery tools for AI assistants.
-
-### Claude Code
+A companion FastMCP server, [`wiswa-mcp`](https://github.com/Tatsh/wiswa-mcp), exposes the
+Wiswa settings discovery tools to AI assistants. Install it separately:
 
 ```shell
-claude mcp add wiswa-mcp -- wiswa-mcp
+pipx install wiswa-mcp
 ```
 
-### Cursor
-
-Add to `.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "wiswa-mcp": {
-      "command": "wiswa-mcp"
-    }
-  }
-}
-```
-
-### GitHub Copilot CLI
-
-Add to `.github/copilot/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "wiswa-mcp": {
-      "command": "wiswa-mcp"
-    }
-  }
-}
-```
+See the wiswa-mcp project for client configuration (Claude Code, Cursor, and GitHub Copilot CLI).

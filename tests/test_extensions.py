@@ -5,7 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-from wiswa.extensions import ShellExtension, ToPythonExtension
+from wiswa.tool.extensions import ShellExtension, ToPythonExtension
 import jinja2
 import pytest
 
@@ -176,14 +176,14 @@ def test_shell_indent_heredoc_with_quotes() -> None:
 
 
 def test_github_api_extension_registers_global(mocker: MockerFixture) -> None:
-    from wiswa.extensions import GithubAPIExtension
+    from wiswa.tool.extensions import GithubAPIExtension
 
     env = jinja2.Environment(extensions=[GithubAPIExtension], autoescape=True)
     assert 'github_latest_action_tag' in env.globals
 
 
 def test_parse_md_badge_valid() -> None:
-    from wiswa.extensions import ParseMarkdownBadgeExtension
+    from wiswa.tool.extensions import ParseMarkdownBadgeExtension
 
     env = jinja2.Environment(extensions=[ParseMarkdownBadgeExtension], autoescape=True)
     parse_badge = env.filters['parse_md_badge']
@@ -192,7 +192,7 @@ def test_parse_md_badge_valid() -> None:
 
 
 def test_parse_md_badge_no_match() -> None:
-    from wiswa.extensions import ParseMarkdownBadgeExtension
+    from wiswa.tool.extensions import ParseMarkdownBadgeExtension
 
     env = jinja2.Environment(extensions=[ParseMarkdownBadgeExtension], autoescape=True)
     parse_badge = env.filters['parse_md_badge']
@@ -201,7 +201,7 @@ def test_parse_md_badge_no_match() -> None:
 
 
 def test_sort_dicts_orders_by_key() -> None:
-    from wiswa.extensions import SortDictsExtension
+    from wiswa.tool.extensions import SortDictsExtension
 
     env = jinja2.Environment(extensions=[SortDictsExtension], autoescape=True)
     sort_dicts = env.filters['sort_dicts']
@@ -211,7 +211,7 @@ def test_sort_dicts_orders_by_key() -> None:
 
 
 def test_sort_dicts_defaults_missing_key_to_zero() -> None:
-    from wiswa.extensions import SortDictsExtension
+    from wiswa.tool.extensions import SortDictsExtension
 
     env = jinja2.Environment(extensions=[SortDictsExtension], autoescape=True)
     sort_dicts = env.filters['sort_dicts']
@@ -221,7 +221,7 @@ def test_sort_dicts_defaults_missing_key_to_zero() -> None:
 
 
 def test_sort_dicts_custom_default() -> None:
-    from wiswa.extensions import SortDictsExtension
+    from wiswa.tool.extensions import SortDictsExtension
 
     env = jinja2.Environment(extensions=[SortDictsExtension], autoescape=True)
     sort_dicts = env.filters['sort_dicts']
@@ -231,7 +231,7 @@ def test_sort_dicts_custom_default() -> None:
 
 
 def test_sort_dicts_strict_undefined_template_with_missing_key() -> None:
-    from wiswa.extensions import SortDictsExtension
+    from wiswa.tool.extensions import SortDictsExtension
 
     env = jinja2.Environment(extensions=[SortDictsExtension],
                              undefined=jinja2.StrictUndefined,
@@ -245,7 +245,7 @@ def test_sort_dicts_strict_undefined_template_with_missing_key() -> None:
 async def test_github_latest_action_tag_no_session() -> None:
     from typing import cast
 
-    from wiswa.extensions import GithubAPIExtension
+    from wiswa.tool.extensions import GithubAPIExtension
 
     env = jinja2.Environment(extensions=[GithubAPIExtension], autoescape=True)
     func = cast('Any', env.globals['github_latest_action_tag'])
@@ -257,9 +257,9 @@ async def test_github_latest_action_tag_with_session(mocker: MockerFixture) -> N
     from typing import cast
     from unittest.mock import AsyncMock
 
-    from wiswa.extensions import GithubAPIExtension
+    from wiswa.tool.extensions import GithubAPIExtension
 
-    mocker.patch('wiswa.utils.versions.get_github_release_latest_tag',
+    mocker.patch('wiswa.tool.utils.versions.get_github_release_latest_tag',
                  new_callable=AsyncMock,
                  return_value='v4')
     env = jinja2.Environment(extensions=[GithubAPIExtension], autoescape=True)

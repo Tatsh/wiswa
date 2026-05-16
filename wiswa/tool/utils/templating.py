@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
     from niquests import AsyncSession
-    from wiswa.typing import Settings
+    from wiswa.tool.typing import Settings
 
 log = logging.getLogger(__name__)
 
@@ -59,9 +59,9 @@ async def _write_rendered_template(template: jinja2.Template,
 def _template_env(module_path: Path,
                   settings: Settings,
                   session: AsyncSession | None = None) -> _TemplateEnvTuple:
-    # Local import: ``wiswa.extensions`` may import ``wiswa.utils.versions``, which loads this
-    # package's ``__init__`` before ``templating`` has finished initializing.
-    from wiswa.extensions import (  # noqa: I001, PLC0415
+    # Local import: ``wiswa.tool.extensions`` may import ``wiswa.tool.utils.versions``, which
+    # loads this package's ``__init__`` before ``templating`` has finished initializing.
+    from wiswa.tool.extensions import (  # noqa: I001, PLC0415
         GithubAPIExtension, ParseMarkdownBadgeExtension, ShellExtension, SortDictsExtension,
         ToPythonExtension)
 
@@ -69,7 +69,7 @@ def _template_env(module_path: Path,
                              enable_async=True,
                              extensions=(GithubAPIExtension, ParseMarkdownBadgeExtension,
                                          ShellExtension, SortDictsExtension, ToPythonExtension),
-                             loader=jinja2.PackageLoader('wiswa'),
+                             loader=jinja2.PackageLoader('wiswa.tool'),
                              lstrip_blocks=True,
                              trim_blocks=True,
                              undefined=jinja2.StrictUndefined)

@@ -15,7 +15,7 @@ import re
 from anyio.to_thread import run_sync
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
 from packaging.version import InvalidVersion, Version, parse as parse_version
-from wiswa.constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
+from wiswa.tool.constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
 import anyio
 import platformdirs
 import tomlkit

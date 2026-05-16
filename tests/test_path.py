@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from wiswa.utils.path import (
+from wiswa.tool.utils.path import (
     non_empty_file_exists,
     primary_module_to_path,
     remove_empty_dirs,

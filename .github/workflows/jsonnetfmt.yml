@@ -10,13 +10,13 @@ jobs:
           set -uo pipefail
           files=()
           [[ -f .wiswa.jsonnet ]] && files+=('.wiswa.jsonnet')
-          if [ -d wiswa-jsonnet ]; then
+          if [ -d wiswa/jsonnet ]; then
             while IFS= read -r f; do
               files+=("$f")
-            done < <(find wiswa-jsonnet -type f '(' -name '*.jsonnet' -o -name '*.libsonnet' ')' | sort)
+            done < <(find wiswa/jsonnet -type f '(' -name '*.jsonnet' -o -name '*.libsonnet' ')' | sort)
           fi
           if [ "${#files[@]}" -eq 0 ]; then
-            echo 'No Jsonnet sources (.wiswa.jsonnet or wiswa-jsonnet/).'
+            echo 'No Jsonnet sources (.wiswa.jsonnet or wiswa/jsonnet/).'
             exit 0
           fi
           echo "Checking ${#files[@]} Jsonnet file(s) using jsonnetfmt."

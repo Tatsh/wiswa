@@ -48,7 +48,6 @@ dependencies = [
   "anyio>=4.13.0",
   "bascom>=0.1.2",
   "click>=8.3.3",
-  "fastmcp>=3.2.4",
   "jinja2>=3.1.6",
   "jsonnet>=0.22.0",
   "keyring>=25.7.0",
@@ -73,8 +72,7 @@ email = "audvare@gmail.com"
 name = "Andrew Udvare"
 
 [project.scripts]
-wiswa = "wiswa.main:main"
-wiswa-mcp = "wiswa.mcp:main"
+wiswa = "wiswa.tool.main:main"
 
 [project.urls]
 Issues = "https://github.com/Tatsh/wiswa/issues"
@@ -107,7 +105,7 @@ omit = [
   "tests.py",
   "tests/*/test_*.py",
   "tests/test_*.py",
-  "wiswa/__main__.py",
+  "wiswa/tool/__main__.py",
   "typing.py",
   "**/*.j2",
 ]
@@ -120,7 +118,7 @@ omit = [
   "tests.py",
   "tests/*/test_*.py",
   "tests/test_*.py",
-  "wiswa/__main__.py",
+  "wiswa/tool/__main__.py",
   "typing.py",
   "**/*.j2",
 ]
@@ -132,7 +130,7 @@ max-line-length = 100
 include = ["wiswa", "man", "tests"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["wiswa", "wiswa-jsonnet"]
+packages = ["wiswa"]
 
 [tool.mypy]
 cache_dir = "~/.cache/mypy"
@@ -172,7 +170,7 @@ testpaths = ["tests"]
 cache-dir = "~/.cache/ruff"
 force-exclude = true
 line-length = 100
-namespace-packages = ["docs", "tests", "wiswa/static"]
+namespace-packages = ["docs", "tests", "wiswa/tool/static"]
 target-version = "py310"
 unsafe-fixes = true
 

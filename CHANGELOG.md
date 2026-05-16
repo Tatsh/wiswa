@@ -9,6 +9,33 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- New `gitlab_mirror_uri` setting and accompanying `want_gitlab_mirror` flag. When a GitHub-hosted
+  project sets `gitlab_mirror_uri` to an HTTPS GitLab repository URI, Wiswa emits
+  `.github/workflows/sync-to-gitlab.yml`. The workflow clones the source as a `git --mirror`,
+  pushes it to GitLab on every push (using a `GITLAB_TOKEN` repository secret), then invokes the
+  new companion [`wiswa-vcs`](https://github.com/Tatsh/wiswa-vcs) package's `wiswa-sync-gh-gl`
+  command to copy GitHub description, homepage, topics, protected branches, and protected tag
+  patterns to GitLab, synchronise project badges parsed from `docs/badges.rst`, apply the
+  opinionated GitLab project settings (with merge requests, CI/CD, Git LFS, and service desk
+  disabled because the project is a read-only mirror), and trigger GitLab housekeeping.
+
+### Changed
+
+- **Breaking:** the project now lives under an implicit `wiswa/` namespace. Python source code
+  has been moved from `wiswa/` to `wiswa/tool/` (so `from wiswa.X import Y` becomes
+  `from wiswa.tool.X import Y`), and the Jsonnet sources have moved from `wiswa-jsonnet/` to
+  `wiswa/jsonnet/`. The `wiswa` console script entry point is now `wiswa.tool.main:main`. Anyone
+  importing from `wiswa` as a library should update their imports accordingly.
+
+### Removed
+
+- **Breaking:** the `wiswa-mcp` console script and the `wiswa.mcp` Python module have been
+  extracted into a separate [`wiswa-mcp`](https://github.com/Tatsh/wiswa-mcp) package. Install it
+  with `pipx install wiswa-mcp` to keep using the MCP server. Wiswa itself no longer depends on
+  `fastmcp`.
+
 ## [0.3.5] - 2026-05-10
 
 ### Added

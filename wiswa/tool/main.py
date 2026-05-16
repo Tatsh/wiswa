@@ -183,7 +183,7 @@ async def _run_workflow(progress: ProgressDisplay, *, debug: bool, file: Path,
     if _has_legacy_poetry_deps(loaded):
         log.warning('pyproject.tool.poetry.*.dependencies is deprecated. '
                     'Move dependencies to python_deps.main/dev/docs/tests in .wiswa.jsonnet.')
-    # Skip only wiswa-jsonnet/project.jsonnet (manifest files). Merged settings from
+    # Skip only wiswa/jsonnet/project.jsonnet (manifest files). Merged settings from
     # evaluate_merged_settings always run Jsonnet first.
     if not skip_jsonnet:
         progress.start_task(TaskId.EVALUATE_PROJECT, 'Evaluating project. Please be patient...')
@@ -260,9 +260,10 @@ async def _main_async(file: Path,
                                   app_name='wiswa',
                                   expire_after=timedelta(seconds=cache_time)) as session:
             with (importlib.resources.as_file(
-                    importlib.resources.files('wiswa-jsonnet') / 'defaults.libsonnet') as
+                    importlib.resources.files('wiswa.jsonnet') / 'defaults.libsonnet') as
                   jsonnet_defaults_file,
-                  importlib.resources.as_file(importlib.resources.files('wiswa')) as module_path):
+                  importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as
+                  module_path):
                 lib_path = Path(jsonnet_defaults_file).parent
                 jpathdir = [str(lib_path)]
                 await _run_workflow(progress,

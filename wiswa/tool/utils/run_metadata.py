@@ -123,8 +123,8 @@ def _wiswa_short_sha_and_root() -> tuple[str, Path] | None:
         Pair of seven-character commit SHA and repository root, or :py:data:`None` when
         no wiswa checkout is found or the SHA cannot be read.
     """
-    import wiswa  # noqa: PLC0415
-    pkg_path = Path(wiswa.__file__).resolve().parent
+    import wiswa.tool  # noqa: PLC0415
+    pkg_path = Path(wiswa.tool.__file__).resolve().parent
     for parent in pkg_path.parents:
         candidate = parent / '.git'
         git_dir = _resolve_git_dir(candidate)
@@ -162,8 +162,8 @@ async def get_wiswa_version_or_sha() -> str:
     try:
         return importlib.metadata.version(_WISWA_PACKAGE_NAME)
     except importlib.metadata.PackageNotFoundError:
-        import wiswa  # noqa: PLC0415
-        return wiswa.__version__
+        import wiswa.tool  # noqa: PLC0415
+        return wiswa.tool.__version__
 
 
 def _utc_iso_timestamp() -> str:

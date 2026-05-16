@@ -437,6 +437,23 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   /** @brief GitLab CI configuration object; manifest as `.gitlab-ci.yml` when non-empty. */
   gitlab_ci: {},
   /**
+   * @brief HTTPS URI of a GitLab repository to mirror this GitHub repository to.
+   * @details Example: ``https://gitlab.com/group/project.git``. When non-empty and the project is
+   *     hosted on GitHub, Wiswa emits ``.github/workflows/sync-to-gitlab.yml`` which clones the
+   *     GitHub repository with ``--mirror`` and pushes to this URI on every push, on a schedule,
+   *     and on demand. The workflow expects a ``GITLAB_TOKEN`` repository secret containing a
+   *     GitLab personal access token with ``write_repository`` scope.
+   * @var string
+   */
+  gitlab_mirror_uri: '',
+  /**
+   * @brief If the project should include a workflow mirroring this GitHub repository to GitLab.
+   * @details Defaults to true whenever ``gitlab_mirror_uri`` is set and the project is hosted on
+   *     GitHub.
+   * @var boolean
+   */
+  want_gitlab_mirror: self.using_github && self.gitlab_mirror_uri != '',
+  /**
    * @brief GitLab remote project API tables (defaults in ``defaults/gitlab.libsonnet``).
    * @details Override with ``gitlab+: { project_settings+: { ... }, ... }`` in ``.wiswa.jsonnet``.
    */

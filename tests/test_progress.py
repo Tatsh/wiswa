@@ -1,4 +1,4 @@
-"""Tests for the :py:mod:`wiswa.progress` module."""
+"""Tests for the :py:mod:`wiswa.tool.progress` module."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import io
 
 from rich.console import Console
-from wiswa.progress import ProgressDisplay, TaskId
+from wiswa.tool.progress import ProgressDisplay, TaskId
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture

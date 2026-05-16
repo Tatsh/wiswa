@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 import json
 import subprocess as sp
 
-from wiswa.utils.jsonnet import (
+from wiswa.tool.utils.jsonnet import (
     FlatpakConfigurationError,
     RemoteHostConflictError,
     evaluate_jsonnet_file,
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 async def test_evaluate_jsonnet_file(mocker: MockerFixture) -> None:
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{"key": "value"}'
     result = await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     assert result == '{"key": "value"}'
@@ -36,7 +36,7 @@ async def test_evaluate_jsonnet_file(mocker: MockerFixture) -> None:
 
 async def test_evaluate_jsonnet_file_session_exposes_ref_commit_sha_callback(
         mocker: MockerFixture) -> None:
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}', session=MagicMock())
     native_callbacks = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']
@@ -51,7 +51,7 @@ async def test_evaluate_jsonnet_project(tmp_path: Path, monkeypatch: pytest.Monk
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     (lib_path / 'project.jsonnet').write_text('{}')
-    mocker.patch('wiswa.utils.jsonnet.evaluate_jsonnet_file',
+    mocker.patch('wiswa.tool.utils.jsonnet.evaluate_jsonnet_file',
                  return_value='{"file.txt": "content"}')
     await evaluate_jsonnet_project(lib_path, [str(lib_path)], '{}')
     assert (tmp_path / 'file.txt').exists()
@@ -62,7 +62,7 @@ async def test_evaluate_jsonnet_project_with_output_dir(tmp_path: Path,
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     output_dir = tmp_path / 'output'
-    mocker.patch('wiswa.utils.jsonnet.evaluate_jsonnet_file',
+    mocker.patch('wiswa.tool.utils.jsonnet.evaluate_jsonnet_file',
                  return_value='{"sub/file.txt": "hello content"}')
     await evaluate_jsonnet_project(lib_path, [str(lib_path)], '{}', output_dir=output_dir)
     assert output_dir.exists()
@@ -78,7 +78,8 @@ async def test_evaluate_jsonnet_project_with_custom_file(tmp_path: Path,
     lib_path.mkdir()
     custom_file = tmp_path / 'custom.jsonnet'
     custom_file.write_text('{}')
-    mocker.patch('wiswa.utils.jsonnet.evaluate_jsonnet_file', return_value='{"out.txt": "custom"}')
+    mocker.patch('wiswa.tool.utils.jsonnet.evaluate_jsonnet_file',
+                 return_value='{"out.txt": "custom"}')
     await evaluate_jsonnet_project(lib_path, [str(lib_path)], '{}', file=custom_file)
     assert (tmp_path / 'out.txt').exists()
 
@@ -89,7 +90,7 @@ async def test_evaluate_jsonnet_project_default_output_dir(tmp_path: Path,
     monkeypatch.chdir(tmp_path)
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
-    mocker.patch('wiswa.utils.jsonnet.evaluate_jsonnet_file',
+    mocker.patch('wiswa.tool.utils.jsonnet.evaluate_jsonnet_file',
                  return_value='{"generated.txt": "gen content"}')
     await evaluate_jsonnet_project(lib_path, [str(lib_path)], '{}')
     assert (tmp_path / 'generated.txt').exists()
@@ -105,7 +106,7 @@ async def test_evaluate_jsonnet_project_vcpkg_no_trailing_newline(tmp_path: Path
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     payload = json.dumps({filename: '{\n  "name": "x"\n}'})
-    mocker.patch('wiswa.utils.jsonnet.evaluate_jsonnet_file', return_value=payload)
+    mocker.patch('wiswa.tool.utils.jsonnet.evaluate_jsonnet_file', return_value=payload)
     await evaluate_jsonnet_project(lib_path, [str(lib_path)], '{}')
     written = (tmp_path / filename).read_text()
     assert not written.endswith('\n')
@@ -117,7 +118,7 @@ async def test_evaluate_jsonnet_project_other_json_keeps_trailing_newline(
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     payload = json.dumps({'package.json': '{\n  "name": "x"\n}'})
-    mocker.patch('wiswa.utils.jsonnet.evaluate_jsonnet_file', return_value=payload)
+    mocker.patch('wiswa.tool.utils.jsonnet.evaluate_jsonnet_file', return_value=payload)
     await evaluate_jsonnet_project(lib_path, [str(lib_path)], '{}')
     written = (tmp_path / 'package.json').read_text()
     assert written.endswith('\n')
@@ -129,7 +130,7 @@ async def test_evaluate_jsonnet_project_vcpkg_in_subdir_no_trailing_newline(
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     payload = json.dumps({'nested/dir/vcpkg.json': '{\n  "name": "x"\n}'})
-    mocker.patch('wiswa.utils.jsonnet.evaluate_jsonnet_file', return_value=payload)
+    mocker.patch('wiswa.tool.utils.jsonnet.evaluate_jsonnet_file', return_value=payload)
     await evaluate_jsonnet_project(lib_path, [str(lib_path)], '{}')
     written = (tmp_path / 'nested' / 'dir' / 'vcpkg.json').read_text()
     assert not written.endswith('\n')
@@ -172,10 +173,10 @@ def _patch_evaluate_merged_settings_mocks(
         readme_exists: bool = False,
         established_pytest: bool = False,
         evaluate_snippet_return: str = '{"project_type": "python"}') -> MagicMock:
-    mocker.patch('wiswa.utils.jsonnet.run_sync',
+    mocker.patch('wiswa.tool.utils.jsonnet.run_sync',
                  new_callable=AsyncMock,
                  side_effect=lambda func, *_a, **_kw: func())
-    mocker.patch('wiswa.utils.jsonnet.json.loads', wraps=json.loads)
+    mocker.patch('wiswa.tool.utils.jsonnet.json.loads', wraps=json.loads)
 
     def make_path(*args: object, **_kwargs: object) -> MagicMock:
         raw = args[0] if args else ''
@@ -192,10 +193,10 @@ def _patch_evaluate_merged_settings_mocks(
             inst.exists = AsyncMock(return_value=readme_exists)
         return inst
 
-    mocker.patch('wiswa.utils.jsonnet.anyio.Path', side_effect=make_path)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.anyio.Path', side_effect=make_path)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_snippet.return_value = evaluate_snippet_return
-    mocker.patch('wiswa.utils.jsonnet.tests_dir_has_pytest_modules_excluding_starter_main',
+    mocker.patch('wiswa.tool.utils.jsonnet.tests_dir_has_pytest_modules_excluding_starter_main',
                  new_callable=AsyncMock,
                  return_value=established_pytest)
     return mock_jsonnet
@@ -206,7 +207,8 @@ async def test_evaluate_merged_settings_mocks_jsonnet_anyio_and_pytest_scan(
     monkeypatch.chdir(tmp_path)
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
-    mocker.patch('wiswa.utils.jsonnet.platformdirs.user_config_path', return_value=tmp_path / 'cfg')
+    mocker.patch('wiswa.tool.utils.jsonnet.platformdirs.user_config_path',
+                 return_value=tmp_path / 'cfg')
     mock_jsonnet = _patch_evaluate_merged_settings_mocks(mocker)
     merged_json, merged = await evaluate_merged_settings([str(lib_path)], lib_path, '{}')
     assert merged_json == '{"project_type": "python"}'
@@ -223,7 +225,8 @@ async def test_evaluate_merged_settings_mocks_user_defaults_file_missing(
     monkeypatch.chdir(tmp_path)
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
-    mocker.patch('wiswa.utils.jsonnet.platformdirs.user_config_path', return_value=tmp_path / 'cfg')
+    mocker.patch('wiswa.tool.utils.jsonnet.platformdirs.user_config_path',
+                 return_value=tmp_path / 'cfg')
     mock_jsonnet = _patch_evaluate_merged_settings_mocks(mocker, user_defaults_exists=False)
     settings = '{ uses_user_defaults: true }\n'
     _merged_json, _merged = await evaluate_merged_settings([str(lib_path)], lib_path, settings)
@@ -236,7 +239,8 @@ async def test_evaluate_merged_settings_mocks_user_defaults_readme_pytest(
     monkeypatch.chdir(tmp_path)
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
-    mocker.patch('wiswa.utils.jsonnet.platformdirs.user_config_path', return_value=tmp_path / 'cfg')
+    mocker.patch('wiswa.tool.utils.jsonnet.platformdirs.user_config_path',
+                 return_value=tmp_path / 'cfg')
     mock_jsonnet = _patch_evaluate_merged_settings_mocks(mocker,
                                                          user_defaults_exists=True,
                                                          user_defaults_text='{ extra: true }',
@@ -256,15 +260,15 @@ async def test_resolve_defaults_only(tmp_path: Path, mocker: MockerFixture) -> N
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     (lib_path / 'defaults.libsonnet').write_text('{ project_type: "python" }')
-    mocker.patch('wiswa.utils.jsonnet._jsonnet.evaluate_snippet',
+    mocker.patch('wiswa.tool.utils.jsonnet._jsonnet.evaluate_snippet',
                  return_value='{"project_type": "python"}')
     result = await resolve_defaults_only([str(lib_path)], lib_path)
     assert result == {'project_type': 'python'}
 
 
 async def test_evaluate_jsonnet_file_merged_settings_invalid_json(mocker: MockerFixture) -> None:
-    mock_cb = mocker.patch('wiswa.utils.jsonnet._make_native_callbacks')
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_cb = mocker.patch('wiswa.tool.utils.jsonnet._make_native_callbacks')
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '"ok"'
     mock_session = MagicMock()
     await evaluate_jsonnet_file(['/lib'], MagicMock(), 'not valid json{{{', session=mock_session)
@@ -273,8 +277,8 @@ async def test_evaluate_jsonnet_file_merged_settings_invalid_json(mocker: Mocker
 
 
 async def test_evaluate_jsonnet_file_merged_settings_json_not_object(mocker: MockerFixture) -> None:
-    mock_cb = mocker.patch('wiswa.utils.jsonnet._make_native_callbacks')
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_cb = mocker.patch('wiswa.tool.utils.jsonnet._make_native_callbacks')
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '"ok"'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '[1, 2]', session=MagicMock())
     mock_cb.assert_called_once()
@@ -282,7 +286,7 @@ async def test_evaluate_jsonnet_file_merged_settings_json_not_object(mocker: Moc
 
 
 async def test_evaluate_jsonnet_file_with_session(mocker: MockerFixture) -> None:
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{"key": "value"}'
     mock_session = MagicMock()
     result = await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}', session=mock_session)
@@ -305,7 +309,7 @@ async def test_resolve_defaults_only_passes_empty_overrides(tmp_path: Path,
     lib_path = tmp_path / 'lib'
     lib_path.mkdir()
     (lib_path / 'defaults.libsonnet').write_text('{ a: 1 }')
-    mock_eval = mocker.patch('wiswa.utils.jsonnet._jsonnet.evaluate_snippet',
+    mock_eval = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet.evaluate_snippet',
                              return_value='{"a": 1}')
     await resolve_defaults_only([str(lib_path)], lib_path)
     call_kwargs = mock_eval.call_args[1]
@@ -314,7 +318,7 @@ async def test_resolve_defaults_only_passes_empty_overrides(tmp_path: Path,
 
 
 async def test_native_callback_params_use_short_names(mocker: MockerFixture) -> None:
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     mock_session = MagicMock()
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}', session=mock_session)
@@ -331,10 +335,10 @@ async def test_native_callback_params_use_short_names(mocker: MockerFixture) -> 
 
 
 async def test_github_cli_username_native_returns_login(mocker: MockerFixture) -> None:
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
-    mock_run = mocker.patch('wiswa.utils.jsonnet.sp.run')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
+    mock_run = mocker.patch('wiswa.tool.utils.jsonnet.sp.run')
     mock_run.return_value = mocker.MagicMock(stdout='gh_user_out\n')
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -346,10 +350,10 @@ async def test_github_cli_username_native_returns_login(mocker: MockerFixture) -
 async def test_github_cli_username_native_returns_unknown_when_gh_missing(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_run = mocker.patch('wiswa.utils.jsonnet.sp.run')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_run = mocker.patch('wiswa.tool.utils.jsonnet.sp.run')
     mock_run.side_effect = AssertionError('gh should not run when not on PATH')
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -365,13 +369,13 @@ async def test_github_username_native_falls_back_to_git_origin(tmp_path: Path,
                                                                origin_url: str,
                                                                expected_owner: str) -> None:
     monkeypatch.chdir(tmp_path)
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
-    mock_run = mocker.patch('wiswa.utils.jsonnet.sp.run')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
+    mock_run = mocker.patch('wiswa.tool.utils.jsonnet.sp.run')
     mock_run.side_effect = sp.CalledProcessError(1, 'gh')
     git_dir = tmp_path / '.git'
     git_dir.mkdir()
     (git_dir / 'config').write_text(f'[remote "origin"]\n\turl = {origin_url}\n', encoding='utf-8')
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -387,13 +391,13 @@ async def test_github_username_native_git_remote_url_schemes(tmp_path: Path,
                                                              mocker: MockerFixture, origin_url: str,
                                                              expected_owner: str) -> None:
     monkeypatch.chdir(tmp_path)
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
-    mock_run = mocker.patch('wiswa.utils.jsonnet.sp.run')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
+    mock_run = mocker.patch('wiswa.tool.utils.jsonnet.sp.run')
     mock_run.side_effect = sp.CalledProcessError(1, 'gh')
     git_dir = tmp_path / '.git'
     git_dir.mkdir()
     (git_dir / 'config').write_text(f'[remote "origin"]\n\turl = {origin_url}\n', encoding='utf-8')
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -415,8 +419,8 @@ async def test_worktree_without_commondir_yields_only_worktree_config(
     worktree.mkdir()
     (worktree / '.git').write_text(f'gitdir: {wt_marker.as_posix()}\n', encoding='utf-8')
     monkeypatch.chdir(worktree)
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -443,8 +447,8 @@ async def test_github_username_native_worktree_commondir_dot_skips_duplicate_con
     worktree.mkdir()
     (worktree / '.git').write_text(f'gitdir: {wt_marker.as_posix()}\n', encoding='utf-8')
     monkeypatch.chdir(worktree)
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -468,10 +472,10 @@ async def test_github_username_native_gitlab_origin_then_github(tmp_path: Path,
     worktree.mkdir()
     (worktree / '.git').write_text(f'gitdir: {wt_marker.as_posix()}\n', encoding='utf-8')
     monkeypatch.chdir(worktree)
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
-    mock_run = mocker.patch('wiswa.utils.jsonnet.sp.run')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
+    mock_run = mocker.patch('wiswa.tool.utils.jsonnet.sp.run')
     mock_run.side_effect = sp.CalledProcessError(1, 'gh')
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -485,8 +489,8 @@ async def test_github_username_native_config_not_a_file_skipped(tmp_path: Path,
     git_dir = tmp_path / '.git'
     git_dir.mkdir()
     (git_dir / 'config').mkdir()
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -508,8 +512,8 @@ async def test_github_username_native_dot_git_read_oserror(tmp_path: Path,
         return real_read_text(self, encoding=encoding, errors=errors)
 
     monkeypatch.setattr(Path, 'read_text', busted_read_text)
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -523,8 +527,8 @@ async def test_github_username_native_invalid_git_config_ignored(tmp_path: Path,
     git_dir = tmp_path / '.git'
     git_dir.mkdir()
     (git_dir / 'config').write_text('[\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -538,8 +542,8 @@ async def test_github_username_native_no_origin_section_unknown(tmp_path: Path,
     git_dir = tmp_path / '.git'
     git_dir.mkdir()
     (git_dir / 'config').write_text('[core]\n    bare = false\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -554,8 +558,8 @@ async def test_github_username_native_non_github_remote_unknown(tmp_path: Path,
     git_dir.mkdir()
     (git_dir / 'config').write_text(
         '[remote "origin"]\n\turl = https://gitlab.com/acme/warehouse.git\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -569,8 +573,8 @@ async def test_github_username_native_blank_remote_url_unknown(tmp_path: Path,
     git_dir = tmp_path / '.git'
     git_dir.mkdir()
     (git_dir / 'config').write_text('[remote "origin"]\n\turl =\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -583,8 +587,8 @@ async def test_github_username_native_whitespace_only_remote_url_unknown(
     git_dir = tmp_path / '.git'
     git_dir.mkdir()
     (git_dir / 'config').write_text('[remote "origin"]\n\turl =    \n', encoding='utf-8')
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -598,8 +602,8 @@ async def test_github_username_native_origin_without_url_key_unknown(
     git_dir.mkdir()
     (git_dir / 'config').write_text(
         '[remote "origin"]\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -613,8 +617,8 @@ async def test_github_username_native_github_https_root_path_unknown(
     git_dir.mkdir()
     (git_dir / 'config').write_text('[remote "origin"]\n\turl = https://github.com/\n',
                                     encoding='utf-8')
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -628,10 +632,10 @@ async def test_github_username_native_empty_gh_stdout_falls_back_to_git(
     git_dir.mkdir()
     (git_dir / 'config').write_text('[remote "origin"]\n\turl = git@github.com:fall_owner/x.git\n',
                                     encoding='utf-8')
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
-    mock_run = mocker.patch('wiswa.utils.jsonnet.sp.run')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
+    mock_run = mocker.patch('wiswa.tool.utils.jsonnet.sp.run')
     mock_run.return_value = mocker.MagicMock(stdout='\n')
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -641,10 +645,10 @@ async def test_github_username_native_empty_gh_stdout_falls_back_to_git(
 async def test_github_username_native_gh_timeout_unknown_without_git(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
-    mock_run = mocker.patch('wiswa.utils.jsonnet.sp.run')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value='/usr/bin/gh')
+    mock_run = mocker.patch('wiswa.tool.utils.jsonnet.sp.run')
     mock_run.side_effect = sp.TimeoutExpired('gh', 9)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -656,8 +660,8 @@ async def test_git_metadata_file_without_gitdir_yields_nothing(tmp_path: Path,
                                                                mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / '.git').write_text('# no gitdir here\n', encoding='utf-8')
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
@@ -691,8 +695,8 @@ async def test_worktree_commondir_read_oserror_skips_common_yield(tmp_path: Path
         return real_read_text(self, encoding=encoding, errors=errors)
 
     monkeypatch.setattr(Path, 'read_text', picky_read)
-    mocker.patch('wiswa.utils.jsonnet.shutil.which', return_value=None)
-    mock_jsonnet = mocker.patch('wiswa.utils.jsonnet._jsonnet')
+    mocker.patch('wiswa.tool.utils.jsonnet.shutil.which', return_value=None)
+    mock_jsonnet = mocker.patch('wiswa.tool.utils.jsonnet._jsonnet')
     mock_jsonnet.evaluate_file.return_value = '{}'
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]

@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
     from niquests import AsyncSession
-    from wiswa.typing import Settings
+    from wiswa.tool.typing import Settings
 
 JsonnetNativeCallback: TypeAlias = tuple[tuple[str, ...], Callable[..., Any]]
 

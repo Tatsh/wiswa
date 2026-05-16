@@ -3,13 +3,12 @@ Library
 
 .. only:: html
 
-   .. automodule:: wiswa
+   .. automodule:: wiswa.tool
       :members:
 
    .. toctree::
 
       constants
       extensions
-      mcp
       typing
       utils

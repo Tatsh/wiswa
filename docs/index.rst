@@ -4,8 +4,8 @@ wiswa
 Installation
 ------------
 
-We recommend a **global** install so ``wiswa`` and ``wiswa-mcp`` are on your
-``PATH`` from any working directory:
+We recommend a **global** install so ``wiswa`` is on your ``PATH`` from any
+working directory:
 
 .. code-block:: shell
 
@@ -31,7 +31,7 @@ inside the project virtual environment with your usual workflow.
    .. image:: ../demo.gif
       :alt: demo
 
-.. click:: wiswa.main:main
+.. click:: wiswa.tool.main:main
    :prog: wiswa
    :nested: full
 
@@ -39,7 +39,6 @@ inside the project virtual environment with your usual workflow.
    :hidden:
 
    remote-api-tokens
-   mcp-server
    binary-signing
 
 .. only:: html
