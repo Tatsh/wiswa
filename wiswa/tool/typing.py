@@ -1,4 +1,4 @@
-"""Type definitions for Wiswa settings and related structures."""
+"""Type definitions for Wiswa settings and related ``pyproject``/``package.json`` shapes."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict
@@ -8,12 +8,12 @@ from typing_extensions import NotRequired
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
-__all__ = ('CustomProjectBadge', 'ExportRequirements', 'GitlabRemoteSettings', 'PackageJSON',
-           'PackageJSONPublishConfig', 'PackageManager', 'ProjectType', 'PyProject',
-           'PyProjectBuildSystem', 'PyProjectProject', 'PyProjectTool', 'PyProjectToolCommitizen',
-           'PyProjectToolPoetry', 'PyProjectToolPoetryPackage', 'PythonDeps', 'Settings',
-           'SettingsGitHub', 'SettingsSocial', 'SettingsSocialMastodon', 'SettingsSocialTextAndURI',
-           'VSCode', 'VSCodeLaunch', 'VSCodeLaunchConfiguration')
+__all__ = ('CustomProjectBadge', 'ExportRequirements', 'PackageJSON', 'PackageJSONPublishConfig',
+           'PackageManager', 'ProjectType', 'PyProject', 'PyProjectBuildSystem', 'PyProjectProject',
+           'PyProjectTool', 'PyProjectToolCommitizen', 'PyProjectToolPoetry',
+           'PyProjectToolPoetryPackage', 'PythonDeps', 'Settings', 'SettingsGitHub',
+           'SettingsSocial', 'SettingsSocialMastodon', 'SettingsSocialTextAndURI', 'VSCode',
+           'VSCodeLaunch', 'VSCodeLaunchConfiguration')
 
 PackageManager: TypeAlias = Literal['poetry', 'uv']
 """
@@ -152,19 +152,6 @@ class PythonDeps(TypedDict, total=False):
     """Documentation dependencies."""
     tests: Mapping[str, Any]
     """Test dependencies."""
-
-
-class GitlabRemoteSettings(TypedDict, total=False):
-    """GitLab API tables from merged settings (see ``defaults/gitlab.libsonnet``)."""
-
-    project_settings: dict[str, Any]
-    """Project attributes for ``python-gitlab`` (from merged ``gitlab.project_settings``)."""
-    push_rules: dict[str, Any]
-    """Push rules payload (from merged ``gitlab.push_rules``)."""
-    project_approvals: dict[str, Any]
-    """Merge request approval settings (from merged ``gitlab.project_approvals``)."""
-    default_branch_protection: dict[str, Any]
-    """Protected default branch PATCH body (from merged ``gitlab.default_branch_protection``)."""
 
 
 class SettingsGitHub(TypedDict):
@@ -322,8 +309,14 @@ class Settings(TypedDict):
     """GitHub settings."""
     github_project_name: str
     """The GitHub repository name (may differ from :py:attr:`project_name`)."""
-    gitlab: GitlabRemoteSettings
-    """GitLab remote project tables (merged in Jsonnet; see ``defaults/gitlab.libsonnet``)."""
+    gitlab: Mapping[str, Any]
+    """
+    GitLab remote-settings tables (merged in Jsonnet; see ``defaults/gitlab.libsonnet``).
+
+    Wiswa forwards this value to :py:func:`wiswa.vcs.gitlab.configure_project` without reading
+    inside it; consumers that need a typed view should cast to
+    :py:class:`wiswa.vcs.typing.RemoteSettings`.
+    """
     has_multiple_entry_points: bool
     """If the project has multiple entry points (CLI commands)."""
     homepage: str

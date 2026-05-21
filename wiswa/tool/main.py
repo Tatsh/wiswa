@@ -40,7 +40,7 @@ from .utils import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Mapping
 
-    from .typing import Settings
+    from wiswa.tool.typing import Settings
 
 __all__ = ('main',)
 

@@ -43,6 +43,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   extracted into a separate [`wiswa-mcp`](https://github.com/Tatsh/wiswa-mcp) package. Install it
   with `pipx install wiswa-mcp` to keep using the MCP server. Wiswa itself no longer depends on
   `fastmcp`.
+- **Breaking:** the `GitlabRemoteSettings` TypedDict has been dropped from `wiswa.tool.typing`;
+  `Settings['gitlab']` is now typed as `Mapping[str, Any]`. Consumers that need a typed view
+  should import `RemoteSettings` from the companion `wiswa-vcs` package's `wiswa.vcs.typing`.
 
 ## [0.3.5] - 2026-05-10
 
