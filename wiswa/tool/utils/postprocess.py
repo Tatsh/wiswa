@@ -487,6 +487,86 @@ async def apply_python_pyproject_manifest_edits(settings: Settings) -> None:
         anyio.Path('pyproject.toml').write_text(tomlkit.dumps(pyproject_content), encoding='utf-8'))
 
 
+async def _pyproject_entry_point_scripts() -> tuple[str, ...]:
+    """
+    Return the script names declared in ``pyproject.toml`` ``[project.scripts]``.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Sorted tuple of script names, or an empty tuple if ``pyproject.toml`` is missing or
+        declares no scripts.
+    """
+    content = tomlkit.loads(await anyio.Path('pyproject.toml').read_text(encoding='utf-8')).unwrap()
+    scripts = (cast('dict[str, Any]', content.get('project', {})).get('scripts', {}) or {})
+    return tuple(sorted(scripts))
+
+
+def _pyinstaller_builds_anything(settings: Settings, scripts: Sequence[str]) -> bool:
+    """
+    Return whether the PyInstaller workflow would build at least one entry point.
+
+    The workflow has work to do when either ``pyinstaller.include_only`` intersects with the
+    declared scripts, or (with an empty ``include_only``) when at least one supported platform
+    has at least one script not covered by its exclusion list.
+
+    Parameters
+    ----------
+    settings : Settings
+        Merged project settings.
+    scripts : Sequence[str]
+        Entry point script names from ``pyproject.toml``.
+
+    Returns
+    -------
+    bool
+        ``True`` when the workflow would build something, ``False`` when it would skip every
+        script on every supported platform.
+    """
+    if not scripts:
+        return False
+    pyi = cast('dict[str, Any]', settings.get('pyinstaller', {})) or {}
+    sp = settings.get('supported_platforms', 'all')
+    include_only = tuple(pyi.get('include_only') or ())
+    script_set = set(scripts)
+    if include_only:
+        return bool(script_set & set(include_only))
+    for platform_key, exclusion_key in (('windows', 'windows_exclusions'), ('macos',
+                                                                            'macos_exclusions')):
+        if sp != 'all' and platform_key not in sp:
+            continue
+        if script_set - set(pyi.get(exclusion_key) or ()):
+            return True
+    return False
+
+
+def _appimage_builds_anything(settings: Settings, scripts: Sequence[str]) -> bool:
+    """
+    Return whether the AppImage workflow would build at least one entry point.
+
+    Parameters
+    ----------
+    settings : Settings
+        Merged project settings.
+    scripts : Sequence[str]
+        Entry point script names from ``pyproject.toml``.
+
+    Returns
+    -------
+    bool
+        ``True`` when the workflow would build something, ``False`` when every script is
+        excluded.
+    """
+    if not scripts:
+        return False
+    appimage_cfg = cast('dict[str, Any]', settings.get('appimage', {})) or {}
+    script_set = set(scripts)
+    include_only = tuple(appimage_cfg.get('include_only') or ())
+    if include_only:
+        return bool(script_set & set(include_only))
+    return bool(script_set - set(appimage_cfg.get('exclusions') or ()))
+
+
 async def _post_process_steps_python(settings: Settings,
                                      *,
                                      debug: bool = False,
@@ -508,10 +588,15 @@ async def _post_process_steps_python(settings: Settings,
                               anyio.Path('.readthedocs.yaml').unlink(missing_ok=True)))
     if not settings['want_codeql']:
         cleanup_tasks.append(anyio.Path('.github/workflows/codeql.yml').unlink(missing_ok=True))
-    if not settings.get('want_appimage', False):
+    scripts = await _pyproject_entry_point_scripts()
+    delete_appimage = (not settings.get('want_appimage', False)
+                       or not _appimage_builds_anything(settings, scripts))
+    if delete_appimage:
         cleanup_tasks.append(anyio.Path('.github/workflows/appimage.yml').unlink(missing_ok=True))
-    if cleanup_tasks:
-        await asyncio.gather(*cleanup_tasks)
+    if not _pyinstaller_builds_anything(settings, scripts):
+        cleanup_tasks.append(
+            anyio.Path('.github/workflows/pyinstaller.yml').unlink(missing_ok=True))
+    await asyncio.gather(*cleanup_tasks)
     await apply_python_pyproject_manifest_edits(settings)
     oc = on_command
     if is_uv:

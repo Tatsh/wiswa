@@ -23,6 +23,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Post-processing now prunes PyInstaller and AppImage workflow files when their entry-point
+  filters leave nothing to build. `.github/workflows/pyinstaller.yml` is removed when every script
+  in `[project.scripts]` is covered by `pyinstaller.windows_exclusions` and
+  `pyinstaller.macos_exclusions` for every supported platform, or when
+  `pyinstaller.include_only` is non-empty but matches no declared script. Similarly,
+  `.github/workflows/appimage.yml` is removed when every script is covered by
+  `appimage.exclusions`, or when `appimage.include_only` is non-empty but matches no declared
+  script (in addition to the existing `want_appimage=False` cleanup).
 - **Breaking:** the project now lives under an implicit `wiswa/` namespace. Python source code
   has been moved from `wiswa/` to `wiswa/tool/` (so `from wiswa.X import Y` becomes
   `from wiswa.tool.X import Y`), and the Jsonnet sources have moved from `wiswa-jsonnet/` to

@@ -349,6 +349,147 @@ async def test_post_process_steps_python_no_appimage(tmp_path: Path,
     assert not (tmp_path / '.github/workflows/appimage.yml').exists()
 
 
+def _add_pyproject_scripts(tmp_path: Path, scripts: dict[str, str]) -> None:
+    pyproject = tmp_path / 'pyproject.toml'
+    body = ''.join(f'{name} = "{value}"\n' for name, value in sorted(scripts.items()))
+    pyproject.write_text(pyproject.read_text(encoding='utf-8') + f'[project.scripts]\n{body}',
+                         encoding='utf-8')
+
+
+def _make_workflow_files(tmp_path: Path, *names: str) -> None:
+    workflows = tmp_path / '.github/workflows'
+    workflows.mkdir(parents=True, exist_ok=True)
+    for name in names:
+        (workflows / name).write_text('test', encoding='utf-8')
+
+
+async def test_post_process_steps_python_deletes_pyinstaller_when_all_excluded(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _add_pyproject_scripts(tmp_path, {'alpha': 'pkg:alpha', 'beta': 'pkg:beta'})
+    _make_workflow_files(tmp_path, 'pyinstaller.yml')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(want_appimage=False,
+                       supported_platforms='all',
+                       pyinstaller={
+                           'windows_exclusions': ['alpha', 'beta'],
+                           'macos_exclusions': ['alpha', 'beta'],
+                           'include_only': []
+                       }))
+    await post_process_steps(settings)
+    assert not (tmp_path / '.github/workflows/pyinstaller.yml').exists()
+
+
+async def test_post_process_steps_python_deletes_pyinstaller_when_include_only_misses(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _add_pyproject_scripts(tmp_path, {'wiswa': 'pkg:main'})
+    _make_workflow_files(tmp_path, 'pyinstaller.yml')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(want_appimage=False,
+                       supported_platforms='all',
+                       pyinstaller={'include_only': ['ghost']}))
+    await post_process_steps(settings)
+    assert not (tmp_path / '.github/workflows/pyinstaller.yml').exists()
+
+
+async def test_post_process_steps_python_keeps_pyinstaller_when_partial_exclusion(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _add_pyproject_scripts(tmp_path, {'alpha': 'pkg:alpha', 'beta': 'pkg:beta'})
+    _make_workflow_files(tmp_path, 'pyinstaller.yml')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(want_appimage=False,
+                       supported_platforms='all',
+                       pyinstaller={
+                           'windows_exclusions': ['alpha', 'beta'],
+                           'macos_exclusions': ['alpha'],
+                           'include_only': []
+                       }))
+    await post_process_steps(settings)
+    assert (tmp_path / '.github/workflows/pyinstaller.yml').exists()
+
+
+async def test_post_process_steps_python_deletes_appimage_when_all_excluded(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _add_pyproject_scripts(tmp_path, {'alpha': 'pkg:alpha', 'beta': 'pkg:beta'})
+    _make_workflow_files(tmp_path, 'appimage.yml', 'pyinstaller.yml')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(want_appimage=True,
+                       supported_platforms='all',
+                       appimage={
+                           'exclusions': ['alpha', 'beta'],
+                           'include_only': []
+                       }))
+    await post_process_steps(settings)
+    assert not (tmp_path / '.github/workflows/appimage.yml').exists()
+    assert (tmp_path / '.github/workflows/pyinstaller.yml').exists()
+
+
+async def test_post_process_steps_python_deletes_appimage_when_include_only_misses(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _add_pyproject_scripts(tmp_path, {'wiswa': 'pkg:main'})
+    _make_workflow_files(tmp_path, 'appimage.yml', 'pyinstaller.yml')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(want_appimage=True,
+                       supported_platforms='all',
+                       appimage={'include_only': ['ghost']}))
+    await post_process_steps(settings)
+    assert not (tmp_path / '.github/workflows/appimage.yml').exists()
+
+
+async def test_post_process_steps_python_keeps_workflows_with_no_exclusions(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _add_pyproject_scripts(tmp_path, {'wiswa': 'pkg:main'})
+    _make_workflow_files(tmp_path, 'appimage.yml', 'pyinstaller.yml')
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings(want_appimage=True,
+                                          supported_platforms='all',
+                                          appimage={}))
+    await post_process_steps(settings)
+    assert (tmp_path / '.github/workflows/appimage.yml').exists()
+    assert (tmp_path / '.github/workflows/pyinstaller.yml').exists()
+
+
+async def test_post_process_steps_python_deletes_pyinstaller_windows_only_all_excluded(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _add_pyproject_scripts(tmp_path, {'alpha': 'pkg:alpha'})
+    _make_workflow_files(tmp_path, 'pyinstaller.yml')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(want_appimage=False,
+                       supported_platforms=['windows'],
+                       pyinstaller={
+                           'windows_exclusions': ['alpha'],
+                           'macos_exclusions': [],
+                           'include_only': []
+                       }))
+    await post_process_steps(settings)
+    assert not (tmp_path / '.github/workflows/pyinstaller.yml').exists()
+
+
 async def test_post_process_steps_python_want_man_with_man_dir(tmp_path: Path,
                                                                monkeypatch: pytest.MonkeyPatch,
                                                                mocker: MockerFixture) -> None:
