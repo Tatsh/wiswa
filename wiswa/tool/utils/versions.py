@@ -211,15 +211,18 @@ def _parse_duration(value: str) -> timedelta | None:
 def _parse_exclude_newer(value: str) -> datetime | None:
     value = value.strip()
     try:
-        return datetime.fromisoformat(value.replace('Z', '+00:00'))
+        parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
     except ValueError:
         try:
-            return datetime.fromisoformat(value)
+            parsed = datetime.fromisoformat(value)
         except ValueError:
             delta = _parse_duration(value)
             if delta is not None:
                 return datetime.now(tz=timezone.utc) - delta
             return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed
 
 
 def _coerce_per_package_value(val: Any) -> tuple[bool, datetime | None]:

@@ -210,6 +210,19 @@ async def test_get_pypi_per_package_uv_toml_skips_invalid_timestamp(tmp_path: Pa
     assert result == '1.0.0'
 
 
+async def test_get_pypi_per_package_uv_toml_date_only_string(tmp_path: Path,
+                                                             mocker: MockerFixture) -> None:
+    uv_dir = tmp_path / '.config' / 'uv'
+    uv_dir.mkdir(parents=True)
+    (uv_dir / 'uv.toml').write_text('[exclude-newer-package]\ndate-only-pkg = "2025-03-01"\n',
+                                    encoding='utf-8')
+    data = _make_pypi_json([('2.0.0', '2025-04-01T00:00:00Z'), ('1.0.0', '2025-01-15T00:00:00Z')])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'date-only-pkg')
+    assert result == '1.0.0'
+
+
 async def test_get_pypi_uv_toml_empty_behaves_like_no_config(tmp_path: Path,
                                                              mocker: MockerFixture) -> None:
     uv_dir = tmp_path / '.config' / 'uv'
