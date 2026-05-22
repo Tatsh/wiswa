@@ -50,6 +50,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   [`wiswa-typing`](https://pypi.org/project/wiswa-typing/) package instead of redefining them
   locally; both names continue to be the same `Literal` aliases.
 
+### Security
+
+- `wiswa.tool.utils.postprocess` now compares the npm publish registry hostname via
+  `urlparse(...).hostname` instead of a `startswith('https://registry.npmjs.org')` prefix check, so
+  spoofed hosts such as `https://registry.npmjs.org.evil.example/` no longer trick the README badge
+  generator into emitting npmjs.com badges. Fixes CodeQL alert
+  [#4](https://github.com/Tatsh/wiswa/security/code-scanning/4)
+  (`py/incomplete-url-substring-sanitization`, CWE-20).
+
 ### Removed
 
 - **Breaking:** the `wiswa-mcp` console script and the `wiswa.mcp` Python module have been

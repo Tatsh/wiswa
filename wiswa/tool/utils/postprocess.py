@@ -5,7 +5,7 @@ from functools import cache, partial
 from pathlib import Path
 from shlex import quote
 from typing import TYPE_CHECKING, Any, cast
-from urllib.parse import quote as urllib_quote, urlencode
+from urllib.parse import quote as urllib_quote, urlencode, urlparse
 import asyncio
 import json
 import logging
@@ -560,7 +560,8 @@ def _project_type_badges(settings: Settings) -> Iterator[str]:
             # 404, so emit the badges only when the project targets npmjs.org (the default).
             publish_registry = (settings.get('package_json', {}).get('publishConfig', {}).get(
                 'registry', '') or '')
-            if not publish_registry or publish_registry.startswith('https://registry.npmjs.org'):
+            registry_host = urlparse(publish_registry).hostname if publish_registry else ''
+            if not publish_registry or registry_host == 'registry.npmjs.org':
                 yield (f"[![NPM Version](https://img.shields.io/npm/v/{settings['project_name']})]"
                        f"(https://www.npmjs.com/package/{settings['project_name']})")
                 yield (
