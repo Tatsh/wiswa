@@ -28,13 +28,13 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "WISWA" "1" "May 11, 2026" "0.3.5" "wiswa"
+.TH "WISWA" "1" "May 22, 2026" "0.3.5" "wiswa"
 .SH NAME
 wiswa \- wiswa v0.3.5
 .SH INSTALLATION
 .sp
-We recommend a \fBglobal\fP install so \fBwiswa\fP and \fBwiswa\-mcp\fP are on your
-\fBPATH\fP from any working directory:
+We recommend a \fBglobal\fP install so \fBwiswa\fP is on your \fBPATH\fP from any
+working directory:
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -189,53 +189,6 @@ Example for \fBgitlab.com\fP:
 export GITLAB_TOKEN=\(aqglpat\-...\(aq
 
 python \-m keyring set \(aqwiswa\-gitlab:gitlab.com\(aq \(dq$(whoami)\(dq
-.EE
-.UNINDENT
-.UNINDENT
-.SS MCP Server
-.sp
-Wiswa includes an MCP server (\fBwiswa\-mcp\fP) that exposes settings discovery tools for AI
-assistants.
-.SS Claude Code
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-claude mcp add wiswa\-mcp \-\- wiswa\-mcp
-.EE
-.UNINDENT
-.UNINDENT
-.SS Cursor
-.sp
-Add to \fB\&.cursor/mcp.json\fP:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-{
-  \(dqmcpServers\(dq: {
-    \(dqwiswa\-mcp\(dq: {
-      \(dqcommand\(dq: \(dqwiswa\-mcp\(dq
-    }
-  }
-}
-.EE
-.UNINDENT
-.UNINDENT
-.SS GitHub Copilot CLI
-.sp
-Add to \fB\&.github/copilot/mcp.json\fP:
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-{
-  \(dqmcpServers\(dq: {
-    \(dqwiswa\-mcp\(dq: {
-      \(dqcommand\(dq: \(dqwiswa\-mcp\(dq
-    }
-  }
-}
 .EE
 .UNINDENT
 .UNINDENT
