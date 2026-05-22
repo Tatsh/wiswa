@@ -23,14 +23,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Post-processing now prunes PyInstaller and AppImage workflow files when their entry-point
-  filters leave nothing to build. `.github/workflows/pyinstaller.yml` is removed when every script
-  in `[project.scripts]` is covered by `pyinstaller.windows_exclusions` and
-  `pyinstaller.macos_exclusions` for every supported platform, or when
-  `pyinstaller.include_only` is non-empty but matches no declared script. Similarly,
-  `.github/workflows/appimage.yml` is removed when every script is covered by
-  `appimage.exclusions`, or when `appimage.include_only` is non-empty but matches no declared
-  script (in addition to the existing `want_appimage=False` cleanup).
+- New `want_pyinstaller` setting and refined `want_appimage` setting in `defaults.libsonnet` now
+  fold script-level exclusion and include-only filters into a single truth source. Both default
+  to `true` when the project has at least one entry point that survives `pyinstaller.include_only`
+  / `windows_exclusions` / `macos_exclusions` (per supported platform) and
+  `appimage.include_only` / `exclusions`, respectively. The Release workflow's `workflow_run`
+  trigger list, the PyPI publish workflow's "Wait for workflows" gate, the templating step that
+  emits the workflow files, and the post-processing cleanup all consult these flags, so a project
+  whose settings exclude every entry point no longer keeps PyInstaller/AppImage workflows on disk
+  or waits on them during release.
 - **Breaking:** the project now lives under an implicit `wiswa/` namespace. Python source code
   has been moved from `wiswa/` to `wiswa/tool/` (so `from wiswa.X import Y` becomes
   `from wiswa.tool.X import Y`), and the Jsonnet sources have moved from `wiswa-jsonnet/` to

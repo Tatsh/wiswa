@@ -394,6 +394,8 @@ class Settings(TypedDict):
     """
     want_appimage: bool
     """If the project should generate an AppImage workflow."""
+    want_pyinstaller: bool
+    """If the project should generate a PyInstaller workflow."""
     want_codeql: bool
     """If the project should include ``.github/workflows/codeql.yml``."""
     want_gpg: bool

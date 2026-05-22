@@ -149,17 +149,13 @@ async def _write_templated_files_python(settings: Settings, templates_dir: Path,
             write_file(resolve_template(file_path),
                        file_path.relative_to(templates_dir).with_suffix(''),
                        overwrite=overwrite) for file_path, overwrite in doc_outputs)
-    if ((settings['want_main'] or settings['has_multiple_entry_points'])
-            and settings['using_github']):
-        if (settings['supported_platforms'] == 'all' or 'windows' in settings['supported_platforms']
-                or 'macos' in settings['supported_platforms']):
+    if settings['using_github']:
+        if settings.get('want_pyinstaller', False):
             tasks.append(
                 write_file(resolve_template(templates_dir / 'github/workflows/pyinstaller.yml.j2'),
                            '.github/workflows/pyinstaller.yml',
                            overwrite=True))
-        if (settings.get('want_appimage', False)
-                and (settings['supported_platforms'] == 'all'
-                     or 'linux' in settings['supported_platforms'])):
+        if settings.get('want_appimage', False):
             tasks.append(
                 write_file(resolve_template(templates_dir / 'github/workflows/appimage.yml.j2'),
                            '.github/workflows/appimage.yml',

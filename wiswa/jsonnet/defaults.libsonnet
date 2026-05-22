@@ -648,11 +648,61 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   want_man: self.want_main,
   /**
    * @brief If the project will generate an AppImage workflow.
+   *
+   * Defaults to ``true`` for projects with at least one entry point on Linux. The workflow is
+   * suppressed when every declared ``[project.scripts]`` entry is covered by
+   * :py:attr:`appimage.exclusions`, or when :py:attr:`appimage.include_only` is non-empty but
+   * matches no declared script.
    * @var boolean
    */
-  want_appimage: (self.want_main || self.has_multiple_entry_points) &&
-                 (self.supported_platforms == 'all' ||
-                  std.member(self.supported_platforms, 'linux')),
+  want_appimage:
+    local appimage_scripts = std.objectFields(self.pyproject.project.scripts);
+    local appimage_include_only = std.set(self.appimage.include_only);
+    local appimage_script_set = std.set(appimage_scripts);
+    local appimage_has_work =
+      if std.length(appimage_scripts) == 0 then
+        false
+      else if std.length(self.appimage.include_only) > 0 then
+        std.length(std.setInter(appimage_include_only, appimage_script_set)) > 0
+      else
+        std.length(std.setDiff(appimage_script_set, std.set(self.appimage.exclusions))) > 0;
+    (self.want_main || self.has_multiple_entry_points) &&
+    (self.supported_platforms == 'all' || std.member(self.supported_platforms, 'linux')) &&
+    appimage_has_work,
+  /**
+   * @brief If the project will generate a PyInstaller workflow.
+   *
+   * Defaults to ``true`` for Python projects with at least one entry point that targets Windows
+   * or macOS. The workflow is suppressed when every declared ``[project.scripts]`` entry is
+   * covered by both :py:attr:`pyinstaller.windows_exclusions` and
+   * :py:attr:`pyinstaller.macos_exclusions` for every supported platform, or when
+   * :py:attr:`pyinstaller.include_only` is non-empty but matches no declared script.
+   * @var boolean
+   */
+  want_pyinstaller:
+    local pyi_scripts = std.objectFields(self.pyproject.project.scripts);
+    local pyi_script_set = std.set(pyi_scripts);
+    local pyi_include_only = std.set(self.pyinstaller.include_only);
+    local sp = self.supported_platforms;
+    local windows_supported = sp == 'all' || std.member(sp, 'windows');
+    local macos_supported = sp == 'all' || std.member(sp, 'macos');
+    local pyi_include_match = std.length(std.setInter(pyi_include_only, pyi_script_set)) > 0;
+    local pyi_win_survivors =
+      windows_supported &&
+      std.length(std.setDiff(pyi_script_set, std.set(self.pyinstaller.windows_exclusions))) > 0;
+    local pyi_mac_survivors =
+      macos_supported &&
+      std.length(std.setDiff(pyi_script_set, std.set(self.pyinstaller.macos_exclusions))) > 0;
+    local pyi_has_work =
+      if std.length(pyi_scripts) == 0 then
+        false
+      else if std.length(self.pyinstaller.include_only) > 0 then
+        pyi_include_match
+      else
+        pyi_win_survivors || pyi_mac_survivors;
+    (self.want_main || self.has_multiple_entry_points) &&
+    (windows_supported || macos_supported) &&
+    pyi_has_work,
   /**
    * @brief If the project will have a Snapcraft configuration.
    * @var boolean

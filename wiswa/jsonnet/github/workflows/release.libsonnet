@@ -1,10 +1,6 @@
 local utils = import 'utils.libsonnet';
 
 function(settings)
-  local has_pyinstaller = (settings.want_main || settings.has_multiple_entry_points) &&
-                          (settings.supported_platforms == 'all' ||
-                           std.member(settings.supported_platforms, 'windows') ||
-                           std.member(settings.supported_platforms, 'macos'));
   local has_qa_workflow = settings.project_type == 'python' ||
                           settings.project_type == 'typescript';
   local optional_workflows = std.set(
@@ -16,7 +12,7 @@ function(settings)
     (if !settings.private then ['Publish'] else []) +
     (if settings.want_appimage then ['AppImage'] else []) +
     (if utils.wantFlatpakOutputs(settings) then ['Flatpak'] else []) +
-    (if has_pyinstaller then ['PyInstaller'] else []) +
+    (if settings.want_pyinstaller then ['PyInstaller'] else []) +
     (if settings.want_snap then ['Snap'] else []) +
     settings.github.workflows.release_gate_workflows
   );

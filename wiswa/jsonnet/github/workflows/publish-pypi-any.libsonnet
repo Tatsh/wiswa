@@ -9,9 +9,7 @@ function(settings)
   );
   local required_workflows = std.set(
     (if settings.want_appimage then ['AppImage'] else []) +
-    (if settings.want_main || settings.has_multiple_entry_points then
-       (if settings.supported_platforms == 'all' || std.member(settings.supported_platforms, 'windows') || std.member(settings.supported_platforms, 'macos') then ['PyInstaller'] else [])
-     else []) +
+    (if settings.want_pyinstaller then ['PyInstaller'] else []) +
     (if utils.wantFlatpakOutputs(settings) then ['Flatpak'] else []) +
     (if settings.want_snap then ['Snap'] else []) +
     settings.github.workflows.release_gate_workflows
