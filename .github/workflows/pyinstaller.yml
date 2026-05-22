@@ -281,7 +281,7 @@ name: 'PyInstaller'
     branches:
       - 'master'
     paths:
-      - 'wiswa.tool/**'
+      - 'wiswa/tool/**'
       - '.github/workflows/pyinstaller.yml'
       - 'pyproject.toml'
       - 'uv.lock'

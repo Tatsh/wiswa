@@ -14,7 +14,7 @@ local utils = import 'utils.libsonnet';
   keywords: ['command line', 'jsonnet', 'project generator', 'project management', 'scaffolding'],
   github+: {
     pages_config+: {
-      exclude+: ['wiswa/templates/'],
+      exclude+: ['wiswa/tool/templates/'],
     },
     workflows+: {
       release_gate_workflows+: ['jsonnetfmt'],

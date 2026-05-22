@@ -704,6 +704,29 @@ async def test_write_templated_files_python_implicit_namespace_writes_qualified_
     assert (out / 'vendor/product/service/__init__.py').exists()
 
 
+async def test_write_templated_files_python_namespace_workflow_paths_use_slashes(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
+        out = await _run_write(
+            monkeypatch, tmp_path, module_path,
+            _make_settings(primary_module='vendor',
+                           primary_module_qualified='vendor.product.service',
+                           modules=['vendor.product.service'],
+                           want_appimage=True,
+                           want_pyinstaller=True,
+                           want_main=True,
+                           want_tests=False,
+                           want_ai=False,
+                           using_github=True,
+                           supported_platforms='all'))
+    pyinstaller_yml = (out / '.github/workflows/pyinstaller.yml').read_text(encoding='utf-8')
+    appimage_yml = (out / '.github/workflows/appimage.yml').read_text(encoding='utf-8')
+    assert "- 'vendor/product/service/**'" in pyinstaller_yml
+    assert 'vendor.product.service/**' not in pyinstaller_yml
+    assert "- 'vendor/product/service/**'" in appimage_yml
+    assert 'vendor.product.service/**' not in appimage_yml
+
+
 async def test_write_templated_files_python_windows_only(tmp_path: Path,
                                                          monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:

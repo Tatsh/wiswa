@@ -258,7 +258,7 @@ name: 'PyInstaller'
       - 'master'
     paths:
 {% for mod in settings.modules %}
-      - '{{ mod }}/**'
+      - '{{ mod | replace('.', '/') }}/**'
 {% endfor %}
       - '.github/workflows/pyinstaller.yml'
       - 'pyproject.toml'

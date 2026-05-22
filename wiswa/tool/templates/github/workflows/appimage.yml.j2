@@ -96,7 +96,7 @@ name: 'AppImage'
       - 'master'
     paths:
 {% for mod in settings.modules %}
-      - '{{ mod }}/**'
+      - '{{ mod | replace('.', '/') }}/**'
 {% endfor %}
       - '.github/workflows/appimage.yml'
       - 'pyproject.toml'
