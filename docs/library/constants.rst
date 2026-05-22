@@ -1,5 +1,5 @@
 Constants
 =========
 
-.. automodule:: wiswa.constants
+.. automodule:: wiswa.tool.constants
    :members:

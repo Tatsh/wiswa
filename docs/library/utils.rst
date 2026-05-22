@@ -1,5 +1,5 @@
 Utilities
 =========
 
-.. automodule:: wiswa.utils
+.. automodule:: wiswa.tool.utils
    :members:

@@ -1,5 +1,5 @@
 Typing
 ======
 
-.. automodule:: wiswa.typing
+.. automodule:: wiswa.tool.typing
    :members:

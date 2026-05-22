@@ -1,5 +1,5 @@
 Extensions
 ==========
 
-.. automodule:: wiswa.extensions
+.. automodule:: wiswa.tool.extensions
    :members:
