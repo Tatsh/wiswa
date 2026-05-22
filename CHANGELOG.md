@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-22
+
 ### Added
 
 - New `gitlab_mirror_uri` setting and accompanying `want_gitlab_mirror` flag. When a GitHub-hosted
@@ -753,7 +755,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First version.
 
-[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.3.4...HEAD
+[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Tatsh/wiswa/compare/v0.3.5...v0.4.0
+[0.3.5]: https://github.com/Tatsh/wiswa/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/Tatsh/wiswa/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/Tatsh/wiswa/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/Tatsh/wiswa/compare/v0.3.1...v0.3.2

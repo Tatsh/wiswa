@@ -21,7 +21,7 @@ parts:
     python-packages:
       - '.'
     source: 'https://github.com/Tatsh/wiswa.git'
-    source-tag: 'v0.3.5'
+    source-tag: 'v0.4.0'
     stage-packages: []
 platforms:
   amd64:
@@ -31,5 +31,5 @@ platforms:
 source-code: 'https://github.com/Tatsh/wiswa'
 summary: 'A highly opinionated way to generate and maintain projects with Jsonnet.'
 title: 'wiswa'
-version: '0.3.5'
+version: '0.4.0'
 website: 'https://tatsh.github.io/wiswa/'
