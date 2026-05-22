@@ -85,7 +85,6 @@ intersphinx_mapping = {
     'niquests-cache': ('https://niquests-cache.readthedocs.io/en/latest/', None),
     'platformdirs': ('https://platformdirs.readthedocs.io/en/latest/', None),
     'python': ('https://docs.python.org/3', None),
-    'python-gitlab': ('https://python-gitlab.readthedocs.io/en/stable/', None),
     'rich': ('https://rich.readthedocs.io/en/stable/', None),
     'tomlkit': ('https://tomlkit.readthedocs.io/en/latest/', None),
     'typing-extensions': ('https://typing-extensions.readthedocs.io/en/latest/', None)

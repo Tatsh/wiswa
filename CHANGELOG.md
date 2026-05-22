@@ -37,6 +37,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `from wiswa.tool.X import Y`), and the Jsonnet sources have moved from `wiswa-jsonnet/` to
   `wiswa/jsonnet/`. The `wiswa` console script entry point is now `wiswa.tool.main:main`. Anyone
   importing from `wiswa` as a library should update their imports accordingly.
+- Wiswa now depends on [`wiswa-vcs`](https://github.com/Tatsh/wiswa-vcs) for all VCS plumbing
+  (GitHub and GitLab project configuration, repository discovery, GitHub tag/SHA caching, and
+  the git-restore primitive used by the post-process `uv.lock` revert). Public entry points
+  (`setup_github_project`, `setup_gitlab_project`, `get_github_pages_build_type`,
+  `maybe_revert_uv_lock_if_only_lockfile_changed`) keep their existing signatures and
+  semantics, so downstream callers do not need to change. Internal helpers
+  (`_DESIRED_RULESETS`, `_configure_github_repo`, `_configure_gitlab_project_sync`,
+  `_desired_gitlab_badges`, `_sync_gitlab_badges`, ruleset upsert logic, GitHub Pages bootstrap,
+  etc.) have been deleted now that wiswa-vcs owns the protocol details.
+- `wiswa.tool.typing` now imports `PackageManager` and `ProjectType` from the
+  [`wiswa-typing`](https://pypi.org/project/wiswa-typing/) package instead of redefining them
+  locally; both names continue to be the same `Literal` aliases.
 
 ### Removed
 
@@ -47,6 +59,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Breaking:** the `GitlabRemoteSettings` TypedDict has been dropped from `wiswa.tool.typing`;
   `Settings['gitlab']` is now typed as `Mapping[str, Any]`. Consumers that need a typed view
   should import `RemoteSettings` from the companion `wiswa-vcs` package's `wiswa.vcs.typing`.
+- `python-gitlab` is no longer a runtime dependency. GitLab orchestration now uses the async
+  HTTP client in `wiswa-vcs` (`gidgetlab` + `niquests`); the legacy `python-gitlab` thread-pool
+  bridge in `wiswa.tool.utils.gitlab` has been removed.
+- The internal helpers `get_github_release_latest_tag` and the GitHub tag disk cache
+  (`github_tag_cache.json` read/write helpers, the in-memory memo box, the
+  `_github_newest_release_tag_respecting_cutoff` pagination loop) have been deleted from
+  `wiswa.tool.utils.versions`; that function is now a thin adapter around
+  `wiswa.vcs.github.latest_release_tag` that still resolves the local npm minimum-release-age
+  gate and maps `google/yapf` to `require_v_prefix=True`. The on-disk cache file path
+  (`~/.cache/wiswa/github_tag_cache.json`) is unchanged.
 
 ## [0.3.5] - 2026-05-10
 

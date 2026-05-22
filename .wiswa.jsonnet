@@ -91,9 +91,10 @@ local utils = import 'utils.libsonnet';
       niquests: utils.latestPypiPackageVersionCaret('niquests'),
       'niquests-cache': utils.latestPypiPackageVersionCaret('niquests-cache'),
       platformdirs: utils.latestPypiPackageVersionCaret('platformdirs'),
-      'python-gitlab': utils.latestPypiPackageVersionCaret('python-gitlab'),
       rich: utils.latestPypiPackageVersionCaret('rich'),
       tomlkit: utils.latestPypiPackageVersionCaret('tomlkit'),
+      'wiswa-typing': utils.latestPypiPackageVersionCaret('wiswa-typing'),
+      'wiswa-vcs': utils.latestPypiPackageVersionCaret('wiswa-vcs'),
     },
     dev+: {
       'types-jsonnet': utils.latestPypiPackageVersionCaret('types-jsonnet'),
@@ -142,7 +143,8 @@ local utils = import 'utils.libsonnet';
       },
       uv+: {
         'exclude-newer-package'+: {
-          'niquests-cache': false,
+          'wiswa-typing': '2026-05-18',
+          'wiswa-vcs': '2026-05-23',
         },
       },
     },

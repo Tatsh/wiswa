@@ -15,7 +15,6 @@ autodoc
 automoc
 automodule
 autorcc
-autosubmit
 autouic
 autouse
 bascom
@@ -61,7 +60,6 @@ datatables
 davidanson
 dbuild
 debugpy
-delenv
 devmode
 devrelease
 djangorestframework
@@ -105,6 +103,8 @@ genindex
 getenv
 getline
 ggdb
+gidgethub
+gidgetlab
 gitdir
 githistory
 glab
@@ -183,7 +183,6 @@ noqa
 norecursedirs
 notarytool
 notint
-npmage
 npmjs
 nsis
 nsucz
@@ -209,7 +208,6 @@ plistlib
 preapproved
 proc
 prodvers
-pushrules
 pycache
 pydantic
 pydocstyle
@@ -256,7 +254,6 @@ sqlfluff
 srcs
 startswith
 staticfiles
-stopall
 strequal
 strongified
 syft
@@ -266,6 +263,7 @@ tamasfe
 tatsh
 templater
 testpaths
+testrepo
 timezone
 timonwong
 toctree
@@ -286,6 +284,7 @@ udvare
 undoc
 undraft
 undrafted
+unparseable
 urllib
 userprofile
 varattributes

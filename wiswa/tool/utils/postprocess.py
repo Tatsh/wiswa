@@ -16,6 +16,7 @@ import tempfile
 
 from anyio.to_thread import run_sync
 from niquests import AsyncSession
+from wiswa.vcs.git import maybe_revert
 import anyio
 import niquests
 import tomlkit
@@ -36,8 +37,6 @@ log = logging.getLogger(__name__)
 
 _README_GENERATED_START = '<!-- WISWA-GENERATED-README:START -->'
 _README_GENERATED_STOP = '<!-- WISWA-GENERATED-README:STOP -->'
-
-_GIT_CONFIG_NO_HOOKS = ('-c', f'core.hooksPath={os.devnull}')
 
 _FORMAT_DEFAULT_FILENAMES = {'cyclonedx1.5': 'cyclonedx.json', 'pylock.toml': 'pylock.toml'}
 _LEGACY_WISWA_AI_PATHS = ('.claude/settings.local.json.dist', '.cursor/permissions.json.dist',
@@ -878,83 +877,25 @@ def uv_lock_diff_changes_only_exclude_newer(diff_text: str) -> bool:
     return saw_exclude_newer_change
 
 
-async def maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings,
-                                                        *,
-                                                        on_command: Callable[[str], None]
-                                                        | None = None) -> None:
+async def maybe_revert_uv_lock_if_only_lockfile_changed(settings: Settings) -> None:
     """
     Restore ``uv.lock`` from ``HEAD`` when the drift arises from incidental resolution.
 
-    ``uv lock --upgrade`` can refresh the lock without any edits to ``pyproject.toml`` (for example
-    when rolling ``exclude-newer`` cut-offs in the user ``uv.toml`` or when the index moves). If the
-    working tree differs from ``HEAD`` only in ``uv.lock``, put the lock file back so a run does
-    not leave an incidental lock diff. The same applies when other tracked paths also differ, if
-    ``git diff --no-color -a HEAD -- uv.lock`` shows changes only on ``exclude-newer`` lines under
-    ``[options]`` (compare to ``HEAD``, matching ``git restore --source=HEAD``). ``git restore`` and
-    ``git checkout`` pass ``-c`` ``core.hooksPath`` set to the platform null device so hooks (for
-    example pre-commit) cannot block reverting the lock.
+    Delegates the git plumbing (``git diff``, ``git restore``/``git checkout`` with hooks
+    bypassed) to :py:func:`wiswa.vcs.git.maybe_revert`. Wiswa supplies the uv-specific
+    predicate :py:func:`uv_lock_diff_changes_only_exclude_newer` so the lock is also
+    restored when other tracked paths changed alongside it, as long as the ``uv.lock`` diff
+    is limited to ``exclude-newer`` rolls under ``[options]``.
 
     Parameters
     ----------
     settings : Settings
         Merged project settings.
-    on_command : Callable[[str], None] | None
-        Called with the command string before each subprocess runs.
     """
     if settings['package_manager'] != 'uv':
         return
-    if not await anyio.Path('.git').exists():
-        return
-    proc, out, _ = await _subprocess_log_run(('git', 'diff', '--name-only', 'HEAD'),
-                                             on_command=on_command,
-                                             stdout=asyncio.subprocess.PIPE,
-                                             stderr=asyncio.subprocess.DEVNULL,
-                                             check=False)
-    if proc.returncode != 0:
-        log.debug('git diff --name-only HEAD failed; skipping uv.lock restore.')
-        return
-    diff_names = {
-        p.strip().replace('\\', '/')
-        for p in (out or b'').decode().splitlines() if p.strip()
-    }
-    if 'uv.lock' not in diff_names:
-        return
-    if diff_names == {'uv.lock'}:
-        restore_uv_lock = True
-    else:
-        proc_uv, diff_uv, _ = await _subprocess_log_run(
-            ('git', 'diff', '--no-color', '-a', 'HEAD', '--', 'uv.lock'),
-            on_command=on_command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
-            check=False)
-        if proc_uv.returncode != 0:
-            log.debug(
-                'git diff --no-color -a HEAD -- uv.lock failed; skipping extended uv.lock restore.')
-            return
-        restore_uv_lock = uv_lock_diff_changes_only_exclude_newer((diff_uv or b'').decode())
-    if not restore_uv_lock:
-        return
-    proc_restore, _, err = await _subprocess_log_run(
-        ('git', *_GIT_CONFIG_NO_HOOKS, 'restore', '--source=HEAD', '--staged', '--worktree', '--',
-         'uv.lock'),
-        on_command=on_command,
-        stdout=asyncio.subprocess.DEVNULL,
-        stderr=asyncio.subprocess.PIPE,
-        check=False)
-    if proc_restore.returncode != 0:
-        log.debug('git restore uv.lock failed (%s); trying git checkout.',
-                  (err or b'').decode().strip())
-        proc_co, _, err_co = await _subprocess_log_run(
-            ('git', *_GIT_CONFIG_NO_HOOKS, 'checkout', 'HEAD', '--', 'uv.lock'),
-            on_command=on_command,
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.PIPE,
-            check=False)
-        if proc_co.returncode != 0:
-            log.warning('Could not restore uv.lock from HEAD: %s', (err_co or b'').decode().strip())
-            return
-    log.debug('Restored uv.lock from HEAD.')
+    if await maybe_revert('uv.lock', should_revert=uv_lock_diff_changes_only_exclude_newer):
+        log.debug('Restored uv.lock from HEAD.')
 
 
 async def post_process_steps(settings: Settings,
@@ -1017,5 +958,4 @@ async def post_process_steps(settings: Settings,
                             on_command=on_command,
                             stderr=asyncio.subprocess.PIPE,
                             stdout=asyncio.subprocess.PIPE,
-                            check=False),
-        maybe_revert_uv_lock_if_only_lockfile_changed(settings, on_command=on_command))
+                            check=False), maybe_revert_uv_lock_if_only_lockfile_changed(settings))

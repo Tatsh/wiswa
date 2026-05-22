@@ -301,10 +301,27 @@ def _docs_conf_defaults() -> dict[str, Any]:
 
 def _stub_github_api_session() -> MagicMock:
     session = MagicMock()
-    response = MagicMock()
-    response.ok = True
-    response.json = MagicMock(return_value=[{'name': 'v4.1.2'}])
-    session.get = AsyncMock(return_value=response)
+
+    def _get(url: str, *_args: Any, **_kwargs: Any) -> MagicMock:
+        response = MagicMock()
+        response.ok = True
+        response.status_code = 200
+        if '/releases/latest' in url:
+            response.json = MagicMock(return_value={'tag_name': 'v4.1.2'})
+        elif '/tags' in url:
+            response.json = MagicMock(return_value=[{'name': 'v4.1.2'}])
+        else:
+            response.json = MagicMock(return_value={})
+        return response
+
+    def _head(*_args: Any, **_kwargs: Any) -> MagicMock:
+        response = MagicMock()
+        response.ok = True
+        response.status_code = 200
+        return response
+
+    session.get = AsyncMock(side_effect=_get)
+    session.head = AsyncMock(side_effect=_head)
     return session
 
 
@@ -913,7 +930,7 @@ async def test_write_templated_files_real_env_skips_existing(
 
 async def test_write_templated_files_real_env_with_session(tmp_path: Path,
                                                            monkeypatch: pytest.MonkeyPatch) -> None:
-    mock_session = MagicMock()
+    mock_session = _stub_github_api_session()
     with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
         out = tmp_path / 'proj'
         out.mkdir()

@@ -18,13 +18,13 @@ import time
 
 from anyio.from_thread import run as run_async_from_worker_thread
 from anyio.to_thread import run_sync
+from wiswa.vcs.github import ref_commit_sha
 import _jsonnet  # noqa: PLC2701
 import anyio
 import platformdirs
 
 from .path import tests_dir_has_pytest_modules_excluding_starter_main
 from .versions import (
-    get_github_ref_commit_sha,
     get_github_release_latest_tag,
     get_latest_yarn_version,
     get_npm_latest_package_version,
@@ -277,7 +277,7 @@ def _make_native_callbacks(
                         skip_releases=True,
                         allow_suffixes=False)
     gh_tag = partial(get_github_release_latest_tag, session, skip_releases=True)
-    gh_ref_sha = partial(get_github_ref_commit_sha, session)
+    gh_ref_sha = partial(ref_commit_sha, session)
     return {
         # The argument names here cannot conflict with a wrapping function.
         # f(arg):: std.native('f', arg) will fail if it's defined here as 'f': (('arg',), ...).

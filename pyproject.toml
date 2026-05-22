@@ -54,10 +54,11 @@ dependencies = [
   "niquests-cache>=0.2.4",
   "niquests>=3.18.7",
   "platformdirs>=4.9.6",
-  "python-gitlab>=8.3.0",
   "rich>=15.0.0",
   "tomlkit>=0.14.0",
   "typing-extensions>=4.15.0",
+  "wiswa-typing>=0.0.1",
+  "wiswa-vcs>=0.0.1",
 ]
 description = "A highly opinionated way to generate and maintain projects with Jsonnet."
 keywords = ["command line", "jsonnet", "project generator", "project management", "scaffolding"]
@@ -228,7 +229,8 @@ default-groups = "all"
 exclude-newer = "1 week"
 
 [tool.uv.exclude-newer-package]
-niquests-cache = false
+wiswa-typing = "2026-05-18"
+wiswa-vcs = "2026-05-23"
 
 [tool.yapf]
 align_closing_bracket_with_visual_indent = true

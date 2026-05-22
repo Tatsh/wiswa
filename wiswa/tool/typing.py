@@ -1,32 +1,20 @@
 """Type definitions for Wiswa settings and related ``pyproject``/``package.json`` shapes."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from typing_extensions import NotRequired
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
+    from wiswa.typing import PackageManager, ProjectType
+
 __all__ = ('CustomProjectBadge', 'ExportRequirements', 'PackageJSON', 'PackageJSONPublishConfig',
-           'PackageManager', 'ProjectType', 'PyProject', 'PyProjectBuildSystem', 'PyProjectProject',
-           'PyProjectTool', 'PyProjectToolCommitizen', 'PyProjectToolPoetry',
-           'PyProjectToolPoetryPackage', 'PythonDeps', 'Settings', 'SettingsGitHub',
-           'SettingsSocial', 'SettingsSocialMastodon', 'SettingsSocialTextAndURI', 'VSCode',
-           'VSCodeLaunch', 'VSCodeLaunchConfiguration')
-
-PackageManager: TypeAlias = Literal['poetry', 'uv']
-"""
-The Python package manager to use.
-
-:meta hide-value:
-"""
-ProjectType: TypeAlias = Literal['c', 'c++', 'generic', 'lua', 'python', 'typescript', 'xcode']
-"""
-The type of project being generated.
-
-:meta hide-value:
-"""
+           'PyProject', 'PyProjectBuildSystem', 'PyProjectProject', 'PyProjectTool',
+           'PyProjectToolCommitizen', 'PyProjectToolPoetry', 'PyProjectToolPoetryPackage',
+           'PythonDeps', 'Settings', 'SettingsGitHub', 'SettingsSocial', 'SettingsSocialMastodon',
+           'SettingsSocialTextAndURI', 'VSCode', 'VSCodeLaunch', 'VSCodeLaunchConfiguration')
 
 
 class VSCodeLaunchConfiguration(TypedDict):

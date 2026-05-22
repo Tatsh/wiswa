@@ -7,7 +7,6 @@ from functools import cache
 from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING, Any, cast
-import json
 import logging
 import operator
 import re
@@ -16,6 +15,7 @@ from anyio.to_thread import run_sync
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
 from packaging.version import InvalidVersion, Version, parse as parse_version
 from wiswa.tool.constants import PLUGIN_PRETTIER_AFTER_ALL_INSTALLED_URI
+from wiswa.vcs.github import clear_tag_cache, latest_release_tag
 import anyio
 import platformdirs
 import tomlkit
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     import niquests
 
 __all__ = ('clear_resolution_caches', 'download_yarn', 'download_yarn_plugins',
-           'get_github_ref_commit_sha', 'get_github_release_latest_tag', 'get_latest_yarn_version',
+           'get_github_release_latest_tag', 'get_latest_yarn_version',
            'get_npm_latest_package_version', 'get_pypi_latest_package_version',
            'resolve_npm_minimal_age_gate_minutes')
 
@@ -36,18 +36,10 @@ _PYPI_YANKED_RELEASES = {'sphinx-8.3.0'}
 
 _cache: dict[str, str] = {}
 
-# In-memory snapshot of ``github_tag_cache.json``; one-element box avoids ``global``.
-_github_tag_disk_store_memo_box: list[dict[str, str] | None] = [None]
-
-_GITHUB_TAG_DISK_FILENAME = 'github_tag_cache.json'
-
 _NPM_AGE_GATE_DEFAULT_MINUTES = 10080
 """Default npm minimum age gate in minutes (7 days)."""
 
 _YARNRC_FILENAME = '.yarnrc.yml'
-
-_GITHUB_RELEASES_PAGE_CAP = 20
-_GITHUB_RELEASES_PER_PAGE = 100
 
 _NODE_RANGE_RE = re.compile(r'>=\s*(\d+)')
 """
@@ -348,8 +340,8 @@ def clear_resolution_caches() -> None:
     ``platformdirs``.
     """
     _cache.clear()
-    _github_tag_disk_store_memo_box[0] = None
     _get_uv_config.cache_clear()
+    clear_tag_cache()
 
 
 async def get_latest_yarn_version(session: niquests.AsyncSession) -> str:
@@ -607,130 +599,6 @@ async def download_yarn(session: niquests.AsyncSession, version: str) -> None:
     await run_sync(lambda: Path(target).chmod(0o755))
 
 
-def _github_tag_disk_cache_path() -> Path:
-    return platformdirs.user_cache_path('wiswa', appauthor=False) / _GITHUB_TAG_DISK_FILENAME
-
-
-def _read_github_tag_disk_store() -> dict[str, str]:
-    cached = _github_tag_disk_store_memo_box[0]
-    if cached is not None:
-        return cached
-    path = _github_tag_disk_cache_path()
-    try:
-        raw = json.loads(path.read_text(encoding='utf-8'))
-    except (OSError, json.JSONDecodeError, TypeError):
-        store: dict[str, str] = {}
-    else:
-        if not isinstance(raw, dict):
-            store = {}
-        else:
-            store = {
-                str(k): str(v)
-                for k, v in raw.items() if isinstance(k, str) and isinstance(v, str)
-            }
-    _github_tag_disk_store_memo_box[0] = store
-    return store
-
-
-def _write_github_tag_disk_entry(key: str, value: str) -> None:
-    path = _github_tag_disk_cache_path()
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        store = _read_github_tag_disk_store()
-        store[key] = value
-        text = f'{json.dumps(store, indent=2, sort_keys=True)}\n'
-        tmp = path.with_suffix(f'{path.suffix}.tmp')
-        tmp.write_text(text, encoding='utf-8')
-        tmp.replace(path)
-    except OSError as exc:
-        _github_tag_disk_store_memo_box[0] = None
-        log.debug('Could not persist GitHub tag cache: %s', exc)
-
-
-def _blocked_github_response_status(response: object) -> int | None:
-    code = getattr(response, 'status_code', None)
-    if isinstance(code, int) and code in {403, 429}:
-        return code
-    return None
-
-
-def _version_from_github_tag_name(tag: str) -> Version | None:
-    body = tag.removeprefix('v')
-    try:
-        ver = parse_version(body)
-    except InvalidVersion:
-        return None
-    return ver
-
-
-def _github_tag_allowed_for_policy(tag: str, *, allow_suffixes: bool, owner: str,
-                                   repo: str) -> bool:
-    if owner == 'google' and repo == 'yapf':
-        if not tag.startswith('v'):
-            return False
-        return True if allow_suffixes else bool(re.search(r'\d$', tag))
-    if not allow_suffixes:
-        return tag.startswith('v') and bool(re.search(r'\d$', tag))
-    return True
-
-
-async def _github_newest_release_tag_respecting_cutoff(
-        session: niquests.AsyncSession, owner: str, repo: str, *, cutoff: datetime,
-        allow_suffixes: bool) -> tuple[str | None, int | None]:
-    """
-    Return the highest semantic version among GitHub releases published on or before *cutoff*.
-
-    Returns
-    -------
-    tuple[str | None, int | None]
-        Selected ``tag_name``, or ``(None, status)`` when the GitHub API blocks access.
-    """
-    best: tuple[Version, str] | None = None
-    for page in range(1, _GITHUB_RELEASES_PAGE_CAP + 1):
-        resp = await session.get(
-            f'https://api.github.com/repos/{owner}/{repo}/releases'
-            f'?per_page={_GITHUB_RELEASES_PER_PAGE}&page={page}',
-            timeout=15)
-        gh_st = _blocked_github_response_status(resp)
-        if gh_st is not None:
-            return None, gh_st
-        if not resp.ok:
-            break
-        batch = resp.json()
-        if not isinstance(batch, list) or not batch:
-            break
-        for rel in batch:
-            if not isinstance(rel, dict):
-                continue
-            if rel.get('draft'):
-                continue
-            if rel.get('prerelease'):
-                continue
-            tag = rel.get('tag_name')
-            if not isinstance(tag, str) or not tag:
-                continue
-            published = rel.get('published_at')
-            if not isinstance(published, str):
-                continue
-            try:
-                pub_dt = datetime.fromisoformat(published.replace('Z', '+00:00'))
-            except ValueError:
-                continue
-            if pub_dt > cutoff:
-                continue
-            if not _github_tag_allowed_for_policy(
-                    tag, allow_suffixes=allow_suffixes, owner=owner, repo=repo):
-                continue
-            ver_obj = _version_from_github_tag_name(tag)
-            if ver_obj is None or ver_obj.is_prerelease or ver_obj.is_devrelease:
-                continue
-            if best is None or ver_obj > best[0]:
-                best = (ver_obj, tag)
-        if len(batch) < _GITHUB_RELEASES_PER_PAGE:
-            break
-    return (best[1] if best else None), None
-
-
 async def get_github_release_latest_tag(session: niquests.AsyncSession,
                                         owner: str,
                                         repo: str,
@@ -741,6 +609,13 @@ async def get_github_release_latest_tag(session: niquests.AsyncSession,
                                         npm_age_gate_minutes: int | None = None) -> str:
     """
     Get the latest release tag from a GitHub repository.
+
+    Thin Wiswa-side adapter that resolves the npm minimum-release-age gate via
+    :py:func:`resolve_npm_minimal_age_gate_minutes` (a Wiswa-only concern that reads
+    ``yarnrc.npmMinimalAgeGate`` from ``uv.toml``) and forwards the rest to
+    :py:func:`wiswa.vcs.github.latest_release_tag`. The ``google/yapf`` repository is mapped to
+    ``require_v_prefix=True`` because its tag scheme allows non-``v`` names that should not be
+    picked.
 
     Parameters
     ----------
@@ -756,140 +631,27 @@ async def get_github_release_latest_tag(session: niquests.AsyncSession,
         Whether to allow tags with suffixes (e.g. ``-beta``).
     apply_npm_min_release_age : bool
         When set, prefer releases at least as old as the resolved npm age gate (see
-        :func:`resolve_npm_minimal_age_gate_minutes`) before falling back to unfiltered
-        ``releases/latest`` or tag list logic, mirroring :func:`get_npm_latest_package_version`.
+        :py:func:`resolve_npm_minimal_age_gate_minutes`) before falling back to unfiltered
+        ``releases/latest`` or tag list logic, mirroring
+        :py:func:`get_npm_latest_package_version`.
     npm_age_gate_minutes : int | None
-        Minutes for the age gate when *apply_npm_min_release_age* is set. When ``None``, uses
-        :func:`resolve_npm_minimal_age_gate_minutes` without settings (callers from Jsonnet supply
-        the value computed from merged settings and the project snippet).
+        Minutes for the age gate when *apply_npm_min_release_age* is set. When :py:data:`None`,
+        uses :py:func:`resolve_npm_minimal_age_gate_minutes` without settings.
 
     Returns
     -------
     str
         The latest release tag.
-
-    Raises
-    ------
-    ValueError
-        If no tags are found.
     """
-    rg_for_gate: int | None = None
+    min_age: int | None = None
     if apply_npm_min_release_age:
-        rg_for_gate = (npm_age_gate_minutes if npm_age_gate_minutes is not None else
-                       resolve_npm_minimal_age_gate_minutes())
-    key = f'gh_{owner}/{repo}_{skip_releases}_{allow_suffixes}'
-    if rg_for_gate is not None:
-        key += f'_npmage{rg_for_gate}'
-    if key in _cache:
-        return _cache[key]
-    version: str | None = None
-    blocked_status: int | None = None
-
-    if apply_npm_min_release_age:
-        gate_minutes = cast('int', rg_for_gate)
-        cutoff = datetime.now(tz=timezone.utc) - timedelta(minutes=gate_minutes)
-        gated, gh_st = await _github_newest_release_tag_respecting_cutoff(
-            session, owner, repo, cutoff=cutoff, allow_suffixes=allow_suffixes)
-        if gh_st is not None:
-            blocked_status = gh_st
-        if gated:
-            version = gated
-        else:
-            log.debug(
-                'No GitHub release for %s/%s is older than the npm minimal age gate (%d minutes); '
-                'falling back to latest tag logic.', owner, repo, gate_minutes)
-
-    if not version and not skip_releases:
-        resp = await session.get(f'https://api.github.com/repos/{owner}/{repo}/releases/latest',
-                                 timeout=15)
-        gh_st = _blocked_github_response_status(resp)
-        if gh_st is not None:
-            blocked_status = gh_st
-        if resp.ok:
-            data = resp.json()
-            version = data['tag_name']
-    if not version:
-        resp = await session.get(f'https://api.github.com/repos/{owner}/{repo}/tags', timeout=15)
-        gh_st = _blocked_github_response_status(resp)
-        if gh_st is not None:
-            blocked_status = gh_st
-        if resp.ok:
-            data = resp.json()
-            tags = [x['name'] for x in data if 'name' in x]
-            if tags:
-                if not allow_suffixes or (owner == 'google' and repo == 'yapf'):
-                    version = next(x for x in tags if x.startswith('v') and (
-                        re.search(r'\d$', x) if not allow_suffixes else True))
-                else:
-                    version = tags[0]
-    if not version:
-        if blocked_status is not None:
-            disk_tag = _read_github_tag_disk_store().get(key)
-            if disk_tag:
-                log.warning(
-                    'Using disk-cached GitHub tag %s for %s/%s after HTTP %d '
-                    '(likely due to rate limiting).', disk_tag, owner, repo, blocked_status)
-                _cache[key] = disk_tag
-                return disk_tag
-        msg = f'Could not get latest tag for {owner}/{repo}.'
-        raise ValueError(msg)
-    _cache[key] = version
-    _write_github_tag_disk_entry(key, version)
-    return version
-
-
-async def get_github_ref_commit_sha(session: niquests.AsyncSession, owner: str, repo: str,
-                                    ref: str) -> str:
-    """
-    Resolve a Git ref (branch, tag, or full SHA) to its underlying commit SHA on GitHub.
-
-    Uses the ``/repos/{owner}/{repo}/commits/{ref}`` endpoint with
-    ``Accept: application/vnd.github.sha`` so GitHub returns just the SHA as plain text. Annotated
-    tags are followed to the commit they point at; lightweight tags resolve directly. The result is
-    cached in-process for the lifetime of the run, persisted to the on-disk GitHub cache, and falls
-    back to that cache when GitHub responds with 403 or 429 (rate limiting).
-
-    Parameters
-    ----------
-    session : niquests.AsyncSession
-        The HTTP session.
-    owner : str
-        The repository owner.
-    repo : str
-        The repository name.
-    ref : str
-        The Git ref to resolve (branch name, tag name, or full commit SHA).
-
-    Returns
-    -------
-    str
-        The 40-character hexadecimal commit SHA *ref* resolves to.
-
-    Raises
-    ------
-    ValueError
-        If the SHA cannot be retrieved and no cached value is available.
-    """
-    key = f'gh_sha_{owner}/{repo}@{ref}'
-    if key in _cache:
-        return _cache[key]
-    resp = await session.get(f'https://api.github.com/repos/{owner}/{repo}/commits/{ref}',
-                             headers={'Accept': 'application/vnd.github.sha'},
-                             timeout=15)
-    blocked_status = _blocked_github_response_status(resp)
-    if resp.ok:
-        sha = (resp.text or '').strip()
-        if sha:
-            _cache[key] = sha
-            _write_github_tag_disk_entry(key, sha)
-            return sha
-    if blocked_status is not None:
-        disk_sha = _read_github_tag_disk_store().get(key)
-        if disk_sha:
-            log.warning(
-                'Using disk-cached GitHub commit SHA %s for %s/%s@%s after HTTP %d '
-                '(likely due to rate limiting).', disk_sha, owner, repo, ref, blocked_status)
-            _cache[key] = disk_sha
-            return disk_sha
-    msg = f'Could not get commit SHA for {owner}/{repo}@{ref}.'
-    raise ValueError(msg)
+        min_age = (npm_age_gate_minutes
+                   if npm_age_gate_minutes is not None else resolve_npm_minimal_age_gate_minutes())
+    require_v_prefix = owner == 'google' and repo == 'yapf'
+    return await latest_release_tag(session,
+                                    owner,
+                                    repo,
+                                    skip_releases=skip_releases,
+                                    allow_suffixes=allow_suffixes,
+                                    require_v_prefix=require_v_prefix,
+                                    min_release_age_minutes=min_age)
