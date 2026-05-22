@@ -103,7 +103,6 @@ genindex
 getenv
 getline
 ggdb
-gidgethub
 gidgetlab
 gitdir
 githistory
@@ -284,7 +283,6 @@ udvare
 undoc
 undraft
 undrafted
-unparseable
 urllib
 userprofile
 varattributes

@@ -53,8 +53,8 @@ all rules in `.claude/rules/python.md`.
 ## Workflow
 
 1. Read `pyproject.toml` to get the list of all entry points in `[project.scripts]`.
-2. For each command module in `wiswa/commands/`
-   or just `wiswa/main.py`:
+2. For each command module in `wiswa/tool/commands/`
+   or just `wiswa/tool/main.py`:
    a. Read the file.
    b. Run each check above against every command.
    c. Apply fixes directly to the file.

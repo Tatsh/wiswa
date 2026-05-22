@@ -141,7 +141,7 @@ name: 'AppImage'
     branches:
       - 'master'
     paths:
-      - 'wiswa/**'
+      - 'wiswa.tool/**'
       - '.github/workflows/appimage.yml'
       - 'pyproject.toml'
       - 'uv.lock'

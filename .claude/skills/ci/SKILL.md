@@ -24,12 +24,12 @@ changed, skip the click-auditor).
 
 ### When Python code is being committed
 
-If any changed files are under `wiswa/` or `tests/`, run the following
+If any changed files are under `wiswa/tool/` or `tests/`, run the following
 agents **in order**:
 
 1. **python-moderniser** - upgrade to modern Python features.
 1. **click-auditor** - validate Click command consistency. **Only run if files under
-   `wiswa/commands/` changed.**
+   `wiswa/tool/commands/` changed.**
 1. **docstring-fixer** - fix missing or incomplete docstrings.
 1. **copy-editor** - fix prose in comments, docstrings, and strings.
 1. **test-writer** - generate/update tests for new/changed code. **Skip if the only changes are in
@@ -43,7 +43,7 @@ agents **in order**:
   check if `CHANGELOG.md` was modified (`git diff CHANGELOG.md`). If it was, stage it with the
   relevant commit. Follow `.claude/agents/changelog.md`, including its skip list.
 
-  Files under `wiswa/`, `tests/`, or version changes in `pyproject.toml` are **candidates**
+  Files under `wiswa/tool/`, `tests/`, or version changes in `pyproject.toml` are **candidates**
   for the changelog agent only when they **change what users see or
   how the software behaves**. Editing those paths is not sufficient on its own.
 
@@ -65,7 +65,7 @@ file in a commit:
 - `CHANGELOG.md`
 - `.vscode/dictionary.txt`
 
-For example, if a commit contains `wiswa/commands/main.py`,
+For example, if a commit contains `wiswa/tool/commands/main.py`,
 `tests/test_main_command.py`, and `CHANGELOG.md`, the component is determined by
 the source files only. `CHANGELOG.md` is simply staged alongside them.
 
@@ -125,11 +125,11 @@ Closes: #123
 
 ### Component prefix rules
 
-For Python files, strip the `wiswa/` prefix and replace `/` with `.` (like module imports).
+For Python files, strip the `wiswa/tool/` prefix and replace `/` with `.` (like module imports).
 
-- Python file `wiswa/media.py` → `media:`.
-- Multiple files under `wiswa/commands/` → `commands:`.
-- Single command file `wiswa/commands/admin.py` → `commands.admin:`.
+- Python file `wiswa/tool/media.py` → `media:`.
+- Multiple files under `wiswa/tool/commands/` → `commands:`.
+- Single command file `wiswa/tool/commands/admin.py` → `commands.admin:`.
 - Workflow file `.github/workflows/qa.yml` → `workflows/qa:`.
 - Multiple workflows → `workflows/*:`.
 - Agent files `.claude/agents/*.md` → `.claude:` or specific agent name.

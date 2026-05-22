@@ -39,7 +39,7 @@ name: 'Snap'
     branches:
       - 'master'
     paths:
-      - 'wiswa/**'
+      - 'wiswa/tool/**'
       - '.github/workflows/snap.yml'
       - 'pyproject.toml'
       - 'snapcraft.yaml'

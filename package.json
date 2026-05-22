@@ -1,8 +1,8 @@
 {
   "_wiswa": {
     "commandLine": "wiswa",
-    "lastRun": "2026-05-06T21:46:42Z",
-    "version": "7cfbfdb-dirty"
+    "lastRun": "2026-05-22T05:36:25Z",
+    "version": "a9367a5-dirty"
   },
   "contributors": ["Andrew Udvare <audvare@gmail.com>"],
   "cspell": {
@@ -76,7 +76,7 @@
     "showFound": true
   },
   "name": "wiswa",
-  "packageManager": "yarn@4.14.1",
+  "packageManager": "yarn@4.15.0",
   "prettier": {
     "endOfLine": "lf",
     "iniSpaceAroundEquals": true,
@@ -101,7 +101,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:Tatsh/wiswa.git"
+    "url": "git+https://github.com/Tatsh/wiswa.git"
   },
   "scripts": {
     "check-formatting": "prettier --check . && uv run yapf --diff --parallel --recursive . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 && jsonnetfmt --string-style s --no-pad-arrays --test -- .wiswa.jsonnet wiswa/jsonnet/**/*.*sonnet",

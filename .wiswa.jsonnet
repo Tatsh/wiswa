@@ -3,6 +3,7 @@ local utils = import 'utils.libsonnet';
 {
   local top = self,
   uses_user_defaults: true,
+  primary_module_qualified: 'wiswa.tool',
   want_djlint: true,
   want_main: true,
   want_flatpak: true,

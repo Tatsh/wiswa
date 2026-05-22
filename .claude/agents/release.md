@@ -87,9 +87,9 @@ with the changelog.
    the embedded `.TH` line shows version `NEW` and today's date; if not, stop and report.
 
 1. **Commit the version bump outside the sandbox.** Stage all changed files and commit with
-   `git commit -S -s -m 'bump: vOLD → vNEW'` (replace OLD/NEW with actual versions). Run
-   outside the sandbox because the pre-commit hooks invoked by the commit need to write across
-   the worktree.
+   `git commit -S -s -m 'bump: vOLD → vNEW'` (replace
+   OLD/NEW with actual versions). Run outside the sandbox because the pre-commit hooks invoked
+   by the commit need to write across the worktree.
 
 1. **Create a signed tag.** Run
    `git tag -s vNEW -m 'vNEW'` (replace NEW with the
@@ -163,7 +163,7 @@ with the changelog.
 - `cz bump --files-only` is plain string substitution, not pattern-aware. Always pre-scan
   every `version_files` entry for OLD substrings before bumping, and revert non-canonical
   matches afterwards so unrelated literals like `10.0.0` are not corrupted into `10.0.1`.
-- (GitHub) A release is not complete until every post-push CI run reaches a terminal status
-  and the GitHub Release is un-drafted. If recovery requires deleting a release that was
-  already un-drafted, bump one more patch level instead of reusing the failed tag - a
-  published release is part of the public history and must not be silently replaced.
+- A release is not complete until every post-push CI run reaches a terminal status and the
+  GitHub Release is un-drafted. If recovery requires deleting a release that was already
+  un-drafted, bump one more patch level instead of reusing the failed tag - a published
+  release is part of the public history and must not be silently replaced.

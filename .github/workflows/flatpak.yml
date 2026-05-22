@@ -48,7 +48,7 @@ name: 'Flatpak'
     branches:
       - 'master'
     paths:
-      - 'wiswa/**'
+      - 'wiswa/tool/**'
       - '.github/workflows/flatpak.yml'
       - 'sh.tat.wiswa.yml'
       - 'pyproject.toml'
