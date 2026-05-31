@@ -24,6 +24,7 @@
 /.bash_profile
 /.bashrc
 /.claude/commands
+/.claude/hooks
 /.gitconfig
 /.gitmodules
 /.idea
