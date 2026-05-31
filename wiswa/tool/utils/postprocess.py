@@ -39,11 +39,12 @@ _README_GENERATED_START = '<!-- WISWA-GENERATED-README:START -->'
 _README_GENERATED_STOP = '<!-- WISWA-GENERATED-README:STOP -->'
 
 _FORMAT_DEFAULT_FILENAMES = {'cyclonedx1.5': 'cyclonedx.json', 'pylock.toml': 'pylock.toml'}
-_LEGACY_WISWA_AI_PATHS = ('.claude/settings.local.json.dist', '.cursor/permissions.json.dist',
-                          '.cursor/rules/general.mdc', '.cursor/rules/json-yaml.mdc',
-                          '.cursor/rules/markdown.mdc', '.cursor/rules/toml-ini.mdc',
-                          '.cursor/rules/cpp.mdc', '.cursor/rules/python.mdc',
-                          '.cursor/rules/python-tests.mdc', '.github/copilot-instructions.md',
+_LEGACY_WISWA_AI_PATHS = ('.claude/agents/release.md', '.claude/settings.local.json.dist',
+                          '.cursor/permissions.json.dist', '.cursor/rules/general.mdc',
+                          '.cursor/rules/json-yaml.mdc', '.cursor/rules/markdown.mdc',
+                          '.cursor/rules/toml-ini.mdc', '.cursor/rules/cpp.mdc',
+                          '.cursor/rules/python.mdc', '.cursor/rules/python-tests.mdc',
+                          '.github/copilot-instructions.md',
                           '.github/instructions/general.instructions.md',
                           '.github/instructions/json-yaml.instructions.md',
                           '.github/instructions/markdown.instructions.md',
@@ -158,7 +159,7 @@ async def _refresh_changelog_reference_urls(session: AsyncSession | None) -> Non
 
 
 async def _remove_legacy_wiswa_ai_files() -> None:
-    """Delete Cursor/Copilot instruction files emitted by older Wiswa releases."""
+    """Delete Claude, Cursor, and Copilot AI files emitted by older Wiswa releases."""
     for relative in _LEGACY_WISWA_AI_PATHS:
         path = anyio.Path(relative)
         if await path.is_file():

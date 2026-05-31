@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Replaced the generated `release` agent (`.claude/agents/release.md`) with a `make-release` skill
+  (`.claude/skills/make-release/SKILL.md`), so the release workflow is now invoked as
+  `/make-release`. Projects that already have the old agent shed it on the next regen.
+
 ## [0.4.0] - 2026-05-22
 
 ### Added
