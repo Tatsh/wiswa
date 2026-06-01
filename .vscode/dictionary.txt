@@ -189,7 +189,6 @@ nullptr
 numpy
 numpydoc
 objc
-oidc
 olivierlacan
 onefile
 oneline

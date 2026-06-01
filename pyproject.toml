@@ -57,7 +57,7 @@ dependencies = [
   "rich>=15.0.0",
   "tomlkit>=0.15.0",
   "typing-extensions>=4.15.0",
-  "wiswa-typing>=0.0.1",
+  "wiswa-typing>=0.1.0",
   "wiswa-vcs>=0.1.0",
 ]
 description = "A highly opinionated way to generate and maintain projects with Jsonnet."
