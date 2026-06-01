@@ -10,12 +10,12 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-05-24T20:30:53.543922251Z"
+exclude-newer = "2026-05-25T12:07:40.314175542Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
-wiswa-vcs = "2026-05-24T04:00:00Z"
-wiswa-typing = "2026-05-19T04:00:00Z"
+wiswa-vcs = "2026-06-03T04:00:00Z"
+wiswa-typing = "2026-05-24T04:00:00Z"
 
 [[package]]
 name = "aiosqlite"
@@ -2906,7 +2906,7 @@ requires-dist = [
     { name = "tomlkit", specifier = ">=0.15.0" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
     { name = "wiswa-typing", specifier = ">=0.0.1" },
-    { name = "wiswa-vcs", specifier = ">=0.0.1" },
+    { name = "wiswa-vcs", specifier = ">=0.1.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -2941,19 +2941,19 @@ tests = [
 
 [[package]]
 name = "wiswa-typing"
-version = "0.0.1"
+version = "0.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d8/a2/e1f1e487f43b73d3c0eee6f06367c5b8b263060153bab2fd3d8d15098bad/wiswa_typing-0.0.1.tar.gz", hash = "sha256:c7f3eb576cc2e20ce18b0caef25375c9012aac371601bbd258479ac0a3d13c91", size = 12936, upload-time = "2026-05-17T04:52:33.109Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/22/d4/3d6903d4a0a0c9c23909459007bb4b62474b9a4ce4d75062231aef6d7456/wiswa_typing-0.1.0.tar.gz", hash = "sha256:2af2ec4d566dc5e5e41fd96ed83a037ffe78c5a071446acfb00a0d88370651ab", size = 5255, upload-time = "2026-05-22T00:42:32.212Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/3a/9499e8c15e0aef3de619fded36cdac55813baecc1f703dea2670e377e7c0/wiswa_typing-0.0.1-py3-none-any.whl", hash = "sha256:dbd0cffefc5740f4aed7da8e87b7bc88403543beac5a3e77cbb65da0b1a743ab", size = 13370, upload-time = "2026-05-17T04:52:31.431Z" },
+    { url = "https://files.pythonhosted.org/packages/44/f1/7272498a674a05abc518a2873c61df99d46c4d108e6e0b4aeecdc6135f65/wiswa_typing-0.1.0-py3-none-any.whl", hash = "sha256:f69fffdb42e1255c1c66c6a515606774e19b4a8bafe10672b71c34b549968a69", size = 4353, upload-time = "2026-05-22T00:42:30.18Z" },
 ]
 
 [[package]]
 name = "wiswa-vcs"
-version = "0.0.1"
+version = "0.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -2968,9 +2968,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "wiswa-typing" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/11/03/4884771cf16402d461a77f6ba73b8b1be0cfe9e0127c58a901a1136fb7b2/wiswa_vcs-0.0.1.tar.gz", hash = "sha256:af02f83e70a6e4fbef01d5e81d93389c520ac943a100f3aebbc836185ff7fdc6", size = 43111, upload-time = "2026-05-22T00:07:44.355Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1e/01/5fdb58dcda969a6bb8b4e3ab9de1ca3d993b17f7dd9ada10da745ba2e999/wiswa_vcs-0.1.0.tar.gz", hash = "sha256:b601751e66e1fcc608828327c51acfcc74ecbcea1a14a8ef35b2b91ddfca8554", size = 44484, upload-time = "2026-06-01T12:06:42.451Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/aa/e7417360c86cb29b7c232133a38f86ed5608765ac53ffa4ac32d583d312a/wiswa_vcs-0.0.1-py3-none-any.whl", hash = "sha256:ca862490d9f0336435475f8b1995e4d666018a97e13af05d52e2c935c34927b0", size = 33731, upload-time = "2026-05-22T00:07:43.186Z" },
+    { url = "https://files.pythonhosted.org/packages/e1/26/9099f27bef1228c67a30f2b5f01c0385e79156a486904c2a79c41d056fc4/wiswa_vcs-0.1.0-py3-none-any.whl", hash = "sha256:f94df2b689bac82bc0c0ade650c662322c5eaccd47f6194cfcd89b9de161c054", size = 34281, upload-time = "2026-06-01T12:06:41.295Z" },
 ]
 
 [[package]]

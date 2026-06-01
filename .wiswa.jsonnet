@@ -144,8 +144,8 @@ local utils = import 'utils.libsonnet';
       },
       uv+: {
         'exclude-newer-package'+: {
-          'wiswa-typing': '2026-05-18',
-          'wiswa-vcs': '2026-05-23',
+          'wiswa-typing': '2026-05-23',
+          'wiswa-vcs': '2026-06-02',
         },
       },
     },
