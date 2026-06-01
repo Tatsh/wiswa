@@ -13,18 +13,26 @@ import os
 import re
 import sys
 
+from wiswa.vcs.git import changed_files, diff, restore_from_head
 import anyio
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-__all__ = ('get_wiswa_version_or_sha', 'write_wiswa_run_metadata')
+__all__ = ('get_wiswa_version_or_sha', 'maybe_revert_package_json_if_only_wiswa_metadata_changed',
+           'package_json_diff_changes_only_wiswa_metadata', 'write_wiswa_run_metadata')
 
 log = logging.getLogger(__name__)
 
 _WISWA_PACKAGE_NAME = 'wiswa'
 _WISWA_SHORT_SHA_LENGTH = 7
 _WISWA_PYPROJECT_NAME_RE = re.compile(r'(?m)^name\s*=\s*[\'"]wiswa[\'"]\s*$')
+_WISWA_METADATA_KEY = '_wiswa'
+_RE_PACKAGE_JSON_TOP_LEVEL_KEY = re.compile(r'^  "([^"]+)"\s*:')
+"""Match a top-level key line in the 2-space-indented, sorted ``package.json``.
+
+:meta hide-value:
+"""
 
 
 def _resolve_git_dir(candidate: Path) -> Path | None:
@@ -193,6 +201,74 @@ async def _run_prettier_on_package_json(on_command: Callable[[str], None] | None
         log.debug('Prettier on `package.json` exited with status %d.', proc.returncode)
 
 
+def package_json_diff_changes_only_wiswa_metadata(diff_text: str) -> bool:
+    """
+    Return whether a ``package.json`` unified diff touches only the ``_wiswa`` block.
+
+    The ``_wiswa`` object holds Wiswa run metadata (``commandLine``, ``lastRun``, and
+    ``version``) that :py:func:`write_wiswa_run_metadata` rewrites on every run, so a diff
+    confined to it is incidental churn. Nesting is tracked by watching lines indented exactly
+    two spaces (the top-level keys of the sorted, 2-space-indented file): an added or removed
+    line counts only while the enclosing top-level key is ``_wiswa``. A top-level key that is
+    itself added or removed, or any change under a different key (including the top-level
+    ``version``, which shares a name with ``_wiswa.version``), fails the check.
+
+    Parameters
+    ----------
+    diff_text : str
+        Unified diff text from comparing ``package.json`` revisions.
+
+    Returns
+    -------
+    bool
+        ``True`` when every ``+``/``-`` line lies within the ``_wiswa`` object.
+    """
+    if not diff_text.strip():
+        return False
+    top_level_key: str | None = None
+    saw_wiswa_change = False
+    for line in diff_text.splitlines():
+        if line.startswith('@@'):
+            top_level_key = None
+            continue
+        if not line or line.startswith(('diff --git ', 'index ', '--- ', '+++ ', '\\')):
+            continue
+        marker, content = line[0], line[1:]
+        if (match := _RE_PACKAGE_JSON_TOP_LEVEL_KEY.match(content)) is not None:
+            if marker in '+-':
+                return False
+            top_level_key = match.group(1)
+            continue
+        if marker == ' ':
+            continue
+        if marker in '+-':
+            if top_level_key != _WISWA_METADATA_KEY:
+                return False
+            saw_wiswa_change = True
+            continue
+        return False
+    return saw_wiswa_change
+
+
+async def maybe_revert_package_json_if_only_wiswa_metadata_changed() -> None:
+    """
+    Restore ``package.json`` from ``HEAD`` when only its ``_wiswa`` block drifted.
+
+    Mirrors :py:func:`wiswa.tool.utils.postprocess.maybe_revert_uv_lock_if_only_lockfile_changed`
+    in intent, but applies the predicate even when ``package.json`` is the only changed file:
+    ``package.json`` carries real project configuration that a regen may legitimately update,
+    so it is restored only when :py:func:`package_json_diff_changes_only_wiswa_metadata`
+    accepts the diff. A run that genuinely changes scripts, dependencies, or any other key is
+    left untouched.
+    """
+    if 'package.json' not in await changed_files():
+        return
+    if not package_json_diff_changes_only_wiswa_metadata(await diff('package.json')):
+        return
+    if await restore_from_head('package.json'):
+        log.debug('Restored package.json from HEAD.')
+
+
 async def write_wiswa_run_metadata(*,
                                    enabled: bool = True,
                                    on_command: Callable[[str], None] | None = None) -> None:
@@ -205,7 +281,10 @@ async def write_wiswa_run_metadata(*,
     ``_wiswa.version`` (the wiswa version or short SHA from
     :py:func:`get_wiswa_version_or_sha`). Re-emits ``package.json`` without sorting keys so
     the ``_wiswa`` block remains the last property, then runs
-    ``yarn prettier --write package.json`` to produce a canonical file.
+    ``yarn prettier --write package.json`` to produce a canonical file. Finally,
+    :py:func:`maybe_revert_package_json_if_only_wiswa_metadata_changed` restores the file from
+    ``HEAD`` when the metadata refresh is the only drift, so incidental ``_wiswa`` churn does
+    not show up as a change.
 
     When *enabled* is :py:data:`False`, removes any existing ``_wiswa`` block, rewriting and
     reformatting only when the file actually changes. Skips silently when ``package.json``
@@ -243,3 +322,4 @@ async def write_wiswa_run_metadata(*,
     }
     await package_json.write_text(f'{json.dumps(data, indent=2)}\n', encoding='utf-8')
     await _run_prettier_on_package_json(on_command)
+    await maybe_revert_package_json_if_only_wiswa_metadata_changed()

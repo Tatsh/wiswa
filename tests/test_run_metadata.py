@@ -2,20 +2,27 @@
 
 from __future__ import annotations
 
+from shutil import which
 from typing import TYPE_CHECKING, cast
 from unittest.mock import AsyncMock
 import importlib.metadata
 import json
 import re
+import subprocess
 
-from wiswa.tool.utils.run_metadata import get_wiswa_version_or_sha, write_wiswa_run_metadata
+from wiswa.tool.utils.run_metadata import (
+    get_wiswa_version_or_sha,
+    maybe_revert_package_json_if_only_wiswa_metadata_changed,
+    package_json_diff_changes_only_wiswa_metadata,
+    write_wiswa_run_metadata,
+)
+import pytest
 import wiswa.tool
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from pytest_mock import MockerFixture
-    import pytest
 
 
 def _make_async_proc(*, returncode: int = 0, stdout: bytes = b'') -> AsyncMock:
@@ -425,3 +432,236 @@ async def test_write_wiswa_run_metadata_records_short_sha(tmp_path: Path,
     data = json.loads((tmp_path / 'package.json').read_text(encoding='utf-8'))
     assert data['_wiswa']['version'] == '0badbee'
     assert len(data['_wiswa']['version']) == 7
+
+
+_PACKAGE_JSON_DIFF_OK = ('diff --git a/package.json b/package.json\n'
+                         '--- a/package.json\n'
+                         '+++ b/package.json\n'
+                         '@@ -1,7 +1,7 @@\n'
+                         ' {\n'
+                         '   "_wiswa": {\n'
+                         '     "commandLine": "wiswa",\n'
+                         '-    "lastRun": "2026-06-01T12:22:23Z",\n'
+                         '+    "lastRun": "2026-06-02T08:00:00Z",\n'
+                         '-    "version": "aaaaaaa-dirty"\n'
+                         '+    "version": "bbbbbbb-dirty"\n'
+                         '   },\n'
+                         '   "name": "demo"\n')
+
+_PACKAGE_JSON_DIFF_TOP_LEVEL_VERSION = ('--- a/package.json\n'
+                                        '+++ b/package.json\n'
+                                        '@@ -120,3 +120,3 @@\n'
+                                        '   "scripts": {},\n'
+                                        '-  "version": "0.4.0"\n'
+                                        '+  "version": "0.5.0"\n'
+                                        ' }\n')
+
+_PACKAGE_JSON_DIFF_OTHER_KEY = ('--- a/package.json\n'
+                                '+++ b/package.json\n'
+                                '@@ -10,4 +10,4 @@\n'
+                                '   "scripts": {\n'
+                                '-    "build": "old",\n'
+                                '+    "build": "new",\n'
+                                '   },\n')
+
+_PACKAGE_JSON_DIFF_BOGUS = ('--- a/package.json\n'
+                            '+++ b/package.json\n'
+                            '@@ -1,1 +1,1 @@\n'
+                            'bogus\n')
+
+_PACKAGE_JSON_DIFF_ADD_WISWA_BLOCK = ('--- a/package.json\n'
+                                      '+++ b/package.json\n'
+                                      '@@ -1,2 +1,6 @@\n'
+                                      ' {\n'
+                                      '+  "_wiswa": {\n'
+                                      '+    "commandLine": "wiswa",\n'
+                                      '+    "lastRun": "2026-06-01T12:22:23Z",\n'
+                                      '+    "version": "aaaaaaa"\n'
+                                      '+  },\n'
+                                      '   "name": "demo"\n')
+
+
+def test_package_json_diff_changes_only_wiswa_metadata_empty() -> None:
+    assert package_json_diff_changes_only_wiswa_metadata('') is False
+
+
+def test_package_json_diff_changes_only_wiswa_metadata_whitespace_only() -> None:
+    assert package_json_diff_changes_only_wiswa_metadata('   \n  ') is False
+
+
+def test_package_json_diff_changes_only_wiswa_metadata_valid() -> None:
+    assert package_json_diff_changes_only_wiswa_metadata(_PACKAGE_JSON_DIFF_OK) is True
+
+
+def test_package_json_diff_changes_only_wiswa_metadata_top_level_version() -> None:
+    assert package_json_diff_changes_only_wiswa_metadata(
+        _PACKAGE_JSON_DIFF_TOP_LEVEL_VERSION) is False
+
+
+def test_package_json_diff_changes_only_wiswa_metadata_other_key() -> None:
+    assert package_json_diff_changes_only_wiswa_metadata(_PACKAGE_JSON_DIFF_OTHER_KEY) is False
+
+
+def test_package_json_diff_changes_only_wiswa_metadata_bogus_hunk_line() -> None:
+    assert package_json_diff_changes_only_wiswa_metadata(_PACKAGE_JSON_DIFF_BOGUS) is False
+
+
+def test_package_json_diff_changes_only_wiswa_metadata_added_block() -> None:
+    assert package_json_diff_changes_only_wiswa_metadata(
+        _PACKAGE_JSON_DIFF_ADD_WISWA_BLOCK) is False
+
+
+def test_package_json_diff_changes_only_wiswa_metadata_headers_only() -> None:
+    assert package_json_diff_changes_only_wiswa_metadata(
+        'diff --git a/package.json b/package.json\n'
+        'index 111..222 100644\n'
+        '--- a/package.json\n'
+        '+++ b/package.json\n') is False
+
+
+def _git_init_commit_package_json(tmp_path: Path, *, text: str) -> None:
+    git = which('git')
+    assert git is not None
+    subprocess.run([git, 'init'], check=True, cwd=tmp_path, capture_output=True)
+    subprocess.run([git, 'config', 'user.email', 't@e.st'], check=True, cwd=tmp_path)
+    subprocess.run([git, 'config', 'user.name', 't'], check=True, cwd=tmp_path)
+    subprocess.run([git, 'config', 'commit.gpgsign', 'false'], check=True, cwd=tmp_path)
+    (tmp_path / 'package.json').write_text(text, encoding='utf-8')
+    subprocess.run([git, 'add', 'package.json'], check=True, cwd=tmp_path)
+    subprocess.run([git, 'commit', '-m', 'init'], check=True, cwd=tmp_path, capture_output=True)
+
+
+@pytest.mark.skipif(which('git') is None, reason='git not installed')
+def test_package_json_diff_changes_only_wiswa_metadata_real_git_diff(tmp_path: Path) -> None:
+    committed = ('{\n'
+                 '  "_wiswa": {\n'
+                 '    "commandLine": "wiswa",\n'
+                 '    "lastRun": "2026-06-01T12:22:23Z",\n'
+                 '    "version": "aaaaaaa-dirty"\n'
+                 '  },\n'
+                 '  "name": "demo"\n'
+                 '}\n')
+    _git_init_commit_package_json(tmp_path, text=committed)
+    drifted = committed.replace('2026-06-01T12:22:23Z', '2026-06-02T08:00:00Z').replace(
+        'aaaaaaa-dirty', 'bbbbbbb-dirty')
+    (tmp_path / 'package.json').write_text(drifted, encoding='utf-8')
+    git = which('git')
+    assert git is not None
+    diff = subprocess.run([git, 'diff', '--no-color', '-a', 'HEAD', '--', 'package.json'],
+                          cwd=tmp_path,
+                          check=False,
+                          capture_output=True,
+                          text=True)
+    assert diff.returncode == 0
+    assert package_json_diff_changes_only_wiswa_metadata(diff.stdout) is True
+
+
+@pytest.mark.skipif(which('git') is None, reason='git not installed')
+def test_package_json_diff_changes_only_wiswa_metadata_real_git_diff_other_change(
+        tmp_path: Path) -> None:
+    committed = ('{\n'
+                 '  "_wiswa": {\n'
+                 '    "lastRun": "2026-06-01T12:22:23Z"\n'
+                 '  },\n'
+                 '  "version": "0.4.0"\n'
+                 '}\n')
+    _git_init_commit_package_json(tmp_path, text=committed)
+    (tmp_path / 'package.json').write_text(committed.replace('"0.4.0"', '"0.5.0"'),
+                                           encoding='utf-8')
+    git = which('git')
+    assert git is not None
+    diff = subprocess.run([git, 'diff', '--no-color', '-a', 'HEAD', '--', 'package.json'],
+                          cwd=tmp_path,
+                          check=False,
+                          capture_output=True,
+                          text=True)
+    assert diff.returncode == 0
+    assert package_json_diff_changes_only_wiswa_metadata(diff.stdout) is False
+
+
+async def test_maybe_revert_package_json_skips_when_unchanged(mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.tool.utils.run_metadata.changed_files',
+                 new_callable=AsyncMock,
+                 return_value=set())
+    restore = mocker.patch('wiswa.tool.utils.run_metadata.restore_from_head',
+                           new_callable=AsyncMock)
+    await maybe_revert_package_json_if_only_wiswa_metadata_changed()
+    restore.assert_not_called()
+
+
+async def test_maybe_revert_package_json_skips_when_predicate_rejects(
+        mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.tool.utils.run_metadata.changed_files',
+                 new_callable=AsyncMock,
+                 return_value={'package.json', 'README.md'})
+    mocker.patch('wiswa.tool.utils.run_metadata.diff',
+                 new_callable=AsyncMock,
+                 return_value=_PACKAGE_JSON_DIFF_OTHER_KEY)
+    restore = mocker.patch('wiswa.tool.utils.run_metadata.restore_from_head',
+                           new_callable=AsyncMock)
+    await maybe_revert_package_json_if_only_wiswa_metadata_changed()
+    restore.assert_not_called()
+
+
+async def test_maybe_revert_package_json_restores_when_only_wiswa(mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.tool.utils.run_metadata.changed_files',
+                 new_callable=AsyncMock,
+                 return_value={'package.json'})
+    mocker.patch('wiswa.tool.utils.run_metadata.diff',
+                 new_callable=AsyncMock,
+                 return_value=_PACKAGE_JSON_DIFF_OK)
+    restore = mocker.patch('wiswa.tool.utils.run_metadata.restore_from_head',
+                           new_callable=AsyncMock,
+                           return_value=True)
+    await maybe_revert_package_json_if_only_wiswa_metadata_changed()
+    restore.assert_awaited_once_with('package.json')
+
+
+async def test_maybe_revert_package_json_no_log_when_restore_fails(mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.tool.utils.run_metadata.changed_files',
+                 new_callable=AsyncMock,
+                 return_value={'package.json'})
+    mocker.patch('wiswa.tool.utils.run_metadata.diff',
+                 new_callable=AsyncMock,
+                 return_value=_PACKAGE_JSON_DIFF_OK)
+    restore = mocker.patch('wiswa.tool.utils.run_metadata.restore_from_head',
+                           new_callable=AsyncMock,
+                           return_value=False)
+    await maybe_revert_package_json_if_only_wiswa_metadata_changed()
+    restore.assert_awaited_once_with('package.json')
+
+
+async def test_write_wiswa_run_metadata_invokes_revert(tmp_path: Path,
+                                                       monkeypatch: pytest.MonkeyPatch,
+                                                       mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'package.json').write_text('{"name": "demo"}', encoding='utf-8')
+    _setup_fake_wiswa_checkout(tmp_path / 'src',
+                               monkeypatch,
+                               mocker,
+                               head='1234567abcdef1234567abcdef1234567abcdef1')
+    monkeypatch.setattr('sys.argv', ['wiswa'])
+    revert = mocker.patch(
+        'wiswa.tool.utils.run_metadata.maybe_revert_package_json_if_only_wiswa_metadata_changed',
+        new_callable=AsyncMock)
+    await write_wiswa_run_metadata()
+    revert.assert_awaited_once_with()
+
+
+async def test_write_wiswa_run_metadata_disabled_skips_revert(tmp_path: Path,
+                                                              monkeypatch: pytest.MonkeyPatch,
+                                                              mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'package.json').write_text(json.dumps({
+        '_wiswa': {
+            'lastRun': '2026-04-27T08:27:53Z'
+        },
+        'name': 'demo',
+    }),
+                                           encoding='utf-8')
+    _mock_async_subprocess(mocker)
+    revert = mocker.patch(
+        'wiswa.tool.utils.run_metadata.maybe_revert_package_json_if_only_wiswa_metadata_changed',
+        new_callable=AsyncMock)
+    await write_wiswa_run_metadata(enabled=False)
+    revert.assert_not_called()

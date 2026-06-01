@@ -25,6 +25,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - New `github.sha_pinning_required` and `github.immutable_oidc_subject` settings (default on) make
   Wiswa configure the GitHub repository, through the API, to require SHA-pinned actions and to use
   the immutable OIDC subject claim.
+- After writing the `_wiswa` run-metadata block, Wiswa restores `package.json` from `HEAD` when that
+  block is the only drift, so the incidental `lastRun` and `version` churn no longer shows up as a
+  change. Mirrors the existing `uv.lock` revert, but always gates on the diff (a regen that
+  genuinely changes scripts, dependencies, or any other key is left untouched even when
+  `package.json` is the only changed file).
 
 ### Changed
 
