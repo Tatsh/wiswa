@@ -10,9 +10,7 @@ function(settings)
         },
         'runs-on': '${{ matrix.system.image }}',
         steps: [
-          {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
+          utils.checkout(),
           {
             name: 'Set Flatpak bundle filename',
             id: 'flatpak_bundle',
@@ -26,7 +24,7 @@ function(settings)
           {
             name: 'Build Flatpak',
             uses: 'flatpak/flatpak-github-actions/flatpak-builder@' +
-                  utils.githubLatestActionTag('flatpak', 'flatpak-github-actions'),
+                  utils.githubLatestActionSha('flatpak', 'flatpak-github-actions'),
             with: {
               arch: '${{ matrix.system.arch }}',
               bundle: '${{ steps.flatpak_bundle.outputs.filename }}',
@@ -35,7 +33,7 @@ function(settings)
           },
           {
             name: 'Upload Artifacts',
-            uses: 'actions/upload-artifact@' + utils.githubLatestActionTag('actions', 'upload-artifact'),
+            uses: 'actions/upload-artifact@' + utils.githubLatestActionSha('actions', 'upload-artifact'),
             with: {
               'if-no-files-found': 'error',
               name: '%s-${{ steps.flatpak_bundle.outputs.version }}-${{ matrix.system.arch }}' % settings.publishing.flathub,
@@ -44,19 +42,15 @@ function(settings)
           },
           {
             name: 'Attest',
-            uses: 'actions/attest@' + utils.githubLatestActionTag('actions', 'attest'),
+            uses: 'actions/attest@' + utils.githubLatestActionSha('actions', 'attest'),
             with: {
               'subject-path': '${{ steps.flatpak_bundle.outputs.filename }}',
             },
           },
-          {
+          utils.ghDraftReleaseStep(['"$FILE"']) + {
             'if': "github.ref_type == 'tag'",
-            name: 'Upload package',
-            uses: 'softprops/action-gh-release@' + utils.githubLatestActionTag('softprops', 'action-gh-release'),
-            with: {
-              draft: true,
-              fail_on_unmatched_files: true,
-              files: '${{ steps.flatpak_bundle.outputs.filename }}',
+            env+: {
+              FILE: '${{ steps.flatpak_bundle.outputs.filename }}',
             },
           },
         ],

@@ -306,7 +306,10 @@ def _stub_github_api_session() -> MagicMock:
         response = MagicMock()
         response.ok = True
         response.status_code = 200
-        if '/releases/latest' in url:
+        if '/commits/' in url:
+            response.text = 'a' * 40
+            response.json = MagicMock(return_value={})
+        elif '/releases/latest' in url:
             response.json = MagicMock(return_value={'tag_name': 'v4.1.2'})
         elif '/tags' in url:
             response.json = MagicMock(return_value=[{'name': 'v4.1.2'}])

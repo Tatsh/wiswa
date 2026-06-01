@@ -11,11 +11,13 @@ local utils = import 'utils.libsonnet';
    * @returns A job object suitable for inclusion in a workflow's `jobs` field.
    */
   job(required_workflows, optional_workflows): {
+    permissions: {
+      actions: 'read',
+      contents: 'read',
+    },
     'runs-on': 'ubuntu-latest',
     steps: [
-      {
-        uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-      },
+      utils.checkout(),
       {
         id: 'check',
         name: 'Wait for workflows',

@@ -15,6 +15,17 @@ function(settings)
                                                      } + (
                                                        if settings.github.pages_using_jekyll then
                                                          { '_config.yml': utils.manifestYaml(settings.github.pages_config) } else {}
+                                                     ) + (
+                                                       if settings.want_zizmor then {
+                                                         '.github/zizmor.yml': utils.manifestYaml({
+                                                           rules: {
+                                                             // workflow_run is required to gate the draft release on upstream workflows.
+                                                             'dangerous-triggers': {
+                                                               ignore: ['publish-winget.yml', 'release.yml'],
+                                                             },
+                                                           },
+                                                         }),
+                                                       } else {}
                                                      ) +
                                                      github.workflows(settings) else {};
   local gitlab_items = if settings.using_gitlab && std.length(std.objectFields(settings.gitlab_ci)) > 0 then {

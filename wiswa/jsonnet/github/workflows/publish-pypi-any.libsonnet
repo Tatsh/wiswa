@@ -18,21 +18,28 @@ function(settings)
     jobs: {
       check: check_workflows.job(required_workflows, optional_workflows),
       publish: {
+        [if settings.github.workflows.release_environment != '' then 'environment']:
+          settings.github.workflows.release_environment,
         needs: ['check'],
+        permissions: {
+          contents: 'write',
+          'id-token': 'write',
+        },
         'runs-on': settings.github.workflows.publish_pypi_any.runs_on,
         steps: [
+          utils.checkout(),
           {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
-          {
-            uses: 'actions/setup-python@' + utils.githubLatestActionTag('actions', 'setup-python'),
+            uses: 'actions/setup-python@' + utils.githubLatestActionSha('actions', 'setup-python'),
             with: {
               'python-version': settings.github.workflows.publish_pypi_any.python_version,
             },
           },
         ] + (if is_uv then [{
                name: 'Install uv',
-               uses: 'astral-sh/setup-uv@' + utils.githubLatestActionTag('astral-sh', 'setup-uv'),
+               uses: 'astral-sh/setup-uv@' + utils.githubLatestActionSha('astral-sh', 'setup-uv'),
+               with: {
+                 'enable-cache': false,
+               },
              }] else [{
                name: 'Install Poetry',
                run: 'pipx install poetry',
@@ -41,18 +48,9 @@ function(settings)
             run: if is_uv then 'uv build' else 'poetry build',
           },
           {
-            uses: 'pypa/gh-action-pypi-publish@release/v1',
+            uses: 'pypa/gh-action-pypi-publish@' + utils.githubLatestActionSha('pypa', 'gh-action-pypi-publish'),
           },
-          {
-            uses: 'softprops/action-gh-release@' + utils.githubLatestActionTag('softprops', 'action-gh-release'),
-            with: {
-              draft: true,
-              files: |||
-                dist/*.tar.gz
-                dist/*.whl
-              |||,
-            },
-          },
+          utils.ghDraftReleaseStep(['dist/*.tar.gz', 'dist/*.whl']),
         ],
       },
     },
@@ -64,8 +62,5 @@ function(settings)
         ],
       },
     },
-    permissions: {
-      contents: 'write',
-      'id-token': 'write',
-    },
+    permissions: {},
   }

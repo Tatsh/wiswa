@@ -18,9 +18,7 @@ function(settings)
       test: {
         'runs-on': settings.tests_run_on,
         steps: [
-          {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
+          utils.checkout(),
         ] + (if std.length(settings.github.workflows.tests.apt_packages) > 0 then [{
                name: 'Install dependencies',
                run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.tests.apt_packages),
@@ -37,7 +35,7 @@ function(settings)
         ] + (if settings.want_coveralls then [{
                name: 'Coveralls',
                'if': "github.event_name != 'pull_request'",
-               uses: 'coverallsapp/github-action@' + utils.githubLatestActionTag('coverallsapp', 'github-action'),
+               uses: 'coverallsapp/github-action@' + utils.githubLatestActionSha('coverallsapp', 'github-action'),
              }] else []),
       },
     },

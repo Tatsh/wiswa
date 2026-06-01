@@ -26,14 +26,13 @@ function(settings)
               echo "tag=$TAG" >> "$GITHUB_OUTPUT"
             |||,
           },
-          {
+          utils.checkout({
             name: 'Checkout MINGW-packages repository',
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
             with: {
               repository: 'msys2/MINGW-packages',
               token: '${{ secrets.MSYS2_TOKEN }}',
             },
-          },
+          }),
           {
             name: 'Configure git',
             run: |||
@@ -58,7 +57,7 @@ function(settings)
           },
           {
             name: 'Create Pull Request',
-            uses: 'peter-evans/create-pull-request@' + utils.githubLatestActionTag('peter-evans', 'create-pull-request'),
+            uses: 'peter-evans/create-pull-request@' + utils.githubLatestActionSha('peter-evans', 'create-pull-request'),
             with: {
               base: 'master',
               branch: '%s-${{ steps.version.outputs.version }}' % package_name,
@@ -79,5 +78,8 @@ function(settings)
       release: {
         types: ['published'],
       },
+    },
+    permissions: {
+      contents: 'read',
     },
   }

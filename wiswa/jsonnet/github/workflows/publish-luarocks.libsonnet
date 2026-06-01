@@ -11,20 +11,23 @@ function(settings)
     jobs: {
       check: check_workflows.job(required_workflows, optional_workflows),
       publish: {
+        [if settings.github.workflows.release_environment != '' then 'environment']:
+          settings.github.workflows.release_environment,
         needs: ['check'],
+        permissions: {
+          contents: 'write',
+        },
         'runs-on': 'ubuntu-latest',
         steps: [
+          utils.checkout(),
           {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
-          {
-            uses: 'leafo/gh-actions-lua@' + utils.githubLatestActionTag('leafo', 'gh-actions-lua'),
+            uses: 'leafo/gh-actions-lua@' + utils.githubLatestActionSha('leafo', 'gh-actions-lua'),
             with: {
               luaVersion: '5.1',
             },
           },
           {
-            uses: 'leafo/gh-actions-luarocks@' + utils.githubLatestActionTag('leafo', 'gh-actions-luarocks'),
+            uses: 'leafo/gh-actions-luarocks@' + utils.githubLatestActionSha('leafo', 'gh-actions-luarocks'),
           },
           {
             env: {
@@ -33,19 +36,12 @@ function(settings)
             name: 'Upload package',
             run: 'luarocks upload --api-key="$LUAROCKS_API_KEY" *.rockspec',
           },
-          {
-            uses: 'softprops/action-gh-release@' + utils.githubLatestActionTag('softprops', 'action-gh-release'),
-            with: {
-              draft: true,
-            },
-          },
+          utils.ghDraftReleaseStep(),
         ],
       },
     },
     name: 'Publish',
-    permissions: {
-      contents: 'write',
-    },
+    permissions: {},
     on: {
       push: {
         tags: [

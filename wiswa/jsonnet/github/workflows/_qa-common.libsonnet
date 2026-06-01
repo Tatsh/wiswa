@@ -2,9 +2,7 @@ local cache_yarn = import 'github/workflows/_cache-yarn.libsonnet';
 local utils = import 'utils.libsonnet';
 
 {
-  local checkout = {
-    uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-  },
+  local checkout = utils.checkout(),
   local yarn_steps = [
     cache_yarn,
     {
@@ -108,7 +106,7 @@ local utils = import 'utils.libsonnet';
         steps: [checkout] + [
           {
             name: 'Check spelling',
-            uses: 'streetsidesoftware/cspell-action@' + utils.githubLatestActionTag('streetsidesoftware', 'cspell-action'),
+            uses: 'streetsidesoftware/cspell-action@' + utils.githubLatestActionSha('streetsidesoftware', 'cspell-action'),
             with: {
               check_dot_files: true,
               suggestions: true,

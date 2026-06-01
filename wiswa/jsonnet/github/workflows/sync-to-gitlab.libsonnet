@@ -12,10 +12,7 @@ function(settings)
       'sync-to-gitlab': {
         'runs-on': 'ubuntu-latest',
         steps: [
-          {
-            name: 'Checkout repository',
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
+          utils.checkout({ name: 'Checkout repository' }),
           {
             env: {
               GITHUB_REPO_URI: 'https://github.com/${{ github.repository }}.git',

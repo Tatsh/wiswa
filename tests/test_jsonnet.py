@@ -293,6 +293,7 @@ async def test_evaluate_jsonnet_file_with_session(mocker: MockerFixture) -> None
     assert result == '{"key": "value"}'
     call_kwargs = mock_jsonnet.evaluate_file.call_args[1]
     native_callbacks = call_kwargs['native_callbacks']
+    assert 'githubLatestActionSha' in native_callbacks
     assert 'githubLatestActionTag' in native_callbacks
     assert 'githubLatestReleaseTag' in native_callbacks
     assert 'githubLatestTag' in native_callbacks
@@ -323,6 +324,7 @@ async def test_native_callback_params_use_short_names(mocker: MockerFixture) -> 
     mock_session = MagicMock()
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}', session=mock_session)
     native_callbacks = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']
+    assert native_callbacks['githubLatestActionSha'][0] == ('o', 'r')
     assert native_callbacks['githubLatestActionTag'][0] == ('o', 'r')
     assert native_callbacks['githubLatestReleaseTag'][0] == ('o', 'r', 'g')
     assert native_callbacks['githubLatestTag'][0] == ('o', 'r')

@@ -29,24 +29,21 @@ function(settings)
         },
         'runs-on': settings.github.codeql.runs_on,
         steps: [
-          {
-            name: 'Checkout repository',
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
+          utils.checkout({ name: 'Checkout repository' }),
         ] + (if std.length(settings.github.workflows.codeql.apt_packages) > 0 then [{
                name: 'Install dependencies',
                run: 'sudo apt-get update && sudo apt-get install -y ' + std.join(' ', settings.github.workflows.codeql.apt_packages),
              }] else []) + [
           {
             name: 'Initialize CodeQL',
-            uses: 'github/codeql-action/init@' + utils.githubLatestActionTag('github', 'codeql-action'),
+            uses: 'github/codeql-action/init@' + utils.githubLatestActionSha('github', 'codeql-action'),
             with: {
               languages: '${{ matrix.language }}',
             },
           },
           {
             name: 'Perform CodeQL Analysis',
-            uses: 'github/codeql-action/analyze@' + utils.githubLatestActionTag('github', 'codeql-action'),
+            uses: 'github/codeql-action/analyze@' + utils.githubLatestActionSha('github', 'codeql-action'),
             with: {
               category: '/language:${{matrix.language}}',
             },

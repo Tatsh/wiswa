@@ -2,6 +2,7 @@ local package = import 'defaults/package.libsonnet';
 local pre_commit_configs = {
   cff: [import 'defaults/pre-commit-config/cff.libsonnet'],
   github: [import 'defaults/pre-commit-config/github.libsonnet'],
+  zizmor: [import 'defaults/pre-commit-config/zizmor.libsonnet'],
 };
 local python_deps = import 'defaults/python-deps.libsonnet';
 local vscode_settings = import 'defaults/vscode/settings.libsonnet';
@@ -27,6 +28,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   ),
   local is_uv = self.package_manager == 'uv',
   local github = if settings.using_github then pre_commit_configs.github else [],
+  local zizmor = if settings.want_zizmor then pre_commit_configs.zizmor else [],
   local cff = if settings.want_cff then pre_commit_configs.cff else [],
   local local_hooks = import 'defaults/pre-commit-config/local.libsonnet',
   local cspell_hooks = if settings.cspell_pre_commit_hook then [import 'defaults/pre-commit-config/cspell.libsonnet'] else [],
@@ -625,6 +627,11 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    * @var boolean
    */
   want_codeql: !self.stubs_only && self.using_github,
+  /**
+   * @brief If the project should run the zizmor GitHub Actions security linter via pre-commit.
+   * @var boolean
+   */
+  want_zizmor: self.using_github,
   /** @brief If Git commits and tags should be GPG-signed. */
   want_gpg: true,
   /** @brief If the project will generate documentation. */
@@ -883,7 +890,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
      * ```
      */
     repos: [(import 'defaults/pre-commit-config/main.libsonnet').get(settings)] +
-           precommit_python_repos + precommit_c_cpp_repos + github + cff + [local_hooks.get(settings)] + cspell_hooks,
+           precommit_python_repos + precommit_c_cpp_repos + github + zizmor + cff + [local_hooks.get(settings)] + cspell_hooks,
   } + (if !settings.private then {
          ci: {
            skip: [
@@ -949,10 +956,14 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
       std.asciiLower(settings.github_username),
       settings.github_project_name,
     ],
+    /** @brief If the immutable OIDC subject claim format should be enabled for the repository. */
+    immutable_oidc_subject: true,
     /** @brief If releases should be immutable (prevent asset modification after publish). */
     immutable_releases: true,
     /** @brief If GitHub Pages is using Jekyll. */
     pages_using_jekyll: true,
+    /** @brief If GitHub Actions must be pinned to a full-length commit SHA (enforced via API). */
+    sha_pinning_required: true,
     /** @brief GitHub username. */
     username: settings.github_username,
     /**
@@ -1099,6 +1110,15 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
        * @var string[]
        */
       release_gate_workflows: [],
+      /**
+       * @brief GitHub deployment environment that gates the publish and release-promotion jobs.
+       *
+       * When non-empty, the publishing jobs declare ``environment`` so a configured environment
+       * protection rule (for example a required reviewer) must be satisfied before the job runs.
+       * Set to an empty string to disable the gate.
+       * @var string
+       */
+      release_environment: 'release',
     },
   },
   /** @brief Operating system for `qa.yml` runs on GitHub runners. */

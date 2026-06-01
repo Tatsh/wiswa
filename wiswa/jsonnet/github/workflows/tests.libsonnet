@@ -10,12 +10,10 @@ function(settings)
         },
         'runs-on': settings.tests_run_on,
         steps: [
-          {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
+          utils.checkout(),
         ] + (if is_uv then [{
                name: 'Install uv',
-               uses: 'astral-sh/setup-uv@' + utils.githubLatestActionTag('astral-sh', 'setup-uv'),
+               uses: 'astral-sh/setup-uv@' + utils.githubLatestActionSha('astral-sh', 'setup-uv'),
              }] else [{
                name: 'Install Poetry',
                run: 'pipx install poetry',
@@ -25,7 +23,7 @@ function(settings)
                     }] else []) + [
           {
             name: 'Set up Python ${{ matrix.python-version }}',
-            uses: 'actions/setup-python@' + utils.githubLatestActionTag('actions', 'setup-python'),
+            uses: 'actions/setup-python@' + utils.githubLatestActionSha('actions', 'setup-python'),
             with: {
               'python-version': '${{ matrix.python-version }}',
             } + if !is_uv then { cache: 'poetry' } else {},
@@ -45,7 +43,7 @@ function(settings)
           },
           {
             name: 'Run tests',
-            uses: 'pavelzw/pytest-action@' + utils.githubLatestActionTag('pavelzw', 'pytest-action'),
+            uses: 'pavelzw/pytest-action@' + utils.githubLatestActionSha('pavelzw', 'pytest-action'),
             with: {
               'click-to-expand': true,
               'custom-arguments': '--cov . --cov-branch --cov-report term-missing:skip-covered --cov-report xml',
@@ -59,7 +57,7 @@ function(settings)
         ] + (if settings.want_coveralls then [{
                name: 'Coverage',
                'if': "github.event_name != 'pull_request'",
-               uses: 'coverallsapp/github-action@' + utils.githubLatestActionTag('coverallsapp', 'github-action'),
+               uses: 'coverallsapp/github-action@' + utils.githubLatestActionSha('coverallsapp', 'github-action'),
                with: {
                  file: 'coverage.xml',
                },

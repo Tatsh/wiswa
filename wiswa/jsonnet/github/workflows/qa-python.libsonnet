@@ -16,7 +16,7 @@ function(settings)
   local uv_setup_steps = if is_uv then [
     {
       name: 'Install uv',
-      uses: 'astral-sh/setup-uv@' + utils.githubLatestActionTag('astral-sh', 'setup-uv'),
+      uses: 'astral-sh/setup-uv@' + utils.githubLatestActionSha('astral-sh', 'setup-uv'),
     },
   ] else [
     {
@@ -32,7 +32,7 @@ function(settings)
   ] else [];
   local python_setup(version='3.14', matrix=false) = {
     name: if matrix then 'Set up Python ${{ matrix.python-version }}' else 'Set up Python',
-    uses: 'actions/setup-python@' + utils.githubLatestActionTag('actions', 'setup-python'),
+    uses: 'actions/setup-python@' + utils.githubLatestActionSha('actions', 'setup-python'),
     with: {
       'python-version': if matrix then '${{ matrix.python-version }}' else version,
     } + if !is_uv then { cache: 'poetry' } else {},
@@ -84,7 +84,7 @@ function(settings)
             common.checkout,
             {
               name: 'Lint with Ruff',
-              uses: 'astral-sh/ruff-action@' + utils.githubLatestActionTag('astral-sh', 'ruff-action'),
+              uses: 'astral-sh/ruff-action@' + utils.githubLatestActionSha('astral-sh', 'ruff-action'),
             },
           ],
         },

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, cast
 import re
 
 from jinja2.ext import Extension
+from wiswa.vcs.github import ref_commit_sha
 
 if TYPE_CHECKING:
     from niquests import AsyncSession
@@ -194,4 +195,17 @@ class GithubAPIExtension(Extension):
                                                        skip_releases=True,
                                                        allow_suffixes=False)
 
+        async def _github_latest_action_sha(owner: str, repo: str) -> str:
+            session = cast('AsyncSession | None', globs.get('_http_session'))
+            if session is None:
+                msg = 'No HTTP session available for GitHub API calls.'
+                raise RuntimeError(msg)
+            tag = await get_github_release_latest_tag(session,
+                                                      owner,
+                                                      repo,
+                                                      skip_releases=True,
+                                                      allow_suffixes=False)
+            return await ref_commit_sha(session, owner, repo, tag)
+
         globs['github_latest_action_tag'] = _github_latest_action_tag
+        globs['github_latest_action_sha'] = _github_latest_action_sha

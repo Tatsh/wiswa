@@ -14,18 +14,22 @@ jobs:
 {% endif %}
     runs-on: ${{ '{{' }} matrix.os }}
     steps:
-      - uses: 'actions/checkout@{{ github_latest_action_tag('actions', 'checkout') }}'
+      - uses: 'actions/checkout@{{ github_latest_action_sha('actions', 'checkout') }}'
+        with:
+          persist-credentials: false
 {% if settings.package_manager == 'uv' %}
       - name: 'Install yq'
         run: 'pipx install yq'
       - name: 'Install uv'
-        uses: 'astral-sh/setup-uv@{{ github_latest_action_tag('astral-sh', 'setup-uv') }}'
+        uses: 'astral-sh/setup-uv@{{ github_latest_action_sha('astral-sh', 'setup-uv') }}'
+        with:
+          enable-cache: false
 {% else %}
       - name: 'Install Poetry'
         run: 'pipx install poetry yq'
 {% endif %}
       - name: 'Set up Python'
-        uses: 'actions/setup-python@{{ github_latest_action_tag('actions', 'setup-python') }}'
+        uses: 'actions/setup-python@{{ github_latest_action_sha('actions', 'setup-python') }}'
         with:
 {% if settings.package_manager != 'uv' %}
           cache: 'poetry'
@@ -35,7 +39,7 @@ jobs:
   {% for os_name, target in settings.pyinstaller.vcpkg.targets.items() %}
       - if: matrix.os == '{{ os_name }}'
         name: 'Cache vcpkg installed packages'
-        uses: 'actions/cache@{{ github_latest_action_tag('actions', 'cache') }}'
+        uses: 'actions/cache@{{ github_latest_action_sha('actions', 'cache') }}'
         with:
           key: vcpkg-{{ target.triplet }}-{{ target.packages | join('-') }}-${{ '{{' }} hashFiles('.github/workflows/pyinstaller.yml') }}
           path: '~/vcpkg/installed'
@@ -166,7 +170,7 @@ jobs:
           {{ test_bash(settings.pyinstaller.test_commands) | indent(10) | trim }}
 {% endif %}
       - name: 'Upload Artifacts'
-        uses: 'actions/upload-artifact@{{ github_latest_action_tag('actions', 'upload-artifact') }}'
+        uses: 'actions/upload-artifact@{{ github_latest_action_sha('actions', 'upload-artifact') }}'
         with:
           if-no-files-found: error
           name: {{ settings.github_project_name }}-binaries-${{ '{{' }} matrix.suffix }}
@@ -174,11 +178,11 @@ jobs:
             ${{ '{{' }} matrix.dist_path }}
   {% if not settings.private %}
       - name: 'Attest'
-        uses: 'actions/attest@{{ github_latest_action_tag('actions', 'attest') }}'
+        uses: 'actions/attest@{{ github_latest_action_sha('actions', 'attest') }}'
         with:
           subject-path: '${{ '{{' }} matrix.dist_path }}'
       - name: 'Generate SBOM'
-        uses: 'anchore/sbom-action@{{ github_latest_action_tag('anchore', 'sbom-action') }}'
+        uses: 'anchore/sbom-action@{{ github_latest_action_sha('anchore', 'sbom-action') }}'
         env:
           SYFT_SOURCE_NAME: '{{ settings.github_project_name }}'
           SYFT_SOURCE_VERSION: ${{ '{{' }} github.ref_name }}
@@ -187,7 +191,7 @@ jobs:
           output-file: 'sbom.spdx.json'
           upload-artifact: false
       - name: 'Attest SBOM'
-        uses: 'actions/attest@{{ github_latest_action_tag('actions', 'attest') }}'
+        uses: 'actions/attest@{{ github_latest_action_sha('actions', 'attest') }}'
         with:
           subject-path: '${{ '{{' }} matrix.dist_path }}'
           sbom-path: 'sbom.spdx.json'
@@ -195,41 +199,48 @@ jobs:
 {% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
       - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'
         name: 'Zip files'
+        env:
+          DIST_PATH: ${{ '{{' }} matrix.dist_path }}
+          REF_NAME: ${{ '{{' }} github.ref_name }}
+          SUFFIX: ${{ '{{' }} matrix.suffix }}
         run: |
           rm -fR _out
           mkdir _out
-          zip -j _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}-${{ '{{' }} matrix.suffix }}.zip ${{ '{{' }} matrix.dist_path }}
+          zip -j "_out/{{ settings.github_project_name }}-${REF_NAME}-${SUFFIX}.zip" "$DIST_PATH"
 {% endif %}
 {% if settings.supported_platforms == 'all' or 'windows' in settings.supported_platforms %}
       - if: (matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm') && github.ref_type == 'tag'
         name: 'Zip files'
+        env:
+          DIST_PATH: ${{ '{{' }} matrix.dist_path }}
+          REF_NAME: ${{ '{{' }} github.ref_name }}
+          SUFFIX: ${{ '{{' }} matrix.suffix }}
         run: |
           Remove-Item -Force _out -ErrorAction Continue
           New-Item -ItemType Directory -Name _out
-          Compress-Archive -Path ${{ '{{' }} matrix.dist_path }} -DestinationPath _out/{{ settings.github_project_name }}-${{ '{{' }} github.ref_name }}-${{ '{{' }} matrix.suffix }}.zip
+          Compress-Archive -Path $env:DIST_PATH -DestinationPath "_out/{{ settings.github_project_name }}-$env:REF_NAME-$env:SUFFIX.zip"
         shell: pwsh
 {% endif %}
   {% if not settings.private %}
       - if: github.ref_type == 'tag'
         name: 'Attest'
-        uses: 'actions/attest@{{ github_latest_action_tag('actions', 'attest') }}'
+        uses: 'actions/attest@{{ github_latest_action_sha('actions', 'attest') }}'
         with:
           subject-path: '_out/*.zip'
       - if: github.ref_type == 'tag'
         name: 'Attest SBOM'
-        uses: 'actions/attest@{{ github_latest_action_tag('actions', 'attest') }}'
+        uses: 'actions/attest@{{ github_latest_action_sha('actions', 'attest') }}'
         with:
           subject-path: '_out/*.zip'
           sbom-path: 'sbom.spdx.json'
   {% endif %}
       - if: github.ref_type == 'tag'
-        name: Upload package
-        uses: softprops/action-gh-release@{{ github_latest_action_tag('softprops', 'action-gh-release') }}
-        with:
-          draft: true
-          fail_on_unmatched_files: true
-          files: |
-            _out/*.zip
+        name: Create or update draft release
+        env:
+          GH_TOKEN: ${{ '{{' }} github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --draft --notes '' _out/*.zip ||
+            gh release upload "$GITHUB_REF_NAME" _out/*.zip --clobber
     strategy:
       matrix:
         include:

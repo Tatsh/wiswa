@@ -3,9 +3,7 @@ function(settings) {
     cleanup: {
       'runs-on': 'ubuntu-latest',
       steps: [
-        {
-          uses: 'actions/checkout@' + (import 'utils.libsonnet').githubLatestActionTag('actions', 'checkout'),
-        },
+        (import 'utils.libsonnet').checkout(),
         {
           env: {
             GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}',

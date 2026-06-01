@@ -278,10 +278,15 @@ def _make_native_callbacks(
                         allow_suffixes=False)
     gh_tag = partial(get_github_release_latest_tag, session, skip_releases=True)
     gh_ref_sha = partial(ref_commit_sha, session)
+
+    async def _gh_action_sha(owner: str, repo: str) -> str:  # pragma: no cover
+        return await gh_ref_sha(owner, repo, await gh_action(owner, repo))
+
     return {
         # The argument names here cannot conflict with a wrapping function.
         # f(arg):: std.native('f', arg) will fail if it's defined here as 'f': (('arg',), ...).
         'githubCliUsername': github_cli_username_cb,
+        'githubLatestActionSha': (('o', 'r'), lambda o, r: _sync_wrap(_gh_action_sha, o, r)),
         'githubLatestActionTag': (('o', 'r'), lambda o, r: _sync_wrap(gh_action, o, r)),
         'githubLatestReleaseTag': (
             ('o', 'r', 'g'), lambda o, r, g=False: _sync_wrap(get_github_release_latest_tag,

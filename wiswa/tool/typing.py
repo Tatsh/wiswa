@@ -145,8 +145,12 @@ class PythonDeps(TypedDict, total=False):
 class SettingsGitHub(TypedDict):
     """GitHub settings."""
 
+    immutable_oidc_subject: bool
+    """If the immutable OIDC subject claim format should be enabled."""
     immutable_releases: bool
     """If releases should be immutable."""
+    sha_pinning_required: bool
+    """If GitHub Actions must be pinned to a full-length commit SHA."""
     username: str
     """The GitHub username."""
 

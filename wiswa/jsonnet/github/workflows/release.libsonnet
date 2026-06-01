@@ -20,11 +20,11 @@ function(settings)
   {
     jobs: {
       'publish-release': {
+        [if settings.github.workflows.release_environment != '' then 'environment']:
+          settings.github.workflows.release_environment,
         'runs-on': 'ubuntu-latest',
         steps: [
-          {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
+          utils.checkout(),
           {
             id: 'guard',
             name: 'Check trigger conditions',

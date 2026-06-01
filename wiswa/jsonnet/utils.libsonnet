@@ -3,6 +3,8 @@
  * @namespace utils
  * @brief A collection of utility functions for manipulating settings.
  */
+local utils = import 'utils.libsonnet';
+
 {
   /**
    * @brief Map a dotted Python import name to a filesystem path (slashes between segments).
@@ -298,6 +300,63 @@
    */
   latestPypiPackageVersion(package, h='pypi.org', py='')::
     std.native('latestPypiPackageVersion')(package, h, py),
+  /**
+   * @brief Resolve the latest action tag for a GitHub repository to its commit SHA.
+   *
+   * Requires a native function `githubLatestActionSha` to be defined in the Jsonnet environment.
+   *
+   * @param owner The repository owner.
+   * @param repo The repository name.
+   * @returns The 40-character hexadecimal commit SHA the latest action tag resolves to.
+   * @pt string, string
+   * @rv string
+   */
+  githubLatestActionSha(owner, repo):: std.native('githubLatestActionSha')(owner, repo),
+  /**
+   * @brief A hardened `actions/checkout` step that does not persist credentials.
+   *
+   * Credentials are not written to `.git/config`, so they cannot leak through build artifacts. A
+   * nested `with` in `extra` is merged on top of the default `persist-credentials: false`.
+   *
+   * @param extra Additional fields merged into the generated step.
+   * @returns A GitHub Actions step object pinning `actions/checkout` to a commit SHA.
+   * @pt object
+   * @rv object
+   */
+  checkout(extra={}):: {
+    uses: 'actions/checkout@' + utils.githubLatestActionSha('actions', 'checkout'),
+  } + extra + {
+    with: { 'persist-credentials': false } +
+          (if std.objectHas(extra, 'with') then extra.with else {}),
+  },
+  /**
+   * @brief A step that creates or updates a draft GitHub release for the pushed tag.
+   *
+   * Uses the `gh` CLI rather than a third-party action. When the release already exists the assets
+   * are uploaded with `--clobber`, keeping the step idempotent across re-runs and concurrent matrix
+   * jobs. The tag is read from the `GITHUB_REF_NAME` environment variable to avoid interpolating a
+   * GitHub Actions expression into the shell.
+   *
+   * @param files Shell globs of asset files to upload. When empty, only a draft release is created.
+   * @returns A GitHub Actions step object.
+   * @pt array
+   * @rv object
+   */
+  ghDraftReleaseStep(files=[]):: {
+    name: 'Create or update draft release',
+    env: {
+      GH_TOKEN: '${{ github.token }}',
+    },
+    run: if std.length(files) > 0 then
+      |||
+        gh release create "$GITHUB_REF_NAME" --draft --notes '' %(files)s ||
+          gh release upload "$GITHUB_REF_NAME" %(files)s --clobber
+      ||| % { files: std.join(' ', files) }
+    else
+      |||
+        gh release create "$GITHUB_REF_NAME" --draft --notes '' || true
+      |||,
+  },
   /**
    * @brief Get the latest action tag for a GitHub repository.
    *

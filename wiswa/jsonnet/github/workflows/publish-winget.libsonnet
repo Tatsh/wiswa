@@ -1,3 +1,5 @@
+local utils = import 'utils.libsonnet';
+
 function(settings)
   {
     jobs: {
@@ -32,7 +34,7 @@ function(settings)
         'runs-on': 'windows-latest',
         steps: [
           {
-            uses: 'vedantmgoyal9/winget-releaser@main',
+            uses: 'vedantmgoyal9/winget-releaser@' + utils.githubLatestActionSha('vedantmgoyal9', 'winget-releaser'),
             with: {
               identifier: settings.github.workflows.publish_winget.identifier,
               'max-versions-to-keep': settings.github.workflows.publish_winget.max_versions_to_keep,

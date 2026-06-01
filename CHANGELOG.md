@@ -9,8 +9,33 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Generated GitHub Actions workflows now pin every action to a full-length commit SHA (resolved
+  from the latest release tag) rather than a moving tag, including the previously branch-pinned
+  `pypa/gh-action-pypi-publish` and `vedantmgoyal9/winget-releaser` actions. A new
+  `githubLatestActionSha` Jsonnet native function and `github_latest_action_sha` Jinja global back
+  this.
+- New `want_zizmor` flag (default on for GitHub projects) adds the
+  [zizmor](https://github.com/zizmorcore/zizmor) GitHub Actions security linter as a pre-commit
+  hook.
+- New `github.workflows.release_environment` setting (default `release`) gates the publish and
+  release-promotion jobs behind a GitHub deployment environment, so a required-reviewer protection
+  rule can approve releases.
+- New `github.sha_pinning_required` and `github.immutable_oidc_subject` settings (default on) make
+  Wiswa configure the GitHub repository, through the API, to require SHA-pinned actions and to use
+  the immutable OIDC subject claim.
+
 ### Changed
 
+- Hardened generated GitHub Actions workflows against zizmor findings: every `actions/checkout`
+  sets `persist-credentials: false`, publish and release-gate write permissions are scoped to the
+  job level (the workflow level defaults to none), the uv cache is disabled in release jobs, and
+  draft releases are created with the `gh` CLI instead of `softprops/action-gh-release`. A
+  generated `.github/zizmor.yml` documents the one accepted finding (`workflow_run` in the Release
+  and WinGet workflows).
+- The npm publish job no longer restores the Yarn cache, removing a cache-poisoning vector during
+  releases.
 - Replaced the generated `release` agent (`.claude/agents/release.md`) with a `make-release` skill
   (`.claude/skills/make-release/SKILL.md`), so the release workflow is now invoked as
   `/make-release`. Projects that already have the old agent shed it on the next regen.

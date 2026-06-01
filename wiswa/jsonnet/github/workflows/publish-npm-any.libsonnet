@@ -1,4 +1,3 @@
-local cache_yarn = import 'github/workflows/_cache-yarn.libsonnet';
 local check_workflows = import 'github/workflows/_check-workflows.libsonnet';
 local utils = import 'utils.libsonnet';
 
@@ -12,6 +11,8 @@ function(settings)
     jobs: {
       check: check_workflows.job(required_workflows, optional_workflows),
       publish: {
+        [if settings.github.workflows.release_environment != '' then 'environment']:
+          settings.github.workflows.release_environment,
         needs: ['check'],
         permissions: {
           contents: 'write',
@@ -20,12 +21,10 @@ function(settings)
         },
         'runs-on': settings.github.workflows.publish_npm_any.runs_on,
         steps: [
-          {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
+          utils.checkout(),
           {
             name: 'Setup Node.js',
-            uses: 'actions/setup-node@' + utils.githubLatestActionTag('actions', 'setup-node'),
+            uses: 'actions/setup-node@' + utils.githubLatestActionSha('actions', 'setup-node'),
             with: {
               'node-version': settings.github.workflows.publish_npm_any.node_version,
               'registry-url': settings.github.workflows.publish_npm_any.registry_url,
@@ -35,7 +34,6 @@ function(settings)
             name: 'Update npm',
             run: 'npm install --global npm@latest',
           },
-          cache_yarn,
           {
             name: 'Install dependencies',
             run: 'yarn',
@@ -51,12 +49,7 @@ function(settings)
               NODE_AUTH_TOKEN: '${{ secrets.NODE_AUTH_TOKEN || secrets.GITHUB_TOKEN }}',
             },
           },
-          {
-            uses: 'softprops/action-gh-release@' + utils.githubLatestActionTag('softprops', 'action-gh-release'),
-            with: {
-              draft: true,
-            },
-          },
+          utils.ghDraftReleaseStep(),
         ],
       },
     },
@@ -68,9 +61,5 @@ function(settings)
         ],
       },
     },
-    permissions: {
-      contents: 'write',
-      'id-token': 'write',
-      packages: 'write',
-    },
+    permissions: {},
   }

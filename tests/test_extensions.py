@@ -180,6 +180,7 @@ def test_github_api_extension_registers_global(mocker: MockerFixture) -> None:
 
     env = jinja2.Environment(extensions=[GithubAPIExtension], autoescape=True)
     assert 'github_latest_action_tag' in env.globals
+    assert 'github_latest_action_sha' in env.globals
 
 
 def test_parse_md_badge_valid() -> None:
@@ -268,3 +269,34 @@ async def test_github_latest_action_tag_with_session(mocker: MockerFixture) -> N
     func = cast('Any', env.globals['github_latest_action_tag'])
     result = await func('owner', 'repo')
     assert result == 'v4'
+
+
+async def test_github_latest_action_sha_no_session() -> None:
+    from typing import cast
+
+    from wiswa.tool.extensions import GithubAPIExtension
+
+    env = jinja2.Environment(extensions=[GithubAPIExtension], autoescape=True)
+    func = cast('Any', env.globals['github_latest_action_sha'])
+    with pytest.raises(RuntimeError, match='No HTTP session'):
+        await func('owner', 'repo')
+
+
+async def test_github_latest_action_sha_with_session(mocker: MockerFixture) -> None:
+    from typing import cast
+    from unittest.mock import AsyncMock
+
+    from wiswa.tool.extensions import GithubAPIExtension
+
+    mocker.patch('wiswa.tool.utils.versions.get_github_release_latest_tag',
+                 new_callable=AsyncMock,
+                 return_value='v4')
+    mocker.patch('wiswa.tool.extensions.ref_commit_sha',
+                 new_callable=AsyncMock,
+                 return_value='a' * 40)
+    env = jinja2.Environment(extensions=[GithubAPIExtension], autoescape=True)
+    mock_session = mocker.MagicMock()
+    env.globals['_http_session'] = mock_session
+    func = cast('Any', env.globals['github_latest_action_sha'])
+    result = await func('owner', 'repo')
+    assert result == 'a' * 40

@@ -79,4 +79,6 @@ async def setup_github_project(session: niquests.AsyncSession, settings: Setting
                             keywords=settings['keywords'],
                             default_branch=settings['default_branch'],
                             private=settings.get('private', False),
-                            immutable_releases=settings['github']['immutable_releases'])
+                            immutable_releases=settings['github']['immutable_releases'],
+                            sha_pinning_required=settings['github']['sha_pinning_required'],
+                            immutable_oidc_subject=settings['github']['immutable_oidc_subject'])

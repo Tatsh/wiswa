@@ -19,7 +19,9 @@ def _make_settings(**overrides: Any) -> Settings:
         'homepage': 'https://example.com',
         'keywords': ['test', 'example project'],
         'github': {
+            'immutable_oidc_subject': True,
             'immutable_releases': True,
+            'sha_pinning_required': True,
             'username': 'testuser'
         },
         'private': False,
@@ -45,6 +47,8 @@ async def test_setup_github_project_delegates_to_wiswa_vcs(mocker: MockerFixture
     assert kwargs['repository_uri'] == 'https://github.com/testuser/testrepo'
     assert kwargs['description'] == 'A test project'
     assert kwargs['immutable_releases'] is True
+    assert kwargs['sha_pinning_required'] is True
+    assert kwargs['immutable_oidc_subject'] is True
     assert kwargs['private'] is False
 
 

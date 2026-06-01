@@ -7,9 +7,7 @@ function(settings)
       build: {
         'runs-on': '${{ matrix.system.image }}',
         steps: [
-          {
-            uses: 'actions/checkout@' + utils.githubLatestActionTag('actions', 'checkout'),
-          },
+          utils.checkout(),
         ] + (if !is_uv then [{
                name: 'Fix pyproject.toml for older Poetry',
                run: |||
@@ -43,7 +41,7 @@ function(settings)
              }] else []) + [
           {
             name: 'Build Snap package',
-            uses: 'snapcore/action-build@' + utils.githubLatestActionTag('snapcore', 'action-build'),
+            uses: 'snapcore/action-build@' + utils.githubLatestActionSha('snapcore', 'action-build'),
             id: 'build',
             with: {
               'snapcraft-args': 'pack',
@@ -52,7 +50,7 @@ function(settings)
           },
           {
             name: 'Upload Artifacts',
-            uses: 'actions/upload-artifact@' + utils.githubLatestActionTag('actions', 'upload-artifact'),
+            uses: 'actions/upload-artifact@' + utils.githubLatestActionSha('actions', 'upload-artifact'),
             with: {
               'if-no-files-found': 'error',
               name: '%s-snap-${{ matrix.system.arch }}' % settings.project_name,
@@ -61,20 +59,13 @@ function(settings)
           },
           {
             name: 'Attest',
-            uses: 'actions/attest@' + utils.githubLatestActionTag('actions', 'attest'),
+            uses: 'actions/attest@' + utils.githubLatestActionSha('actions', 'attest'),
             with: {
               'subject-path': '*.snap',
             },
           },
-          {
+          utils.ghDraftReleaseStep(['*.snap']) + {
             'if': "github.ref_type == 'tag'",
-            name: 'Upload package',
-            uses: 'softprops/action-gh-release@' + utils.githubLatestActionTag('softprops', 'action-gh-release'),
-            with: {
-              draft: true,
-              fail_on_unmatched_files: true,
-              files: '*.snap',
-            },
           },
         ],
         strategy: {
