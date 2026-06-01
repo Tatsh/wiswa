@@ -30,10 +30,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Hardened generated GitHub Actions workflows against zizmor findings: every `actions/checkout`
   sets `persist-credentials: false`, publish and release-gate write permissions are scoped to the
-  job level (the workflow level defaults to none), the uv cache is disabled in release jobs, and
-  draft releases are created with the `gh` CLI instead of `softprops/action-gh-release`. A
-  generated `.github/zizmor.yml` documents the one accepted finding (`workflow_run` in the Release
-  and WinGet workflows).
+  job level (the workflow level defaults to none), caching is disabled in release builds (the
+  PyInstaller vcpkg cache only restores on non-tag builds), and draft releases are created with the
+  `gh` CLI instead of `softprops/action-gh-release`. A generated `.github/zizmor.yml` documents the
+  accepted findings (`workflow_run` in the Release and WinGet workflows, and the gated vcpkg cache
+  in PyInstaller).
 - The npm publish job no longer restores the Yarn cache, removing a cache-poisoning vector during
   releases.
 - Replaced the generated `release` agent (`.claude/agents/release.md`) with a `make-release` skill

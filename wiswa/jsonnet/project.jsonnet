@@ -19,6 +19,10 @@ function(settings)
                                                        if settings.want_zizmor then {
                                                          '.github/zizmor.yml': utils.manifestYaml({
                                                            rules: {
+                                                             // The vcpkg cache is gated to non-tag builds, so release artifacts are unaffected.
+                                                             'cache-poisoning': {
+                                                               ignore: ['pyinstaller.yml'],
+                                                             },
                                                              // workflow_run is required to gate the draft release on upstream workflows.
                                                              'dangerous-triggers': {
                                                                ignore: ['publish-winget.yml', 'release.yml'],
