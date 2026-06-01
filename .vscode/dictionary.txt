@@ -189,6 +189,7 @@ nullptr
 numpy
 numpydoc
 objc
+oidc
 olivierlacan
 onefile
 oneline
@@ -319,3 +320,5 @@ yaspin
 zainchen
 zengxingxin
 zeshuaro
+zizmor
+zizmorcore
