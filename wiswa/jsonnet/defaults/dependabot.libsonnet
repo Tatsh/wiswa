@@ -41,6 +41,7 @@
                  schedule: schedule,
                },
                {
+                 cooldown: cooldown,
                  directory: '/',
                  groups: {
                    'github-actions': { patterns: ['*'] },
