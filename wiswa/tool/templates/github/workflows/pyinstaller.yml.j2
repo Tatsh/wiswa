@@ -37,7 +37,7 @@ jobs:
           python-version: '3.13'
 {% if settings.pyinstaller.vcpkg.enabled %}
   {% for os_name, target in settings.pyinstaller.vcpkg.targets.items() %}
-      - if: matrix.os == '{{ os_name }}'
+      - if: matrix.os == '{{ os_name }}' && github.ref_type != 'tag'
         name: 'Cache vcpkg installed packages'
         uses: 'actions/cache@{{ github_latest_action_sha('actions', 'cache') }}'
         with:
