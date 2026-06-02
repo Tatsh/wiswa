@@ -15,13 +15,13 @@
 {% endfor %}
 {% if not settings.private %}
 {{ rst_badge(
-      'https://img.shields.io/pypi/pyversions/' ~ settings.project_name
+      'https://img.shields.io/pypi/pyversions/' ~ settings.pypi_project_name
       ~ '.svg?color=blue&logo=python&logoColor=white',
       'https://www.python.org/',
       'Python versions') }}
 {{ rst_badge(
-      'https://img.shields.io/pypi/v/' ~ settings.project_name,
-      'https://pypi.org/project/' ~ settings.project_name ~ '/',
+      'https://img.shields.io/pypi/v/' ~ settings.pypi_project_name,
+      'https://pypi.org/project/' ~ settings.pypi_project_name ~ '/',
       'PyPI - Version') }}
 {% endif %}
 {% if settings.using_github %}
@@ -147,8 +147,8 @@
       'Ruff') }}
 {% if not settings.private %}
 {{ rst_badge(
-      'https://static.pepy.tech/badge/' ~ settings.project_name ~ '/month',
-      'https://pepy.tech/project/' ~ settings.project_name,
+      'https://static.pepy.tech/badge/' ~ settings.pypi_project_name ~ '/month',
+      'https://pepy.tech/project/' ~ settings.pypi_project_name,
       'Downloads') }}
 {% endif %}
 {% if settings.using_github and not settings.private %}

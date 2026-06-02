@@ -9,7 +9,7 @@
 {% if settings.project_type == 'python' %}
 {% if not settings.private %}
 [![Python versions](https://img.shields.io/pypi/pyversions/{{ settings.pypi_project_name }}.svg?color=blue&logo=python&logoColor=white)](https://www.python.org/)
-[![PyPI - Version](https://img.shields.io/pypi/v/{{ settings.project_name }})](https://pypi.org/project/{{ settings.pypi_project_name }}/)
+[![PyPI - Version](https://img.shields.io/pypi/v/{{ settings.pypi_project_name }})](https://pypi.org/project/{{ settings.pypi_project_name }}/)
 {% endif %}
 {% elif settings.project_type == 'typescript' %}
 {% set _publish_registry = settings.package_json.get('publishConfig', {}).get('registry', '') if settings.package_json else '' %}
@@ -81,7 +81,7 @@
 {% endif %}
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 {% if not settings.private %}
-[![Downloads](https://static.pepy.tech/badge/{{ settings.project_name }}/month)](https://pepy.tech/project/{{ settings.project_name }})
+[![Downloads](https://static.pepy.tech/badge/{{ settings.pypi_project_name }}/month)](https://pepy.tech/project/{{ settings.pypi_project_name }})
 {% endif %}
 {% endif %}
 {% if settings.using_github and not settings.private %}
