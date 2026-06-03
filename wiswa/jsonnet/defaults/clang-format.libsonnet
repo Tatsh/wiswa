@@ -85,6 +85,7 @@
     IndentCaseLabels: false,
     IndentWidth: tab_size,
     IndentWrappedFunctionNames: false,
+    InsertBraces: true,
     KeepEmptyLinesAtTheStartOfBlocks: true,
     MacroBlockBegin: '',
     MacroBlockEnd: '',
