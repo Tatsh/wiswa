@@ -50,6 +50,7 @@ local utils = import 'utils.libsonnet';
         id: 'destroyed-symlinks',
       },
       {
+        args: ['--allow-missing-credentials'],
         id: 'detect-aws-credentials',
       },
       {
