@@ -39,6 +39,17 @@ _cache: dict[str, str] = {}
 _NPM_AGE_GATE_DEFAULT_MINUTES = 10080
 """Default npm minimum age gate in minutes (7 days)."""
 
+_UV_EXCLUDE_NEWER_DEFAULT = timedelta(weeks=1)
+"""
+Default ``exclude-newer`` window applied when uv has no configured cutoff.
+
+Mirrors uv's own one-week default and the npm age gate so Python package versions are filtered even
+when the user has no ``uv.toml`` and the project ``pyproject.toml`` sets no ``[tool.uv]``
+``exclude-newer``.
+
+:meta hide-value:
+"""
+
 _YARNRC_FILENAME = '.yarnrc.yml'
 
 _NODE_RANGE_RE = re.compile(r'>=\s*(\d+)')
@@ -306,6 +317,10 @@ def _get_uv_config(
     ``pyproject.toml`` ``[tool.uv]`` section on top so project values override the user
     config — matching uv's own precedence.
 
+    When neither source sets a global ``exclude-newer``, the cutoff falls back to
+    :py:data:`_UV_EXCLUDE_NEWER_DEFAULT` before now so a one-week age gate still applies without any
+    ``uv.toml`` present, mirroring the npm side.
+
     Parameters
     ----------
     project_root : Path | None
@@ -314,8 +329,8 @@ def _get_uv_config(
     Returns
     -------
     tuple[datetime | None, dict[str, datetime | None]]
-        The global cutoff (or :py:data:`None`) and the per-package map. A per-package
-        value of :py:data:`None` means the package is explicitly exempt from any cutoff.
+        The global cutoff and the per-package map. A per-package value of :py:data:`None` means
+        the package is explicitly exempt from any cutoff.
     """
     global_cutoff: datetime | None = None
     per_package: dict[str, datetime | None] = {}
@@ -327,6 +342,8 @@ def _get_uv_config(
         tool_uv = project_pyproject.get('tool', {}).get('uv')
         if isinstance(tool_uv, dict):
             global_cutoff = _apply_uv_section(tool_uv, global_cutoff, per_package)
+    if global_cutoff is None:
+        global_cutoff = datetime.now(tz=timezone.utc) - _UV_EXCLUDE_NEWER_DEFAULT
     return global_cutoff, per_package
 
 
@@ -490,7 +507,9 @@ async def get_pypi_latest_package_version(session: niquests.AsyncSession,
     Get the latest version of a PyPI package.
 
     Respects ``exclude-newer-package`` (per-package) and ``exclude-newer`` (global) from uv's
-    user ``uv.toml`` (via ``platformdirs``) to filter out versions published after the cutoff.
+    user ``uv.toml`` (via ``platformdirs``) to filter out versions published after the cutoff. When
+    no global ``exclude-newer`` is configured, a one-week default cutoff is applied (see
+    :py:func:`_get_uv_config`) so recent releases are still excluded.
 
     When *python* is a non-empty version string (for example ``'3.10'``), releases whose
     ``requires_python`` specifier excludes that version are filtered out.

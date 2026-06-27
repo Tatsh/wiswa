@@ -835,6 +835,16 @@ async def test_get_pypi_latest_package_version_no_cutoff() -> None:
     assert result == '2.0.0'
 
 
+async def test_get_pypi_latest_package_version_default_cutoff_without_config() -> None:
+    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    new_date = (datetime.now(tz=timezone.utc) - timedelta(minutes=1)).isoformat()
+    data = _make_pypi_json([('2.0.0', new_date), ('1.0.0', old_date)])
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
+    result = await get_pypi_latest_package_version(mock_session, 'default-cutoff-pkg')
+    assert result == '1.0.0'
+
+
 async def test_get_pypi_latest_package_version_global_cutoff(tmp_path: Path) -> None:
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)

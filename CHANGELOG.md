@@ -48,6 +48,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The default generated `.clang-format` for C/C++ projects now sets `InsertBraces: true`, so
   clang-format wraps single-statement `if`, `else`, `for`, and `while` bodies in braces.
 
+### Fixed
+
+- When resolving the latest PyPI package versions, Wiswa now applies a one-week `exclude-newer`
+  cutoff by default. Previously the age gate was skipped entirely unless `exclude-newer` was set in
+  a user `uv.toml` or the project's `pyproject.toml` `[tool.uv]`, so users without that
+  configuration received the very newest releases. This mirrors uv's own one-week default and the
+  existing npm age gate.
+
 ## [0.4.0] - 2026-05-22
 
 ### Added
