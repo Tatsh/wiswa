@@ -19,6 +19,15 @@
   '/.yarn/install-state.gz',
   '/build/',
   'node_modules/',
+  // cc-session-recover
+  '/HANDOFF.md',
+  '/.claude/auto-continue.md',
+  '/.claude/standing-instructions.md',
+  '/.claude/statusline-quota-cache.sh',
+  '/.claude/hooks/inject-standing-instructions.sh',
+  '/.claude/hooks/remind-on-prompt.sh',
+  '/.claude/settings.example.json',
+  '/.claude/hooks/log-stop-failure.sh',
   /*
    * Workaround for https://github.com/anthropics/claude-code/issues/46584:
    * Claude Code creates stub shell/editor config files at the project root.
