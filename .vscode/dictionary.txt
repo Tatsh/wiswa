@@ -112,6 +112,7 @@ glpat
 gmock
 gnucxx
 gpgsign
+handoff
 henriiik
 hexliteralcase
 hookimpl
@@ -253,6 +254,7 @@ sqlfluff
 srcs
 startswith
 staticfiles
+statusline
 strequal
 strongified
 syft
