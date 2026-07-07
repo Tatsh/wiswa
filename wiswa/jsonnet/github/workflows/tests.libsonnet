@@ -7,6 +7,7 @@ function(settings)
       test: {
         env: {
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}',
+          HOMEBREW_NO_REQUIRE_TAP_TRUST: '1',
         },
         'runs-on': settings.tests_run_on,
         steps: [
