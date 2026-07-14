@@ -20,14 +20,18 @@
   '/build/',
   'node_modules/',
   // cc-session-recover
-  '/HANDOFF.md',
   '/.claude/auto-continue.md',
+  '/.claude/hooks/inject-standing-instructions.sh',
+  '/.claude/hooks/log-stop-failure.sh',
+  '/.claude/hooks/remind-on-prompt.sh',
+  '/.claude/quota-blocked.json',
+  '/.claude/session-recover.js',
+  '/.claude/settings.example.json',
   '/.claude/standing-instructions.md',
   '/.claude/statusline-quota-cache.sh',
-  '/.claude/hooks/inject-standing-instructions.sh',
-  '/.claude/hooks/remind-on-prompt.sh',
-  '/.claude/settings.example.json',
-  '/.claude/hooks/log-stop-failure.sh',
+  '/.claude/stop-failure-events.jsonl',
+  '/HANDOFF.md',
+  '/session-recover.yaml',
   /*
    * Workaround for https://github.com/anthropics/claude-code/issues/46584:
    * Claude Code creates stub shell/editor config files at the project root.
