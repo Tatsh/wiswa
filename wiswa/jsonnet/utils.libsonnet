@@ -335,7 +335,9 @@ local utils = import 'utils.libsonnet';
    * Uses the `gh` CLI rather than a third-party action. When the release already exists the assets
    * are uploaded with `--clobber`, keeping the step idempotent across re-runs and concurrent matrix
    * jobs. The tag is read from the `GITHUB_REF_NAME` environment variable to avoid interpolating a
-   * GitHub Actions expression into the shell.
+   * GitHub Actions expression into the shell. `GH_REPO` is set explicitly so `gh` never invokes
+   * `git` to detect the repository, which fails in container jobs where the workspace is owned by
+   * a different user.
    *
    * @param files Shell globs of asset files to upload. When empty, only a draft release is created.
    * @returns A GitHub Actions step object.
@@ -345,6 +347,7 @@ local utils = import 'utils.libsonnet';
   ghDraftReleaseStep(files=[]):: {
     name: 'Create or update draft release',
     env: {
+      GH_REPO: '${{ github.repository }}',
       GH_TOKEN: '${{ github.token }}',
     },
     run: if std.length(files) > 0 then
