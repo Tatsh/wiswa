@@ -77,7 +77,7 @@ def test_main_basic_invocation(args: list[str], mocker: MockerFixture, tmp_path:
 @pytest.mark.parametrize(('skip_flag', 'called'), [('--skip-remote', False), ('', True)])
 def test_main_skip_remote(
         skip_flag: str,
-        called: bool,  # noqa: FBT001
+        called: bool,  # ruff:ignore[boolean-type-hint-positional-argument]
         mocker: MockerFixture,
         tmp_path: Path) -> None:
     runner = CliRunner()

@@ -361,7 +361,7 @@ async def test_write_wiswa_run_metadata_empty_argv(tmp_path: Path, monkeypatch: 
     monkeypatch.setattr('sys.argv', [])
     await write_wiswa_run_metadata()
     data = json.loads((tmp_path / 'package.json').read_text(encoding='utf-8'))
-    assert data['_wiswa']['commandLine'] == ''  # noqa: PLC1901
+    assert data['_wiswa']['commandLine'] == ''  # ruff:ignore[compare-to-empty-string]
 
 
 async def test_write_wiswa_run_metadata_logs_when_prettier_fails(tmp_path: Path,

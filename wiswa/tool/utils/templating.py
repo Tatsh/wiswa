@@ -61,7 +61,7 @@ def _template_env(module_path: Path,
                   session: AsyncSession | None = None) -> _TemplateEnvTuple:
     # Local import: ``wiswa.tool.extensions`` may import ``wiswa.tool.utils.versions``, which
     # loads this package's ``__init__`` before ``templating`` has finished initializing.
-    from wiswa.tool.extensions import (  # noqa: I001, PLC0415
+    from wiswa.tool.extensions import (  # ruff:ignore[unsorted-imports, import-outside-top-level]
         GithubAPIExtension, ParseMarkdownBadgeExtension, ShellExtension, SortDictsExtension,
         ToPythonExtension)
 

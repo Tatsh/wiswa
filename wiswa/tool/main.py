@@ -377,7 +377,7 @@ def main(file: Path,
          skip_static: bool = False,
          skip_templates: bool = False,
          skip_yarn: bool = False) -> None:
-    """Generate and maintain projects with Jsonnet."""  # noqa: DOC501
+    """Generate and maintain projects with Jsonnet."""  # ruff:ignore[docstring-missing-exception]
 
     async def _run() -> None:
         await _main_async(file,
