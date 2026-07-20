@@ -36,7 +36,8 @@ def clear_version_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None
 def _make_response(
         text: str = '',
         json_data: object = None,
-        ok: bool = True,  # noqa: FBT001, FBT002
+        ok:
+    bool = True,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
         content: bytes = b'',
         status_code: int | None = None) -> MagicMock:
     response = MagicMock()
@@ -164,7 +165,7 @@ async def test_get_pypi_exclude_newer_duration_forms(
         mocker: MockerFixture,
         toml_value: str,
         pkg: str,
-        use_bare_int: bool  # noqa: FBT001
+        use_bare_int: bool  # ruff:ignore[boolean-type-hint-positional-argument]
 ) -> None:
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)

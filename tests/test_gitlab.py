@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import json
 
 from wiswa.tool.utils.gitlab import setup_gitlab_project
-import _jsonnet  # noqa: PLC2701
+import _jsonnet  # ruff:ignore[import-private-name]
 import pytest
 
 if TYPE_CHECKING:

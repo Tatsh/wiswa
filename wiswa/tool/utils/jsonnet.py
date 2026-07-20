@@ -19,7 +19,7 @@ import time
 from anyio.from_thread import run as run_async_from_worker_thread
 from anyio.to_thread import run_sync
 from wiswa.vcs.github import ref_commit_sha
-import _jsonnet  # noqa: PLC2701
+import _jsonnet  # ruff:ignore[import-private-name]
 import anyio
 import platformdirs
 
@@ -210,7 +210,7 @@ def _iter_git_config_paths() -> Iterator[Path]:
 def _origin_url_from_git_config_file(config_path: Path) -> str | None:
     parser = configparser.ConfigParser(interpolation=None)
     # ``str`` preserves key case; ``setattr`` avoids strict stub mismatch on ``optionxform``.
-    setattr(parser, 'optionxform', str)  # noqa: B010
+    setattr(parser, 'optionxform', str)  # ruff:ignore[set-attr-with-constant]
     try:
         parser.read(config_path, encoding='utf-8')
     except configparser.Error:
@@ -439,7 +439,8 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
                                               merged_settings=None,
                                               project_settings_snippet=settings)
     defaults_path = anyio.Path(
-        lib_path.resolve(strict=True) / 'defaults.libsonnet')  # noqa: ASYNC240
+        lib_path.resolve(strict=True) /
+        'defaults.libsonnet')  # ruff:ignore[blocking-path-method-in-async-function]
     defaults_text = await defaults_path.read_text()
     user_defaults_text = '{}'
     if _PROJECT_USES_USER_DEFAULTS.search(settings):
@@ -500,7 +501,8 @@ async def resolve_defaults_only(jpathdir: Sequence[str],
                                               merged_settings=None,
                                               project_settings_snippet=None)
     defaults_path = anyio.Path(
-        lib_path.resolve(strict=True) / 'defaults.libsonnet')  # noqa: ASYNC240
+        lib_path.resolve(strict=True) /
+        'defaults.libsonnet')  # ruff:ignore[blocking-path-method-in-async-function]
     defaults_text = await defaults_path.read_text()
     t0 = time.perf_counter()
     s = await run_sync(lambda: _jsonnet.evaluate_snippet(

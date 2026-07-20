@@ -13,7 +13,10 @@ if TYPE_CHECKING:
 
 
 def _make_display(
-        enabled: bool = True) -> tuple[ProgressDisplay, io.StringIO]:  # noqa: FBT001,FBT002
+    enabled: bool = True
+) -> tuple[
+        ProgressDisplay, io.
+        StringIO]:  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
     buf = io.StringIO()
     console = Console(file=buf, force_terminal=True, width=80, legacy_windows=False)
     return ProgressDisplay(enabled=enabled, console=console), buf
