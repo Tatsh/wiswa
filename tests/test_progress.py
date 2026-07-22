@@ -12,11 +12,7 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
-def _make_display(
-    enabled: bool = True
-) -> tuple[
-        ProgressDisplay, io.
-        StringIO]:  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
+def _make_display(enabled: bool = True) -> tuple[ProgressDisplay, io.StringIO]:
     buf = io.StringIO()
     console = Console(file=buf, force_terminal=True, width=80, legacy_windows=False)
     return ProgressDisplay(enabled=enabled, console=console), buf
