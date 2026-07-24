@@ -41,6 +41,10 @@
       'D212',
       // Personal preference really. ``raise NoRowFound`` is just as clear as ``raise NoRowFoundError``.
       'N818',
+      // Prefer shorter noqa: comments with codes over ruff: ignore.
+      'RUF105',
+      'RUF106',
+      'RUF201',
       'S404',
       // Disabled because of false positives.
       'S603',
