@@ -35,9 +35,10 @@ def clear_version_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None
 
 def _make_response(text: str = '',
                    json_data: object = None,
-                   ok: bool = True,
                    content: bytes = b'',
-                   status_code: int | None = None) -> MagicMock:
+                   status_code: int | None = None,
+                   *,
+                   ok: bool = True) -> MagicMock:
     response = MagicMock()
     response.ok = ok
     if status_code is not None:

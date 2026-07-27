@@ -438,7 +438,8 @@ async def evaluate_merged_settings(jpathdir: Sequence[str],
     native_callbacks = _make_native_callbacks(session,
                                               merged_settings=None,
                                               project_settings_snippet=settings)
-    defaults_path = anyio.Path(lib_path.resolve(strict=True) / 'defaults.libsonnet')
+    aio_lib_path = anyio.Path(lib_path)
+    defaults_path = (await aio_lib_path.resolve(strict=True)) / 'defaults.libsonnet'
     defaults_text = await defaults_path.read_text()
     user_defaults_text = '{}'
     if _PROJECT_USES_USER_DEFAULTS.search(settings):
@@ -498,7 +499,7 @@ async def resolve_defaults_only(jpathdir: Sequence[str],
     native_callbacks = _make_native_callbacks(session,
                                               merged_settings=None,
                                               project_settings_snippet=None)
-    defaults_path = anyio.Path(lib_path.resolve(strict=True) / 'defaults.libsonnet')
+    defaults_path = (await anyio.Path(lib_path).resolve(strict=True)) / 'defaults.libsonnet'
     defaults_text = await defaults_path.read_text()
     t0 = time.perf_counter()
     s = await run_sync(lambda: _jsonnet.evaluate_snippet(

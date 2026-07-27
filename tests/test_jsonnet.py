@@ -181,9 +181,11 @@ def _patch_evaluate_merged_settings_mocks(
     def make_path(*args: object, **_kwargs: object) -> MagicMock:
         raw = args[0] if args else ''
         ps = raw if isinstance(raw, str) else str(raw)
-        inst = MagicMock()
+        inst = AsyncMock()
+        inst.resolve = AsyncMock(return_value=inst)
         inst.read_text = AsyncMock(return_value='{}')
         inst.exists = AsyncMock(return_value=False)
+        inst.__truediv__ = MagicMock(side_effect=make_path)
         if 'defaults.libsonnet' in ps:
             inst.read_text = AsyncMock(return_value='{ project_type: "python" }')
         elif ps.endswith('defaults.jsonnet'):
