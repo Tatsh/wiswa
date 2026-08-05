@@ -73,13 +73,17 @@ local utils = import 'utils.libsonnet';
     qa: 'yarn check-spelling && yarn check-formatting',
   },
   typescript_dev_deps(settings):: {
+    // typescript-eslint and ts-jest cannot load the TypeScript 7 API, so `typescript` resolves to
+    // the 6.x compatibility package until
+    // https://github.com/typescript-eslint/typescript-eslint/issues/10940 is resolved.
+    local typescript6 = '@typescript/typescript6',
     '@eslint/js': utils.latestNpmPackageVersionCaret('@eslint/js'),
     '@types/node': utils.latestNpmPackageVersionCaret('@types/node'),
     eslint: utils.latestNpmPackageVersionCaret('eslint'),
     'ts-node': utils.latestNpmPackageVersionCaret('ts-node'),
     typedoc: utils.latestNpmPackageVersionCaret('typedoc'),
     'typescript-eslint': utils.latestNpmPackageVersionCaret('typescript-eslint'),
-    typescript: utils.latestNpmPackageVersionCaret('typescript'),
+    typescript: 'npm:%s@%s' % [typescript6, utils.latestNpmPackageVersionCaret(typescript6)],
   } + if settings.want_tests then {
     '@vitest/coverage-v8': utils.latestNpmPackageVersionCaret('@vitest/coverage-v8'),
     vitest: utils.latestNpmPackageVersionCaret('vitest'),

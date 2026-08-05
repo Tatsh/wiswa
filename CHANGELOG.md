@@ -52,6 +52,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   static "pre-commit enabled" shields.io badge, and the badge links to the latest run. Because the
   pre-commit.ci endpoints are scoped to a GitHub owner, repository, and branch, private and
   non-GitHub projects keep the static badge.
+- Generated TypeScript projects now resolve the `typescript` dependency to the TypeScript 6
+  compatibility package (`npm:@typescript/typescript6@^6`) instead of the latest release.
+  `typescript-eslint` and `ts-jest` cannot load the TypeScript 7 API, so ESLint aborts with
+  "typescript-eslint does not support TS 7.0" whenever `typescript` resolves to 7.x. See
+  [typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940).
 
 ### Fixed
 
