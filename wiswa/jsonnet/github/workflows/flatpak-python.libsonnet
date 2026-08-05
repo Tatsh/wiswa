@@ -47,12 +47,6 @@ function(settings)
               'subject-path': '${{ steps.flatpak_bundle.outputs.filename }}',
             },
           },
-          utils.ghDraftReleaseStep(['"$FILE"']) + {
-            'if': "github.ref_type == 'tag'",
-            env+: {
-              FILE: '${{ steps.flatpak_bundle.outputs.filename }}',
-            },
-          },
         ],
         strategy: {
           matrix: {
@@ -69,6 +63,9 @@ function(settings)
           },
         },
       },
+      'release-assets': utils.releaseAssetsJob(
+        ['build'], '%s-*' % settings.publishing.flathub
+      ),
     },
     name: 'Flatpak',
     on: {

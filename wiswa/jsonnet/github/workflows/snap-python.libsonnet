@@ -64,9 +64,6 @@ function(settings)
               'subject-path': '*.snap',
             },
           },
-          utils.ghDraftReleaseStep(['*.snap']) + {
-            'if': "github.ref_type == 'tag'",
-          },
         ],
         strategy: {
           matrix: {
@@ -83,6 +80,9 @@ function(settings)
           },
         },
       },
+      'release-assets': utils.releaseAssetsJob(
+        ['build'], '%s-snap-*' % settings.project_name
+      ),
     },
     name: 'Snap',
     on: {

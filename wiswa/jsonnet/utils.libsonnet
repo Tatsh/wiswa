@@ -330,35 +330,75 @@ local utils = import 'utils.libsonnet';
           (if std.objectHas(extra, 'with') then extra.with else {}),
   },
   /**
-   * @brief A step that creates or updates a draft GitHub release for the pushed tag.
+   * @brief A job that attaches a workflow's build artifacts to the draft release for the tag.
    *
-   * Uses the `gh` CLI rather than a third-party action. When the release already exists the assets
-   * are uploaded with `--clobber`, keeping the step idempotent across re-runs and concurrent matrix
-   * jobs. The tag is read from the `GITHUB_REF_NAME` environment variable to avoid interpolating a
+   * GitHub enforces tag uniqueness only for published releases, so `gh release create --draft`
+   * succeeds even when a draft already exists for the tag and cannot be used to detect one. Left
+   * unguarded, every job that calls it creates its own draft and the assets end up split across
+   * them. This job is therefore the single release writer for its workflow: the build jobs only
+   * publish artifacts, and one small job collects them afterwards.
+   *
+   * The `concurrency` group is deliberately shared by every workflow in the repository, so the
+   * release writers across `AppImage`, `Publish`, `Snap`, and the rest run one at a time and the
+   * `view`-then-`create` check cannot race. `queue: max` is required: the default behaviour cancels
+   * a pending job when another enters the group, which would silently drop a workflow's assets.
+   * Because the job holds the lock only while downloading and uploading, the build matrices that
+   * feed it still run in parallel.
+   *
+   * The tag is read from the `GITHUB_REF_NAME` environment variable to avoid interpolating a
    * GitHub Actions expression into the shell. `GH_REPO` is set explicitly so `gh` never invokes
    * `git` to detect the repository, which fails in container jobs where the workspace is owned by
    * a different user.
    *
-   * @param files Shell globs of asset files to upload. When empty, only a draft release is created.
-   * @returns A GitHub Actions step object.
-   * @pt array
+   * @param needs Names of the jobs producing the artifacts.
+   * @param pattern Artifact name pattern to collect. All matches are merged into one directory.
+   *                When empty no artifacts are downloaded and only the draft release is ensured,
+   *                which is what projects that publish no release assets need.
+   * @returns A GitHub Actions job object.
+   * @pt array, string
    * @rv object
    */
-  ghDraftReleaseStep(files=[]):: {
-    name: 'Create or update draft release',
-    env: {
-      GH_REPO: '${{ github.repository }}',
-      GH_TOKEN: '${{ github.token }}',
+  releaseAssetsJob(needs, pattern=''):: {
+    concurrency: {
+      group: 'release-assets-${{ github.ref }}',
+      queue: 'max',
     },
-    run: if std.length(files) > 0 then
-      |||
-        gh release create "$GITHUB_REF_NAME" --draft --notes '' %(files)s ||
-          gh release upload "$GITHUB_REF_NAME" %(files)s --clobber
-      ||| % { files: std.join(' ', files) }
-    else
-      |||
-        gh release create "$GITHUB_REF_NAME" --draft --notes '' || true
-      |||,
+    'if': "github.ref_type == 'tag'",
+    needs: needs,
+    permissions: {
+      contents: 'write',
+    },
+    'runs-on': 'ubuntu-latest',
+    steps: (if pattern != '' then [{
+              name: 'Download build artifacts',
+              uses: 'actions/download-artifact@' +
+                    utils.githubLatestActionSha('actions', 'download-artifact'),
+              with: {
+                'merge-multiple': true,
+                path: '_release_assets',
+                pattern: pattern,
+              },
+            }] else []) + [
+      {
+        name: 'Create or update draft release',
+        env: {
+          GH_REPO: '${{ github.repository }}',
+          GH_TOKEN: '${{ github.token }}',
+        },
+        shell: 'bash',
+        run: |||
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 ||
+            gh release create "$GITHUB_REF_NAME" --draft --notes ''
+          shopt -s nullglob
+          assets=(_release_assets/*)
+          if [ -z "${assets[0]-}" ]; then
+            echo 'No build artifacts to attach.'
+            exit 0
+          fi
+          gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --clobber
+        |||,
+      },
+    ],
   },
   /**
    * @brief Get the latest action tag for a GitHub repository.

@@ -2,6 +2,13 @@
 {% from 'github/workflows/pyinstaller-test.sh.j2' import test_bash %}
 jobs:
   build:
+    permissions:
+{% if settings.private %}
+      actions: 'write'
+{% endif %}
+      attestations: 'write'
+      contents: 'read'
+      id-token: 'write'
     runs-on: ${{ '{{' }} matrix.system.image }}
     steps:
       - uses: 'actions/checkout@{{ github_latest_action_sha('actions', 'checkout') }}'
@@ -78,13 +85,6 @@ jobs:
           subject-path: 'dist/*.AppImage'
           sbom-path: 'sbom.spdx.json'
   {% endif %}
-      - if: github.ref_type == 'tag'
-        name: Create or update draft release
-        env:
-          GH_TOKEN: ${{ '{{' }} github.token }}
-        run: |
-          gh release create "$GITHUB_REF_NAME" --draft --notes '' dist/*.AppImage ||
-            gh release upload "$GITHUB_REF_NAME" dist/*.AppImage --clobber
     strategy:
       matrix:
         system:
@@ -92,6 +92,38 @@ jobs:
           - { arch: aarch64, image: ubuntu-24.04-arm }
 {% endif %}
           - { arch: x86_64, image: ubuntu-latest }
+  release-assets:
+    concurrency:
+      group: release-assets-${{ '{{' }} github.ref }}
+      queue: max
+    if: github.ref_type == 'tag'
+    needs:
+      - 'build'
+    permissions:
+      contents: 'write'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Download build artifacts'
+        uses: 'actions/download-artifact@{{ github_latest_action_sha('actions', 'download-artifact') }}'
+        with:
+          merge-multiple: true
+          path: '_release_assets'
+          pattern: {{ settings.github_project_name }}-binaries-linux-*
+      - name: 'Create or update draft release'
+        env:
+          GH_REPO: ${{ '{{' }} github.repository }}
+          GH_TOKEN: ${{ '{{' }} github.token }}
+        shell: 'bash'
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 ||
+            gh release create "$GITHUB_REF_NAME" --draft --notes ''
+          shopt -s nullglob
+          assets=(_release_assets/*)
+          if [ -z "${assets[0]-}" ]; then
+            echo 'No build artifacts to attach.'
+            exit 0
+          fi
+          gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --clobber
 name: 'AppImage'
 'on':
   push:
@@ -107,10 +139,4 @@ name: 'AppImage'
       - 'poetry.lock'
     tags:
       - 'v*.*.*'
-permissions:
-{% if settings.private %}
-  actions: 'write'
-{% endif %}
-  attestations: 'write'
-  contents: 'write'
-  id-token: 'write'
+permissions: {}

@@ -50,9 +50,20 @@ function(settings)
           {
             uses: 'pypa/gh-action-pypi-publish@' + utils.githubLatestActionSha('pypa', 'gh-action-pypi-publish'),
           },
-          utils.ghDraftReleaseStep(['dist/*.tar.gz', 'dist/*.whl']),
+          {
+            'if': "github.ref_type == 'tag'",
+            name: 'Upload release assets',
+            uses: 'actions/upload-artifact@' +
+                  utils.githubLatestActionSha('actions', 'upload-artifact'),
+            with: {
+              'if-no-files-found': 'error',
+              name: 'release-assets-dist',
+              path: 'dist/*.tar.gz\ndist/*.whl',
+            },
+          },
         ],
       },
+      'release-assets': utils.releaseAssetsJob(['publish'], 'release-assets-*'),
     },
     name: 'Publish',
     on: {

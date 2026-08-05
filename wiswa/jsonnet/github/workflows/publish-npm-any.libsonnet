@@ -49,9 +49,9 @@ function(settings)
               NODE_AUTH_TOKEN: '${{ secrets.NODE_AUTH_TOKEN || secrets.GITHUB_TOKEN }}',
             },
           },
-          utils.ghDraftReleaseStep(),
         ],
       },
+      'release-assets': utils.releaseAssetsJob(['publish']),
     },
     name: 'Publish',
     on: {
