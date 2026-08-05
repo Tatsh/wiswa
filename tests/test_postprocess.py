@@ -872,6 +872,38 @@ async def test_post_process_steps_badges_not_using_github(tmp_path: Path,
     await post_process_steps(settings)
 
 
+_LIVE_PRE_COMMIT_BADGE = ('[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/'
+                          'testuser/myproject/master.svg)]'
+                          '(https://results.pre-commit.ci/latest/github/testuser/myproject/master)')
+_STATIC_PRE_COMMIT_BADGE = ('[![pre-commit](https://img.shields.io/badge/'
+                            'pre--commit-enabled-brightgreen?logo=pre-commit)]'
+                            '(https://github.com/pre-commit/pre-commit)')
+
+
+@pytest.mark.parametrize(('overrides', 'expected', 'unexpected'),
+                         [({}, _LIVE_PRE_COMMIT_BADGE, _STATIC_PRE_COMMIT_BADGE),
+                          ({
+                              'private': True
+                          }, _STATIC_PRE_COMMIT_BADGE, _LIVE_PRE_COMMIT_BADGE),
+                          ({
+                              'using_github': False
+                          }, _STATIC_PRE_COMMIT_BADGE, _LIVE_PRE_COMMIT_BADGE)])
+async def test_post_process_steps_badges_pre_commit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                    mocker: MockerFixture, overrides: dict[str,
+                                                                                           Any],
+                                                    expected: str, unexpected: str) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast('Any', _make_settings(_readme_existed=True, **overrides))
+    await post_process_steps(settings)
+    content = readme.read_text(encoding='utf-8')
+    assert expected in content
+    assert unexpected not in content
+
+
 async def test_post_process_steps_badges_docs_github_pages_workflow(tmp_path: Path,
                                                                     monkeypatch: pytest.MonkeyPatch,
                                                                     mocker: MockerFixture) -> None:

@@ -87,7 +87,11 @@
 {% if settings.using_github and not settings.private %}
 [![Stargazers](https://img.shields.io/github/stars/{{ settings.github.username }}/{{ settings.github_project_name }}?logo=github&style=flat)](https://github.com/{{ settings.github.username }}/{{ settings.github_project_name }}/stargazers)
 {% endif %}
+{% if settings.using_github and not settings.private %}
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/{{ settings.github.username }}/{{ settings.github_project_name }}/{{ settings.default_branch }}.svg)](https://results.pre-commit.ci/latest/github/{{ settings.github.username }}/{{ settings.github_project_name }}/{{ settings.default_branch }})
+{% else %}
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+{% endif %}
 [![Prettier](https://img.shields.io/badge/Prettier-black?logo=prettier)](https://prettier.io/)
 {% for badge in settings.custom_project_badges | sort_dicts('priority') %}
 {% if (badge.priority | default(0)) >= 0 %}

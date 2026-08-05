@@ -158,10 +158,19 @@
       'https://github.com/' ~ settings.github.username ~ '/' ~ settings.github_project_name ~ '/stargazers',
       'Stargazers') }}
 {% endif %}
+{% if settings.using_github and not settings.private %}
+{{ rst_badge(
+      'https://results.pre-commit.ci/badge/github/' ~ settings.github.username ~ '/'
+      ~ settings.github_project_name ~ '/' ~ settings.default_branch ~ '.svg',
+      'https://results.pre-commit.ci/latest/github/' ~ settings.github.username ~ '/'
+      ~ settings.github_project_name ~ '/' ~ settings.default_branch,
+      'pre-commit.ci status') }}
+{% else %}
 {{ rst_badge(
       'https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit',
       'https://github.com/pre-commit/pre-commit',
       'pre-commit') }}
+{% endif %}
 {{ rst_badge(
       'https://img.shields.io/badge/Prettier-black?logo=prettier',
       'https://prettier.io/',

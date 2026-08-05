@@ -694,10 +694,16 @@ def _misc_badges(settings: Settings) -> Iterator[str]:
     if settings['using_github'] and not settings['private']:
         gh = settings['github']['username']
         name = settings['github_project_name']
+        branch = settings['default_branch']
         yield (f'[![Stargazers](https://img.shields.io/github/stars/{gh}/{name}'
                f'?logo=github&style=flat)](https://github.com/{gh}/{name}/stargazers)')
-    yield _simple_icons_badge('pre-commit', 'pre-commit', 'pre--commit-enabled', 'brightgreen',
-                              'https://github.com/pre-commit/pre-commit')
+        # The pre-commit.ci endpoints are scoped to a GitHub owner, repository, and branch, so the
+        # live badge only resolves for public GitHub projects; everything else keeps the static one.
+        yield (f'[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/{gh}/{name}/'
+               f'{branch}.svg)](https://results.pre-commit.ci/latest/github/{gh}/{name}/{branch})')
+    else:
+        yield _simple_icons_badge('pre-commit', 'pre-commit', 'pre--commit-enabled', 'brightgreen',
+                                  'https://github.com/pre-commit/pre-commit')
     if (settings['project_type'] in {'c', 'c++'} and Path('CMakeLists.txt').exists()):
         yield _simple_icons_badge('CMake', 'cmake', 'CMake', '6E6E6E', 'https://cmake.org/')
     yield _simple_icons_badge('Prettier', 'prettier', 'Prettier', 'black', 'https://prettier.io/')

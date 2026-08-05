@@ -47,6 +47,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `/make-release`. Projects that already have the old agent shed it on the next regen.
 - The default generated `.clang-format` for C/C++ projects now sets `InsertBraces: true`, so
   clang-format wraps single-statement `if`, `else`, `for`, and `while` bodies in braces.
+- The generated `README.md` and `docs/badges.rst` now carry the live
+  [pre-commit.ci](https://results.pre-commit.ci) status badge for the default branch instead of the
+  static "pre-commit enabled" shields.io badge, and the badge links to the latest run. Because the
+  pre-commit.ci endpoints are scoped to a GitHub owner, repository, and branch, private and
+  non-GitHub projects keep the static badge.
 
 ### Fixed
 
