@@ -50,6 +50,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- The generated PyInstaller workflow now sets a short `UV_CACHE_DIR` on Windows runners. Disabling
+  the uv cache for zizmor left uv using its default `%LOCALAPPDATA%` cache, and because setuptools
+  repeats the source path inside the object path, building a native dependency from an sdist
+  exceeded the 260-character `MAX_PATH` limit and failed to link on `windows-11-arm`.
 - When resolving the latest PyPI package versions, Wiswa now applies a one-week `exclude-newer`
   cutoff by default. Previously the age gate was skipped entirely unless `exclude-newer` was set in
   a user `uv.toml` or the project's `pyproject.toml` `[tool.uv]`, so users without that

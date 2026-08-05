@@ -153,6 +153,7 @@ libjsonnet
 libname
 libsonnet
 linters
+localappdata
 luacheck
 luacheckrc
 luacov
@@ -240,6 +241,7 @@ sdist
 sdists
 sectigo
 setattr
+setuptools
 shellcheck
 shellformat
 signtool

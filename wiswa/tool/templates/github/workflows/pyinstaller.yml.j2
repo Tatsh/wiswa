@@ -77,6 +77,16 @@ jobs:
   {% endfor %}
 {% endif %}
 {% if settings.package_manager == 'uv' %}
+  {% if settings.supported_platforms == 'all' or 'windows' in settings.supported_platforms %}
+  {# uv's default cache lives under %LOCALAPPDATA%, and setuptools repeats the source path
+     inside the object path, so building a native dependency from an sdist can exceed
+     MAX_PATH and fail to link. #}
+      - if: runner.os == 'Windows'
+        name: 'Shorten uv cache path'
+        run: |
+          Add-Content -Path $env:GITHUB_ENV -Value 'UV_CACHE_DIR=C:\uv'
+        shell: 'pwsh'
+  {% endif %}
       - name: 'Install dependencies (uv)'
         run: |
           uv sync{{ ' ' + settings.pyinstaller.uv_sync_args | join(' ') if settings.pyinstaller.uv_sync_args else '' }}
