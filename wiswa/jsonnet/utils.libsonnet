@@ -330,6 +330,25 @@ local utils = import 'utils.libsonnet';
           (if std.objectHas(extra, 'with') then extra.with else {}),
   },
   /**
+   * @brief The permissions a build job needs to attest the artifacts it produces.
+   *
+   * `actions/attest` signs with a workflow OIDC token (`id-token: write`) and writes the resulting
+   * provenance to the attestations API (`attestations: write`). These belong on the job that runs
+   * the attestation, not on the workflow: a workflow-level grant hands the same token to every
+   * other job, which zizmor reports as `excessive-permissions`. `contents` stays read-only because
+   * the build only checks the repository out; the release writer requests write for itself.
+   *
+   * @param settings The settings object.
+   * @returns A GitHub Actions permissions object.
+   * @pt object
+   * @rv object
+   */
+  attestPermissions(settings):: (if settings.private then { actions: 'write' } else {}) + {
+    attestations: 'write',
+    contents: 'read',
+    'id-token': 'write',
+  },
+  /**
    * @brief A job that attaches a workflow's build artifacts to the draft release for the tag.
    *
    * GitHub enforces tag uniqueness only for published releases, so `gh release create --draft`

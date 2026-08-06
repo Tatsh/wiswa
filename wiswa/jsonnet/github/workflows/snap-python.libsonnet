@@ -5,6 +5,7 @@ function(settings)
   {
     jobs: {
       build: {
+        permissions: utils.attestPermissions(settings),
         'runs-on': '${{ matrix.system.image }}',
         steps: [
           utils.checkout(),
@@ -103,9 +104,5 @@ function(settings)
       },
       workflow_dispatch: null,
     },
-    permissions: (if settings.private then { actions: 'write' } else {}) + {
-      attestations: 'write',
-      contents: 'write',
-      'id-token': 'write',
-    },
+    permissions: {},
   }

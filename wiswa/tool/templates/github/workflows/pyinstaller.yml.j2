@@ -12,6 +12,13 @@ jobs:
 {% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
       APPLE_SIGNING_CERT: ${{ '{{' }} secrets.{{ apple_sv.signing_certificate }} }}
 {% endif %}
+    permissions:
+{% if settings.private %}
+      actions: 'write'
+{% endif %}
+      attestations: 'write'
+      contents: 'read'
+      id-token: 'write'
     runs-on: ${{ '{{' }} matrix.os }}
     steps:
       - uses: 'actions/checkout@{{ github_latest_action_sha('actions', 'checkout') }}'
@@ -313,10 +320,4 @@ name: 'PyInstaller'
       - 'poetry.lock'
     tags:
       - 'v*.*.*'
-permissions:
-{% if settings.private %}
-  actions: 'write'
-{% endif %}
-  attestations: 'write'
-  contents: 'write'
-  id-token: 'write'
+permissions: {}
