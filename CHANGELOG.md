@@ -11,6 +11,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A dependency's constraint array (used by `python_deps` and the legacy Poetry path) now accepts
+  `{version, markers}` objects, emitting the version with an arbitrary PEP 508 marker string (for
+  example a combined `platform_machine`/`sys_platform`/`python_version` condition). The existing
+  `{version, python}` shorthand is unchanged.
 - Generated GitHub Actions workflows now pin every action to a full-length commit SHA (resolved
   from the latest release tag) rather than a moving tag, including the previously branch-pinned
   `pypa/gh-action-pypi-publish` and `vedantmgoyal9/winget-releaser` actions. A new

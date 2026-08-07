@@ -50,7 +50,8 @@ local utils = import 'utils.libsonnet';
    *
    * @param name The package name.
    * @param val The version specifier: a string, an object `{extras, version}`, or an array of
-   *            `{version, python}` objects.
+   *            `{version, python}` or `{version, markers}` objects (the latter for an arbitrary
+   *            PEP 508 marker).
    * @returns An array of PEP 508 dependency strings.
    * @pt string, (string | object | array)
    * @rv string[]
@@ -58,12 +59,15 @@ local utils = import 'utils.libsonnet';
   formatPep508Deps(name, val)::
     if std.isArray(val) then
       [
-        '%s%s; python_version %s "%s"' % [
-          name,
-          self.poetryVerToPep508(entry.version),
-          if std.startsWith(entry.python, '>=') then '>=' else '<',
-          entry.python[std.length(if std.startsWith(entry.python, '>=') then '>=' else '<'):],
-        ]
+        if std.objectHas(entry, 'markers') then
+          '%s%s; %s' % [name, self.poetryVerToPep508(entry.version), entry.markers]
+        else
+          '%s%s; python_version %s "%s"' % [
+            name,
+            self.poetryVerToPep508(entry.version),
+            if std.startsWith(entry.python, '>=') then '>=' else '<',
+            entry.python[std.length(if std.startsWith(entry.python, '>=') then '>=' else '<'):],
+          ]
         for entry in val
       ]
     else if std.isObject(val) then
