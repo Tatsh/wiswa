@@ -81,6 +81,7 @@ endcode
 endfor
 endmacro
 endraw
+endswith
 errexit
 esac
 esbenp
