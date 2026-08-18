@@ -33,7 +33,7 @@ if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
 fi
 cp generic.svg "recipe/${script_name}.svg"
 echo "Building AppImage for '${script_name}'..."
-{{ 'uv run' if settings.package_manager == 'uv' else 'poetry run' }} python -m python_appimage -v build app -l "manylinux2014_${{ '{{' }} matrix.system.arch }}" -p {{ settings.appimage.python_version }} recipe
+{{ 'uv run' if settings.package_manager == 'uv' else 'poetry run' }} python -m python_appimage -v build app -b "${base_image}" recipe
 mv "${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage" "dist/${script_name}-v${version}-${{ '{{' }} matrix.system.arch }}.AppImage"
 {% endmacro %}
 {% macro build(settings) %}
@@ -42,6 +42,27 @@ project_name=$(tomlq -r '.project.urls.repository|split("/")[-1]' pyproject.toml
 version=$(tomlq -r .project.version pyproject.toml)
 rm -fR dist
 mkdir dist
+{# Fetch the base image here rather than letting python-appimage do it. Left to itself it calls
+api.github.com unauthenticated, once per entry point, and the anonymous quota is 60 an hour shared
+across every runner on the same egress address, so it fails with "HTTP Error 403: rate limit
+exceeded" at times of day that have nothing to do with the project being built. Asking once with
+the workflow token and passing -b avoids the call altogether. The name has to survive the
+download: python-appimage parses the version and both tags back out of the file name. #}
+base_image_tag='manylinux2014_${{ '{{' }} matrix.system.arch }}.AppImage'
+base_image=$(curl -fsSL \
+    -H "Authorization: Bearer ${GH_TOKEN}" \
+    -H 'Accept: application/vnd.github+json' \
+    "https://api.github.com/repos/niess/python-appimage/releases/tags/python{{ settings.appimage.python_version }}" |
+    jq -r --arg suffix "${base_image_tag}" \
+        'first(.assets[] | select(.name | endswith($suffix)) | .browser_download_url)')
+if [[ -z "${base_image}" || "${base_image}" == 'null' ]]; then
+    echo "No python{{ settings.appimage.python_version }} base image ending in ${base_image_tag}." >&2
+    exit 1
+fi
+curl -fsSL -O "${base_image}"
+base_image="${base_image##*/}"
+chmod +x "${base_image}"
+echo "Using base image ${base_image}."
     {% if single %}
 script_name='{{ settings.appimage.include_only[0] }}'
 {{ _build_body(settings) }}

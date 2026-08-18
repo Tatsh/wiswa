@@ -52,6 +52,8 @@ jobs:
         shell: 'bash'
 {% endif %}
       - name: 'Build with python-appimage'
+        env:
+          GH_TOKEN: '${{ '{{' }} github.token }}'
         run: |
           {{ build(settings) | indent(10) | trim }}
         shell: 'bash'
