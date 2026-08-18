@@ -30,6 +30,22 @@ function(settings)
             uses: 'leafo/gh-actions-luarocks@' + utils.githubLatestActionSha('leafo', 'gh-actions-luarocks'),
           },
           {
+            id: 'check_secret',
+            name: 'Check LUAROCKS_API_KEY is set',
+            env: {
+              LUAROCKS_API_KEY: '${{ secrets.LUAROCKS_API_KEY }}',
+            },
+            run: |||
+              if [[ -n "$LUAROCKS_API_KEY" ]]; then
+                echo 'has_luarocks_api_key=true' >> "$GITHUB_OUTPUT"
+              else
+                echo 'has_luarocks_api_key=false' >> "$GITHUB_OUTPUT"
+                echo '::warning::LUAROCKS_API_KEY secret is empty; the upload step will be skipped.'
+              fi
+            |||,
+          },
+          {
+            'if': "steps.check_secret.outputs.has_luarocks_api_key == 'true'",
             env: {
               LUAROCKS_API_KEY: '${{ secrets.LUAROCKS_API_KEY }}',
             },
