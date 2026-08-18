@@ -236,6 +236,7 @@ rstcheck
 ruiquelhas
 samuelcolvin
 sass
+sbclaude
 savestepsize
 schemafile
 scrapy
