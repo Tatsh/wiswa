@@ -73,6 +73,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   a user `uv.toml` or the project's `pyproject.toml` `[tool.uv]`, so users without that
   configuration received the very newest releases. This mirrors uv's own one-week default and the
   existing npm age gate.
+- A repository named `<username>.github.io` is the user or organisation GitHub Pages site, which is
+  served from the domain root rather than a path beneath it. `github.pages_uri` and the `homepage`
+  derived from it now account for that instead of always appending the repository name, so such a
+  project no longer advertises `https://<username>.github.io/<username>.github.io/`. A new
+  `gitHubPagesUri` Jsonnet utility backs this.
+- The GitHub Pages README badge now links to `github.pages_uri` rather than rebuilding the URL from
+  the username and repository name. The badge was derived independently in the post-processing step
+  and in the README template, so it disagreed with `homepage` for a user site and ignored a
+  `pages_uri` override set for a custom domain.
 
 ## [0.4.0] - 2026-05-22
 

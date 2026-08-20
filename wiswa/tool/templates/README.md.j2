@@ -42,7 +42,7 @@
 {% if settings.project_type == 'python' %}
 [![Documentation Status](https://readthedocs.org/projects/{{ settings.github_project_name }}/badge/?version=latest)]({{ settings.documentation_uri }}/?badge=latest)
 {% elif settings.using_github %}
-[![GitHub Pages]({{ settings.repository_uri }}/actions/workflows/pages.yml/badge.svg)](https://{{ settings.github.username | lower }}.github.io/{{ settings.github_project_name }}/)
+[![GitHub Pages]({{ settings.repository_uri }}/actions/workflows/pages.yml/badge.svg)]({{ settings.github.pages_uri }})
 {% endif %}
 {% endif %}
 {% if settings.project_type == 'python' %}

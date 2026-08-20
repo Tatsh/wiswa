@@ -624,7 +624,7 @@ def _docs_badges(settings: Settings,
     elif settings['using_github'] and github_pages_build_type is not None:
         gh = settings['github']['username']
         name = settings['github_project_name']
-        pages_uri = f'https://{gh.lower()}.github.io/{name}/'
+        pages_uri = settings['github']['pages_uri']
         if github_pages_build_type == 'legacy':
             yield (f'[![pages-build-deployment](https://github.com/{gh}/{name}/actions/workflows/'
                    f'pages/pages-build-deployment/badge.svg)]({pages_uri})')

@@ -952,10 +952,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     /** @brief GitHub Pages configuration. */
     pages_config: import 'defaults/_config.libsonnet',
     /** @brief GitHub Pages URI. */
-    pages_uri: 'https://%s.github.io/%s/' % [
-      std.asciiLower(settings.github_username),
-      settings.github_project_name,
-    ],
+    pages_uri: utils.gitHubPagesUri(settings.github_username, settings.github_project_name),
     /** @brief If the immutable OIDC subject claim format should be enabled for the repository. */
     immutable_oidc_subject: true,
     /** @brief If releases should be immutable (prevent asset modification after publish). */

@@ -158,6 +158,26 @@ local utils = import 'utils.libsonnet';
     ],
 
   /**
+   * @brief Generate a GitHub Pages URI.
+   *
+   * A repository named ``<username>.github.io`` is the user or organisation site, which GitHub
+   * serves from the domain root. Every other repository is a project site served from a path
+   * beneath it.
+   *
+   * @param github_username The GitHub username.
+   * @param project_name The project name.
+   * @returns A GitHub Pages URI (string).
+   * @pt string, string
+   * @rv string
+   */
+  gitHubPagesUri(github_username, project_name)::
+    local user = std.asciiLower(github_username);
+    if std.asciiLower(project_name) == '%s.github.io' % user then
+      'https://%s.github.io/' % user
+    else
+      'https://%s.github.io/%s/' % [user, project_name],
+
+  /**
    * @brief Extract the host from an ``http`` or ``https`` repository URI.
    * @param uri A repository URL such as ``https://gitlab.example.com/group/project``.
    * @returns The hostname, or empty string if the URI does not look like ``http(s)://host/...``.

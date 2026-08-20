@@ -149,6 +149,8 @@ class SettingsGitHub(TypedDict):
     """If the immutable OIDC subject claim format should be enabled."""
     immutable_releases: bool
     """If releases should be immutable."""
+    pages_uri: str
+    """The GitHub Pages URI."""
     sha_pinning_required: bool
     """If GitHub Actions must be pinned to a full-length commit SHA."""
     username: str

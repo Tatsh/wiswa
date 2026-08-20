@@ -18,10 +18,32 @@ from wiswa.tool.utils.jsonnet import (
     validate_flatpak_app_id,
     validate_remote_host_flags,
 )
+import _jsonnet  # ruff:ignore[import-private-name]
 import pytest
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
+
+_WISWA_JSONNET = Path(__file__).resolve().parent.parent / 'wiswa' / 'jsonnet'
+
+
+@pytest.mark.parametrize(('username', 'project_name', 'expected'), [
+    ('Tatsh', 'tatsh.github.io', 'https://tatsh.github.io/'),
+    ('Tatsh', 'Tatsh.github.io', 'https://tatsh.github.io/'),
+    ('tatsh', 'tatsh.github.io', 'https://tatsh.github.io/'),
+    ('Tatsh', 'wiswa', 'https://tatsh.github.io/wiswa/'),
+    ('TestUser', 'myproject', 'https://testuser.github.io/myproject/'),
+    ('TestUser', 'testuser.github.io', 'https://testuser.github.io/'),
+    ('Tatsh', 'tatsh.github.io.old', 'https://tatsh.github.io/tatsh.github.io.old/'),
+])
+def test_github_pages_uri(username: str, project_name: str, expected: str) -> None:
+    assert json.loads(
+        _jsonnet.evaluate_snippet('',
+                                  f"""
+            local utils = import 'utils.libsonnet';
+            utils.gitHubPagesUri('{username}', '{project_name}')
+            """,
+                                  jpathdir=[str(_WISWA_JSONNET)])) == expected
 
 
 async def test_evaluate_jsonnet_file(mocker: MockerFixture) -> None:
