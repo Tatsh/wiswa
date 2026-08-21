@@ -1,8 +1,8 @@
 {
   "_wiswa": {
     "commandLine": "wiswa -d",
-    "lastRun": "2026-08-05T01:12:49Z",
-    "version": "0a44fcc-dirty"
+    "lastRun": "2026-08-21T12:52:29Z",
+    "version": "4153b14-dirty"
   },
   "contributors": ["Andrew Udvare <audvare@gmail.com>"],
   "cspell": {
@@ -49,7 +49,7 @@
     "prettier-plugin-ini": "^1.3.0",
     "prettier-plugin-sort-json": "^4.2.0",
     "prettier-plugin-toml": "^2.0.6",
-    "pyright": "^1.1.411"
+    "pyright": "^1.1.412"
   },
   "files": ["LICENSE.txt", "README.md", "man/wiswa.1"],
   "homepage": "https://tatsh.github.io/wiswa/",

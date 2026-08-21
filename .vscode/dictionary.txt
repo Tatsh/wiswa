@@ -43,7 +43,6 @@ commondir
 conftest
 contenttypes
 contrib
-cooldown
 coveragerc
 coverallsapp
 cpack
@@ -236,8 +235,8 @@ rstcheck
 ruiquelhas
 samuelcolvin
 sass
-sbclaude
 savestepsize
+sbclaude
 schemafile
 scrapy
 sdist
