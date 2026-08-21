@@ -28,9 +28,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "WISWA" "1" "May 22, 2026" "0.4.0" "wiswa"
+.TH "WISWA" "1" "Aug 21, 2026" "0.5.0" "wiswa"
 .SH NAME
-wiswa \- wiswa v0.4.0
+wiswa \- wiswa v0.5.0
 .SH INSTALLATION
 .sp
 We recommend a \fBglobal\fP install so \fBwiswa\fP is on your \fBPATH\fP from any
@@ -455,6 +455,39 @@ The temporary keychain and certificate file are cleaned up.
 \X'tty: link https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution'\fI\%Notarizing macOS Software\fP\X'tty: link'
 .IP \(bu 2
 \X'tty: link https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/customizing_the_notarization_workflow'\fI\%notarytool\fP\X'tty: link'
+.UNINDENT
+.SS Supply chain security
+.sp
+Wiswa generates projects with several supply\-chain hardening measures inspired by
+\X'tty: link https://astral.sh/blog/open-source-security-at-astral'\fI\%Astral\(aqs open source security practices\fP\X'tty: link'\&.
+.SS Pinned actions
+.sp
+Every generated GitHub Actions workflow pins each action to a full\-length commit SHA, resolved from
+the action\(aqs latest release tag when the project is generated. This is the recommended defence
+against a tag or branch being re\-pointed at malicious code. Dependabot still proposes updates to
+SHA\-pinned actions, so the pins stay current. Regenerating the project re\-resolves the SHAs.
+.SS zizmor
+.sp
+GitHub projects gain a \X'tty: link https://github.com/zizmorcore/zizmor'\fI\%zizmor\fP\X'tty: link' pre\-commit hook, which
+statically analyses workflows for issues such as unpinned actions and impostor commits. Set
+\fBwant_zizmor\fP to \fBfalse\fP to opt out.
+.SS Release environment
+.sp
+The publish and release\-promotion jobs declare a GitHub deployment \fBenvironment\fP (\fBrelease\fP by
+default, configurable through \fBgithub.workflows.release_environment\fP; set it to an empty string to
+disable the gate). \fBCreate this environment in the repository settings and add a required\-reviewer
+protection rule\fP so another maintainer must approve before a release runs.
+.SS Repository configuration
+.sp
+When Wiswa configures the GitHub repository (that is, unless \fB\-\-skip\-remote\fP is passed), it also
+applies two account\-level controls through the API, both enabled by default:
+.INDENT 0.0
+.IP \(bu 2
+\fBgithub.sha_pinning_required\fP requires that actions are pinned to a full\-length commit SHA,
+enforcing the policy server\-side to complement the SHA pins in the generated workflows.
+.IP \(bu 2
+\fBgithub.immutable_oidc_subject\fP opts the repository in to the immutable OIDC subject claim
+format, giving trusted publishing a stable, repository\-ID\-based subject.
 .UNINDENT
 .SH AUTHOR
 Andrew Udvare <audvare@gmail.com>

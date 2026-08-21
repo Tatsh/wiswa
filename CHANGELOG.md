@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-21
+
 ### Added
 
 - A dependency's constraint array (used by `python_deps` and the legacy Poetry path) now accepts
@@ -61,6 +63,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `typescript-eslint` and `ts-jest` cannot load the TypeScript 7 API, so ESLint aborts with
   "typescript-eslint does not support TS 7.0" whenever `typescript` resolves to 7.x. See
   [typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940).
+- Release assets are now attached by a single locked job rather than by each build job. GitHub
+  enforces tag uniqueness only for published releases, so `gh release create --draft` succeeded
+  even when a draft already existed for the tag, and every job that ran it created a draft of its
+  own, scattering one tag's assets across several releases. Build jobs now only publish artifacts,
+  and one small job collects them behind a repository-wide concurrency group (with `queue: max`,
+  since the default cancels a queued run), so exactly one job writes the release. `GH_REPO` is set
+  explicitly so `gh` never invokes `git` to detect the repository, which fails in container jobs
+  whose workspace is owned by another user.
+- The generated AppImage workflow now resolves and fetches the base image itself instead of
+  letting python-appimage do it. The python-appimage tool asks `api.github.com` which releases
+  exist, using an anonymous request that accepts no token, and because hosted runners share egress
+  addresses, the shared hourly limit was reached at times unrelated to the project being built,
+  failing the build with `HTTP Error 403: rate limit exceeded`. Supplying the base image skips
+  that call.
+- The Dependabot `cooldown` default of seven days now also covers the `github-actions` ecosystem,
+  which clears zizmor's `dependabot-cooldown` finding.
+- The generated Ruff configuration now ignores `RUF105`, `RUF106`, and `RUF201`, preferring
+  shorter `noqa:` comments carrying codes over `ruff: ignore`.
+- The generated pre-commit AWS credentials hook now passes `--allow-missing-credentials`.
 
 ### Fixed
 
@@ -82,6 +103,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the username and repository name. The badge was derived independently in the post-processing step
   and in the README template, so it disagreed with `homepage` for a user site and ignored a
   `pages_uri` override set for a custom domain.
+- The generated `publish-luarocks` workflow now checks the API key before uploading and skips the
+  step with a warning when the secret is empty. Previously the empty value was passed straight to
+  `luarocks upload`, so a project without the secret failed on an authentication error that said
+  nothing about the cause. This matches what `publish-winget` already does for its token.
+- The PyPI version, Downloads, and Python versions badges in the generated `README.md` and
+  `docs/badges.rst` now use `pypi_project_name` rather than `project_name` in the shields.io and
+  pepy.tech image URLs. Where the two names differ, those badges pointed at a project that does not
+  exist on PyPI and rendered as "not found", and the two files disagreed with each other.
 
 ## [0.4.0] - 2026-05-22
 
@@ -829,7 +858,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First version.
 
-[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.4.0...HEAD
+[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Tatsh/wiswa/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Tatsh/wiswa/compare/v0.3.5...v0.4.0
 [0.3.5]: https://github.com/Tatsh/wiswa/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/Tatsh/wiswa/compare/v0.3.3...v0.3.4
