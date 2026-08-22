@@ -1436,6 +1436,9 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                   } else {})
                  + {
                    ignore: std.set(pyproject.tool.ruff.lint.ignore + com812),
+                   isort+: {
+                     'known-first-party': std.set([std.split(m, '.')[0] for m in settings.modules]),
+                   },
                  }
                ),
                'target-version': 'py3%s' % settings.supported_python_versions[0][2:],

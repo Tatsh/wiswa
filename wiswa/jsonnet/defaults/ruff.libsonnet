@@ -67,7 +67,13 @@
       'combine-as-imports': true,
       'from-first': true,
       'required-imports': ['from __future__ import annotations'],
-      'section-order': ['future', 'standard-library', 'third-party', 'local-folder'],
+      'section-order': [
+        'future',
+        'standard-library',
+        'third-party',
+        'first-party',
+        'local-folder',
+      ],
     },
     /** @brief Configuration for Ruff's mccabe implementation. */
     mccabe: {

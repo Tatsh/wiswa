@@ -9,6 +9,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Generated Ruff configuration now lists the project's own top-level modules under
+  `lint.isort.known-first-party` and adds the `first-party` group to `lint.isort.section-order`, so
+  a project's own imports sort into a group of their own instead of alongside third-party ones.
+  Stubs-only projects are unaffected, as they do not enforce import sorting.
+
 ## [0.5.0] - 2026-08-21
 
 ### Added
