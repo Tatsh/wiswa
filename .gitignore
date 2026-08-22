@@ -8,7 +8,6 @@
 .cspellcache
 .directory
 .pnp.*
-.sbclaude-venv/
 .venv/
 /.bash_profile
 /.bashrc
@@ -31,6 +30,7 @@
 /.mcp.json
 /.profile
 /.ripgreprc
+/.sbclaude-venv/
 /.wiswa-ci/
 /.yarn/install-state.gz
 /.zprofile

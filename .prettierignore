@@ -19,7 +19,6 @@
 .directory
 .eslintignore
 .pnp.*
-.sbclaude-venv/
 .shellcheckrc
 .venv/
 /.bash_profile
@@ -42,6 +41,7 @@
 /.mcp.json
 /.profile
 /.ripgreprc
+/.sbclaude-venv/
 /.wiswa-ci/
 /.yarn/**/*.cjs
 /.yarn/install-state.gz

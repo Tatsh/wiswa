@@ -1173,8 +1173,8 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     '/.claude/settings.local.json',
   ] else [],
   local python_ignore = if self.project_type == 'python' then [
-    '.sbclaude-venv/',
-    '.venv/',
+    '/.sbclaude-venv/',
+    '/.venv/',
     '/docs/_build/',
     '/man/_static/',
     '/mypy-report*/',
