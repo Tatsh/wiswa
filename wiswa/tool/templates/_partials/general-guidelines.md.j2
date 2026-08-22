@@ -52,3 +52,5 @@
 - Spell-check uses cspell with British English (`en-GB`). Exception: code identifiers must use
   American English (`ColorCode` not `ColourCode`).
 {% endif -%}
+- Do not use `echo`, `cat`, `printf`, `python`, `perl`, or other shell commands to write to files.
+  Use `Write()` for new files and `Edit()` for existing files.
