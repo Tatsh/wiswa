@@ -19,4 +19,7 @@ deliberately has none — match the file's existing comment density rather than 
 Doc comments (docstrings, etc) follow the file's convention and cover the public surface only.
 Document behaviour, invariants, units, and error conditions.
 
+If a correction is being made, a comment mentioning the prior state is not worth having because the
+commit message mentioning why the change was made will suffice.
+
 Comments must stay true on any machine: never mention this sandbox, host, or session.
