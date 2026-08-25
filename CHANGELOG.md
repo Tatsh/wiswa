@@ -15,6 +15,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `lint.isort.known-first-party` and adds the `first-party` group to `lint.isort.section-order`, so
   a project's own imports sort into a group of their own instead of alongside third-party ones.
   Stubs-only projects are unaffected, as they do not enforce import sorting.
+- Generated `.claude/rules/python.md` now forbids a rationale after a suppression directive.
+  `# noqa`, `# ruff: ignore[...]`, `# type: ignore[...]`, `# ty: ignore[...]`, and
+  `# pyright: ignore[...]` end with their codes and nothing else. This replaces the instruction to
+  explain the limitation behind every `# type: ignore[...]` in a comment on the same line.
+- The Python section of the generated `.claude/skills/ci/SKILL.md` now runs its review agents in
+  parallel, each reporting suggestions that are then applied in one pass, rather than running them
+  in sequence with each editing the tree in turn. `qa-fixer` and a `yarn test:cov` run follow the
+  applied suggestions instead of sitting in the same numbered list, and the `click-auditor` entry
+  now also requires that the project uses Click.
 
 ## [0.5.0] - 2026-08-21
 
