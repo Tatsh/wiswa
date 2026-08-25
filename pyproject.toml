@@ -58,7 +58,7 @@ dependencies = [
   "tomlkit>=0.15.1",
   "typing-extensions>=4.16.0",
   "wiswa-typing>=0.1.0",
-  "wiswa-vcs>=0.1.0",
+  "wiswa-vcs>=0.1.1",
 ]
 description = "A highly opinionated way to generate and maintain projects with Jsonnet."
 keywords = ["command line", "jsonnet", "project generator", "project management", "scaffolding"]
@@ -242,10 +242,6 @@ exclude = ["tests/test_extensions.py"]
 [tool.uv]
 default-groups = "all"
 exclude-newer = "1 week"
-
-[tool.uv.exclude-newer-package]
-wiswa-typing = "2026-05-23"
-wiswa-vcs = "2026-06-02"
 
 [tool.yapf]
 align_closing_bracket_with_visual_indent = true
