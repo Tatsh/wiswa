@@ -32,7 +32,7 @@ def _setup_module_path(tmp_path: Path) -> Path:
     module_path = tmp_path / 'wiswa_pkg'
     rules_dir = module_path / 'static/claude/rules'
     rules_dir.mkdir(parents=True, exist_ok=True)
-    for name in ('json-yaml', 'toml-ini'):
+    for name in ('json-yaml', 'minimal-comments', 'toml-ini'):
         (rules_dir / f'{name}.md').write_text(f'{name} rules content')
     (rules_dir / 'python-tests.md').write_text('python-tests rules')
     return module_path
@@ -165,7 +165,7 @@ async def test_copy_static_files_not_wanted_ai_removes_rules_and_trims_empty_dir
     module_path = _setup_module_path(tmp_path)
     rules_dir = tmp_path / '.claude/rules'
     rules_dir.mkdir(parents=True)
-    for name in ('json-yaml', 'toml-ini'):
+    for name in ('json-yaml', 'minimal-comments', 'toml-ini'):
         (rules_dir / f'{name}.md').write_text(f'{name} rules content')
     settings = cast('Any', _make_settings(want_ai=False, project_type='generic'))
     await copy_static_files(settings, module_path)
