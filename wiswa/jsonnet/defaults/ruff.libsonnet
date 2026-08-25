@@ -54,7 +54,6 @@
     preview: true,
     'flake8-builtins': {
       'allowed-modules': ['types', 'typing'],
-      // 'strict-checking': true,
     },
     'flake8-quotes': {
       'inline-quotes': 'single',

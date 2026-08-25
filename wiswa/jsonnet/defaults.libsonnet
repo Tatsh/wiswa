@@ -743,7 +743,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    */
   year: utils.year(),
 
-  // Detailed settings
   /** @brief Line width for code formatting. */
   line_width: 100,
   /**
@@ -766,7 +765,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   /** @brief Depth of the Python package index (for Pyright and Pylance). */
   python_package_index_depth: 100,
 
-  // Tab sizes
   /** @brief Tab size for C/C++ files. */
   c_cpp_tab_size: 4,
   /** @brief Tab size for Python files. */
@@ -778,7 +776,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   /** @brief Default tab size. */
   tab_size: 2,
 
-  // Shared
   /**
    * @brief Array of authors.
    * @sa [What is a CITATION.cff file?](https://citation-file-format.github.io/#/what-is-a-citation-cff-file)
@@ -929,7 +926,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     },
   },
 
-  // GitHub
   /** @brief GitHub settings. */
   github: {
     /** @brief CodeQL configuration. */
@@ -1128,7 +1124,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   local cz = import 'defaults/cz.libsonnet',
   cz: cz.get(settings),
 
-  // CITATION.cff
   /** @brief `CITATION.cff` output. */
   citation: {
     /** @brief CITATION.cff version. */
@@ -1153,7 +1148,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     version: settings.version,
   },
 
-  // Git
   /**
    * @brief Array of `.gitattributes` entries.
    * @var string[]
@@ -1524,7 +1518,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   /** @brief If ESLint tasks should be added on non-TypeScript projects. */
   force_eslint: self.project_type == 'typescript',
 
-  // package.json only
   /** @brief Configuration for `package.json`. */
   package_json: package.get(self) + {
     contributors: ['%s <%s>' % [x.name, x.email] for x in settings.authors],
@@ -1552,7 +1545,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     else {},
   },
 
-  // Publishing
   /** @brief Publishing configuration. */
   publishing: {
     /** @brief App Store app identifier. */

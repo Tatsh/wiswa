@@ -18,14 +18,12 @@ function(settings)
                  description=$(tomlq --raw-output '.project.description' pyproject.toml)
                  author_name=$(tomlq --raw-output '.project.authors[0].name' pyproject.toml)
                  author_email=$(tomlq --raw-output '.project.authors[0].email' pyproject.toml)
-                 # Create temporary file with the new fields
                  cat > /tmp/poetry_fields.toml << EOF
                  authors = ["$author_name <$author_email>"]
                  description = "$description"
                  name = "$name"
                  version = "$version"
                  EOF
-                 # Insert the fields after [tool.poetry] line
                  awk '
                    /^\[tool\.poetry\]$/ {
                      print
