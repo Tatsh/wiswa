@@ -13,8 +13,9 @@ if TYPE_CHECKING:
 __all__ = ('CustomProjectBadge', 'ExportRequirements', 'PackageJSON', 'PackageJSONPublishConfig',
            'PyProject', 'PyProjectBuildSystem', 'PyProjectProject', 'PyProjectTool',
            'PyProjectToolCommitizen', 'PyProjectToolPoetry', 'PyProjectToolPoetryPackage',
-           'PythonDeps', 'Settings', 'SettingsGitHub', 'SettingsSocial', 'SettingsSocialMastodon',
-           'SettingsSocialTextAndURI', 'VSCode', 'VSCodeLaunch', 'VSCodeLaunchConfiguration')
+           'PythonDeps', 'Settings', 'SettingsGitHub', 'SettingsPublishing', 'SettingsSocial',
+           'SettingsSocialMastodon', 'SettingsSocialTextAndURI', 'VSCode', 'VSCodeLaunch',
+           'VSCodeLaunchConfiguration')
 
 
 class VSCodeLaunchConfiguration(TypedDict):
@@ -211,6 +212,23 @@ class SettingsSocial(TypedDict):
     """The Libera.Chat IRC nickname for the project or its maintainer."""
 
 
+class SettingsPublishing(TypedDict, total=False):
+    """Store and registry identifiers the project publishes under."""
+
+    appstore: str
+    """App Store app identifier."""
+    chrome: str
+    """Chrome Web Store app identifier."""
+    fdroid: str
+    """F-Droid app identifier."""
+    flathub: str
+    """Flathub app identifier, which also names the generated Flatpak manifest."""
+    nuget: str
+    """NuGet package identifier."""
+    snapcraft: str
+    """Snapcraft app identifier."""
+
+
 class PackageJSONPublishConfig(TypedDict, total=False):
     """The ``publishConfig`` block of a ``package.json``."""
 
@@ -388,6 +406,12 @@ class Settings(TypedDict):
     """
     want_appimage: bool
     """If the project should generate an AppImage workflow."""
+    publishing: SettingsPublishing
+    """Store and registry identifiers the project publishes under."""
+    want_flatpak: bool
+    """If the project should generate a Flatpak manifest and, for Python, a workflow."""
+    want_snap: bool
+    """If the project should generate ``snapcraft.yaml`` and, for Python, a Snap workflow."""
     want_pyinstaller: bool
     """If the project should generate a PyInstaller workflow."""
     want_codeql: bool

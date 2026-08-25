@@ -168,6 +168,38 @@ async def _remove_legacy_wiswa_ai_files() -> None:
             log.debug('Removed legacy Wiswa AI file `%s`.', relative)
 
 
+def _flathub_app_id(settings: Settings) -> str:
+    return settings.get('publishing', {}).get('flathub', '').strip()
+
+
+async def _remove_disabled_packaging_files(settings: Settings) -> None:
+    """
+    Delete Snap and Flatpak outputs that are no longer generated.
+
+    The Flatpak manifest is named after ``publishing.flathub``, so it can only be removed while
+    that ID is still set. Clearing the ID in the same run that disables ``want_flatpak`` leaves
+    the manifest behind.
+
+    Parameters
+    ----------
+    settings : Settings
+        Project settings.
+    """
+    stale: list[str] = []
+    if not settings.get('want_snap', False):
+        stale.extend(('.github/workflows/snap.yml', 'snapcraft.yaml'))
+    app_id = _flathub_app_id(settings)
+    if not (settings.get('want_flatpak', False) and app_id):
+        stale.append('.github/workflows/flatpak.yml')
+        if app_id:
+            stale.append(f'{app_id}.yml')
+    for relative in stale:
+        path = anyio.Path(relative)
+        if await path.is_file():
+            await path.unlink()
+            log.debug('Removed `%s` because its packaging output is not configured.', relative)
+
+
 async def _create_wiswa_ci_cache_dirs(settings: Settings) -> None:
     """
     Create ``.wiswa-ci/cache`` subdirectories for tool caches when ``want_ai`` is enabled.
@@ -931,6 +963,7 @@ async def post_process_steps(settings: Settings,
     """
     if settings['private']:
         await anyio.Path('.github/workflows/publish.yml').unlink(missing_ok=True)
+    await _remove_disabled_packaging_files(settings)
     match settings['project_type']:
         case 'python':
             await _post_process_steps_python(settings, debug=debug, on_command=on_command)
