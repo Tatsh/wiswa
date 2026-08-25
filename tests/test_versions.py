@@ -9,6 +9,8 @@ from unittest.mock import AsyncMock, MagicMock
 import math
 import stat
 
+import pytest
+
 from wiswa.tool.utils.versions import (
     clear_resolution_caches,
     download_yarn,
@@ -19,7 +21,6 @@ from wiswa.tool.utils.versions import (
     get_pypi_latest_package_version,
     resolve_npm_minimal_age_gate_minutes,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture

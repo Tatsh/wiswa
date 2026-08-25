@@ -8,6 +8,9 @@ from unittest.mock import AsyncMock, MagicMock
 import json
 import subprocess as sp
 
+import _jsonnet  # ruff:ignore[import-private-name]
+import pytest
+
 from wiswa.tool.utils.jsonnet import (
     FlatpakConfigurationError,
     RemoteHostConflictError,
@@ -18,8 +21,6 @@ from wiswa.tool.utils.jsonnet import (
     validate_flatpak_app_id,
     validate_remote_host_flags,
 )
-import _jsonnet  # ruff:ignore[import-private-name]
-import pytest
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, cast
 import re
 
 from jinja2.ext import Extension
+
 from wiswa.vcs.github import ref_commit_sha
 
 if TYPE_CHECKING:

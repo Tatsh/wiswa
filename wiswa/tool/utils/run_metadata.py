@@ -13,8 +13,9 @@ import os
 import re
 import sys
 
-from wiswa.vcs.git import changed_files, diff, restore_from_head
 import anyio
+
+from wiswa.vcs.git import changed_files, diff, restore_from_head
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -8,9 +8,10 @@ import logging
 from wiswa.vcs.gitlab import configure_project, get_gitlab_token, repository_uri_hostname
 
 if TYPE_CHECKING:
+    import niquests
+
     from wiswa.tool.typing import Settings
     from wiswa.vcs.typing import RemoteSettings
-    import niquests
 
 __all__ = ('setup_gitlab_project',)
 

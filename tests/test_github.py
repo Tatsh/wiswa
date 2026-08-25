@@ -9,6 +9,7 @@ from wiswa.tool.utils.github import get_github_pages_build_type, setup_github_pr
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
+
     from wiswa.tool.typing import Settings
 
 

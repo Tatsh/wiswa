@@ -7,12 +7,14 @@ from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
 import json
 
-from wiswa.tool.utils.gitlab import setup_gitlab_project
 import _jsonnet  # ruff:ignore[import-private-name]
 import pytest
 
+from wiswa.tool.utils.gitlab import setup_gitlab_project
+
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
+
     from wiswa.tool.typing import Settings
 
 _WISWA_JSONNET = Path(__file__).resolve().parent.parent / 'wiswa' / 'jsonnet'

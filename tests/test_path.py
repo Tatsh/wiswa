@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from wiswa.tool.utils.path import (
     non_empty_file_exists,
     primary_module_to_path,
     remove_empty_dirs,
     tests_dir_has_pytest_modules_excluding_starter_main,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

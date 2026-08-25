@@ -4,11 +4,11 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
-  "commitizen>=4.17.0",
+  "commitizen>=4.17.1",
   "cz-path>=0.0.7",
-  "mypy>=2.3.0",
+  "mypy>=2.3.1",
   "ruff==0.16.3",
-  "ty>=0.0.71",
+  "ty>=0.0.72",
   "types-jsonnet>=0.22.0.20260408",
   "yapf>=0.43.0",
 ]
@@ -211,8 +211,9 @@ multiline-quotes = "double"
 case-sensitive = true
 combine-as-imports = true
 from-first = true
+known-first-party = ["wiswa"]
 required-imports = ["from __future__ import annotations"]
-section-order = ["future", "standard-library", "third-party", "local-folder"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 20

@@ -16,10 +16,11 @@ import tempfile
 
 from anyio.to_thread import run_sync
 from niquests import AsyncSession
-from wiswa.vcs.git import maybe_revert
 import anyio
 import niquests
 import tomlkit
+
+from wiswa.vcs.git import maybe_revert
 
 from .github import get_github_pages_build_type
 from .versions import get_github_release_latest_tag

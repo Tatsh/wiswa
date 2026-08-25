@@ -11,9 +11,10 @@ import logging
 import re
 import shutil
 
+import pytest
+
 from wiswa.tool.utils.postprocess import resolve_changelog_boilerplate_urls
 from wiswa.tool.utils.templating import write_templated_files
-import pytest
 import wiswa.tool
 
 if TYPE_CHECKING:

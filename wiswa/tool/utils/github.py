@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import logging
 
 from anyio.to_thread import run_sync
+
 from wiswa.vcs.github import (
     USER_AGENT,
     NiquestsGitHubAPI,
@@ -16,9 +17,10 @@ from wiswa.vcs.github import (
 from wiswa.vcs.gitlab import repository_uri_hostname
 
 if TYPE_CHECKING:
+    import niquests
+
     from wiswa.tool.typing import Settings
     from wiswa.vcs.github import PagesBuildType
-    import niquests
 
 __all__ = ('get_github_pages_build_type', 'setup_github_project')
 

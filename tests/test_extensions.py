@@ -5,9 +5,10 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-from wiswa.tool.extensions import ShellExtension, ToPythonExtension
 import jinja2
 import pytest
+
+from wiswa.tool.extensions import ShellExtension, ToPythonExtension
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

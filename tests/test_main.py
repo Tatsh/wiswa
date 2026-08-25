@@ -7,11 +7,12 @@ from unittest.mock import AsyncMock, MagicMock
 
 from click.testing import CliRunner
 from typing_extensions import override
-from wiswa.tool.main import main
-from wiswa.tool.utils import FlatpakConfigurationError, RemoteHostConflictError
 import click
 import niquests
 import pytest
+
+from wiswa.tool.main import main
+from wiswa.tool.utils import FlatpakConfigurationError, RemoteHostConflictError
 
 if TYPE_CHECKING:
     from pathlib import Path

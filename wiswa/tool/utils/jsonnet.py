@@ -18,10 +18,11 @@ import time
 
 from anyio.from_thread import run as run_async_from_worker_thread
 from anyio.to_thread import run_sync
-from wiswa.vcs.github import ref_commit_sha
 import _jsonnet  # ruff:ignore[import-private-name]
 import anyio
 import platformdirs
+
+from wiswa.vcs.github import ref_commit_sha
 
 from .path import tests_dir_has_pytest_modules_excluding_starter_main
 from .versions import (
@@ -36,6 +37,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
     from niquests import AsyncSession
+
     from wiswa.tool.typing import Settings
 
 JsonnetNativeCallback: TypeAlias = tuple[tuple[str, ...], Callable[..., Any]]

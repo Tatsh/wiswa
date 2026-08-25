@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import io
 
 from rich.console import Console
+
 from wiswa.tool.progress import ProgressDisplay, TaskId
 
 if TYPE_CHECKING:

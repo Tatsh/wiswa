@@ -9,15 +9,16 @@ import json
 import logging
 import subprocess
 
+import niquests
+import pytest
+import tomlkit
+
 from wiswa.tool.utils.postprocess import (
     apply_python_pyproject_manifest_edits,
     maybe_revert_uv_lock_if_only_lockfile_changed,
     post_process_steps,
     uv_lock_diff_changes_only_exclude_newer,
 )
-import niquests
-import pytest
-import tomlkit
 
 if TYPE_CHECKING:
     from pathlib import Path

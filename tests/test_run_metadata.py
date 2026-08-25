@@ -10,13 +10,14 @@ import json
 import re
 import subprocess
 
+import pytest
+
 from wiswa.tool.utils.run_metadata import (
     get_wiswa_version_or_sha,
     maybe_revert_package_json_if_only_wiswa_metadata_changed,
     package_json_diff_changes_only_wiswa_metadata,
     write_wiswa_run_metadata,
 )
-import pytest
 import wiswa.tool
 
 if TYPE_CHECKING:

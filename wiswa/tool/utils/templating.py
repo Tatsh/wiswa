@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
     from niquests import AsyncSession
+
     from wiswa.tool.typing import Settings
 
 log = logging.getLogger(__name__)
