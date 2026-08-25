@@ -249,6 +249,9 @@ async def test_post_process_steps_removes_legacy_wiswa_ai_files(tmp_path: Path,
     legacy_release_agent = tmp_path / '.claude' / 'agents' / 'release.md'
     legacy_release_agent.parent.mkdir(parents=True)
     legacy_release_agent.write_text('legacy')
+    legacy_comments_rule = tmp_path / '.claude' / 'rules' / 'minimal-comments.md'
+    legacy_comments_rule.parent.mkdir(parents=True)
+    legacy_comments_rule.write_text('legacy')
     _mock_subprocess(mocker)
     settings = cast('Any', _make_settings())
     await post_process_steps(settings)
@@ -256,6 +259,7 @@ async def test_post_process_steps_removes_legacy_wiswa_ai_files(tmp_path: Path,
     assert not legacy_gh.exists()
     assert not legacy_claude_dist.exists()
     assert not legacy_release_agent.exists()
+    assert not legacy_comments_rule.exists()
 
 
 async def test_post_process_steps_creates_wiswa_ci_cache_dirs(tmp_path: Path,

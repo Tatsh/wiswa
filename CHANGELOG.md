@@ -24,6 +24,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   in sequence with each editing the tree in turn. `qa-fixer` and a `yarn test:cov` run follow the
   applied suggestions instead of sitting in the same numbered list, and the `click-auditor` entry
   now also requires that the project uses Click.
+- The generated `minimal-comments` Claude rule is now named `comments`, emitted as
+  `.claude/rules/comments.md` with a matching `name` field. Post-processing deletes the old
+  `.claude/rules/minimal-comments.md` from projects that already carry it, so a regenerated project
+  does not end up carrying both.
 
 ## [0.5.0] - 2026-08-21
 
