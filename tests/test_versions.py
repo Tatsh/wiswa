@@ -516,9 +516,6 @@ def test_resolve_npm_minimal_age_gate_minutes_npmrc_read_oserror_only(
     assert resolve_npm_minimal_age_gate_minutes() == 10080
 
 
-# get_npm_latest_package_version tests
-
-
 async def test_get_npm_latest_package_version_picks_oldest_stable() -> None:
     old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
     new_date = (datetime.now(tz=timezone.utc) - timedelta(minutes=5)).isoformat()
@@ -816,9 +813,6 @@ async def test_get_npm_latest_package_version_node_engine_invalid_constraint() -
                                                   'invalid-engines-pkg',
                                                   node_constraint='>=20')
     assert result == '2.0.0'
-
-
-# get_pypi_latest_package_version tests
 
 
 def _make_pypi_json(versions: list[tuple[str, str]]) -> dict[str, Any]:
