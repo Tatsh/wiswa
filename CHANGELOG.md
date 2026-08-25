@@ -35,6 +35,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `.github/workflows/flatpak.yml` and the `{publishing.flathub}.yml` manifest. The manifest is
   named after `publishing.flathub`, so it can only be removed while that ID is still set; clearing
   the ID in the same run that disables the flag leaves the manifest behind.
+- Generated Ruff configuration now sets `output-prefer-rule-codes`, so diagnostics are labelled
+  with their rule codes rather than the human-readable rule names that preview mode would
+  otherwise print. The generated configuration enables preview for both the linter and the
+  formatter, which is what makes the setting necessary.
 
 ## [0.5.0] - 2026-08-21
 

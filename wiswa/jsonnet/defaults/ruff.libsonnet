@@ -24,6 +24,8 @@
   'line-length': 100,
   /** @brief List of namespace packages in the project. */
   'namespace-packages': ['docs', 'tests'],
+  /** @brief If true, output rule codes instead of rule names. */
+  'output-prefer-rule-codes': true,
   /** @brief If true, apply fixes that may be unsafe. */
   'unsafe-fixes': true,
   /** @brief Configuration for Ruff linter. */
