@@ -9,6 +9,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- The generated PyInstaller workflow attached only one binary per file extension to a release,
+  silently discarding the rest. Every matrix job builds its binary under the same name, so a
+  four-way matrix produced two files called `dade` and two called `dade.exe`; the release job
+  downloads all four artifacts with `merge-multiple: true`, which flattens them into one directory,
+  and the second of each pair overwrote the first. A release advertising four platforms therefore
+  shipped two binaries, and neither said which architecture it was. The workflow already built
+  correctly named archives carrying the version and the architecture, and already attested them,
+  but never uploaded them anywhere; the release job now takes those instead. An archive also keeps
+  the executable bit and any macOS notarisation, both of which a bare release asset loses.
+
 ### Changed
 
 - The generated `.claude/skills/make-release/SKILL.md` now carries a step to bring the security

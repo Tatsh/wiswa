@@ -252,6 +252,18 @@ jobs:
           subject-path: '_out/*.zip'
           sbom-path: 'sbom.spdx.json'
   {% endif %}
+      # The archives, not the binaries, are what a release carries. Every matrix job builds a
+      # binary under the same name, so uploading those directly would collide once merged and
+      # silently drop every architecture but the last. An archive carries the version and the
+      # architecture in its own name, and keeps the executable bit and any notarisation that a
+      # bare release asset would lose.
+      - if: github.ref_type == 'tag'
+        name: 'Upload release archives'
+        uses: 'actions/upload-artifact@{{ github_latest_action_sha('actions', 'upload-artifact') }}'
+        with:
+          if-no-files-found: error
+          name: {{ settings.github_project_name }}-release-${{ '{{' }} matrix.suffix }}
+          path: '_out/*.zip'
     strategy:
       matrix:
         include:
@@ -289,7 +301,7 @@ jobs:
         with:
           merge-multiple: true
           path: '_release_assets'
-          pattern: {{ settings.github_project_name }}-binaries-*
+          pattern: {{ settings.github_project_name }}-release-*
       - name: 'Create or update draft release'
         env:
           GH_REPO: ${{ '{{' }} github.repository }}
