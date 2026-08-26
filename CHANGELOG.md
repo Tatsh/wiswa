@@ -9,6 +9,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-08-26
+
+### Added
+
+- New generated `.claude/rules/comments.md` rule. It sets one test for whether a comment is worth
+  writing (does it say something the code genuinely cannot?) and lists the kinds that fail it:
+  restating the code, labelling obvious structure, announcing a phase, decorative separators,
+  summarising the function below, describing the edit itself, and commented-out code.
+  Post-processing deletes `.claude/rules/minimal-comments.md`, the name the rule carried before
+  release, so a project regenerated from an intermediate development version does not end up
+  carrying both.
+
 ### Changed
 
 - Generated Ruff configuration now lists the project's own top-level modules under
@@ -24,10 +36,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   in sequence with each editing the tree in turn. `qa-fixer` and a `yarn test:cov` run follow the
   applied suggestions instead of sitting in the same numbered list, and the `click-auditor` entry
   now also requires that the project uses Click.
-- The generated `minimal-comments` Claude rule is now named `comments`, emitted as
-  `.claude/rules/comments.md` with a matching `name` field. Post-processing deletes the old
-  `.claude/rules/minimal-comments.md` from projects that already carry it, so a regenerated project
-  does not end up carrying both.
+- Generated `.claude/rules/python.md` now requires an acronym inside a class name to keep every
+  letter capitalised (`PNGFile`, not `PngFile`). `CamelCase` on its own says nothing about acronyms,
+  so a project could end up holding both spellings.
+- The generated general guidelines (in `AGENTS.md` and the Claude, Cursor, and Copilot rule files)
+  now forbid writing files with `echo`, `cat`, `printf`, or an interpreter, directing the assistant
+  to the editing tools instead. A shell write skips the read-before-write check and leaves no
+  diff to review, so a quoting mistake produces the wrong content silently rather than failing.
 - Post-processing now deletes the Snap and Flatpak outputs that a project no longer generates, so
   turning a packaging flag off no longer leaves the workflow and manifest on disk. With `want_snap`
   off, it removes `.github/workflows/snap.yml` and `snapcraft.yaml`; with Flatpak output off
@@ -39,6 +54,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   with their rule codes rather than the human-readable rule names that preview mode would
   otherwise print. The generated configuration enables preview for both the linter and the
   formatter, which is what makes the setting necessary.
+
+### Fixed
+
+- The virtualenv entries in `python_ignore` are now anchored to the repository root (`/.venv/`
+  rather than `.venv/`). A virtualenv only ever sits beside the project file, but the unanchored
+  entries also matched a directory of that name at any depth. `python_ignore` feeds both the
+  generated `.gitignore` and the generated `.prettierignore`. The yapf and pyright exclude lists
+  keep the bare name, as neither reads its patterns the way gitignore does.
 
 ## [0.5.0] - 2026-08-21
 
@@ -889,7 +912,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First version.
 
-[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.5.0...HEAD
+[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/Tatsh/wiswa/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Tatsh/wiswa/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Tatsh/wiswa/compare/v0.3.5...v0.4.0
 [0.3.5]: https://github.com/Tatsh/wiswa/compare/v0.3.4...v0.3.5
