@@ -9,26 +9,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed
-
-- The generated PyInstaller workflow attached only one binary per file extension to a release,
-  silently discarding the rest. Every matrix job builds its binary under the same name, so a
-  four-way matrix produced two files called `dade` and two called `dade.exe`; the release job
-  downloads all four artifacts with `merge-multiple: true`, which flattens them into one directory,
-  and the second of each pair overwrote the first. A release advertising four platforms therefore
-  shipped two binaries, and neither said which architecture it was. The workflow already built
-  correctly named archives carrying the version and the architecture, and already attested them,
-  but never uploaded them anywhere; the release job now takes those instead. An archive also keeps
-  the executable bit and any macOS notarisation, both of which a bare release asset loses.
+## [0.5.2] - 2026-08-26
 
 ### Changed
 
 - The generated `.claude/skills/make-release/SKILL.md` now carries a step to bring the security
   policy's supported versions up to date before the bump. `SECURITY.md` renders from
-  `security_policy_supported_versions`, so the setting and the rendered table have to move together
-  or the next regen reverts the file. Without the step, a project keeps advertising support for a
-  series it no longer ships; Wiswa itself declared `0.3.x` up to the 0.5.1 release, and now declares
-  `0.5.x`.
+  `security_policy_supported_versions`, so the setting and the rendered table have to move
+  together, or the next regen reverts the file. Without the step, a project keeps advertising
+  support for a series it no longer ships; Wiswa itself declared `0.3.x` up to the 0.5.1 release
+  and now declares `0.5.x`.
+
+### Fixed
+
+- The generated PyInstaller workflow attached only one binary per file extension to a release,
+  silently discarding the rest. Every matrix job built its binary under the same name, so a
+  four-way matrix produced two files called `myproject` and two called `myproject.exe`; the release
+  job downloaded all four artifacts with `merge-multiple: true`, which flattened them into one
+  directory, and the second of each pair overwrote the first. A release advertising four platforms
+  therefore shipped two binaries, and neither name said which architecture it was for. The workflow
+  already built correctly named archives carrying the version and the architecture, and already
+  attested them, but never uploaded them anywhere; the release job now takes those instead. An
+  archive also keeps the executable bit and any macOS notarisation, both of which a bare release
+  asset loses.
 
 ## [0.5.1] - 2026-08-26
 
@@ -933,7 +936,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First version.
 
-[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.5.1...HEAD
+[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/Tatsh/wiswa/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/Tatsh/wiswa/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Tatsh/wiswa/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Tatsh/wiswa/compare/v0.3.5...v0.4.0
