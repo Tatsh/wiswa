@@ -9,6 +9,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The generated `.claude/skills/make-release/SKILL.md` now carries a step to bring the security
+  policy's supported versions up to date before the bump. `SECURITY.md` renders from
+  `security_policy_supported_versions`, so the setting and the rendered table have to move together
+  or the next regen reverts the file. Without the step, a project keeps advertising support for a
+  series it no longer ships; Wiswa itself declared `0.3.x` up to the 0.5.1 release, and now declares
+  `0.5.x`.
+
 ## [0.5.1] - 2026-08-26
 
 ### Added
