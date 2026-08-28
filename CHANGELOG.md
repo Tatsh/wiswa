@@ -9,6 +9,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- The generated `.pre-commit-config.yaml` took its Ruff revision from the newest `ruff-pre-commit`
+  tag, while `pyproject.toml` pinned the dev dependency to the newest release on PyPI. Nothing tied
+  the two together, so they drifted apart on their own schedules and the hook could enforce a
+  different rule set than the project. Generated projects select `ALL` with preview mode on, so a
+  hook that ran ahead applied rules the pinned Ruff does not implement: the commit failed on a
+  diagnostic `yarn qa` could not reproduce, and the exact `ruff==` pin that exists to make linting
+  reproducible was defeated by the hook. The revision is now derived from the same PyPI lookup that
+  pins the dependency, so one version decides both.
+
 ## [0.5.2] - 2026-08-26
 
 ### Changed
