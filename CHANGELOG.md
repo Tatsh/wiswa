@@ -19,6 +19,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   diagnostic `yarn qa` could not reproduce, and the exact `ruff==` pin that exists to make linting
   reproducible was defeated by the hook. The revision is now derived from the same PyPI lookup that
   pins the dependency, so one version decides both.
+- The generated `.pre-commit-config.yaml` took its yapf revision from the newest tag on GitHub while
+  the dev dependency came from PyPI, the same split as the Ruff revision above. The consequence is
+  milder, because the dependency is a `>=` floor rather than an exact pin, but two yapf versions
+  disagree about formatting, so the hook can reject what the project's own format script just
+  produced. The revision now comes from the same PyPI lookup. A `>=` floor still lets uv resolve a
+  newer yapf than the hook pins, so the two agree at generation time rather than for all time;
+  closing that fully would mean pinning yapf exactly, as Ruff already is.
 
 ## [0.5.2] - 2026-08-26
 

@@ -8,5 +8,7 @@ local utils = import 'utils.libsonnet';
     },
   ],
   repo: 'https://github.com/google/yapf',
-  rev: utils.githubLatestTag('google', 'yapf'),
+  // Derived from the same PyPI lookup as the dev dependency, so the hook and the project format
+  // with the same yapf rather than drifting apart on separate schedules.
+  rev: 'v' + utils.latestPypiPackageVersion('yapf'),
 }
