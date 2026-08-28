@@ -9,6 +9,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The generated `pyproject.toml` no longer pins Ruff exactly. It was the one dev dependency written
+  as `ruff==X.Y.Z` while every other tool took a `>=` floor, and it is now a floor as well, so a
+  project can take a Ruff release without waiting for a regen. The pre-commit revision is still
+  derived from the same PyPI lookup, so a fresh regen produces a matching pair; a lock file upgraded
+  on its own can now move ahead of the hook, which is the trade the floor buys.
+
 ### Fixed
 
 - The generated `.pre-commit-config.yaml` took its Ruff revision from the newest `ruff-pre-commit`
@@ -16,16 +24,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the two together, so they drifted apart on their own schedules and the hook could enforce a
   different rule set than the project. Generated projects select `ALL` with preview mode on, so a
   hook that ran ahead applied rules the pinned Ruff does not implement: the commit failed on a
-  diagnostic `yarn qa` could not reproduce, and the exact `ruff==` pin that exists to make linting
-  reproducible was defeated by the hook. The revision is now derived from the same PyPI lookup that
-  pins the dependency, so one version decides both.
+  diagnostic `yarn qa` could not reproduce. The revision is now derived from the same PyPI lookup
+  that resolves the dependency, so one version decides both.
 - The generated `.pre-commit-config.yaml` took its yapf revision from the newest tag on GitHub while
   the dev dependency came from PyPI, the same split as the Ruff revision above. The consequence is
   milder, because the dependency is a `>=` floor rather than an exact pin, but two yapf versions
   disagree about formatting, so the hook can reject what the project's own format script just
   produced. The revision now comes from the same PyPI lookup. A `>=` floor still lets uv resolve a
-  newer yapf than the hook pins, so the two agree at generation time rather than for all time;
-  closing that fully would mean pinning yapf exactly, as Ruff already is.
+  newer yapf than the hook pins, so the two agree at generation time rather than for all time.
 
 ## [0.5.2] - 2026-08-26
 

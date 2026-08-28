@@ -17,8 +17,8 @@ function(settings) {
          },
        ] else []),
   repo: 'https://github.com/astral-sh/ruff-pre-commit',
-  // Derived from the pinned dev dependency rather than the latest tag, so the hook and the project
-  // enforce the same rule set. A newer hook applies rules the pinned Ruff does not implement, which
-  // fails the commit while local QA passes.
+  // Derived from the same PyPI lookup as the dev dependency, so the hook and the project enforce
+  // the same rule set rather than drifting apart on separate schedules. A hook ahead of the project
+  // applies rules the installed Ruff does not implement, failing the commit while local QA passes.
   rev: 'v' + utils.latestPypiPackageVersion('ruff'),
 }
