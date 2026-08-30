@@ -1113,6 +1113,25 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
        */
       release_environment: 'release',
     },
+    /**
+     * @brief `.github/zizmor.yml` contents.
+     *
+     * Only workflows Wiswa generates are listed by default. A project that hand-maintains a
+     * workflow zizmor flags (for example another `workflow_run` consumer) extends the relevant
+     * `ignore` array rather than editing the generated file, which a regen would overwrite.
+     */
+    zizmor: {
+      rules: {
+        // The vcpkg cache is gated to non-tag builds, so release artifacts are unaffected.
+        'cache-poisoning': {
+          ignore: ['pyinstaller.yml'],
+        },
+        // workflow_run is required to gate the draft release on upstream workflows.
+        'dangerous-triggers': {
+          ignore: ['publish-winget.yml', 'release.yml'],
+        },
+      },
+    },
   },
   /** @brief Operating system for `qa.yml` runs on GitHub runners. */
   qa_runs_on: self.tests_run_on,

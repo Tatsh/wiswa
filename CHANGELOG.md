@@ -11,6 +11,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `github.zizmor`, holding the generated `.github/zizmor.yml` contents. The rule ignore lists were
+  a literal inside the generator and named only workflows Wiswa itself writes, so a project that
+  hand-maintains a workflow zizmor flags had to edit the generated file and lose the edit on the
+  next regen. The lists can now be extended from `.wiswa.jsonnet`.
 - `latestVcpkgPortVersion`, which resolves a vcpkg port's newest version from the vcpkg version
   database, so a `vcpkg.json` dependency constraint can be written as
   `utils.latestVcpkgPortVersion('qtbase')` instead of a literal. A non-zero port version is
