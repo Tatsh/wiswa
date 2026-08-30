@@ -180,8 +180,8 @@ async def _remove_disabled_packaging_files(settings: Settings) -> None:
     that ID is still set. Clearing the ID in the same run that disables ``want_flatpak`` leaves
     the manifest behind.
 
-    The Flatpak workflow is only ever generated for Python projects, so for any other project type
-    it belongs to the project rather than to Wiswa and is left alone.
+    The Snap outputs and the Flatpak workflow are only ever generated for Python projects, so for
+    any other project type they belong to the project rather than to Wiswa and are left alone.
 
     Parameters
     ----------
@@ -189,11 +189,12 @@ async def _remove_disabled_packaging_files(settings: Settings) -> None:
         Project settings.
     """
     stale: list[str] = []
-    if not settings.get('want_snap', False):
+    is_python = settings.get('project_type') == 'python'
+    if not settings.get('want_snap', False) and is_python:
         stale.extend(('.github/workflows/snap.yml', 'snapcraft.yaml'))
     app_id = _flathub_app_id(settings)
     if not (settings.get('want_flatpak', False) and app_id):
-        if settings.get('project_type') == 'python':
+        if is_python:
             stale.append('.github/workflows/flatpak.yml')
         if app_id:
             stale.append(f'{app_id}.yml')

@@ -40,6 +40,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `publishing.flathub`, and setting that makes Wiswa write its own Python manifest over the
   project's. The deletion is now limited to Python projects. The manifest named after
   `publishing.flathub` is generated for every project type, so it is still removed as before.
+- A run deleted `.github/workflows/snap.yml` and `snapcraft.yaml` from every project that left
+  `want_snap` off, the same fault as the Flatpak workflow above. The workflow is only ever written
+  when `want_snap` is set and the project is Python, so for a C, C++, Lua, TypeScript, or Xcode
+  project the deletion took away hand-written Snap packaging on every run. The manifest is
+  generated for any project type, but its `parts` section is assembled from the Python part alone
+  and comes out empty for anything else, so outside Python it is not an artefact Wiswa can usefully
+  own either. Both deletions are now limited to Python projects.
 
 ## [0.5.2] - 2026-08-26
 
