@@ -61,7 +61,8 @@ local utils = import 'utils.libsonnet';
         id: 'end-of-file-fixer',
       },
       {
-        files: '^(\\.(docker|eslint|prettier)ignore|CODEOWNERS|\\.gitattributes)$',
+        files: '^(\\.(docker|eslint|prettier)ignore|CODEOWNERS|\\.gitattributes'
+               + '|\\.vscode/dictionary\\.txt)$',
         id: 'file-contents-sorter',
       },
       {

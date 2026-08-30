@@ -30,8 +30,9 @@ local utils = import 'utils.libsonnet';
   local python_npm_dev_deps(settings) = if settings.want_pyright then {
     pyright: utils.latestNpmPackageVersionCaret('pyright'),
   } else {},
-  // tr arguments need to be quoted or Yarn will not handle it correctly.
-  local dictionary_update = "rm -f .vscode/dictionary.txt && cspell lint --no-progress --no-summary --unique --words-only | tr '[:upper:]' '[:lower:]' | sort -u > .vscode/dictionary.txt",
+  // tr arguments need to be quoted or Yarn will not handle it correctly. LC_ALL=C keeps the order
+  // byte-based so it matches the file-contents-sorter hook, which sorts the file as bytes.
+  local dictionary_update = "rm -f .vscode/dictionary.txt && cspell lint --no-progress --no-summary --unique --words-only | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C sort -u > .vscode/dictionary.txt",
   local python_test_scripts(run_cmd) = {
     test: '%s pytest' % run_cmd,
     'test:cov': 'yarn test --cov . --cov-branch --cov-report html --cov-report term-missing:skip-covered',
