@@ -32,6 +32,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   disagree about formatting, so the hook can reject what the project's own format script just
   produced. The revision now comes from the same PyPI lookup. A `>=` floor still lets uv resolve a
   newer yapf than the hook pins, so the two agree at generation time rather than for all time.
+- A run deleted `.github/workflows/flatpak.yml` from every project that left `want_flatpak` off,
+  including projects Wiswa never generates that workflow for. It is only ever written for Python
+  projects, so for a C, C++, Lua, TypeScript, or Xcode project the deletion removed a hand-written
+  file the project maintained itself, and it came back on the next run only if someone noticed and
+  restored it. Enabling `want_flatpak` was not an escape either, because it additionally requires
+  `publishing.flathub`, and setting that makes Wiswa write its own Python manifest over the
+  project's. The deletion is now limited to Python projects. The manifest named after
+  `publishing.flathub` is generated for every project type, so it is still removed as before.
 
 ## [0.5.2] - 2026-08-26
 

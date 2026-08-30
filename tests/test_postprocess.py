@@ -486,6 +486,24 @@ async def test_post_process_steps_deletes_snap_files_for_non_python_project(
     assert not (tmp_path / 'snapcraft.yaml').exists()
 
 
+async def test_post_process_steps_keeps_flatpak_workflow_for_non_python_project(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.20)')
+    (tmp_path / 'package.json').write_text('{}', encoding='utf-8')
+    _make_workflow_files(tmp_path, 'flatpak.yml')
+    (tmp_path / 'org.example.MyApp.yml').write_text('test', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(project_type='c',
+                       publishing={'flathub': 'org.example.MyApp'},
+                       want_flatpak=False))
+    await post_process_steps(settings)
+    assert (tmp_path / '.github/workflows/flatpak.yml').exists()
+    assert not (tmp_path / 'org.example.MyApp.yml').exists()
+
+
 async def test_post_process_steps_python_want_man_with_man_dir(tmp_path: Path,
                                                                monkeypatch: pytest.MonkeyPatch,
                                                                mocker: MockerFixture) -> None:
