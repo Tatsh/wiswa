@@ -19,6 +19,7 @@ from wiswa.tool.utils.versions import (
     get_latest_yarn_version,
     get_npm_latest_package_version,
     get_pypi_latest_package_version,
+    get_vcpkg_latest_port_version,
     resolve_npm_minimal_age_gate_minutes,
 )
 
@@ -1185,3 +1186,66 @@ async def test_get_pypi_latest_package_version_upload_time_invalid_date_skipped(
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
     result = await get_pypi_latest_package_version(mock_session, 'bad-time-pkg')
     assert result == '2.0.0'
+
+
+async def test_get_vcpkg_latest_port_version_uses_first_entry() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={
+            'versions': [{
+                'version': '6.29.0',
+                'port-version': 0
+            }, {
+                'version': '6.28.0',
+                'port-version': 0
+            }]
+        }))
+    assert await get_vcpkg_latest_port_version(mock_session, 'ecm') == '6.29.0'
+    mock_session.get.assert_called_once_with(
+        'https://raw.githubusercontent.com/microsoft/vcpkg/master/versions/e-/ecm.json', timeout=15)
+
+
+async def test_get_vcpkg_latest_port_version_appends_port_version() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={'versions': [{
+            'version': '6.11.1',
+            'port-version': 1
+        }]}))
+    assert await get_vcpkg_latest_port_version(mock_session, 'qtbase') == '6.11.1#1'
+
+
+@pytest.mark.parametrize('field', ['version-semver', 'version-date', 'version-string'])
+async def test_get_vcpkg_latest_port_version_alternate_schemes(field: str) -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={'versions': [{
+            field: '1.2.3'
+        }]}))
+    assert await get_vcpkg_latest_port_version(mock_session, 'ecm') == '1.2.3'
+
+
+async def test_get_vcpkg_latest_port_version_caches() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={'versions': [{
+            'version': '1.0.0'
+        }]}))
+    assert await get_vcpkg_latest_port_version(mock_session, 'cached') == '1.0.0'
+    assert await get_vcpkg_latest_port_version(mock_session, 'cached') == '1.0.0'
+    assert mock_session.get.await_count == 1
+
+
+async def test_get_vcpkg_latest_port_version_requires_port_name() -> None:
+    with pytest.raises(ValueError, match='port name is required'):
+        await get_vcpkg_latest_port_version(MagicMock(), '')
+
+
+async def test_get_vcpkg_latest_port_version_no_usable_entry() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(return_value=_make_response(
+        json_data={'versions': [{
+            'git-tree': 'abc'
+        }]}))
+    with pytest.raises(ValueError, match='No versions found for vcpkg port'):
+        await get_vcpkg_latest_port_version(mock_session, 'broken')

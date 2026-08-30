@@ -499,6 +499,19 @@ local utils = import 'utils.libsonnet';
    */
   githubLatestTag(owner, repo):: std.native('githubLatestTag')(owner, repo),
   /**
+   * @brief Get the latest version of a vcpkg port.
+   *
+   * Requires a native function `latestVcpkgPortVersion` to be defined in the Jsonnet environment.
+   * A non-zero port version is appended as `#N`, so the result is usable directly as a
+   * `version>=` constraint in `vcpkg.json`.
+   *
+   * @param port The vcpkg port name.
+   * @returns The latest version string, for example `6.29.0` or `6.11.1#1`.
+   * @pt string
+   * @rv string
+   */
+  latestVcpkgPortVersion(port):: std.native('latestVcpkgPortVersion')(port),
+  /**
    * @brief Get the latest version of Yarn.
    *
    * Requires a native function `latestYarnVersion` to be defined in the Jsonnet environment.

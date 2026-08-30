@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 __all__ = ('clear_resolution_caches', 'download_yarn', 'download_yarn_plugins',
            'get_github_release_latest_tag', 'get_latest_yarn_version',
            'get_npm_latest_package_version', 'get_pypi_latest_package_version',
-           'resolve_npm_minimal_age_gate_minutes')
+           'get_vcpkg_latest_port_version', 'resolve_npm_minimal_age_gate_minutes')
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +52,18 @@ when the user has no ``uv.toml`` and the project ``pyproject.toml`` sets no ``[t
 """
 
 _YARNRC_FILENAME = '.yarnrc.yml'
+
+_VCPKG_VERSIONS_BASE_URI = 'https://raw.githubusercontent.com/microsoft/vcpkg/master/versions'
+"""Base URI of the vcpkg version database, whose per-port files live under ``<letter>-/``."""
+
+_VCPKG_VERSION_FIELDS = ('version', 'version-semver', 'version-date', 'version-string')
+"""
+Version field names a vcpkg version database entry may carry, in precedence order.
+
+A port declares exactly one of these depending on its versioning scheme.
+
+:meta hide-value:
+"""
 
 _NODE_RANGE_RE = re.compile(r'>=\s*(\d+)')
 """
@@ -576,6 +588,52 @@ async def get_pypi_latest_package_version(session: niquests.AsyncSession,
         msg = f'No versions found for package `{package}`.'
         raise ValueError(msg)
     result = str(max(candidates))
+    _cache[key] = result
+    return result
+
+
+async def get_vcpkg_latest_port_version(session: niquests.AsyncSession, port: str) -> str:
+    """
+    Get the latest version of a vcpkg port.
+
+    The vcpkg version database stores one file per port, whose ``versions`` array is ordered
+    newest first, so the first usable entry is the latest. A non-zero ``port-version`` is appended
+    as ``#N`` to match the constraint syntax ``vcpkg.json`` accepts.
+
+    Parameters
+    ----------
+    session : niquests.AsyncSession
+        The HTTP session.
+    port : str
+        The vcpkg port name.
+
+    Returns
+    -------
+    str
+        The latest version string, for example ``'6.29.0'`` or ``'6.11.1#1'``.
+
+    Raises
+    ------
+    ValueError
+        If the port name is empty or the version database holds no usable entry for it.
+    """
+    if not port:
+        msg = 'A vcpkg port name is required.'
+        raise ValueError(msg)
+    key = f'vcpkg_{port}'
+    if key in _cache:
+        return _cache[key]
+    resp = await session.get(f'{_VCPKG_VERSIONS_BASE_URI}/{port[0].lower()}-/{port}.json',
+                             timeout=15)
+    resp.raise_for_status()
+    versions = cast('list[Mapping[str, Any]]', resp.json().get('versions', []))
+    entry = next((v for v in versions if any(f in v for f in _VCPKG_VERSION_FIELDS)), None)
+    if entry is None:
+        msg = f'No versions found for vcpkg port `{port}`.'
+        raise ValueError(msg)
+    version = next(str(entry[f]) for f in _VCPKG_VERSION_FIELDS if f in entry)
+    port_version = int(entry.get('port-version', 0))
+    result = f'{version}#{port_version}' if port_version else version
     _cache[key] = result
     return result
 

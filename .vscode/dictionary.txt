@@ -223,6 +223,7 @@ pyproject
 pytest
 pythonhosted
 qstringbuilder
+qtbase
 qtcore
 reflow
 regen

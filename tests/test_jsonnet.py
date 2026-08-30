@@ -324,6 +324,7 @@ async def test_evaluate_jsonnet_file_with_session(mocker: MockerFixture) -> None
     assert 'githubLatestTag' in native_callbacks
     assert 'latestNpmPackageVersion' in native_callbacks
     assert 'latestPypiPackageVersion' in native_callbacks
+    assert 'latestVcpkgPortVersion' in native_callbacks
     assert 'latestYarnVersion' in native_callbacks
     assert 'githubCliUsername' in native_callbacks
     assert 'isodate' in native_callbacks
@@ -355,6 +356,7 @@ async def test_native_callback_params_use_short_names(mocker: MockerFixture) -> 
     assert native_callbacks['githubLatestTag'][0] == ('o', 'r')
     assert native_callbacks['latestNpmPackageVersion'][0] == ('p',)
     assert native_callbacks['latestPypiPackageVersion'][0] == ('p', 'h', 'py')
+    assert native_callbacks['latestVcpkgPortVersion'][0] == ('p',)
     assert native_callbacks['githubCliUsername'][0] == ()
     assert native_callbacks['isodate'][0] == ()
     assert native_callbacks['latestYarnVersion'][0] == ()

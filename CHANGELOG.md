@@ -9,6 +9,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `latestVcpkgPortVersion`, which resolves a vcpkg port's newest version from the vcpkg version
+  database, so a `vcpkg.json` dependency constraint can be written as
+  `utils.latestVcpkgPortVersion('qtbase')` instead of a literal. A non-zero port version is
+  appended as `#N` to match the constraint syntax `vcpkg.json` accepts. `vcpkg.json` was
+  serialised verbatim from the settings and no version lookup existed for it, so every regen reset
+  the constraints to whatever literal was last written in `.wiswa.jsonnet` and silently undid the
+  bumps Dependabot had made.
+
 ### Changed
 
 - The generated `pyproject.toml` no longer pins Ruff exactly. It was the one dev dependency written

@@ -30,6 +30,7 @@ from .versions import (
     get_latest_yarn_version,
     get_npm_latest_package_version,
     get_pypi_latest_package_version,
+    get_vcpkg_latest_port_version,
     resolve_npm_minimal_age_gate_minutes,
 )
 
@@ -308,6 +309,8 @@ def _make_native_callbacks(
             npm_age_gate_minutes=(0 if p in npm_age_gate_exclude else npm_age_gate))),
         'latestPypiPackageVersion': (('p', 'h', 'py'), lambda p, h='pypi.org', py='': _sync_wrap(
             get_pypi_latest_package_version, session, p, host=h, python=py or None)),
+        'latestVcpkgPortVersion': (
+            ('p',), lambda p: _sync_wrap(get_vcpkg_latest_port_version, session, p)),
         'latestYarnVersion': ((), lambda: _sync_wrap(get_latest_yarn_version, session)),
         'year': ((), lambda: datetime.now(tz=timezone.utc).year)
     }
