@@ -26,6 +26,24 @@ local utils = import 'utils.libsonnet';
     std.length(std.filter(function(d) std.startsWith(d, name), deps)) > 0,
 
   /**
+   * @brief Check if a platform family is supported, whatever architecture is named.
+   *
+   * An entry may carry an architecture (``macos-arm64``), which supports that architecture alone.
+   * The bare family name (``macos``) supports every architecture of it.
+   * @param supported ``'all'``, a platform name, or an array of them.
+   * @param family Platform family to look for (e.g. ``macos``).
+   * @returns True if the family is supported on at least one architecture.
+   * @pt string|string[], string
+   * @rv boolean
+   */
+  supportsPlatform(supported, family)::
+    supported == 'all' ||
+    std.length(std.filter(
+      function(p) p == family || std.startsWith(p, family + '-'),
+      if std.isString(supported) then [supported] else supported
+    )) > 0,
+
+  /**
    * @brief Convert a Poetry-style version specifier to a PEP 508 specifier.
    *
    * `^X.Y.Z` becomes `>=X.Y.Z`, `~X.Y.Z` becomes `~=X.Y.Z`, and all other specifiers are

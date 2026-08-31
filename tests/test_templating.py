@@ -731,6 +731,23 @@ async def test_write_templated_files_python_namespace_workflow_paths_use_slashes
     assert 'vendor.product.service/**' not in appimage_yml
 
 
+async def test_write_templated_files_python_pyinstaller_matrix_follows_architectures(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
+        out = await _run_write(
+            monkeypatch, tmp_path, module_path,
+            _make_settings(want_main=True,
+                           want_pyinstaller=True,
+                           want_ai=False,
+                           using_github=True,
+                           supported_platforms=['macos-arm64', 'windows-x86_64']))
+    pyinstaller_yml = (out / '.github/workflows/pyinstaller.yml').read_text()
+    assert 'macos-latest' in pyinstaller_yml
+    assert 'windows-latest' in pyinstaller_yml
+    assert 'macos-15-intel' not in pyinstaller_yml
+    assert 'windows-11-arm' not in pyinstaller_yml
+
+
 async def test_write_templated_files_python_windows_only(tmp_path: Path,
                                                          monkeypatch: pytest.MonkeyPatch) -> None:
     with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:

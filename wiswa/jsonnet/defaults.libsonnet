@@ -674,7 +674,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
       else
         std.length(std.setDiff(appimage_script_set, std.set(self.appimage.exclusions))) > 0;
     (self.want_main || self.has_multiple_entry_points) &&
-    (self.supported_platforms == 'all' || std.member(self.supported_platforms, 'linux')) &&
+    utils.supportsPlatform(self.supported_platforms, 'linux') &&
     appimage_has_work,
   /**
    * @brief If the project will generate a PyInstaller workflow.
@@ -691,8 +691,8 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     local pyi_script_set = std.set(pyi_scripts);
     local pyi_include_only = std.set(self.pyinstaller.include_only);
     local sp = self.supported_platforms;
-    local windows_supported = sp == 'all' || std.member(sp, 'windows');
-    local macos_supported = sp == 'all' || std.member(sp, 'macos');
+    local windows_supported = utils.supportsPlatform(sp, 'windows');
+    local macos_supported = utils.supportsPlatform(sp, 'macos');
     local pyi_include_match = std.length(std.setInter(pyi_include_only, pyi_script_set)) > 0;
     local pyi_win_survivors =
       windows_supported &&

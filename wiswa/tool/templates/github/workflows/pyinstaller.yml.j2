@@ -3,13 +3,39 @@
 {% from 'github/workflows/pyinstaller-test.sh.j2' import test_bash %}
 {% set win_sv = settings.github.secret_vars.windows %}
 {% set apple_sv = settings.github.secret_vars.apple %}
+{% set supported = ['all'] if settings.supported_platforms == 'all'
+     else ([settings.supported_platforms] if settings.supported_platforms is string
+           else settings.supported_platforms) %}
+{% set runners = [
+     {'os': 'macos-15-intel', 'family': 'macos', 'arch': 'x86_64', 'dist_path': 'dist/*',
+      'suffix': 'mac-x86_64'},
+     {'os': 'macos-latest', 'family': 'macos', 'arch': 'arm64', 'dist_path': 'dist/*',
+      'suffix': 'mac-arm64'},
+     {'os': 'windows-latest', 'family': 'windows', 'arch': 'x86_64', 'dist_path': 'dist/*.exe',
+      'suffix': 'win-x86_64'},
+     {'os': 'windows-11-arm', 'family': 'windows', 'arch': 'arm64', 'dist_path': 'dist/*.exe',
+      'suffix': 'win-arm64', 'public_only': true},
+   ] %}
+{% set macos_matrix = [] %}
+{% set windows_matrix = [] %}
+{% for runner in runners %}
+{% if ('all' in supported or runner.family in supported
+       or runner.family ~ '-' ~ runner.arch in supported)
+      and not (runner.get('public_only', false) and settings.private) %}
+{% set _ = (macos_matrix if runner.family == 'macos' else windows_matrix).append(runner) %}
+{% endif %}
+{% endfor %}
+{% set macos_if = "matrix.os == '" ~ macos_matrix | map(attribute='os') | join("' || matrix.os == '") ~ "'" %}
+{% set windows_if = "matrix.os == '" ~ windows_matrix | map(attribute='os') | join("' || matrix.os == '") ~ "'" %}
+{% set macos_group = '(' ~ macos_if ~ ')' if macos_matrix | length > 1 else macos_if %}
+{% set windows_group = '(' ~ windows_if ~ ')' if windows_matrix | length > 1 else windows_if %}
 jobs:
   build:
     env:
-{% if settings.supported_platforms == 'all' or 'windows' in settings.supported_platforms %}
+{% if windows_matrix %}
       WINDOWS_SIGNING_CERT: ${{ '{{' }} secrets.{{ win_sv.signing_certificate }} }}
 {% endif %}
-{% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
+{% if macos_matrix %}
       APPLE_SIGNING_CERT: ${{ '{{' }} secrets.{{ apple_sv.signing_certificate }} }}
 {% endif %}
     permissions:
@@ -43,7 +69,8 @@ jobs:
 {% endif %}
           python-version: '3.13'
 {% if settings.pyinstaller.vcpkg.enabled %}
-  {% for os_name, target in settings.pyinstaller.vcpkg.targets.items() %}
+  {% for os_name, target in settings.pyinstaller.vcpkg.targets.items()
+        if os_name in (macos_matrix + windows_matrix) | map(attribute='os') | list %}
       - if: matrix.os == '{{ os_name }}' && github.ref_type != 'tag'
         name: 'Cache vcpkg installed packages'
         uses: 'actions/cache@{{ github_latest_action_sha('actions', 'cache') }}'
@@ -84,7 +111,7 @@ jobs:
   {% endfor %}
 {% endif %}
 {% if settings.package_manager == 'uv' %}
-  {% if settings.supported_platforms == 'all' or 'windows' in settings.supported_platforms %}
+  {% if windows_matrix %}
   {# uv's default cache lives under %LOCALAPPDATA%, and setuptools repeats the source path
      inside the object path, so building a native dependency from an sdist can exceed
      MAX_PATH and fail to link. #}
@@ -110,8 +137,8 @@ jobs:
         run: |
           {{ build(settings) | indent(10) | trim }}
         shell: 'bash'
-{% if settings.supported_platforms == 'all' or 'windows' in settings.supported_platforms %}
-      - if: (matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm') && env.WINDOWS_SIGNING_CERT != ''
+{% if windows_matrix %}
+      - if: {{ windows_group }} && env.WINDOWS_SIGNING_CERT != ''
         name: 'Sign Windows binaries'
         env:
           SIGNING_CERT_BASE64: ${{ '{{' }} secrets.{{ win_sv.signing_certificate }} }}
@@ -132,13 +159,13 @@ jobs:
           }
           Remove-Item $certPath
         shell: 'pwsh'
-      - if: matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm'
+      - if: {{ windows_if }}
         name: 'Test binary'
         run: |
           {{ test_powershell(settings.pyinstaller.test_commands) | indent(10) | trim }}
 {% endif %}
-{% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
-      - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && env.APPLE_SIGNING_CERT != ''
+{% if macos_matrix %}
+      - if: {{ macos_group }} && env.APPLE_SIGNING_CERT != ''
         name: 'Sign and notarise macOS binaries'
         env:
           APPLE_CERT_BASE64: ${{ '{{' }} secrets.{{ apple_sv.signing_certificate }} }}
@@ -181,7 +208,7 @@ jobs:
           rm -f "$cert_path" "$zip_path"
           security delete-keychain "$keychain"
         shell: 'bash'
-      - if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
+      - if: {{ macos_if }}
         name: 'Test binary'
         run: |
           {{ test_bash(settings.pyinstaller.test_commands) | indent(10) | trim }}
@@ -213,8 +240,8 @@ jobs:
           subject-path: '${{ '{{' }} matrix.dist_path }}'
           sbom-path: 'sbom.spdx.json'
   {% endif %}
-{% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
-      - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'
+{% if macos_matrix %}
+      - if: {{ macos_group }} && github.ref_type == 'tag'
         name: 'Zip files'
         env:
           DIST_PATH: ${{ '{{' }} matrix.dist_path }}
@@ -226,8 +253,8 @@ jobs:
           # shellcheck disable=SC2086 # DIST_PATH is a glob and must expand.
           zip -j "_out/{{ settings.github_project_name }}-${REF_NAME}-${SUFFIX}.zip" $DIST_PATH
 {% endif %}
-{% if settings.supported_platforms == 'all' or 'windows' in settings.supported_platforms %}
-      - if: (matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm') && github.ref_type == 'tag'
+{% if windows_matrix %}
+      - if: {{ windows_group }} && github.ref_type == 'tag'
         name: 'Zip files'
         env:
           DIST_PATH: ${{ '{{' }} matrix.dist_path }}
@@ -267,24 +294,11 @@ jobs:
     strategy:
       matrix:
         include:
-{% if settings.supported_platforms == 'all' or 'macos' in settings.supported_platforms %}
-          - os: 'macos-15-intel'
-            dist_path: 'dist/*'
-            suffix: 'mac-x86_64'
-          - os: 'macos-latest'
-            dist_path: 'dist/*'
-            suffix: 'mac-arm64'
-{% endif %}
-{% if settings.supported_platforms == 'all' or 'windows' in settings.supported_platforms %}
-          - os: 'windows-latest'
-            dist_path: 'dist/*.exe'
-            suffix: 'win-x86_64'
-  {% if not settings.private %}
-          - os: 'windows-11-arm'
-            dist_path: 'dist/*.exe'
-            suffix: 'win-arm64'
-  {% endif %}
-{% endif %}
+{% for entry in macos_matrix + windows_matrix %}
+          - os: '{{ entry.os }}'
+            dist_path: '{{ entry.dist_path }}'
+            suffix: '{{ entry.suffix }}'
+{% endfor %}
   release-assets:
     concurrency:
       group: release-assets-${{ '{{' }} github.ref }}

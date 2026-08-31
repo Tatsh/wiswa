@@ -25,6 +25,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `supported_platforms` entries may name an architecture: `macos-arm64` or `windows-x86_64` builds
+  for that architecture alone, while the bare `macos` or `windows` still builds for every one of
+  them. The PyInstaller matrix was a literal covering both architectures of each platform, so a
+  project whose dependencies publish no wheels for one of them had to delete the job from the
+  generated workflow and lose the edit on the next regen. vcpkg targets naming a runner that is no
+  longer in the matrix are dropped with it rather than emitting steps that never run.
 - The generated `pyproject.toml` no longer pins Ruff exactly. It was the one dev dependency written
   as `ruff==X.Y.Z` while every other tool took a `>=` floor, and it is now a floor as well, so a
   project can take a Ruff release without waiting for a regen. The pre-commit revision is still

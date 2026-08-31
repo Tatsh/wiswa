@@ -386,6 +386,10 @@ class Settings(TypedDict):
     """
     Supported platforms for the project, ``'all'``, string, or an array of strings. Values:
     ``'windows'``, ``'linux'``, ``'macos'``, ``'ios'``.
+
+    A value may name an architecture as well, as in ``'macos-arm64'`` or ``'windows-x86_64'``, which
+    supports that architecture alone; the bare name supports every architecture. Architectures are
+    ``'arm64'`` and ``'x86_64'``, and only the PyInstaller build matrix distinguishes them.
     """
     using_django: bool
     """If the project is using Django."""
