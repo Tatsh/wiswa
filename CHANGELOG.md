@@ -39,6 +39,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- The `Lint with Ruff` job in the generated `qa.yml` now reads its version out of `uv.lock`. The
+  action otherwise takes the version from `pyproject.toml`, where the dependency is a `>=` floor,
+  and resolves that to whatever Ruff released most recently: one job ran a Ruff nobody else had,
+  so a commit that passed everywhere else failed in CI on a rule the installed Ruff does not
+  implement. Projects on Poetry are unchanged, since the action cannot read `poetry.lock`.
 - The generated `.pre-commit-config.yaml` took its Ruff revision from the newest `ruff-pre-commit`
   tag, while `pyproject.toml` pinned the dev dependency to the newest release on PyPI. Nothing tied
   the two together, so they drifted apart on their own schedules and the hook could enforce a

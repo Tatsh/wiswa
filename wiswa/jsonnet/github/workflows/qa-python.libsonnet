@@ -85,7 +85,10 @@ function(settings)
             {
               name: 'Lint with Ruff',
               uses: 'astral-sh/ruff-action@' + utils.githubLatestActionSha('astral-sh', 'ruff-action'),
-            },
+              // Left to itself the action reads the dependency out of pyproject.toml, and a
+              // ``>=`` floor resolves to whatever Ruff released most recently, which is not the
+              // one the lock file installs everywhere else.
+            } + if settings.package_manager == 'uv' then { with: { 'version-file': 'uv.lock' } } else {},
           ],
         },
         mypy: {
