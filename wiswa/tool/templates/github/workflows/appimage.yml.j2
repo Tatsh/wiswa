@@ -54,6 +54,9 @@ jobs:
       - name: 'Build with python-appimage'
         env:
           GH_TOKEN: '${{ '{{' }} github.token }}'
+{% for name, value in settings.appimage.build_env | dictsort %}
+          {{ name }}: '{{ value }}'
+{% endfor %}
         run: |
           {{ build(settings) | indent(10) | trim }}
         shell: 'bash'

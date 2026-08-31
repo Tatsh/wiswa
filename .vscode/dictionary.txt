@@ -62,6 +62,7 @@ dbuild
 debugpy
 devmode
 devrelease
+dictsort
 djangorestframework
 djlint
 docstrings

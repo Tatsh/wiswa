@@ -11,10 +11,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- `appimage.requirements_options`, a list of lines written above the project in the AppImage's
-  `requirements.txt`. A project whose wheels are too large to package can point pip at another
-  index there: torch's PyPI wheels carry the CUDA runtime, which puts an AppImage over GitHub's
-  2 GiB limit for a release asset, and an extra index serving CPU-only builds brings it back under.
+- `appimage.build_env`, a dictionary of environment variables for the AppImage build step. A
+  project whose wheels are too large to package can point pip at another index with
+  `PIP_EXTRA_INDEX_URL`: torch's Linux wheels carry the CUDA runtime, which puts an AppImage over
+  GitHub's 2 GiB limit for a release asset, and the CPU-only wheels bring it back under. The
+  environment is the only way in, because python-appimage hands each line of its
+  `requirements.txt` to pip as a single argument, where an option is read as a requirement.
 - `github.zizmor`, holding the generated `.github/zizmor.yml` contents. The rule ignore lists were
   a literal inside the generator and named only workflows Wiswa itself writes, so a project that
   hand-maintains a workflow zizmor flags had to edit the generated file and lose the edit on the

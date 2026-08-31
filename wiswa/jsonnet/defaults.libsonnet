@@ -309,13 +309,14 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
      */
     requirements_filter: '',
     /**
-     * @brief Lines written above the project in requirements.txt, for pip options.
+     * @brief Environment the AppImage is built in, as a dictionary of names to values.
      *
-     * An extra index is what a project needs when the wheels PyPI serves are too large to package,
-     * as with the CUDA runtime that comes with torch.
-     * @var string[]
+     * python-appimage hands each line of its requirements.txt to pip as one argument, so pip
+     * options cannot be written there. PIP_EXTRA_INDEX_URL belongs here instead, which is what a
+     * project needs when the wheels PyPI serves are too large to package, as with the CUDA
+     * runtime that comes with torch.
      */
-    requirements_options: [],
+    build_env: {},
   },
   /**
    * @brief If the project should upload coverage to Coveralls.
