@@ -48,6 +48,7 @@ coverallsapp
 cpack
 ctes
 ctypes
+cuda
 cutoff
 cutoffs
 cyclonedx

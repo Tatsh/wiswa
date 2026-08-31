@@ -308,6 +308,14 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
      * If non-empty, runs `uv export | grep -E '<filter>'` and appends matches.
      */
     requirements_filter: '',
+    /**
+     * @brief Lines written above the project in requirements.txt, for pip options.
+     *
+     * An extra index is what a project needs when the wheels PyPI serves are too large to package,
+     * as with the CUDA runtime that comes with torch.
+     * @var string[]
+     */
+    requirements_options: [],
   },
   /**
    * @brief If the project should upload coverage to Coveralls.

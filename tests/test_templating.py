@@ -134,7 +134,8 @@ def _appimage_defaults() -> dict[str, Any]:
         'terminal': True,
         'test_commands': [],
         'uv_sync_args': [],
-        'requirements_filter': ''
+        'requirements_filter': '',
+        'requirements_options': []
     }
 
 
@@ -729,6 +730,23 @@ async def test_write_templated_files_python_namespace_workflow_paths_use_slashes
     assert 'vendor.product.service/**' not in pyinstaller_yml
     assert "- 'vendor/product/service/**'" in appimage_yml
     assert 'vendor.product.service/**' not in appimage_yml
+
+
+async def test_write_templated_files_python_appimage_requirements_options(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
+        out = await _run_write(
+            monkeypatch, tmp_path, module_path,
+            _make_settings(
+                want_appimage=True,
+                want_main=True,
+                want_ai=False,
+                using_github=True,
+                supported_platforms=['linux'],
+                appimage=_appimage_defaults()
+                | {'requirements_options': ['--extra-index-url https://example.com/cpu']}))
+    appimage_yml = (out / '.github/workflows/appimage.yml').read_text()
+    assert '--extra-index-url https://example.com/cpu' in appimage_yml
 
 
 async def test_write_templated_files_python_pyinstaller_matrix_follows_architectures(

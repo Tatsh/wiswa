@@ -17,6 +17,9 @@ if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
     cat "recipe/${script_name}.desktop"
 fi
 cat > recipe/requirements.txt <<EOF
+{% for option in settings.appimage.requirements_options %}
+{{ option }}
+{% endfor %}
 $(pwd -P)
 EOF
 {% if settings.appimage.requirements_filter %}
