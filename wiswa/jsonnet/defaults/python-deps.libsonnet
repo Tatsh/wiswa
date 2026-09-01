@@ -26,8 +26,9 @@ function(want_main,
          commitizen: ver('commitizen'),
          mypy: ver('mypy'),
          // Pinned exactly rather than with a caret, because Ruff adds lint rules in patch
-         // releases. A range lets CI resolve a newer Ruff than the lock file and the pre-commit
-         // hook carry, and every rule added in between fails a build nobody changed.
+         // releases. Under a range, CI can resolve a Ruff newer than the one the lock file and
+         // the pre-commit hook name, and every rule added in between fails a build nobody
+         // changed.
          ruff: utils.latestPypiPackageVersion('ruff'),
        } + cz_path_dep + (
          if want_yapf then { yapf: ver('yapf') } else {}
