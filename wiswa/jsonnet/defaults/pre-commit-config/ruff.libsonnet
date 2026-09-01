@@ -6,6 +6,13 @@ local utils = import 'utils.libsonnet';
  * @brief Run Ruff. For `.pre-commit-config.yaml`.
  */
 function(settings) {
+  // The version the project itself pins, with whatever specifier it carries stripped off. Asking
+  // PyPI for the newest release instead lets the hook run a Ruff the project cannot install: `uv`
+  // honours `exclude-newer`, so a release published inside that window resolves for the hook and
+  // not for the lock file, and every rule added in between fails the commit while local QA passes.
+  local pinned = if std.objectHas(settings.python_deps.dev, 'ruff') then
+    std.lstripChars(settings.python_deps.dev.ruff, '^~=<>')
+  else utils.latestPypiPackageVersion('ruff'),
   hooks: [
     {
       args: ['--fix'],
@@ -17,8 +24,5 @@ function(settings) {
          },
        ] else []),
   repo: 'https://github.com/astral-sh/ruff-pre-commit',
-  // Derived from the same PyPI lookup as the dev dependency, so the hook and the project enforce
-  // the same rule set rather than drifting apart on separate schedules. A hook ahead of the project
-  // applies rules the installed Ruff does not implement, failing the commit while local QA passes.
-  rev: 'v' + utils.latestPypiPackageVersion('ruff'),
+  rev: 'v' + pinned,
 }
