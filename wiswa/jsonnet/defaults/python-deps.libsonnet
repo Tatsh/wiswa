@@ -25,7 +25,10 @@ function(want_main,
   dev: {
          commitizen: ver('commitizen'),
          mypy: ver('mypy'),
-         ruff: ver('ruff'),
+         // Pinned exactly rather than with a caret, because Ruff adds lint rules in patch
+         // releases. A range lets CI resolve a newer Ruff than the lock file and the pre-commit
+         // hook carry, and every rule added in between fails a build nobody changed.
+         ruff: utils.latestPypiPackageVersion('ruff'),
        } + cz_path_dep + (
          if want_yapf then { yapf: ver('yapf') } else {}
        ) + (if want_sqlfluff then { sqlfluff: ver('sqlfluff') } else {})

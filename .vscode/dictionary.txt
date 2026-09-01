@@ -156,6 +156,7 @@ libname
 libsonnet
 linters
 localappdata
+lstrip
 luacheck
 luacheckrc
 luacov
