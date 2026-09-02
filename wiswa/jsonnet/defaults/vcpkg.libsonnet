@@ -1,3 +1,5 @@
+local utils = import 'utils.libsonnet';
+
 /**
  * @file vcpkg.libsonnet
  * @brief Default configuration for vcpkg package manager.
@@ -36,7 +38,7 @@
     documentation: settings.documentation_uri,
     homepage: settings.homepage,
     license: settings.license,
-    maintainers: ['%s <%s>' % [x.name, x.email] for x in settings.authors],
+    maintainers: ['%s <%s>' % [utils.authorName(x), x.email] for x in settings.authors],
     name: settings.project_name,
     version: settings.version,
   },

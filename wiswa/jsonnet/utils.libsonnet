@@ -128,6 +128,19 @@ local utils = import 'utils.libsonnet';
     std.manifestYamlDoc(value, true, false),
 
   /**
+   * @brief Get an author's full name, joining the given and family names when absent.
+   * @param author An author object.
+   * @returns The author's full name.
+   * @pt object
+   * @rv string
+   */
+  authorName(author)::
+    if std.objectHas(author, 'name') then
+      author.name
+    else
+      '%s %s' % [author['given-names'], author['family-names']],
+
+  /**
    * @brief Convert an array of authors to a format suitable for citation metadata.
    * @param authors The array of author objects.
    * @returns An array of objects with `family-names` and `given-names` fields.
@@ -216,7 +229,7 @@ local utils = import 'utils.libsonnet';
    */
   pyprojectAuthors(authors)::
     [{
-      name: x.name,
+      name: $.authorName(x),
       email: x.email,
     } for x in authors],
 

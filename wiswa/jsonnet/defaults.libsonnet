@@ -1548,7 +1548,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
 
   /** @brief Configuration for `package.json`. */
   package_json: package.get(self) + {
-    contributors: ['%s <%s>' % [x.name, x.email] for x in settings.authors],
+    contributors: ['%s <%s>' % [utils.authorName(x), x.email] for x in settings.authors],
     homepage: settings.homepage,
     keywords: settings.keywords,
     license: settings.license,

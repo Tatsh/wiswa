@@ -78,6 +78,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   generated for any project type, but its `parts` section is assembled from the Python part alone
   and comes out empty for anything else, so outside Python it is not an artefact Wiswa can usefully
   own either. Both deletions are now limited to Python projects.
+- Overriding `authors` in `.wiswa.jsonnet` aborted the run with `field does not exist: name`. The
+  `name` field is documented as optional and generated from `given-names` and `family-names`, but
+  only the default entry supplies it, through `self`, so an override replaces the whole entry and
+  takes the generated value with it. Four places read `authors[].name` directly: `contributors` in
+  `package.json`, the authors table in `pyproject.toml`, `maintainers` in `vcpkg.json`, and the
+  `git config` step of the generated `publish-msys2.yml`. All four now resolve the name through
+  `authorName`, which falls back to joining the given and family names.
 
 ## [0.5.2] - 2026-08-26
 

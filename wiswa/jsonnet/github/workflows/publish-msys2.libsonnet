@@ -38,7 +38,7 @@ function(settings)
             run: |||
               git config user.name "%s"
               git config user.email "%s"
-            ||| % [primary_author.name, primary_author.email],
+            ||| % [utils.authorName(primary_author), primary_author.email],
           },
           {
             name: 'Update PKGBUILD',
