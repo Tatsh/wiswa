@@ -33,11 +33,6 @@ with the changelog.
    - **copy-editor** - to fix prose in the changelog entries.
    - **qa-fixer** - to format and fix any lint/spelling issues.
 
-1. **Sync repo state back to `.wiswa.jsonnet`.** Run the **wiswa-sync** agent so every hand
-   edit to a Wiswa-managed file since the last regen is reflected in `.wiswa.jsonnet`. Any
-   release-time discoveries (for example a `version_files` entry that was missing) must
-   round-trip so the next regen reproduces them.
-
 1. **Run `pre-commit run -a` outside the sandbox** to ensure all hooks pass. The hooks write
    across the worktree, which the sandbox's read-only mount blocks. Fix any issues before
    proceeding.
@@ -75,7 +70,7 @@ with the changelog.
 1. **Verify version-bound and source-bound files.** Stop and report if any check fails:
    - **`CITATION.cff`** if present: `version` matches `NEW` and `date-released` equals today's
      date. If `cz bump` did not update either, the file is missing from
-     `[tool.commitizen].version_files` - add it, rerun **wiswa-sync**, and restart the bump.
+     `[tool.commitizen].version_files` - add it in `.wiswa.jsonnet` and restart the bump.
    - **Flatpak manifest** (`flatpak/**`, any `*.flatpak.{json,yaml}`) if present: every version
      reference is updated to `NEW` (cz must drive this through `version_files` - fix the
      configuration as above if it did not), and every `sources` entry pointing at this
@@ -162,8 +157,7 @@ with the changelog.
   pushed tag, never from a local path or moving branch.
 - Never hand-patch a version reference in `CITATION.cff`, a flatpak manifest, or
   `snapcraft.yaml` to compensate for a missing `[tool.commitizen].version_files` entry. Fix
-  the configuration, run **wiswa-sync** so the fix reaches `.wiswa.jsonnet`, then restart the
-  bump.
+  the configuration in `.wiswa.jsonnet`, then restart the bump.
 - `cz bump --files-only` is plain string substitution, not pattern-aware. Always pre-scan
   every `version_files` entry for OLD substrings before bumping, and revert non-canonical
   matches afterwards so unrelated literals like `10.0.0` are not corrupted into `10.0.1`.
