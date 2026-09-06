@@ -33,6 +33,23 @@ with the changelog.
    - **copy-editor** - to fix prose in the changelog entries.
    - **qa-fixer** - to format and fix any lint/spelling issues.
 
+1. **Run the test suite with coverage.** Run `yarn test:cov`. Every test must pass and total
+   coverage must reach 100%, unless `[tool.coverage.report]` in `pyproject.toml` sets
+   `fail_under`, which is then the threshold. Close a shortfall by writing the missing tests.
+
+1. **Confirm the last CI runs passed.** Nothing is released on top of a red
+   `master`. List the project's workflows with `gh workflow list`, and for
+   each one that runs on pushes rather than only on tags, read its most recent run:
+   `gh run list --workflow <file> --branch master --limit 1`. This covers
+   the QA and test workflows and the packaging ones the project has - Flatpak, Snap, AppImage,
+   and PyInstaller. Every conclusion must be `success`; read a failure with
+   `gh run view <run-id> --log-failed` and fix it before releasing. A workflow that has never run
+   is not a failure.
+
+   Compare the head SHA of the newest **tests** run against `git rev-parse HEAD`. When they
+   differ, the commits about to be released were never tested; say so, and let the user decide
+   whether to push and wait before continuing.
+
 1. **Run `pre-commit run -a` outside the sandbox** to ensure all hooks pass. The hooks write
    across the worktree, which the sandbox's read-only mount blocks. Fix any issues before
    proceeding.
@@ -149,6 +166,8 @@ with the changelog.
 
 - Never use `--no-verify` or skip hooks.
 - Never force-push.
+- Never lower a coverage threshold, skip a test, or exclude a file from measurement to get past
+  the pre-release checks. A shortfall is closed by writing tests or fixing the code.
 - If any step fails, stop and report the error. Do not continue the release process.
 - The `[Unreleased]` section must always exist at the top of the changelog after the release.
 - Run `pre-commit run -a` and the version-bump `git commit` outside the sandbox; both need
