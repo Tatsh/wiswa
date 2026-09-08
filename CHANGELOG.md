@@ -51,6 +51,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   merged with the one it extends, so the setting does not carry over on its own. The lists are
   re-sorted by name, so a project that replaces either one wholesale in `.wiswa.jsonnet`, rather
   than extending it with `+:`, should expect a different order.
+- `output-prefer-rule-codes` is gone from the generated Ruff configuration, so a diagnostic prints
+  the rule's name and reads the same as the ignore list that would silence it. The three rules
+  that enforce that form in source are no longer ignored either: `noqa-comments`,
+  `rule-codes-in-suppression-comments`, and `rule-codes-in-selectors` together move a file from
+  `# noqa: S101` to `# ruff: ignore[assert]`, and `ruff check --fix` rewrites the comments that
+  spell out codes. This reverses the previous preference for the shorter `# noqa`, which has to go
+  because it accepts codes only and cannot name a rule that has none. Only suppression comments
+  are affected; a code in `lint.select` or `lint.ignore` is not flagged, so an override in
+  `.wiswa.jsonnet` may still be written as one.
 - `pytest-fixture-autouse` is ignored for tests. Ruff 0.16.5 added the rule with no code at all,
   which is the one selector that has to be written as a name, and a fixture installing a
   suite-wide guard has no call site for the explicit injection the rule asks for.

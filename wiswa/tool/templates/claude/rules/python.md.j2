@@ -22,9 +22,11 @@
   - `unused-function-argument`, `unused-method-argument`, and `unused-static-method-argument`:
     Allow unused arguments in functions and methods, primarily in cases where a method is
     overridden or a function must be compatible with an interface.
-- Never put a rationale after a suppression comment. `# noqa`, `# ruff: ignore[...]`,
-  `# type: ignore[...]`, `# ty: ignore[...]`, and `# pyright: ignore[...]` end with their codes and
-  nothing else.
+- Suppress a Ruff diagnostic with `# ruff: ignore[rule-name]`, never `# noqa`. Ruff flags the
+  `# noqa` form, and `# noqa` cannot name a rule that has no code, such as `pytest-fixture-autouse`.
+- Never put a rationale after a suppression comment. `# ruff: ignore[...]`, `# type: ignore[...]`,
+  `# ty: ignore[...]`, and `# pyright: ignore[...]` end with their rule names or codes and nothing
+  else.
 - When a function or method signature fits on one line within 100 characters, write its parameters
   horizontally. Example:
 

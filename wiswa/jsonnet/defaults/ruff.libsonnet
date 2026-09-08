@@ -24,8 +24,6 @@
   'line-length': 100,
   /** @brief List of namespace packages in the project. */
   'namespace-packages': ['docs', 'tests'],
-  /** @brief If true, output rule codes instead of rule names. */
-  'output-prefer-rule-codes': true,
   /** @brief If true, apply fixes that may be unsafe. */
   'unsafe-fixes': true,
   /** @brief Configuration for Ruff linter. */
@@ -53,10 +51,6 @@
       'missing-todo-author',
       // Disabled because we want """ to always be on its own line for multi-line docstrings.
       'multi-line-summary-first-line',
-      // Prefer shorter noqa: comments with codes over ruff: ignore.
-      'noqa-comments',
-      'rule-codes-in-selectors',
-      'rule-codes-in-suppression-comments',
       // Disabled because of false positives.
       'subprocess-without-shell-equals-true',
       'suspicious-subprocess-import',
