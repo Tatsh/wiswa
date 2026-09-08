@@ -2,7 +2,6 @@ adoc
 aiofiles
 aiohttp
 anchore
-Ångström
 anyio
 appauthor
 appdir
@@ -210,6 +209,7 @@ pkgrel
 pkgver
 platformdirs
 plistlib
+popen
 preapproved
 proc
 prodvers
@@ -331,5 +331,6 @@ zainchen
 zengxingxin
 zeshuaro
 zizmor
-zizmorcore
 zizmor's
+zizmorcore
+Ångström
