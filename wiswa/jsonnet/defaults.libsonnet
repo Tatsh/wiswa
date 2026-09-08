@@ -1438,26 +1438,27 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                        + (if is_uv then { venv: '.venv', venvPath: '.' } else {}),
              ruff+: {
                local min_py_minor = std.parseInt(std.split(settings.supported_python_versions[0], '.')[1]),
-               local com812 = ['COM812'],
+               local missing_trailing_comma = ['missing-trailing-comma'],
                lint+: if settings.stubs_only then {
-                 ignore: std.set(pyproject.tool.ruff.lint.ignore + com812 + [
-                   'A002',
-                   'E303',
-                   'FBT001',
-                   'I001',
+                 ignore: std.set(pyproject.tool.ruff.lint.ignore + missing_trailing_comma + [
+                   // ``N`` and ``S`` select a whole linter, which has no name to be written as.
                    'N',
                    'S',
-                   'T201',
-                   'TID252',
+                   'boolean-type-hint-positional-argument',
+                   'builtin-argument-shadowing',
+                   'print',
+                   'relative-imports',
+                   'too-many-blank-lines',
+                   'unsorted-imports',
                  ]),
                } else (
                  (if settings.want_main then {
                     'per-file-ignores': {
-                      ['%s/main.py' % primary_module_qualified_path]: ['PLR0913'],
+                      ['%s/main.py' % primary_module_qualified_path]: ['too-many-arguments'],
                     },
                   } else {})
                  + {
-                   ignore: std.set(pyproject.tool.ruff.lint.ignore + com812),
+                   ignore: std.set(pyproject.tool.ruff.lint.ignore + missing_trailing_comma),
                    isort+: {
                      'known-first-party': std.set([std.split(m, '.')[0] for m in settings.modules]),
                    },

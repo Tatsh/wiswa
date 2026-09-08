@@ -57,9 +57,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `rule-codes-in-suppression-comments`, and `rule-codes-in-selectors` together move a file from
   `# noqa: S101` to `# ruff: ignore[assert]`, and `ruff check --fix` rewrites the comments that
   spell out codes. This reverses the previous preference for the shorter `# noqa`, which has to go
-  because it accepts codes only and cannot name a rule that has none. Only suppression comments
-  are affected; a code in `lint.select` or `lint.ignore` is not flagged, so an override in
-  `.wiswa.jsonnet` may still be written as one.
+  because it accepts codes only and cannot name a rule that has none. `rule-codes-in-selectors`
+  reaches the generated `pyproject.toml` as well, where a code in `lint.ignore` or
+  `lint.per-file-ignores` is flagged and rewritten, so a selector overridden in `.wiswa.jsonnet`
+  should be named too. One that selects a whole linter, such as `N` or `S`, has no name form and
+  is left alone.
 - `pytest-fixture-autouse` is ignored for tests. Ruff 0.16.5 added the rule with no code at all,
   which is the one selector that has to be written as a name, and a fixture installing a
   suite-wide guard has no call site for the explicit injection the rule asks for.
