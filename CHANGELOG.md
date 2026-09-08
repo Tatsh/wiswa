@@ -42,6 +42,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   project can take a Ruff release without waiting for a regen. The pre-commit revision is still
   derived from the same PyPI lookup, so a fresh regen produces a matching pair; a lock file upgraded
   on its own can now move ahead of the hook, which is the trade the floor buys.
+- The Ruff ignore lists in the generated `pyproject.toml` and `tests/pyproject.toml` name their
+  rules rather than cite codes: `any-type` in place of `ANN401`, `assert` in place of `S101`. A
+  code says nothing about what it covers, and an entry can drift from the rule it stands for
+  without anyone noticing, because a code that no longer matches still looks like a code. Ruff
+  resolves a selector by name only under preview mode, so `tests/pyproject.toml` now turns that on
+  as the top-level file already did: a configuration file's selectors are resolved before it is
+  merged with the one it extends, so the setting does not carry over on its own. The lists are
+  re-sorted by name, so a project that replaces either one wholesale in `.wiswa.jsonnet`, rather
+  than extending it with `+:`, should expect a different order.
+- `pytest-fixture-autouse` is ignored for tests. Ruff 0.16.5 added the rule with no code at all,
+  which is the one selector that has to be written as a name, and a fixture installing a
+  suite-wide guard has no call site for the explicit injection the rule asks for.
 
 ### Fixed
 

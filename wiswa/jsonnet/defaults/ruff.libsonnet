@@ -31,26 +31,35 @@
   /** @brief Configuration for Ruff linter. */
   lint: {
     'extend-select': ['ALL'],
-    /** @brief List of error codes to ignore. */
+    /** @brief List of rules to ignore. */
     ignore: [
-      'ANN401',
-      'CPY001',
-      // D201 wants no blank line after the signature, yet D203 wants a blank line after a ``class`` line.
-      'D203',
-      // D204 wants a blank line after the class docstring; YAPF removes it.
-      'D204',
+      'any-type',
+      /**
+       * Personal preference really. ``raise NoRowFound`` is just as clear as
+       * ``raise NoRowFoundError``.
+       */
+      'error-suffix-on-exception-name',
+      /**
+       * ``incorrect-blank-line-after-class`` wants a blank line after the class docstring; YAPF
+       * removes it.
+       */
+      'incorrect-blank-line-after-class',
+      /**
+       * ``blank-line-before-function`` wants no blank line after the signature, yet
+       * ``incorrect-blank-line-before-class`` wants a blank line after a ``class`` line.
+       */
+      'incorrect-blank-line-before-class',
+      'missing-copyright-notice',
+      'missing-todo-author',
       // Disabled because we want """ to always be on its own line for multi-line docstrings.
-      'D212',
-      // Personal preference really. ``raise NoRowFound`` is just as clear as ``raise NoRowFoundError``.
-      'N818',
+      'multi-line-summary-first-line',
       // Prefer shorter noqa: comments with codes over ruff: ignore.
-      'RUF105',
-      'RUF106',
-      'RUF201',
-      'S404',
+      'noqa-comments',
+      'rule-codes-in-selectors',
+      'rule-codes-in-suppression-comments',
       // Disabled because of false positives.
-      'S603',
-      'TD002',
+      'subprocess-without-shell-equals-true',
+      'suspicious-subprocess-import',
     ],
     /** @brief If true, enable preview features. */
     preview: true,
