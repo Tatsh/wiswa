@@ -11,6 +11,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `.claude/rules/prose.md`, a prose rule set for generated projects. It bans contractions, en and em
+  dashes, a list of vague verbs and idioms, several sentence patterns such as a trailing
+  `, which ...` clause, and heading forms such as `The problem`. It applies to Markdown, plain
+  comments, formal documentation comments (Numpydoc, JSDoc, Doxygen), user-facing strings, and
+  commit messages. The `copy-editor` agent applies it as well.
 - `appimage.build_env`, a dictionary of environment variables for the AppImage build step. A
   project whose wheels are too large to package can point pip at another index with
   `PIP_EXTRA_INDEX_URL`: torch's Linux wheels carry the CUDA runtime, which puts an AppImage over
@@ -28,6 +33,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   serialised verbatim from the settings and no version lookup existed for it, so every regen reset
   the constraints to whatever literal was last written in `.wiswa.jsonnet` and silently undid the
   bumps Dependabot had made.
+- `prose-lint`, a skill that audits prose against `.claude/rules/prose.md` with a set of greps and
+  applies the fixes.
 
 ### Changed
 

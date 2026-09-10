@@ -182,6 +182,7 @@ nextdotjs
 nhoizey
 niquests
 nonexistent
+noone
 noqa
 norecursedirs
 notarytool
