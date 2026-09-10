@@ -8,7 +8,7 @@ dev = [
   "cz-path>=0.0.7",
   "mypy>=2.3.1",
   "ruff==0.16.5",
-  "ty>=0.0.77",
+  "ty>=0.0.78",
   "types-jsonnet>=0.22.0.20260408",
   "yapf>=0.43.0",
 ]
@@ -45,7 +45,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "anyio>=4.14.2",
+  "anyio>=4.15.0",
   "bascom>=0.2.0",
   "click>=8.5.0",
   "jinja2>=3.1.6",
@@ -53,7 +53,7 @@ dependencies = [
   "keyring>=25.7.0",
   "niquests-cache>=0.2.4",
   "niquests>=3.21.1",
-  "platformdirs>=4.11.6",
+  "platformdirs>=4.11.7",
   "rich>=15.0.0",
   "tomlkit>=0.15.1",
   "typing-extensions>=4.16.0",
