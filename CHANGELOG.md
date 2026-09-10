@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-10
+
 ### Added
 
 - `.claude/rules/prose.md`, a prose rule set for generated projects. It bans contractions, en and em
@@ -18,103 +20,121 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   commit messages. The `copy-editor` agent applies it as well.
 - `appimage.build_env`, a dictionary of environment variables for the AppImage build step. A
   project whose wheels are too large to package can point pip at another index with
-  `PIP_EXTRA_INDEX_URL`: torch's Linux wheels carry the CUDA runtime, which puts an AppImage over
-  GitHub's 2 GiB limit for a release asset, and the CPU-only wheels bring it back under. The
-  environment is the only way in, because python-appimage hands each line of its
-  `requirements.txt` to pip as a single argument, where an option is read as a requirement.
-- `github.zizmor`, holding the generated `.github/zizmor.yml` contents. The rule ignore lists were
-  a literal inside the generator and named only workflows Wiswa itself writes, so a project that
+  `PIP_EXTRA_INDEX_URL`. Linux wheels for torch include the CUDA runtime. An AppImage built with
+  them exceeds GitHub's 2 GiB limit for a release asset, and the CPU-only wheels bring it back
+  under. The environment is the only route available. Every line of the `requirements.txt` for
+  python-appimage is passed to pip as a single argument, where an option is read as a requirement.
+- `github.zizmor`, the generated `.github/zizmor.yml` contents. Rule ignore lists were a literal
+  inside the generator and covered only workflows Wiswa itself writes. A project that
   hand-maintains a workflow zizmor flags had to edit the generated file and lose the edit on the
   next regen. The lists can now be extended from `.wiswa.jsonnet`.
-- `latestVcpkgPortVersion`, which resolves a vcpkg port's newest version from the vcpkg version
-  database, so a `vcpkg.json` dependency constraint can be written as
+- `latestVcpkgPortVersion`, a function resolving the newest version of a vcpkg port from the vcpkg
+  version database. A `vcpkg.json` dependency constraint can now be written as
   `utils.latestVcpkgPortVersion('qtbase')` instead of a literal. A non-zero port version is
   appended as `#N` to match the constraint syntax `vcpkg.json` accepts. `vcpkg.json` was
-  serialised verbatim from the settings and no version lookup existed for it, so every regen reset
-  the constraints to whatever literal was last written in `.wiswa.jsonnet` and silently undid the
-  bumps Dependabot had made.
+  serialised verbatim from the settings and no version lookup existed for it. Every regen reset the
+  constraints to whatever literal was last written in `.wiswa.jsonnet` and silently undid the bumps
+  Dependabot had made.
 - `prose-lint`, a skill that audits prose against `.claude/rules/prose.md` with a set of greps and
   applies the fixes.
 
 ### Changed
 
-- `supported_platforms` entries may name an architecture: `macos-arm64` or `windows-x86_64` builds
-  for that architecture alone, while the bare `macos` or `windows` still builds for every one of
-  them. The PyInstaller matrix was a literal covering both architectures of each platform, so a
-  project whose dependencies publish no wheels for one of them had to delete the job from the
-  generated workflow and lose the edit on the next regen. vcpkg targets naming a runner that is no
-  longer in the matrix are dropped with it rather than emitting steps that never run.
-- The generated `pyproject.toml` no longer pins Ruff exactly. It was the one dev dependency written
-  as `ruff==X.Y.Z` while every other tool took a `>=` floor, and it is now a floor as well, so a
-  project can take a Ruff release without waiting for a regen. The pre-commit revision is still
-  derived from the same PyPI lookup, so a fresh regen produces a matching pair; a lock file upgraded
-  on its own can now move ahead of the hook, which is the trade the floor buys.
-- The Ruff ignore lists in the generated `pyproject.toml` and `tests/pyproject.toml` name their
-  rules rather than cite codes: `any-type` in place of `ANN401`, `assert` in place of `S101`. A
-  code says nothing about what it covers, and an entry can drift from the rule it stands for
-  without anyone noticing, because a code that no longer matches still looks like a code. Ruff
-  resolves a selector by name only under preview mode, so `tests/pyproject.toml` now turns that on
-  as the top-level file already did: a configuration file's selectors are resolved before it is
-  merged with the one it extends, so the setting does not carry over on its own. The lists are
-  re-sorted by name, so a project that replaces either one wholesale in `.wiswa.jsonnet`, rather
-  than extending it with `+:`, should expect a different order.
-- `output-prefer-rule-codes` is gone from the generated Ruff configuration, so a diagnostic prints
-  the rule's name and reads the same as the ignore list that would silence it. The three rules
-  that enforce that form in source are no longer ignored either: `noqa-comments`,
+- `supported_platforms` entries may specify an architecture. `macos-arm64` or `windows-x86_64`
+  builds for the single architecture, while the bare `macos` or `windows` still builds for both
+  architectures. The PyInstaller matrix was a literal covering both architectures of each platform.
+  A project whose dependencies publish no wheels for one architecture had to delete the job from
+  the generated workflow and lose the edit on the next regen. vcpkg targets identifying a runner
+  that is no longer in the matrix are dropped as well rather than emitting steps that never run.
+- The generated `pyproject.toml` no longer pins Ruff exactly. Ruff was the one dev dependency
+  written as `ruff==X.Y.Z` while every other tool took a `>=` floor, and it is now a floor as well.
+  A project can take a Ruff release without waiting for a regen. The pre-commit revision is still
+  derived from the same PyPI lookup, and a fresh regen produces a matching pair. A lock file
+  upgraded on its own can now move ahead of the hook. That is the trade the floor buys.
+- The Ruff ignore lists in the generated `pyproject.toml` and `tests/pyproject.toml` use rule names
+  rather than codes, such as `any-type` in place of `ANN401` and `assert` in place of `S101`. A
+  code does not indicate what the rule covers, and an entry can drift from the rule it stands for
+  while still looking correct. Ruff resolves a selector by name only under preview mode.
+  `tests/pyproject.toml` now enables preview mode as the top-level file already did. Selectors in a
+  configuration file are resolved before the merge with the file it extends, and the setting does
+  not transfer on its own. The lists are re-sorted by name. A project that replaces either list
+  wholesale in `.wiswa.jsonnet`, rather than extending it with `+:`, should expect a different
+  order.
+- `output-prefer-rule-codes` is gone from the generated Ruff configuration. A diagnostic now prints
+  the rule name and reads the same as the ignore list that would silence it. The three rules
+  enforcing the same form in source are no longer ignored. `noqa-comments`,
   `rule-codes-in-suppression-comments`, and `rule-codes-in-selectors` together move a file from
   `# noqa: S101` to `# ruff: ignore[assert]`, and `ruff check --fix` rewrites the comments that
-  spell out codes. This reverses the previous preference for the shorter `# noqa`, which has to go
-  because it accepts codes only and cannot name a rule that has none. `rule-codes-in-selectors`
-  reaches the generated `pyproject.toml` as well, where a code in `lint.ignore` or
-  `lint.per-file-ignores` is flagged and rewritten, so a selector overridden in `.wiswa.jsonnet`
-  should be named too. One that selects a whole linter, such as `N` or `S`, has no name form and
-  is left alone.
+  spell out codes. The change reverses the previous preference for the shorter `# noqa`. The
+  `# noqa` form accepts codes only and cannot identify a rule that has none.
+  `rule-codes-in-selectors` applies to the generated `pyproject.toml` as well, where a code in
+  `lint.ignore` or `lint.per-file-ignores` is flagged and rewritten. A selector overridden in
+  `.wiswa.jsonnet` should therefore use a name too. A selector covering a whole linter, such as `N`
+  or `S`, has no name form and is not rewritten.
 - `pytest-fixture-autouse` is ignored for tests. Ruff 0.16.5 added the rule with no code at all,
-  which is the one selector that has to be written as a name, and a fixture installing a
-  suite-wide guard has no call site for the explicit injection the rule asks for.
+  making it the one selector that has to be written as a name. A fixture installing a suite-wide
+  guard has no call site for the explicit injection the rule requires.
+- `yarn dict:update` sorts `.vscode/dictionary.txt` in byte order, and the `file-contents-sorter`
+  pre-commit hook now covers the same file. The script used a bare `sort -u`, whose order follows
+  the shell locale. Under a UTF-8 locale a word such as `Ångström` collates with `Angstrom` and
+  lands near the top of the file, and under the C locale it sorts after every ASCII word.
+  `file-contents-sorter` reads the file in binary mode and sorts lines as bytes, with no option to
+  change the behaviour. Both the script and the hook are pinned to `LC_ALL=C` and produce
+  byte-identical output. Projects re-sort once on the next regen, and any word beginning with a
+  non-ASCII character moves to the end of the file. The generated general guidelines now direct a
+  project to refresh the dictionary with `yarn dict:update` rather than with a hand edit.
 
 ### Fixed
 
+- The generated `.cz.json` listed `CITATION.cff` under `version_files` for every project,
+  including a project that did not set `want_cff`. `cz bump` then failed on a file the run never
+  generated. The entry is written only when `want_cff` is set.
 - The `Lint with Ruff` job in the generated `qa.yml` now reads its version out of `uv.lock`. The
   action otherwise takes the version from `pyproject.toml`, where the dependency is a `>=` floor,
-  and resolves that to whatever Ruff released most recently: one job ran a Ruff nobody else had,
-  so a commit that passed everywhere else failed in CI on a rule the installed Ruff does not
-  implement. Projects on Poetry are unchanged, since the action cannot read `poetry.lock`.
+  and resolves the floor to whatever Ruff released most recently. One job ran a Ruff version no
+  other job had. A commit that passed everywhere else failed in CI on a rule the installed Ruff
+  does not implement. Projects on Poetry are unchanged. The action cannot read `poetry.lock`.
 - The generated `.pre-commit-config.yaml` took its Ruff revision from the newest `ruff-pre-commit`
   tag, while `pyproject.toml` pinned the dev dependency to the newest release on PyPI. Nothing tied
-  the two together, so they drifted apart on their own schedules and the hook could enforce a
-  different rule set than the project. Generated projects select `ALL` with preview mode on, so a
-  hook that ran ahead applied rules the pinned Ruff does not implement: the commit failed on a
+  the two together. They drifted apart on separate schedules, and the hook could enforce a
+  different rule set than the project. Generated projects select `ALL` with preview mode on. A hook
+  that ran ahead applied rules the pinned Ruff does not implement, and the commit failed on a
   diagnostic `yarn qa` could not reproduce. The revision is now derived from the same PyPI lookup
-  that resolves the dependency, so one version decides both.
+  that resolves the dependency, and one version decides both. A dev dependency is not always a bare
+  specifier. It may be an object with a `version` field or an array of specifiers, and stripping
+  the specifier characters off either form aborted the run. A multi-constraint specifier such as
+  `>=0.16.4,<0.17` produced a revision of `0.16.4,<0.17`, matching no tag. The first constraint of
+  a range is now taken, that being the oldest Ruff the project accepts, and a dependency with no
+  version to read falls back to the PyPI lookup.
 - The generated `.pre-commit-config.yaml` took its yapf revision from the newest tag on GitHub while
   the dev dependency came from PyPI, the same split as the Ruff revision above. The consequence is
-  milder, because the dependency is a `>=` floor rather than an exact pin, but two yapf versions
-  disagree about formatting, so the hook can reject what the project's own format script just
-  produced. The revision now comes from the same PyPI lookup. A `>=` floor still lets uv resolve a
-  newer yapf than the hook pins, so the two agree at generation time rather than for all time.
-- A run deleted `.github/workflows/flatpak.yml` from every project that left `want_flatpak` off,
-  including projects Wiswa never generates that workflow for. It is only ever written for Python
-  projects, so for a C, C++, Lua, TypeScript, or Xcode project the deletion removed a hand-written
-  file the project maintained itself, and it came back on the next run only if someone noticed and
-  restored it. Enabling `want_flatpak` was not an escape either, because it additionally requires
-  `publishing.flathub`, and setting that makes Wiswa write its own Python manifest over the
-  project's. The deletion is now limited to Python projects. The manifest named after
-  `publishing.flathub` is generated for every project type, so it is still removed as before.
-- A run deleted `.github/workflows/snap.yml` and `snapcraft.yaml` from every project that left
+  milder. The dependency is a `>=` floor rather than an exact pin. Two yapf versions disagree about
+  formatting, and the hook can reject what the project format script just produced. The revision
+  now comes from the same PyPI lookup. A `>=` floor still lets uv resolve a newer yapf than the
+  hook pins. The two therefore agree at generation time rather than for all time.
+- A run deleted `.github/workflows/flatpak.yml` from every project with `want_flatpak` off,
+  including projects Wiswa never generates the workflow for. The workflow is only ever written for
+  Python projects. For a C, C++, Lua, TypeScript, or Xcode project the deletion removed a
+  hand-written file the project maintained itself, and the file came back on the next run only
+  after someone noticed and restored it. Enabling `want_flatpak` was no escape. It additionally
+  requires `publishing.flathub`, and setting `publishing.flathub` makes Wiswa write a Python
+  manifest over the project manifest. The deletion is now limited to Python projects. The manifest
+  titled after `publishing.flathub` is generated for every project type and is still removed as
+  before.
+- A run deleted `.github/workflows/snap.yml` and `snapcraft.yaml` from every project with
   `want_snap` off, the same fault as the Flatpak workflow above. The workflow is only ever written
-  when `want_snap` is set and the project is Python, so for a C, C++, Lua, TypeScript, or Xcode
-  project the deletion took away hand-written Snap packaging on every run. The manifest is
-  generated for any project type, but its `parts` section is assembled from the Python part alone
-  and comes out empty for anything else, so outside Python it is not an artefact Wiswa can usefully
-  own either. Both deletions are now limited to Python projects.
+  when `want_snap` is set and the project is Python. For a C, C++, Lua, TypeScript, or Xcode
+  project the deletion removed hand-written Snap packaging on every run. The manifest is generated
+  for any project type, but its `parts` section is assembled from the Python part alone and comes
+  out empty for every other project type. Outside Python the manifest is not an artefact Wiswa can
+  usefully own. Both deletions are now limited to Python projects.
 - Overriding `authors` in `.wiswa.jsonnet` aborted the run with `field does not exist: name`. The
   `name` field is documented as optional and generated from `given-names` and `family-names`, but
-  only the default entry supplies it, through `self`, so an override replaces the whole entry and
+  only the default entry supplies it, through `self`. An override replaces the whole entry and
   takes the generated value with it. Four places read `authors[].name` directly: `contributors` in
   `package.json`, the authors table in `pyproject.toml`, `maintainers` in `vcpkg.json`, and the
   `git config` step of the generated `publish-msys2.yml`. All four now resolve the name through
-  `authorName`, which falls back to joining the given and family names.
+  `authorName`, a function falling back to joining the given and family names.
 
 ## [0.5.2] - 2026-08-26
 
@@ -1043,7 +1063,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First version.
 
-[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.5.2...HEAD
+[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Tatsh/wiswa/compare/v0.5.2...v0.6.0
 [0.5.2]: https://github.com/Tatsh/wiswa/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/Tatsh/wiswa/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Tatsh/wiswa/compare/v0.4.0...v0.5.0

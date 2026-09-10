@@ -9,7 +9,7 @@ local utils = import 'utils.libsonnet';
   want_flatpak: true,
   publishing+: { flathub: 'sh.tat.wiswa' },
   project_name: 'wiswa',
-  version: '0.5.2',
+  version: '0.6.0',
   description: 'A highly opinionated way to generate and maintain projects with Jsonnet.',
   keywords: ['command line', 'jsonnet', 'project generator', 'project management', 'scaffolding'],
   github+: {
@@ -22,7 +22,7 @@ local utils = import 'utils.libsonnet';
   },
   shared_ignore+: ['/docs/_build*/'],
   prettierignore+: ['*.adoc', 'Doxyfile'],
-  security_policy_supported_versions: { '0.5.x': ':white_check_mark:' },
+  security_policy_supported_versions: { '0.6.x': ':white_check_mark:' },
   package_json+: {
     cspell+: {
       ignorePaths+: ['*.html'],
