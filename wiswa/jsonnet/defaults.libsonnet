@@ -1131,6 +1131,10 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
      */
     zizmor: {
       rules: {
+        // Updating npm itself before a publish is deliberate and cannot come from a lockfile.
+        'adhoc-packages': {
+          ignore: ['publish.yml'],
+        },
         // The vcpkg cache is gated to non-tag builds, so release artifacts are unaffected.
         'cache-poisoning': {
           ignore: ['pyinstaller.yml'],

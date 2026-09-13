@@ -27,6 +27,8 @@ function(settings)
             uses: 'actions/setup-node@' + utils.githubLatestActionSha('actions', 'setup-node'),
             with: {
               'node-version': settings.github.workflows.publish_npm_any.node_version,
+              // A release build must not restore a cache a lower-privilege run can write to.
+              'package-manager-cache': false,
               'registry-url': settings.github.workflows.publish_npm_any.registry_url,
             },
           },

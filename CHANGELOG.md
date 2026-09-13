@@ -9,6 +9,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The generated `.github/zizmor.yml` ignores `adhoc-packages` for `publish.yml`. The npm publish
+  workflow updates npm itself before publishing, and no lockfile can express that step.
+
+### Security
+
+- The generated npm publish workflow no longer restores the `setup-node` package manager cache. A
+  release job that restores a cache a lower-privilege workflow can write to is a cache poisoning
+  route.
+
 ## [0.6.0] - 2026-09-10
 
 ### Added
