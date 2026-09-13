@@ -110,6 +110,18 @@ jobs:
         shell: 'pwsh'
   {% endfor %}
 {% endif %}
+{% if macos_matrix %}
+{# cryptography no longer publishes a macOS x86_64 wheel. The Intel runner therefore compiles it
+   from source against Homebrew OpenSSL. PyInstaller flattens every collected dylib into a single
+   directory, and the older libssl.3.dylib shipped with Python wins the collision. The extension
+   then cannot resolve OpenSSL 3.2 symbols at startup. Static linking removes the dylib dependency
+   and matches what the published wheels do. #}
+      - if: runner.os == 'macOS'
+        name: 'Link OpenSSL statically'
+        run: |
+          echo 'OPENSSL_STATIC=1' >> "$GITHUB_ENV"
+        shell: 'bash'
+{% endif %}
 {% if settings.package_manager == 'uv' %}
   {% if windows_matrix %}
   {# uv's default cache lives under %LOCALAPPDATA%, and setuptools repeats the source path

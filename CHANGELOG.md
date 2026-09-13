@@ -14,6 +14,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The generated `.github/zizmor.yml` ignores `adhoc-packages` for `publish.yml`. The npm publish
   workflow updates npm itself before publishing, and no lockfile can express that step.
 
+### Fixed
+
+- The generated PyInstaller workflow sets `OPENSSL_STATIC=1` on macOS runners. `cryptography` no
+  longer publishes a macOS x86_64 wheel, and the Intel runner therefore builds it from source
+  against Homebrew OpenSSL. PyInstaller flattens every collected dylib into one directory, where
+  the older `libssl.3.dylib` bundled with Python wins the collision and the frozen binary cannot
+  resolve OpenSSL 3.2 symbols at startup.
+
 ### Security
 
 - The generated npm publish workflow no longer restores the `setup-node` package manager cache. A
