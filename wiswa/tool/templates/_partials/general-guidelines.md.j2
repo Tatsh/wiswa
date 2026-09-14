@@ -7,7 +7,7 @@
 - Use 2 spaces for indentation.
 {% endif -%}
 - Files must end with a single newline character.
-- Keep lines shorter than 100 characters.
+- Lines must not exceed {{ settings.line_width | default(100) }} characters, inclusive.
 - Line endings must be Unix-style (LF).
 - Use UTF-8 encoding for all files.
 - Use spaces instead of tabs for indentation.
