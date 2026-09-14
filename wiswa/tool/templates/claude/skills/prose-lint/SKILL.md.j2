@@ -53,7 +53,7 @@ grep -nEi "[[:alpha:]]+n[’']t\b|[[:alpha:]]+[’'](re|ll|ve|m)\b|\b(it|that|th
 ```
 
 ```shell
-grep -nEiw "gate|gates|gated|gating|stamp|stamps|stamped|stamping|answer|answers|answered|answering|say|says|said|saying|spell|spells|spelled|spelling|state|states|stated|stating|contain|contains|contained|containing|carry|carries|carried|carrying|hold|holds|held|holding|keep|keeps|kept|keeping|reach|reaches|reached|reaching|name|names|named|naming|lay|lays|laid|laying|leave|leaves|left|leaving|confine|confines|confined|confining|manufacture|manufactures|manufactured|manufacturing|mint|mints|minted|minting|claim|claims|claimed|claiming|ask|asks|asked|asking|transport|transports|transported|transporting" <files>
+grep -nEiw "gate|gates|gated|gating|stamp|stamps|stamped|stamping|answer|answers|answered|answering|say|says|said|saying|spell|spells|spelled|spelling|state|states|stated|stating|contain|contains|contained|containing|carry|carries|carried|carrying|hold|holds|held|holding|keep|keeps|kept|keeping|reach|reaches|reached|reaching|name|names|named|naming|title|titles|titled|titling|lay|lays|laid|laying|leave|leaves|left|leaving|confine|confines|confined|confining|manufacture|manufactures|manufactured|manufacturing|mint|mints|minted|minting|claim|claims|claimed|claiming|ask|asks|asked|asking|transport|transports|transported|transporting" <files>
 ```
 
 ```shell
@@ -61,7 +61,14 @@ grep -nEi "\banyway\b|\banyone\b|\bnobody\b|\bno[ -]?one\b|\bobligatory\b|ground
 ```
 
 ```shell
-grep -nEi ", (which|so|since|because)\b|says nothing|say nothing|for such|left alone|written by hand|that matters is|\b[[:alpha:]]+s no\b|\bstate[sd]\b|\bsomething\b|\bnothing\b|of (its|their|his|her) own|their own" <files>
+grep -nEi ", (which|so|since|because)\b|says nothing|say nothing|for such|left alone|written by hand|that matters is|\b[[:alpha:]]+s no\b|\b(give|make|take|need|want|hold|know|find|show|draw|add|read|write|identify|record|list|store|specify|use|mark) no\b|\bstate[sd]\b|\bsomething\b|\bnothing\b|of (its|their|his|her) own|their own" <files>
+```
+
+Personification hits, an inanimate subject taking a verb of life or emotion (a noun of the same
+spelling is valid, such as a `die` roll or a `wish` list):
+
+```shell
+grep -nEiw "survive|survives|survived|surviving|die|dies|died|dying|perish|perishes|perished|perishing|breathe|breathes|breathed|breathing|suffer|suffers|suffered|suffering|wish|wishes|wished|wishing|enjoy|enjoys|enjoyed|enjoying|hope|hopes|hoped|hoping|fear|fears|feared|fearing" <files>
 ```
 
 Headings and titles need a separate pass:
