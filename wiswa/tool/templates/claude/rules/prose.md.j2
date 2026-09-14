@@ -9,6 +9,12 @@ Assistant instructions are exempt as well. `AGENTS.md`, `CLAUDE.md`, and everyth
 `.claude/` are never rewritten to satisfy these rules, whether by a lint pass or in passing during
 other work. Edit them only when the user requests a change to them.
 
+Text shown to a non-developer end user is exempt and is never rewritten to satisfy these rules.
+This covers website copy and application UI text (labels, buttons, headings, in-app messages).
+Command-line text is not exempt: help strings, usage output, command results, and error messages
+presented at a terminal follow every rule here. Edit end-user product copy only when the user
+requests a change to it.
+
 Apply these rules adversarially. A construction that is defensible under a loose reading and a
 violation under a strict one is a violation, and doubt resolves toward the rewrite.
 
@@ -48,12 +54,17 @@ stamp_ are both fine. _spell-check_ is allowed in every form and position. _clai
 wherever a specification defines it as a term, such as an OIDC or JWT claim. _state_ is allowed as a
 noun (_a state machine_, _the saved state_) and inside _restate_, and no replacement in this table
 is itself a banned verb. _name_ is allowed in the passive form that describes where a name comes
-from, such as _the file is named after the archive_ and _the directory named after it_.
+from, such as _the file is named after the archive_ and _the directory named after it_. _null_ is
+banned as a verb, and _nullify_ is allowed, as are the noun and adjective (_a null value_, _the
+column is null_). _project_ is banned wherever _display_ fits. The geometric sense of mapping a
+point or a shape onto a surface or an axis is allowed (_project the vertex onto the near plane_),
+and so is the noun _projection_.
 
 | Banned        | Write instead                       |
 | ------------- | ----------------------------------- |
 | _answer_      | _respond, reply, resolve_           |
 | _ask_         | _request, query, prompt_            |
+| _bake_        | _embed, build in, compile in_       |
 | _carry_       | _include, have, move_               |
 | _claim_       | _assert, report, record_            |
 | _confine_     | _limit, restrict_                   |
@@ -66,6 +77,9 @@ from, such as _the file is named after the archive_ and _the directory named aft
 | _manufacture_ | _produce, fabricate, build_         |
 | _mint_        | _create, issue, generate_           |
 | _name_        | _identify, specify, list_           |
+| _null_        | _nullify, clear, unset, reset_      |
+| _own_         | _provide, include, manage_          |
+| _project_     | _display, show, forecast_           |
 | _reach_       | _arrive at, contact_                |
 | _say_         | _write, document, report, record_   |
 | _spell_       | _write, writes, reads_              |
@@ -115,9 +129,9 @@ is happy_ and _the reader grows tired_ are not.
 | _X verbs no Y_, such as _the pass touches no files_                                | Rewrite as _X does not verb Y_, such as _the pass does not touch files_.                                                                                         |
 | _nothing verbs Y_, such as _nothing touches the page_                              | Identify the subject and negate the verb, such as _the page is never written to_. Where the subject is genuinely every candidate, _no X verbs Y_ is the rewrite. |
 | _X states that Y_ and _X states Y_, such as _the rule states that tests pass_      | Rewrite as _X requires Y_ where X imposes the requirement, and as _X records Y_ or _X specifies Y_ where X merely reports it.                                    |
-| _..., which (second statement)_                                                    | Split into two sentences.                                                                                                                                        |
-| _..., so (second statement)_ and _..., so that ..._                                | Split into two sentences.                                                                                                                                        |
-| _..., since (second statement)_                                                    | Split into two sentences.                                                                                                                                        |
+| _..., which (second statement)_                                                    | Delete the clause by default. A reader derives an obvious consequence, restatement, or justification without it. Split into two sentences only when the clause adds a fact a reader cannot derive.       |
+| _..., so (second statement)_ and _..., so that ..._                                | Delete the clause by default. A reader derives an obvious consequence, restatement, or justification without it. Split into two sentences only when the clause adds a fact a reader cannot derive.       |
+| _..., since (second statement)_                                                    | Delete the clause by default. A reader derives an obvious consequence, restatement, or justification without it. Split into two sentences only when the clause adds a fact a reader cannot derive.       |
 | _for such_                                                                         | Rewrite with the concrete noun.                                                                                                                                  |
 | _left alone_                                                                       | Specify the concrete action, for example _no edit was made_.                                                                                                     |
 | _written by hand_                                                                  | _hand-written_                                                                                                                                                   |
@@ -128,6 +142,16 @@ is happy_ and _the reader grows tired_ are not.
 
 ## Specificity
 
+- Write plainly. Prefer the plain word to the ornamental one (_use_ over _leverage_, _end_ over
+  _sunset_, _let_ over _enable_ where the meaning is _let_). State the mechanism directly rather
+  than through an abstract stand-in. A phrase such as _the audited layer that lets_ names nothing
+  concrete. Write what the code actually does.
+- Prefer _user_ to _actor_ for the person who performed an action, unless a specification defines
+  _actor_ as a term.
+- De-fluff. Delete a word, clause, or sentence that adds no fact a reader cannot already derive.
+  Adjectives and adverbs that do not change the meaning (_simply_, _just_, _basically_, _various_,
+  _powerful_, _seamless_, _robust_), throat-clearing openers (_it is worth noting that_, _in order
+  to_), and a sentence restating the previous one all go. Shorter is correct when nothing is lost.
 - Do not write _something_ where a specific noun exists.
 - Do not use _that_, _this_, _these_, or _those_ as a stand-in for a noun already available. Repeat
   the noun. _that timestamp_ becomes _the global timestamp_, and _a folder in that state_ becomes
