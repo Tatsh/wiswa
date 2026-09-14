@@ -42,11 +42,11 @@ _NPM_AGE_GATE_DEFAULT_MINUTES = 10080
 
 _UV_EXCLUDE_NEWER_DEFAULT = timedelta(weeks=1)
 """
-Default ``exclude-newer`` window applied when uv has no configured cutoff.
+Default ``exclude-newer`` window applied when uv does not have a configured cutoff.
 
 Mirrors uv's own one-week default and the npm age gate so Python package versions are filtered even
-when the user has no ``uv.toml`` and the project ``pyproject.toml`` sets no ``[tool.uv]``
-``exclude-newer``.
+when the user does not have a ``uv.toml`` and the project ``pyproject.toml`` does not set
+``[tool.uv]`` ``exclude-newer``.
 
 :meta hide-value:
 """
@@ -615,7 +615,7 @@ async def get_vcpkg_latest_port_version(session: niquests.AsyncSession, port: st
     Raises
     ------
     ValueError
-        If the port name is empty or the version database holds no usable entry for it.
+        If the port name is empty or the version database does not include a usable entry for it.
     """
     if not port:
         msg = 'A vcpkg port name is required.'

@@ -43,7 +43,7 @@
        */
       'incorrect-blank-line-after-class',
       /**
-       * ``blank-line-before-function`` wants no blank line after the signature, yet
+       * ``blank-line-before-function`` does not want a blank line after the signature, yet
        * ``incorrect-blank-line-before-class`` wants a blank line after a ``class`` line.
        */
       'incorrect-blank-line-before-class',

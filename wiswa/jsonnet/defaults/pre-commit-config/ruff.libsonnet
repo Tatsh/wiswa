@@ -14,7 +14,7 @@ function(settings) {
     settings.python_deps.dev.ruff
   else null,
   // A dependency may be written as a bare specifier or as an object carrying one. An array of
-  // them names no single release, so there is nothing there to pin a hook to.
+  // them does not identify a single release. There is nothing there to pin a hook to.
   local specifier = if std.isString(declared) then declared
   else if std.isObject(declared) && std.objectHas(declared, 'version') then declared.version
   else '',

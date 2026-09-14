@@ -668,7 +668,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    * Defaults to ``true`` for projects with at least one entry point on Linux. The workflow is
    * suppressed when every declared ``[project.scripts]`` entry is covered by
    * :py:attr:`appimage.exclusions`, or when :py:attr:`appimage.include_only` is non-empty but
-   * matches no declared script.
+   * does not match a declared script.
    * @var boolean
    */
   want_appimage:
@@ -692,7 +692,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    * or macOS. The workflow is suppressed when every declared ``[project.scripts]`` entry is
    * covered by both :py:attr:`pyinstaller.windows_exclusions` and
    * :py:attr:`pyinstaller.macos_exclusions` for every supported platform, or when
-   * :py:attr:`pyinstaller.include_only` is non-empty but matches no declared script.
+   * :py:attr:`pyinstaller.include_only` is non-empty but does not match a declared script.
    * @var boolean
    */
   want_pyinstaller:
@@ -1445,7 +1445,8 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                local missing_trailing_comma = ['missing-trailing-comma'],
                lint+: if settings.stubs_only then {
                  ignore: std.set(pyproject.tool.ruff.lint.ignore + missing_trailing_comma + [
-                   // ``N`` and ``S`` select a whole linter, which has no name to be written as.
+                   // ``N`` and ``S`` select a whole linter. A whole linter does not have a name
+                   // to be written as.
                    'N',
                    'S',
                    'boolean-type-hint-positional-argument',
