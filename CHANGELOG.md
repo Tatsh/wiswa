@@ -9,6 +9,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `eslint_configs`, a list of shareable ESLint configs imported by the generated
+  `eslint.config.mjs`. Each entry is `{ import: <identifier>, from: <module>, spread: <bool> }`. An
+  entry with `spread` set to `true` is also spread into the flat-config array before the appended
+  `eslint` objects. The default is an empty list.
+- `eslint_globals`, the `globals` presets applied to source files in the generated
+  `eslint.config.mjs`. A single entry renders as `globals.<name>`, and several entries render as a
+  spread object such as `{ ...globals.browser, ...globals.node }`. The preset was a literal
+  `globals.browser` inside the template. The default is `['browser']`.
+- `eslint_ignores`, the paths ESLint ignores in the generated `eslint.config.mjs`. The path list
+  was a literal inside the template. `coverage` and `dist` remain the default.
+
 ### Changed
 
 - The generated `.github/zizmor.yml` ignores `adhoc-packages` for `publish.yml`. The npm publish

@@ -1,12 +1,18 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+{%- for cfg in settings.eslint_configs %}
+import {{ cfg.import }} from '{{ cfg.from }}';
+{%- endfor %}
 
 export default tseslint.config(
-  { ignores: ['coverage', 'dist'] },
+  { ignores: [{% for path in settings.eslint_ignores %}'{{ path }}'{{ ', ' if not loop.last }}{% endfor %}] },
   js.configs.recommended,
   { files: ['**/*.js'], languageOptions: { sourceType: 'commonjs' } },
-  { files: ['**/*.{js,mjs,cjs,ts,mts,cts}'], languageOptions: { globals: globals.browser } },
+  { files: ['**/*.{js,mjs,cjs,ts,mts,cts}'], languageOptions: { globals: {% if settings.eslint_globals | length == 1 %}globals.{{ settings.eslint_globals[0] }}{% else %}{ {% for g in settings.eslint_globals %}...globals.{{ g }}{{ ', ' if not loop.last }}{% endfor %} }{% endif %} } },
   ...tseslint.configs.recommended,
+{%- for cfg in settings.eslint_configs %}{% if cfg.spread %}
+  ...{{ cfg.import }},
+{%- endif %}{% endfor %}
   ...{{ settings.eslint | tojson }},
 );

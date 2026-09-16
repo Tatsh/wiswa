@@ -404,6 +404,9 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'cmake': _cmake_defaults(),
         'cxx_standard': 23,
         'eslint': _eslint_defaults(),
+        'eslint_ignores': ['coverage', 'dist'],
+        'eslint_globals': ['browser'],
+        'eslint_configs': [],
         'pyinstaller': _pyinstaller_defaults(),
         'appimage': _appimage_defaults(),
         'docs_conf': _docs_conf_defaults(),
@@ -895,7 +898,34 @@ async def test_write_templated_files_ts_with_tests(tmp_path: Path,
                            want_ai=False))
     assert (out / 'src/index.ts').exists()
     assert (out / 'vitest.config.ts').exists()
-    assert (out / 'eslint.config.mjs').exists()
+    eslint_config = (out / 'eslint.config.mjs').read_text(encoding='utf-8')
+    assert "ignores: ['coverage', 'dist']" in eslint_config
+    assert 'globals: globals.browser' in eslint_config
+    assert 'eslint-config-next' not in eslint_config
+
+
+async def test_write_templated_files_ts_eslint_knobs(tmp_path: Path,
+                                                     monkeypatch: pytest.MonkeyPatch) -> None:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
+        out = await _run_write(
+            monkeypatch, tmp_path, module_path,
+            _make_settings(project_type='typescript',
+                           stubs_only=False,
+                           want_tests=True,
+                           want_ai=False,
+                           eslint_ignores=['coverage', 'dist', '.next'],
+                           eslint_globals=['browser', 'node'],
+                           eslint_configs=[{
+                               'import': 'next',
+                               'from': 'eslint-config-next',
+                               'spread': True
+                           }]))
+    eslint_config = (out / 'eslint.config.mjs').read_text(encoding='utf-8')
+    assert "import next from 'eslint-config-next';" in eslint_config
+    assert "ignores: ['coverage', 'dist', '.next']" in eslint_config
+    assert '...globals.browser' in eslint_config
+    assert '...globals.node' in eslint_config
+    assert '...next,' in eslint_config
 
 
 async def test_write_templated_files_contributing_overwrite_poetry_with_uv(

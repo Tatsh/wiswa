@@ -1533,7 +1533,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   local tsconfig = import 'defaults/tsconfig.libsonnet',
   /** @brief TypeScript configuration. */
   tsconfig: tsconfig,
-  /** @brief ESLint configuration. */
+  /** @brief ESLint configuration (extra flat-config objects appended after the recommended sets). */
   eslint: [
     {
       rules: {
@@ -1549,6 +1549,19 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
       },
     },
   ],
+  /** @brief Paths ESLint ignores (the first flat-config `ignores` entry). */
+  eslint_ignores: ['coverage', 'dist'],
+  /**
+   * @brief `globals` presets applied to source files. A single entry renders as `globals.<name>`;
+   * multiple entries render as a spread object, such as `{ ...globals.browser, ...globals.node }`.
+   */
+  eslint_globals: ['browser'],
+  /**
+   * @brief Shareable ESLint configs to import and (optionally) spread before the appended
+   * `eslint` objects. Each entry is `{ import: <identifier>, from: <module>, spread: <bool> }`;
+   * for example `{ import: 'next', from: 'eslint-config-next', spread: true }`.
+   */
+  eslint_configs: [],
   /** @brief If ESLint tasks should be added on non-TypeScript projects. */
   force_eslint: self.project_type == 'typescript',
 
