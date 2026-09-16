@@ -14,5 +14,7 @@ export default tseslint.config(
 {%- for cfg in settings.eslint_configs %}{% if cfg.spread %}
   ...{{ cfg.import }},
 {%- endif %}{% endfor %}
-  ...{{ settings.eslint | tojson }},
+{%- for entry in settings.eslint %}
+  {{ entry | tojson }},
+{%- endfor %}
 );

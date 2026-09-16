@@ -541,7 +541,7 @@ async def test_write_templated_files_dispatches_project_types(
                 assert (out / '.busted').exists()
                 assert (out / '.luacov').exists()
             case 'typescript':
-                assert (out / 'eslint.config.mjs').exists()
+                assert (out / 'eslint.config.mts').exists()
 
 
 async def test_write_templated_files_unknown_type_warns(tmp_path: Path,
@@ -897,11 +897,28 @@ async def test_write_templated_files_ts_with_tests(tmp_path: Path,
                            want_tests=True,
                            want_ai=False))
     assert (out / 'src/index.ts').exists()
-    assert (out / 'vitest.config.ts').exists()
-    eslint_config = (out / 'eslint.config.mjs').read_text(encoding='utf-8')
+    assert (out / 'vitest.config.mts').exists()
+    eslint_config = (out / 'eslint.config.mts').read_text(encoding='utf-8')
     assert "ignores: ['coverage', 'dist']" in eslint_config
     assert 'globals: globals.browser' in eslint_config
     assert 'eslint-config-next' not in eslint_config
+
+
+async def test_write_templated_files_ts_removes_stale_configs(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    settings = _make_settings(project_type='typescript',
+                              stubs_only=False,
+                              want_tests=True,
+                              want_ai=False)
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
+        out = await _run_write(monkeypatch, tmp_path, module_path, settings)
+        (out / 'eslint.config.mjs').write_text('stale', encoding='utf-8')
+        (out / 'vitest.config.ts').write_text('stale', encoding='utf-8')
+        await write_templated_files(module_path, cast('Any', settings))
+    assert not (out / 'eslint.config.mjs').exists()
+    assert not (out / 'vitest.config.ts').exists()
+    assert (out / 'eslint.config.mts').exists()
+    assert (out / 'vitest.config.mts').exists()
 
 
 async def test_write_templated_files_ts_eslint_knobs(tmp_path: Path,
@@ -920,7 +937,7 @@ async def test_write_templated_files_ts_eslint_knobs(tmp_path: Path,
                                'from': 'eslint-config-next',
                                'spread': True
                            }]))
-    eslint_config = (out / 'eslint.config.mjs').read_text(encoding='utf-8')
+    eslint_config = (out / 'eslint.config.mts').read_text(encoding='utf-8')
     assert "import next from 'eslint-config-next';" in eslint_config
     assert "ignores: ['coverage', 'dist', '.next']" in eslint_config
     assert '...globals.browser' in eslint_config

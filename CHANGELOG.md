@@ -11,19 +11,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `*.tsbuildinfo` in the shared ignore list. TypeScript writes an incremental build information
+  file beside compiled sources.
 - `eslint_configs`, a list of shareable ESLint configs imported by the generated
-  `eslint.config.mjs`. Each entry is `{ import: <identifier>, from: <module>, spread: <bool> }`. An
+  `eslint.config.mts`. Each entry is `{ import: <identifier>, from: <module>, spread: <bool> }`. An
   entry with `spread` set to `true` is also spread into the flat-config array before the appended
   `eslint` objects. The default is an empty list.
 - `eslint_globals`, the `globals` presets applied to source files in the generated
-  `eslint.config.mjs`. A single entry renders as `globals.<name>`, and several entries render as a
+  `eslint.config.mts`. A single entry renders as `globals.<name>`, and several entries render as a
   spread object such as `{ ...globals.browser, ...globals.node }`. The preset was a literal
   `globals.browser` inside the template. The default is `['browser']`.
-- `eslint_ignores`, the paths ESLint ignores in the generated `eslint.config.mjs`. The path list
+- `eslint_ignores`, the paths ESLint ignores in the generated `eslint.config.mts`. The path list
   was a literal inside the template. `coverage` and `dist` remain the default.
+- `jiti` in the generated development dependencies. ESLint requires `jiti` to load a TypeScript
+  flat config.
 
 ### Changed
 
+- The generated ESLint flat config is written to `eslint.config.mts` instead of
+  `eslint.config.mjs`, and the generated Vitest config to `vitest.config.mts` instead of
+  `vitest.config.ts`. ESLint and Vitest both resolve the former name ahead of the new name. A
+  generation run therefore deletes a stale file at the former name.
+- Every entry of the `eslint` setting renders as a separate argument to `tseslint.config()` in the
+  generated ESLint flat config rather than as one spread array literal.
 - The generated `.github/zizmor.yml` ignores `adhoc-packages` for `publish.yml`. The npm publish
   workflow updates npm itself before publishing, and no lockfile can express that step.
 

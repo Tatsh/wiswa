@@ -7,6 +7,7 @@
 [
   '*.kate-swp',
   '*.log',
+  '*.tsbuildinfo',
   '*~',
   '.*.swp',
   '.*_cache/',

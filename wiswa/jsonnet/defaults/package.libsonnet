@@ -81,6 +81,8 @@ local utils = import 'utils.libsonnet';
     '@eslint/js': utils.latestNpmPackageVersionCaret('@eslint/js'),
     '@types/node': utils.latestNpmPackageVersionCaret('@types/node'),
     eslint: utils.latestNpmPackageVersionCaret('eslint'),
+    // ESLint requires jiti to load the .mts flat config.
+    jiti: utils.latestNpmPackageVersionCaret('jiti'),
     'ts-node': utils.latestNpmPackageVersionCaret('ts-node'),
     typedoc: utils.latestNpmPackageVersionCaret('typedoc'),
     'typescript-eslint': utils.latestNpmPackageVersionCaret('typescript-eslint'),

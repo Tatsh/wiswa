@@ -134,6 +134,7 @@ iwyu
 jeffersonlicet
 jinja
 jinjahtml
+jiti
 jmredfern
 jpath
 jpathdir

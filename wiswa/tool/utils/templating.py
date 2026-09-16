@@ -170,10 +170,16 @@ async def _write_templated_files_typescript(settings: Settings, templates_dir: P
     if not settings['stubs_only']:
         await write_file(resolve_template(templates_dir / 'src/index.ts.j2'), 'src/index.ts')
     if settings['want_tests'] and not settings['stubs_only']:
-        await write_file(resolve_template(templates_dir / 'vitest.config.ts.j2'),
-                         'vitest.config.ts')
-    await write_file(resolve_template(templates_dir / 'eslint.config.mjs.j2'),
-                     'eslint.config.mjs',
+        # Vitest resolves vitest.config.ts ahead of the .mts form. A stale copy would override
+        # the generated configuration.
+        await anyio.Path('vitest.config.ts').unlink(missing_ok=True)
+        await write_file(resolve_template(templates_dir / 'vitest.config.mts.j2'),
+                         'vitest.config.mts')
+    # ESLint resolves eslint.config.mjs ahead of the .mts form. A stale copy would override the
+    # generated configuration.
+    await anyio.Path('eslint.config.mjs').unlink(missing_ok=True)
+    await write_file(resolve_template(templates_dir / 'eslint.config.mts.j2'),
+                     'eslint.config.mts',
                      overwrite=True)
 
 
