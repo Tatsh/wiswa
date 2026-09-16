@@ -858,13 +858,15 @@ async def test_post_process_steps_changelog_skips_rewrite_when_no_matching_links
     assert changelog.read_text(encoding='utf-8') == original
 
 
-async def test_post_process_steps_python_no_tests_no_launch_vscode(tmp_path: Path,
+@pytest.mark.parametrize('vscode', [{'launch': None}, {}])
+async def test_post_process_steps_python_no_tests_no_launch_vscode(vscode: dict[str, Any],
+                                                                   tmp_path: Path,
                                                                    monkeypatch: pytest.MonkeyPatch,
                                                                    mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     _mock_subprocess(mocker)
-    settings = cast('Any', _make_settings(want_tests=False, vscode={'launch': None}))
+    settings = cast('Any', _make_settings(want_tests=False, vscode=vscode))
     await post_process_steps(settings)
 
 

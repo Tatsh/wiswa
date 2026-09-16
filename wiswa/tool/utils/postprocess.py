@@ -537,9 +537,9 @@ async def _post_process_steps_python(settings: Settings,
     if not settings['want_tests']:
         cleanup_tasks.extend((run_sync(partial(shutil.rmtree, 'tests', ignore_errors=True)),
                               anyio.Path('.github/workflows/tests.yml').unlink(missing_ok=True)))
-        if (not settings['vscode']['launch']
-                or (len(settings['vscode']['launch']['configurations']) == 1
-                    and settings['vscode']['launch']['configurations'][0]['name'] == 'Run tests')):
+        if (not (launch := settings['vscode'].get('launch'))
+                or (len(launch['configurations']) == 1
+                    and launch['configurations'][0]['name'] == 'Run tests')):
             cleanup_tasks.append(anyio.Path('.vscode/launch.json').unlink(missing_ok=True))
     if not settings['want_docs']:
         cleanup_tasks.extend((run_sync(partial(shutil.rmtree, 'docs', ignore_errors=True)),

@@ -49,7 +49,7 @@ class VSCode(TypedDict):
 
     extensions: Iterable[str]
     """A list of VS Code extensions to install."""
-    launch: VSCodeLaunch
+    launch: NotRequired[VSCodeLaunch | None]
     """Launch configurations."""
 
 
