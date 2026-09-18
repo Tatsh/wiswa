@@ -60,7 +60,7 @@ grep -nEiw "gate|gates|gated|gating|stamp|stamps|stamped|stamping|answer|answers
 ```
 
 ```shell
-grep -nEi "\banyway\b|\banyone\b|\bnobody\b|\bno[ -]?one\b|\bobligatory\b|ground truth|house style|house convention|elephant in the room|writing on the wall|beat around the bush|best[ -]of[ -]breed|call it a day|cut to the chase|hit the nail on the head|jump on the bandwagon|think outside the box" <files>
+grep -nEi "\banyway\b|\banyone\b|\bnobody\b|\bno[ -]?one\b|\bobligatory\b|straight[ -]up|ground truth|house style|house convention|elephant in the room|writing on the wall|beat around the bush|best[ -]of[ -]breed|call it a day|cut to the chase|hit the nail on the head|jump on the bandwagon|think outside the box" <files>
 ```
 
 Ornamental wording and filler need a pass of their own. Delete a hit that adds no fact a reader

@@ -106,6 +106,7 @@ asks for this quarter_). Write _request_.
 - _no one_, _no-one_, and _noone_
 - _nobody_
 - _obligatory_
+- _straight-up_ and _straight up_
 - _the writing on the wall_
 - _think outside the box_
 
