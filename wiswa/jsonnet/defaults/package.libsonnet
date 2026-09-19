@@ -67,7 +67,7 @@ local utils = import 'utils.libsonnet';
     + (if settings.want_ty then { ty: '%s ty check' % run_cmd } else {}),
   local c_cpp_scripts(settings) = {
     build: 'cmake --preset=default -DBUILD_DOCS=ON && cmake --build build',
-    'check-formatting': 'clang-format --dry-run %s && prettier --check . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % settings.clang_format_args,
+    'check-formatting': 'clang-format --dry-run --Werror %s && prettier --check . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2' % settings.clang_format_args,
     'check-spelling': 'cspell --no-progress .',
     'dict:update': dictionary_update,
     format: 'clang-format -i %s && prettier --write . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2 --fix' % settings.clang_format_args,

@@ -12,7 +12,7 @@ function(settings)
           common.checkout,
           {
             name: 'Check formatting (clang-format)',
-            run: 'clang-format --dry-run %s' % settings.clang_format_args,
+            run: 'clang-format --dry-run --Werror %s' % settings.clang_format_args,
           },
         ],
       },

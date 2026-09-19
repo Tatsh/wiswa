@@ -39,6 +39,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- The generated `check-formatting` script and the generated `clang-format` workflow for C and C++
+  projects pass `--Werror` to `clang-format`. Under `--dry-run` alone `clang-format` reports every
+  replacement it would make and still exits 0. The formatting gate and the workflow status check
+  were therefore unable to fail on a source the formatter would rewrite.
 - The generated PyInstaller workflow sets `OPENSSL_STATIC=1` on macOS runners. `cryptography` no
   longer publishes a macOS x86_64 wheel, and the Intel runner therefore builds it from source
   against Homebrew OpenSSL. PyInstaller flattens every collected dylib into one directory, where
