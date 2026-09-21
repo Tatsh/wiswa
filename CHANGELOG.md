@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-09-21
+
 ### Added
 
 - `*.tsbuildinfo` in the shared ignore list. TypeScript writes an incremental build information
@@ -36,6 +38,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   generated ESLint flat config rather than as one spread array literal.
 - The generated `.github/zizmor.yml` ignores `adhoc-packages` for `publish.yml`. The npm publish
   workflow updates npm itself before publishing, and no lockfile can express that step.
+- The generated `.claude/rules/prose.md` bans further verbs, words, and sentence patterns, and the
+  generated `prose-lint` skill takes the matching greps. `bake`, `mint`, `null`, `own`, `project`,
+  `spell`, `state`, and `title` join the verb table, and `ask` is banned as a noun as well as a
+  verb. `best-of-breed`, `house convention`, `house style`, and `straight-up` join the banned
+  phrases, and `leading` is banned as an adjective of rank or prominence. A new Personification
+  section forbids a verb of life, death, sensation, or emotion for an inanimate subject. The fix for
+  a trailing `, which`, `, so`, or `, since` clause is now to delete the clause rather than to split
+  the sentence.
+- `AGENTS.md`, `CLAUDE.md`, and everything under `.claude/` are exempt from the generated prose
+  rules, and so is text shown to a non-developer end user. The exempt files are instructions to an
+  assistant rather than prose for a reader, and a rewrite for a wording preference risked altering
+  behaviour. The generated `copy-editor` agent and `prose-lint` skill repeat the exemption in their
+  exclusion lists. Command-line text remains covered, including help strings, usage output, and
+  error messages.
+- The line length rule in the generated general guidelines reads its width from `line_width` rather
+  than from a literal `100` in the template, and allows a line of exactly the configured width. A
+  project on a different width now receives guidance matching its configuration. The same setting
+  already feeds Prettier, markdownlint, the VS Code ruler, and clang-format.
+- `VSCode.launch` in `wiswa.tool.typing` is `NotRequired[VSCodeLaunch | None]` rather than a
+  required key. A settings mapping assembled outside the Jsonnet merge may omit the key, and the one
+  consumer subscripted the key three times in the cleanup branch for a project without tests.
+  Default settings always write `vscode.launch`, and generated output does not change.
 
 ### Fixed
 
@@ -44,10 +68,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   replacement it would make and still exits 0. The formatting gate and the workflow status check
   were therefore unable to fail on a source the formatter would rewrite.
 - The generated PyInstaller workflow sets `OPENSSL_STATIC=1` on macOS runners. `cryptography` no
-  longer publishes a macOS x86_64 wheel, and the Intel runner therefore builds it from source
-  against Homebrew OpenSSL. PyInstaller flattens every collected dylib into one directory, where
-  the older `libssl.3.dylib` bundled with Python wins the collision and the frozen binary cannot
-  resolve OpenSSL 3.2 symbols at startup.
+  longer publishes a macOS x86_64 wheel, and the Intel runner therefore builds `cryptography` from
+  source against Homebrew OpenSSL. PyInstaller flattens every collected dylib into one directory,
+  where the older `libssl.3.dylib` bundled with Python wins the collision and the frozen binary
+  cannot resolve OpenSSL 3.2 symbols at startup.
 
 ### Security
 
@@ -1109,7 +1133,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First version.
 
-[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.6.0...HEAD
+[unreleased]: https://github.com/Tatsh/wiswa/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/Tatsh/wiswa/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Tatsh/wiswa/compare/v0.5.2...v0.6.0
 [0.5.2]: https://github.com/Tatsh/wiswa/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/Tatsh/wiswa/compare/v0.5.0...v0.5.1
