@@ -4,6 +4,9 @@ import tseslint from 'typescript-eslint';
 {%- for cfg in settings.eslint_configs %}
 import {{ cfg.import }} from '{{ cfg.from }}';
 {%- endfor %}
+{%- for plugin in settings.eslint_plugins %}
+import {{ plugin.import }} from '{{ plugin.from }}';
+{%- endfor %}
 
 export default tseslint.config(
   { ignores: [{% for path in settings.eslint_ignores %}'{{ path }}'{{ ', ' if not loop.last }}{% endfor %}] },
@@ -14,6 +17,9 @@ export default tseslint.config(
 {%- for cfg in settings.eslint_configs %}{% if cfg.spread %}
   ...{{ cfg.import }},
 {%- endif %}{% endfor %}
+{%- if settings.eslint_plugins | length > 0 %}
+  { plugins: { {% for plugin in settings.eslint_plugins %}'{{ plugin.name }}': {{ plugin.import }}{{ ', ' if not loop.last }}{% endfor %} } },
+{%- endif %}
 {%- for entry in settings.eslint %}
   {{ entry | tojson }},
 {%- endfor %}

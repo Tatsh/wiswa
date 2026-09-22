@@ -1581,6 +1581,12 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   /** @brief Paths ESLint ignores (the first flat-config `ignores` entry). */
   eslint_ignores: ['coverage', 'dist'],
   /**
+   * @brief ESLint plugins to register. Each entry is `{ name, import, from }` and renders both an
+   * import and a `{ plugins: { <name>: <import> } }` flat-config object. Plugin rules go in
+   * the `eslint` setting.
+   */
+  eslint_plugins: [],
+  /**
    * @brief `globals` presets applied to source files. A single entry renders as `globals.<name>`;
    * multiple entries render as a spread object, such as `{ ...globals.browser, ...globals.node }`.
    */

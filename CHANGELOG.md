@@ -11,6 +11,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `eslint_plugins`, a list of ESLint plugins registered by the generated `eslint.config.mts`. Each
+  entry is `{ name, import, from }` and renders an import plus a
+  `{ plugins: { <name>: <import> } }` flat-config object. Plugin rules go in the `eslint` setting.
+  The default is an empty list.
 - `vitest`, the settings rendered into the generated `vitest.config.mts`. The keys are
   `environment` (default `node`), `pool`, `globals`, `setup_files`, `aliases`, and `coverage`
   (`provider` with default `v8`, `reporter`, and `exclude`). An empty `pool` or `reporter` falls
