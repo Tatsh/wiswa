@@ -217,6 +217,21 @@ def _eslint_defaults() -> list[dict[str, Any]]:
     }]
 
 
+def _vitest_defaults() -> dict[str, Any]:
+    return {
+        'aliases': {},
+        'coverage': {
+            'exclude': [],
+            'provider': 'v8',
+            'reporter': []
+        },
+        'environment': 'node',
+        'globals': False,
+        'pool': '',
+        'setup_files': []
+    }
+
+
 def _docs_conf_defaults() -> dict[str, Any]:
     return {
         'environment_variables': {},
@@ -388,6 +403,7 @@ def _make_settings(**overrides: Any) -> dict[str, Any]:
         'want_tests': False,
         'want_yapf': False,
         'version': '0.0.1',
+        'vitest': _vitest_defaults(),
         'yarn_version': '4',
         '_readme_existed': False,
         '_has_established_pytest_modules': False,
@@ -897,7 +913,14 @@ async def test_write_templated_files_ts_with_tests(tmp_path: Path,
                            want_tests=True,
                            want_ai=False))
     assert (out / 'src/index.ts').exists()
-    assert (out / 'vitest.config.mts').exists()
+    vitest_config = (out / 'vitest.config.mts').read_text(encoding='utf-8')
+    assert "provider: 'v8'," in vitest_config
+    assert "environment: 'node'," in vitest_config
+    assert 'pool:' not in vitest_config
+    assert 'globals:' not in vitest_config
+    assert 'setupFiles' not in vitest_config
+    assert 'resolve:' not in vitest_config
+    assert "import path from 'path';" not in vitest_config
     eslint_config = (out / 'eslint.config.mts').read_text(encoding='utf-8')
     assert "ignores: ['coverage', 'dist']" in eslint_config
     assert 'globals: globals.browser' in eslint_config
@@ -919,6 +942,67 @@ async def test_write_templated_files_ts_removes_stale_configs(
     assert not (out / 'vitest.config.ts').exists()
     assert (out / 'eslint.config.mts').exists()
     assert (out / 'vitest.config.mts').exists()
+
+
+async def test_write_templated_files_ts_vitest_overwrites_existing(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    out = tmp_path / 'proj'
+    out.mkdir()
+    (out / 'vitest.config.mts').write_text('stale', encoding='utf-8')
+    monkeypatch.chdir(out)
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
+        await write_templated_files(
+            module_path,
+            cast(
+                'Any',
+                _make_settings(project_type='typescript',
+                               stubs_only=False,
+                               want_tests=True,
+                               want_ai=False)))
+    vitest_config = (out / 'vitest.config.mts').read_text(encoding='utf-8')
+    assert 'stale' not in vitest_config
+    assert 'defineConfig' in vitest_config
+
+
+@pytest.mark.parametrize(('setup_files', 'expected_setup_files'),
+                         [(['./vitest.setup.ts'], "setupFiles: './vitest.setup.ts',"),
+                          (['./a.ts', './b.ts'], "setupFiles: ['./a.ts', './b.ts'],")])
+async def test_write_templated_files_ts_vitest_knobs(tmp_path: Path,
+                                                     monkeypatch: pytest.MonkeyPatch,
+                                                     setup_files: list[str],
+                                                     expected_setup_files: str) -> None:
+    with importlib.resources.as_file(importlib.resources.files('wiswa.tool')) as module_path:
+        out = await _run_write(
+            monkeypatch, tmp_path, module_path,
+            _make_settings(project_type='typescript',
+                           stubs_only=False,
+                           want_tests=True,
+                           want_ai=False,
+                           vitest={
+                               'aliases': {
+                                   '@': './'
+                               },
+                               'coverage': {
+                                   'exclude': ['dist', 'src/*.d.ts'],
+                                   'provider': 'istanbul',
+                                   'reporter': ['text', 'lcov']
+                               },
+                               'environment': 'jsdom',
+                               'globals': True,
+                               'pool': 'vmThreads',
+                               'setup_files': setup_files
+                           }))
+    vitest_config = (out / 'vitest.config.mts').read_text(encoding='utf-8')
+    assert "import path from 'path';" in vitest_config
+    assert ("'@': path.resolve(path.dirname(new URL(import.meta.url).pathname), './')"
+            in vitest_config)
+    assert "exclude: ['dist', 'src/*.d.ts']," in vitest_config
+    assert "provider: 'istanbul'," in vitest_config
+    assert "reporter: ['text', 'lcov']," in vitest_config
+    assert "environment: 'jsdom'," in vitest_config
+    assert 'globals: true,' in vitest_config
+    assert "pool: 'vmThreads'," in vitest_config
+    assert expected_setup_files in vitest_config
 
 
 async def test_write_templated_files_ts_eslint_knobs(tmp_path: Path,

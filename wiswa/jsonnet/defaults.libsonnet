@@ -1533,6 +1533,35 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   local tsconfig = import 'defaults/tsconfig.libsonnet',
   /** @brief TypeScript configuration. */
   tsconfig: tsconfig,
+  /** @brief Configuration used to render `vitest.config.mts`. */
+  vitest: {
+    /** @brief Test environment, such as `node` or `jsdom`. */
+    environment: 'node',
+    /**
+     * @brief Worker pool, such as `forks`, `threads`, or `vmThreads`. When empty, the Vitest
+     * default is used. `vmThreads` creates the environment once per worker instead of once per
+     * file. The `vmThreads` pool is faster for `jsdom`.
+     */
+    pool: '',
+    /** @brief Whether to inject test globals (`describe`, `it`, and `expect`) without imports. */
+    globals: false,
+    /** @brief Setup files run before each test file. */
+    setup_files: [],
+    /**
+     * @brief Module alias map, such as `{ '@': './' }`. Each value is a path resolved relative to
+     * the config file directory.
+     */
+    aliases: {},
+    /** @brief Coverage configuration. */
+    coverage: {
+      /** @brief Coverage provider. */
+      provider: 'v8',
+      /** @brief Coverage reporters. When empty, the Vitest default is used. */
+      reporter: [],
+      /** @brief Paths excluded from coverage. */
+      exclude: [],
+    },
+  },
   /** @brief ESLint configuration (extra flat-config objects appended after the recommended sets). */
   eslint: [
     {

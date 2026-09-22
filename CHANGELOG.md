@@ -9,6 +9,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `vitest`, the settings rendered into the generated `vitest.config.mts`. The keys are
+  `environment` (default `node`), `pool`, `globals`, `setup_files`, `aliases`, and `coverage`
+  (`provider` with default `v8`, `reporter`, and `exclude`). An empty `pool` or `reporter` falls
+  back to the Vitest default. A generation run now overwrites `vitest.config.mts` instead of
+  writing the file only when absent.
+
 ## [0.6.1] - 2026-09-21
 
 ### Added

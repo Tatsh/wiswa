@@ -174,7 +174,8 @@ async def _write_templated_files_typescript(settings: Settings, templates_dir: P
         # the generated configuration.
         await anyio.Path('vitest.config.ts').unlink(missing_ok=True)
         await write_file(resolve_template(templates_dir / 'vitest.config.mts.j2'),
-                         'vitest.config.mts')
+                         'vitest.config.mts',
+                         overwrite=True)
     # ESLint resolves eslint.config.mjs ahead of the .mts form. A stale copy would override the
     # generated configuration.
     await anyio.Path('eslint.config.mjs').unlink(missing_ok=True)

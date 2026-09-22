@@ -1,10 +1,43 @@
+{% set vitest = settings.vitest %}
+{% set aliases = vitest.aliases %}
+{% set coverage = vitest.coverage %}
+{% set setup_files = vitest.setup_files %}
+{% if aliases | length > 0 %}
+import path from 'path';
+{% endif %}
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+{% if aliases | length > 0 %}
+  resolve: {
+    alias: {
+{% for name, target in aliases.items() %}
+      '{{ name }}': path.resolve(path.dirname(new URL(import.meta.url).pathname), '{{ target }}'),
+{% endfor %}
+    },
+  },
+{% endif %}
   test: {
     coverage: {
-      provider: 'v8',
+{% if coverage.exclude | length > 0 %}
+      exclude: [{% for item in coverage.exclude %}'{{ item }}'{{ ', ' if not loop.last }}{% endfor %}],
+{% endif %}
+      provider: '{{ coverage.provider }}',
+{% if coverage.reporter | length > 0 %}
+      reporter: [{% for item in coverage.reporter %}'{{ item }}'{{ ', ' if not loop.last }}{% endfor %}],
+{% endif %}
     },
-    environment: 'node',
+    environment: '{{ vitest.environment }}',
+{% if vitest.globals %}
+    globals: true,
+{% endif %}
+{% if vitest.pool %}
+    pool: '{{ vitest.pool }}',
+{% endif %}
+{% if setup_files | length == 1 %}
+    setupFiles: '{{ setup_files[0] }}',
+{% elif setup_files | length > 1 %}
+    setupFiles: [{% for item in setup_files %}'{{ item }}'{{ ', ' if not loop.last }}{% endfor %}],
+{% endif %}
   },
 });
