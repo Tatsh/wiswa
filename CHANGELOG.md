@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-09-23
+
 ### Added
 
 - `eslint_plugins`, a list of ESLint plugins registered by the generated `eslint.config.mts`. Each
