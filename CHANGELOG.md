@@ -9,6 +9,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The generated `make-release` skill sets `date-released` in `CITATION.cff` to the current date
+  when the file exists. `cz bump` does not update the field.
+
 ## [0.6.2] - 2026-09-23
 
 ### Added
