@@ -134,6 +134,7 @@ local utils = import 'utils.libsonnet';
         '.git/**',
         '.yarn/**/*.cjs',
         '.vscode/extensions.json',
+        '.wiswa-ci/**',
         'dist/**',
         'man/**',
       ] + (if settings.export_requirements.enabled && settings.project_type == 'python' then [
