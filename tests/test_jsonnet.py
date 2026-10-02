@@ -730,3 +730,22 @@ async def test_worktree_commondir_read_oserror_skips_common_yield(tmp_path: Path
     await evaluate_jsonnet_file(['/lib'], MagicMock(), '{}')
     callback = mock_jsonnet.evaluate_file.call_args[1]['native_callbacks']['githubCliUsername'][1]
     assert callback() == 'unknown'
+
+
+@pytest.mark.parametrize(('project_type', 'expected'), [
+    ('typescript', [{
+        'dependency-name': 'typescript',
+        'versions': ['>=7']
+    }]),
+    ('python', None),
+])
+def test_dependabot_npm_ignores_typescript_7_for_typescript_projects(
+        project_type: str, expected: list[dict[str, object]] | None) -> None:
+    out = json.loads(
+        _jsonnet.evaluate_snippet(
+            'snippet',
+            f"(import 'defaults/dependabot.libsonnet').updates({{project_type: '{project_type}',"
+            " package_manager: 'uv'})",
+            jpathdir=[str(_WISWA_JSONNET)]))
+    npm = next(u for u in out['updates'] if u['package-ecosystem'] == 'npm')
+    assert npm.get('ignore') == expected

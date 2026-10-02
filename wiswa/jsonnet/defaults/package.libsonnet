@@ -196,6 +196,13 @@ local utils = import 'utils.libsonnet';
             parser: 'json',
           },
         },
+        // tomlkit writes basic (double-quoted) strings; prettier-plugin-toml 3 applies singleQuote.
+        {
+          files: ['*.toml'],
+          options: {
+            singleQuote: false,
+          },
+        },
       ] + prettier_c_cpp + prettier_cpp,
       plugins: [
         '@prettier/plugin-xml',

@@ -39,7 +39,10 @@
                  groups: groups,
                  'package-ecosystem': 'npm',
                  schedule: schedule,
-               },
+               } + (if settings.project_type == 'typescript' then {
+                      // typescript-eslint does not support TypeScript 7 yet.
+                      ignore: [{ 'dependency-name': 'typescript', versions: ['>=7'] }],
+                    } else {}),
                {
                  cooldown: cooldown,
                  directory: '/',
