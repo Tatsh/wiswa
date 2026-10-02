@@ -18,6 +18,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Prettier formats `*.toml` with `singleQuote: false`. `prettier-plugin-toml` 3 applies
   `singleQuote`, which conflicted with the double-quoted strings tomlkit writes.
 - Dependabot ignores TypeScript 7 for TypeScript projects until `typescript-eslint` supports it.
+- TypeScript projects with tests add `vite`, a required peer of vitest 5.
 
 ## [0.6.2] - 2026-09-23
 

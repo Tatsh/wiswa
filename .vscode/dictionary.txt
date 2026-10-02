@@ -308,6 +308,7 @@ venv
 vers
 virtualenv
 visualstudioexptteam
+vite
 vitest
 vscodeintellicode
 wayou

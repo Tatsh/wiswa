@@ -89,6 +89,8 @@ local utils = import 'utils.libsonnet';
     typescript: 'npm:%s@%s' % [typescript6, utils.latestNpmPackageVersionCaret(typescript6)],
   } + if settings.want_tests then {
     '@vitest/coverage-v8': utils.latestNpmPackageVersionCaret('@vitest/coverage-v8'),
+    // vitest 5 requires vite as a non-optional peer.
+    vite: utils.latestNpmPackageVersionCaret('vite'),
     vitest: utils.latestNpmPackageVersionCaret('vitest'),
   } else {},
   typescript_scripts(settings):: {

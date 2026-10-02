@@ -749,3 +749,15 @@ def test_dependabot_npm_ignores_typescript_7_for_typescript_projects(
             jpathdir=[str(_WISWA_JSONNET)]))
     npm = next(u for u in out['updates'] if u['package-ecosystem'] == 'npm')
     assert npm.get('ignore') == expected
+
+
+@pytest.mark.parametrize('want_tests', [True, False])
+def test_typescript_dev_deps_include_vite_with_vitest(*, want_tests: bool) -> None:
+    out = json.loads(
+        _jsonnet.evaluate_snippet(
+            'snippet', "(import 'defaults/package.libsonnet').typescript_dev_deps("
+            f"{{want_tests: {str(want_tests).lower()}}})",
+            jpathdir=[str(_WISWA_JSONNET)],
+            native_callbacks={'latestNpmPackageVersion': (('package',), lambda _: '1.0.0')}))
+    assert ('vite' in out) is want_tests
+    assert ('vitest' in out) is want_tests
