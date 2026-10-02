@@ -133,6 +133,10 @@ local utils = import 'utils.libsonnet';
       ruff+: {
         'namespace-packages'+: ['wiswa/tool/static'],
       },
+      uv+: {
+        // First-party package; take new releases without waiting out exclude-newer.
+        'exclude-newer-package': { 'wiswa-vcs': false },
+      },
       ty+: {
         src+: {
           exclude+:

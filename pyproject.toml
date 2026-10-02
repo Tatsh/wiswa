@@ -4,13 +4,13 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
-  "commitizen>=4.18.1",
+  "commitizen>=4.19.0",
   "cz-path>=0.0.7",
   "mypy>=2.3.1",
-  "ruff==0.16.8",
-  "ty>=0.0.81",
+  "ruff==0.16.9",
+  "ty>=0.0.84",
   "types-jsonnet>=0.22.0.20260408",
-  "yapf>=0.43.0",
+  "yapf>=0.43.0"
 ]
 docs = [
   "autodoc-pydantic>=2.2.0",
@@ -21,7 +21,7 @@ docs = [
   "sphinx-click>=6.2.0",
   "sphinx-datatables>=1.0.0",
   "sphinx-immaterial>=0.13.9",
-  "sphinx>=9.1.0; python_version >= \"3.13\"",
+  "sphinx>=9.1.0; python_version >= \"3.13\""
 ]
 tests = [
   "coveralls>=4.1.0",
@@ -29,7 +29,7 @@ tests = [
   "pytest-asyncio>=1.4.0",
   "pytest-cov>=7.1.0",
   "pytest-mock>=3.15.1",
-  "pytest>=9.1.1",
+  "pytest>=9.1.1"
 ]
 
 [project]
@@ -42,7 +42,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
-  "Typing :: Typed",
+  "Typing :: Typed"
 ]
 dependencies = [
   "anyio>=4.15.1",
@@ -52,13 +52,13 @@ dependencies = [
   "jsonnet>=0.22.0",
   "keyring>=25.7.0",
   "niquests-cache>=0.2.4",
-  "niquests>=3.21.1",
-  "platformdirs>=4.11.9",
+  "niquests>=3.21.2",
+  "platformdirs>=4.11.14",
   "rich>=15.0.0",
   "tomlkit>=0.15.1",
   "typing-extensions>=4.16.0",
   "wiswa-typing>=0.1.0",
-  "wiswa-vcs>=0.1.1",
+  "wiswa-vcs>=0.1.2"
 ]
 description = "A highly opinionated way to generate and maintain projects with Jsonnet."
 keywords = ["command line", "jsonnet", "project generator", "project management", "scaffolding"]
@@ -95,7 +95,7 @@ version_files = [
   "package.json",
   "sh.tat.wiswa.yml",
   "snapcraft.yaml",
-  "wiswa/tool/__init__.py",
+  "wiswa/tool/__init__.py"
 ]
 version_provider = "pep621"
 
@@ -108,7 +108,7 @@ omit = [
   "tests/test_*.py",
   "wiswa/tool/__main__.py",
   "typing.py",
-  "**/*.j2",
+  "**/*.j2"
 ]
 show_missing = true
 
@@ -121,7 +121,7 @@ omit = [
   "tests/test_*.py",
   "wiswa/tool/__main__.py",
   "typing.py",
-  "**/*.j2",
+  "**/*.j2"
 ]
 
 [tool.doc8]
@@ -193,7 +193,7 @@ ignore = [
   "missing-trailing-comma",
   "multi-line-summary-first-line",
   "subprocess-without-shell-equals-true",
-  "suspicious-subprocess-import",
+  "suspicious-subprocess-import"
 ]
 preview = true
 
@@ -239,6 +239,9 @@ exclude = ["tests/test_extensions.py"]
 [tool.uv]
 default-groups = "all"
 exclude-newer = "1 week"
+
+[tool.uv.exclude-newer-package]
+wiswa-vcs = false
 
 [tool.yapf]
 align_closing_bracket_with_visual_indent = true
