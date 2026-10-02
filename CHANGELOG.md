@@ -20,6 +20,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Dependabot ignores TypeScript 7 for TypeScript projects until `typescript-eslint` supports it.
 - TypeScript projects with tests add `vite`, a required peer of vitest 5.
 
+### Fixed
+
+- The generated README PyPI version and pepy.tech downloads badges for Python projects use
+  `pypi_project_name` instead of `project_name`, so they work when the PyPI name differs.
+
 ## [0.6.2] - 2026-09-23
 
 ### Added

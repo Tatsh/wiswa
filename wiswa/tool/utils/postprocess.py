@@ -591,8 +591,9 @@ def _project_type_badges(settings: Settings) -> Iterator[str]:
             yield (f"[![Python versions](https://img.shields.io/pypi/pyversions/"
                    f"{settings['pypi_project_name']}.svg?color=blue&logo=python&logoColor=white)]"
                    "(https://www.python.org/)")
-            yield (f"[![PyPI - Version](https://img.shields.io/pypi/v/{settings['project_name']})]"
-                   f"(https://pypi.org/project/{settings['pypi_project_name']}/)")
+            yield (
+                f"[![PyPI - Version](https://img.shields.io/pypi/v/{settings['pypi_project_name']})]"
+                f"(https://pypi.org/project/{settings['pypi_project_name']}/)")
         case 'typescript' if not settings['private']:
             # The npmjs.com badges only resolve for packages on the public npm registry; for
             # projects publishing to GitHub Packages or another registry, those endpoints return
@@ -699,8 +700,9 @@ def _python_tool_badges(settings: Settings) -> Iterator[str]:
     yield ('[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com'
            '/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)')
     if not settings['private']:
-        yield (f"[![Downloads](https://static.pepy.tech/badge/{settings['project_name']}/month)]"
-               f"(https://pepy.tech/project/{settings['project_name']})")
+        yield (
+            f"[![Downloads](https://static.pepy.tech/badge/{settings['pypi_project_name']}/month)]"
+            f"(https://pepy.tech/project/{settings['pypi_project_name']})")
 
 
 def _typescript_badges(settings: Settings) -> list[str]:

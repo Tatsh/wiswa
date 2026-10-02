@@ -1219,6 +1219,28 @@ async def test_post_process_steps_badges_python_poetry_django(tmp_path: Path,
     assert 'numpy' in content
 
 
+async def test_post_process_steps_badges_use_pypi_name_for_registry_badges(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    readme = tmp_path / 'README.md'
+    readme.write_text('# Project\n\n[![old](http://example.com)]\n\nContent.\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = cast(
+        'Any',
+        _make_settings(_readme_existed=True,
+                       project_name='myproject',
+                       pypi_project_name='other-name'))
+    await post_process_steps(settings)
+    content = readme.read_text(encoding='utf-8')
+    assert 'static.pepy.tech/badge/other-name/month' in content
+    assert 'pepy.tech/project/other-name)' in content
+    assert 'img.shields.io/pypi/v/other-name' in content
+    assert 'pepy.tech/badge/myproject' not in content
+    assert 'pepy.tech/project/myproject' not in content
+    assert 'img.shields.io/pypi/v/myproject' not in content
+
+
 async def test_post_process_steps_badges_private_project(tmp_path: Path,
                                                          monkeypatch: pytest.MonkeyPatch,
                                                          mocker: MockerFixture) -> None:
