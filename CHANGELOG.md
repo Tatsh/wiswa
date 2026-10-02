@@ -24,6 +24,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The generated README PyPI version and pepy.tech downloads badges for Python projects use
   `pypi_project_name` instead of `project_name`, so they work when the PyPI name differs.
+- The Keep a Changelog fallback URL in generated `CHANGELOG.md` boilerplate is
+  `https://keepachangelog.com/en/1.1.1/` instead of `1.1.0/`. Regeneration no longer downgrades
+  existing `1.1.1/` links when the latest release tag is not published on keepachangelog.com or
+  resolution fails.
 
 ## [0.6.2] - 2026-09-23
 

@@ -714,7 +714,7 @@ async def test_post_process_steps_updates_changelog_reference_urls(tmp_path: Pat
     settings = cast('Any', _make_settings())
     await post_process_steps(settings)
     body = changelog.read_text(encoding='utf-8')
-    assert 'https://keepachangelog.com/en/1.1.0/' in body
+    assert 'https://keepachangelog.com/en/1.1.1/' in body
     assert 'https://semver.org/spec/v2.0.0.html' in body
     assert 'keepachangelog.com/en/1.0.0' not in body
     assert 'semver.org/spec/v1.2.3.html' not in body
@@ -734,14 +734,15 @@ async def test_post_process_steps_changelog_urls_resolve_from_github(
     _mock_subprocess(mocker)
     mocker.patch('wiswa.tool.utils.postprocess.get_github_release_latest_tag',
                  new_callable=AsyncMock,
-                 side_effect=['v1.1.1', '3.0.0'])
+                 side_effect=['v9.9.9', '3.0.0'])
     session = mocker.MagicMock()
     session.head = AsyncMock(return_value=mocker.MagicMock(ok=True))
     settings = cast('Any', _make_settings())
     await post_process_steps(settings, session=session)
     body = changelog.read_text(encoding='utf-8')
     assert 'https://semver.org/spec/v3.0.0.html' in body
-    assert 'https://keepachangelog.com/en/1.1.1/' in body
+    assert 'https://keepachangelog.com/en/9.9.9/' in body
+    assert 'https://keepachangelog.com/en/1.1.1/' not in body
 
 
 async def test_post_process_steps_changelog_keepachangelog_resolution_failure_fallback(
@@ -762,7 +763,7 @@ async def test_post_process_steps_changelog_keepachangelog_resolution_failure_fa
     settings = cast('Any', _make_settings())
     await post_process_steps(settings, session=mocker.MagicMock())
     body = changelog.read_text(encoding='utf-8')
-    assert 'https://keepachangelog.com/en/1.1.0/' in body
+    assert 'https://keepachangelog.com/en/1.1.1/' in body
     assert 'https://semver.org/spec/v2.0.0.html' in body
 
 
@@ -780,13 +781,13 @@ async def test_post_process_steps_changelog_semver_resolution_failure_fallback(
     _mock_subprocess(mocker)
     mocker.patch('wiswa.tool.utils.postprocess.get_github_release_latest_tag',
                  new_callable=AsyncMock,
-                 side_effect=['v1.1.1', niquests.RequestException('simulated')])
+                 side_effect=['v9.9.9', niquests.RequestException('simulated')])
     session = mocker.MagicMock()
     session.head = AsyncMock(return_value=mocker.MagicMock(ok=True))
     settings = cast('Any', _make_settings())
     await post_process_steps(settings, session=session)
     body = changelog.read_text(encoding='utf-8')
-    assert 'https://keepachangelog.com/en/1.1.1/' in body
+    assert 'https://keepachangelog.com/en/9.9.9/' in body
     assert 'https://semver.org/spec/v2.0.0.html' in body
 
 
@@ -804,14 +805,14 @@ async def test_post_process_steps_changelog_keepachangelog_url_unreachable_fallb
     _mock_subprocess(mocker)
     mocker.patch('wiswa.tool.utils.postprocess.get_github_release_latest_tag',
                  new_callable=AsyncMock,
-                 side_effect=['v1.1.1', '2.0.0'])
+                 side_effect=['v1.1.2', '2.0.0'])
     session = mocker.MagicMock()
     session.head = AsyncMock(return_value=mocker.MagicMock(ok=False))
     settings = cast('Any', _make_settings())
     await post_process_steps(settings, session=session)
     body = changelog.read_text(encoding='utf-8')
-    assert 'https://keepachangelog.com/en/1.1.0/' in body
-    assert 'https://keepachangelog.com/en/1.1.1/' not in body
+    assert 'https://keepachangelog.com/en/1.1.1/' in body
+    assert 'https://keepachangelog.com/en/1.1.2/' not in body
     assert 'https://semver.org/spec/v2.0.0.html' in body
 
 
@@ -829,14 +830,14 @@ async def test_post_process_steps_changelog_keepachangelog_url_head_request_fail
     _mock_subprocess(mocker)
     mocker.patch('wiswa.tool.utils.postprocess.get_github_release_latest_tag',
                  new_callable=AsyncMock,
-                 side_effect=['v1.1.1', '2.0.0'])
+                 side_effect=['v1.1.2', '2.0.0'])
     session = mocker.MagicMock()
     session.head = AsyncMock(side_effect=niquests.RequestException('simulated'))
     settings = cast('Any', _make_settings())
     await post_process_steps(settings, session=session)
     body = changelog.read_text(encoding='utf-8')
-    assert 'https://keepachangelog.com/en/1.1.0/' in body
-    assert 'https://keepachangelog.com/en/1.1.1/' not in body
+    assert 'https://keepachangelog.com/en/1.1.1/' in body
+    assert 'https://keepachangelog.com/en/1.1.2/' not in body
 
 
 async def test_post_process_steps_changelog_skips_rewrite_when_no_matching_links(
