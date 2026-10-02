@@ -781,7 +781,7 @@ async def test_write_templated_files_python_pyinstaller_matrix_follows_architect
                            using_github=True,
                            supported_platforms=['macos-arm64', 'windows-x86_64']))
     pyinstaller_yml = (out / '.github/workflows/pyinstaller.yml').read_text()
-    assert 'macos-latest' in pyinstaller_yml
+    assert 'macos-15' in pyinstaller_yml
     assert 'windows-latest' in pyinstaller_yml
     assert 'macos-15-intel' not in pyinstaller_yml
     assert 'windows-11-arm' not in pyinstaller_yml

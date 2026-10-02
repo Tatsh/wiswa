@@ -13,6 +13,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The generated `make-release` skill sets `date-released` in `CITATION.cff` to the current date
   when the file exists. `cz bump` does not update the field.
+- GitHub macOS runners use the lowest available image per architecture: `macos-15` (arm64) and
+  `macos-15-intel` (x86_64) instead of `macos-latest`.
 
 ## [0.6.2] - 2026-09-23
 

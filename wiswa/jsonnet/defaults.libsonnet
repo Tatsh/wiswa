@@ -945,7 +945,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                   else if settings.project_type == 'c' || settings.project_type == 'c++' then ['c-cpp', 'actions']
                   else ['actions']),
       /** @brief Operating system for CodeQL runs on GitHub runners. */
-      runs_on: if settings.project_type != 'xcode' then settings.tests_run_on else 'macos-latest',
+      runs_on: if settings.project_type != 'xcode' then settings.tests_run_on else 'macos-15',
     },
     /** @brief Dependabot configuration. */
     dependabot: (import 'defaults/dependabot.libsonnet').updates(settings),
