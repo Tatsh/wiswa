@@ -8,6 +8,8 @@ import os
 from click.testing import CliRunner
 import pytest
 
+import wiswa.vcs.github
+
 if os.getenv('_PYTEST_RAISE', '0') != '0':  # pragma no cover
 
     @pytest.hookimpl(tryfirst=True)
@@ -34,6 +36,21 @@ def recover_stale_process_cwd(request: pytest.FixtureRequest) -> None:
         Path.cwd()
     except FileNotFoundError:
         os.chdir(Path(request.config.rootpath))
+
+
+@pytest.fixture(autouse=True)
+def isolate_github_tag_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    Isolate the GitHub tag cache from the user cache directory.
+
+    Stubbed GitHub sessions return fixture tags and SHAs. Without this fixture,
+    :py:mod:`wiswa.vcs.github` writes the stubbed tags and SHAs to the real disk cache, and later
+    real Wiswa runs pin the stubbed values.
+    """
+    monkeypatch.setattr(wiswa.vcs.github, '_disk_cache_path',
+                        lambda: tmp_path / 'github_tag_cache.json')
+    monkeypatch.setattr(wiswa.vcs.github, '_disk_store_memo_box', [None])
+    monkeypatch.setattr(wiswa.vcs.github, '_tag_cache', {})
 
 
 @pytest.fixture
