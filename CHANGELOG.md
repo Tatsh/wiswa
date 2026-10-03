@@ -28,6 +28,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `https://keepachangelog.com/en/1.1.1/` instead of `1.1.0/`. Regeneration no longer downgrades
   existing `1.1.1/` links when the latest release tag is not published on keepachangelog.com or
   resolution fails.
+- The generated `.pre-commit-config.yaml` adds `fix-eslint` to `ci.skip` when `force_eslint` is set
+  (the default for TypeScript projects). pre-commit.ci cannot run the `language: system` hook
+  (`yarn eslint --fix`) and failed on TypeScript projects.
 
 ## [0.6.2] - 2026-09-23
 

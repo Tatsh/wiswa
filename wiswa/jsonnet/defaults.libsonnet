@@ -903,6 +903,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
              'check-jsonschema',
            ] + (if settings.cspell_pre_commit_hook then ['cspell'] else []) + [
              'detect-aws-credentials',
+           ] + (if settings.force_eslint then ['fix-eslint'] else []) + [
              'fix-formatting-markdown',
              'fix-formatting-prettier',
              'yarn-check-lock',
