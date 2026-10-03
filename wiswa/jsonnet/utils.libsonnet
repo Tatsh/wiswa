@@ -475,6 +475,70 @@ local utils = import 'utils.libsonnet';
     ],
   },
   /**
+   * @brief A job that finds the published release for a completed `Release` workflow run.
+   *
+   * For use in workflows triggered by `workflow_run` on `Release`. `Release` publishes the draft
+   * with the built-in workflow token, and events created with that token do not start other
+   * workflows. A `release: published` trigger never fires for these releases. `Release` itself runs
+   * from `workflow_run`, and its `head_branch` is the default branch rather than the tag. The tag
+   * is found by matching the commit of each `v*` tag against the `head_sha` of the run.
+   *
+   * The `tag` output is empty unless a `v*` tag points at the commit and its release is neither a
+   * draft nor a prerelease. Steps in `extra_steps` run after the lookup and can read
+   * `steps.release.outputs.tag`.
+   *
+   * @param extra_steps Steps appended after the release lookup.
+   * @param extra_outputs Outputs added to the job's `tag` output.
+   * @returns A GitHub Actions job object.
+   * @pt array, object
+   * @rv object
+   */
+  publishedReleaseJob(extra_steps=[], extra_outputs={}):: {
+    'if': "github.event.workflow_run.conclusion == 'success'",
+    outputs: { tag: '${{ steps.release.outputs.tag }}' } + extra_outputs,
+    'runs-on': 'ubuntu-latest',
+    steps: [
+      {
+        env: {
+          GH_TOKEN: '${{ github.token }}',
+          HEAD_SHA: '${{ github.event.workflow_run.head_sha }}',
+          REPO: '${{ github.repository }}',
+        },
+        id: 'release',
+        name: 'Find the published release for this commit',
+        run: |||
+          tag=''
+          while IFS=$'\t' read -r ref obj_type obj_sha; do
+            [[ -z "$ref" ]] && continue
+            if [[ "$obj_type" == 'commit' ]]; then
+              target_sha="$obj_sha"
+            else
+              target_sha=$(gh api "repos/${REPO}/git/tags/${obj_sha}" \
+                --jq '.object.sha' 2>/dev/null || echo '')
+            fi
+            if [[ "$target_sha" == "$HEAD_SHA" ]]; then
+              tag="${ref#refs/tags/}"
+              break
+            fi
+          done < <(gh api "repos/${REPO}/git/matching-refs/tags/v" \
+            --jq '.[] | [.ref, .object.type, .object.sha] | @tsv')
+          if [[ -z "$tag" ]]; then
+            echo "No v* tag points at ${HEAD_SHA}, nothing to do."
+            exit 0
+          fi
+          unpublished=$(gh release view "$tag" --repo "$REPO" --json isDraft,isPrerelease \
+            --jq '.isDraft or .isPrerelease' 2>/dev/null || echo 'true')
+          if [[ "$unpublished" != 'false' ]]; then
+            echo "Release ${tag} is not published, nothing to do."
+            exit 0
+          fi
+          echo "Found published release ${tag}."
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+        |||,
+      },
+    ] + extra_steps,
+  },
+  /**
    * @brief Get the latest action tag for a GitHub repository.
    *
    * Requires a native function `githubLatestActionTag` to be defined in the Jsonnet environment.

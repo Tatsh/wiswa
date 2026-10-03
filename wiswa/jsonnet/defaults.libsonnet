@@ -1140,9 +1140,10 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
         'cache-poisoning': {
           ignore: ['pyinstaller.yml'],
         },
-        // workflow_run is required to gate the draft release on upstream workflows.
+        // workflow_run is required to gate the draft release on upstream workflows, and to start
+        // the publishers after `Release` publishes it with the built-in token.
         'dangerous-triggers': {
-          ignore: ['publish-winget.yml', 'release.yml'],
+          ignore: ['publish-msys2.yml', 'publish-winget.yml', 'release.yml'],
         },
       },
     },

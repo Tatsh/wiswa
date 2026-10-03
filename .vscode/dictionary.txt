@@ -172,6 +172,7 @@ metacharacters
 mktemp
 modindex
 monkeypatch
+msix
 msys
 mymod
 myproject

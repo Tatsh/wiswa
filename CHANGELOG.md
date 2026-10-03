@@ -22,6 +22,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `publish-winget.yml` and `publish-msys2.yml` find the release from the commit of the completed
+  `Release` run. The WinGet job required a `push` run on a `v*` branch, and `Release` runs from
+  `workflow_run` on the default branch, which skipped every WinGet update. The MSYS2 workflow
+  used `release: published`, which does not fire for a release that `Release` publishes with the
+  built-in token, and now runs after `Release`. Both skip drafts and prereleases.
+- `publish-winget.yml` skips releases without an installer asset (`.exe`, `.msi`, `.msix`, or
+  `.appx`, including bundles).
 - The generated README PyPI version and pepy.tech downloads badges for Python projects use
   `pypi_project_name` instead of `project_name`, so they work when the PyPI name differs.
 - The Keep a Changelog fallback URL in generated `CHANGELOG.md` boilerplate is

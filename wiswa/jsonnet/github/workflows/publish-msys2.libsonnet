@@ -9,15 +9,17 @@ function(settings)
   local source_repo = '%s/%s' % [settings.github_username, settings.github_project_name];
   {
     jobs: {
+      check: utils.publishedReleaseJob(),
       'update-pkgbuild': {
-        'if': '!github.event.release.draft && !github.event.release.prerelease',
+        'if': "needs.check.outputs.tag != ''",
+        needs: ['check'],
         'runs-on': 'ubuntu-latest',
         steps: [
           {
             id: 'version',
             name: 'Extract version',
             env: {
-              TAG_NAME: '${{ github.event.release.tag_name }}',
+              TAG_NAME: '${{ needs.check.outputs.tag }}',
             },
             run: |||
               TAG="$TAG_NAME"
@@ -42,12 +44,14 @@ function(settings)
           },
           {
             name: 'Update PKGBUILD',
+            env: {
+              VERSION: '${{ steps.version.outputs.version }}',
+            },
             run: |||
               git remote add upstream https://github.com/msys2/MINGW-packages.git
               git fetch upstream
               git checkout master
               git reset --hard upstream/master
-              VERSION="${{ steps.version.outputs.version }}"
               cd %(pkgbuild_dir)s
               sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
               sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
@@ -65,8 +69,8 @@ function(settings)
               title: '%s: update to ${{ steps.version.outputs.version }}' % pkgbuild_dir,
               token: '${{ secrets.MSYS2_TOKEN }}',
               body: |||
-                This PR was automatically created from the [%s ${{ steps.version.outputs.tag }} release](${{ github.event.release.html_url }}).
-              ||| % settings.project_name,
+                This PR was automatically created from the [%s ${{ steps.version.outputs.tag }} release](https://github.com/%s/releases/tag/${{ steps.version.outputs.tag }}).
+              ||| % [settings.project_name, source_repo],
               'push-to-fork': fork,
             },
           },
@@ -75,8 +79,9 @@ function(settings)
     },
     name: 'Update MSYS2 PKGBUILD',
     on: {
-      release: {
-        types: ['published'],
+      workflow_run: {
+        types: ['completed'],
+        workflows: ['Release'],
       },
     },
     permissions: {
