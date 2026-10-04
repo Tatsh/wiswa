@@ -1,3 +1,4 @@
+local clang_format = import 'github/workflows/clang-format.libsonnet';
 local cleanup = import 'github/workflows/cleanup.libsonnet';
 local codeql = import 'github/workflows/codeql.libsonnet';
 local flatpak_python = import 'github/workflows/flatpak-python.libsonnet';
@@ -27,6 +28,10 @@ local utils = import 'utils.libsonnet';
     if settings.project_type == 'python' then qa_python(settings)
     else if settings.project_type == 'typescript' then qa_typescript(settings)
     else qa_other(settings)
+  ) + (
+    if settings.want_clang_format then {
+      '.github/workflows/clang-format.yml': utils.manifestYaml(clang_format(settings)),
+    } else {}
   ) + (
     if settings.want_codeql then {
       '.github/workflows/codeql.yml': utils.manifestYaml(codeql(settings)),

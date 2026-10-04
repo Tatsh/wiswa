@@ -1228,9 +1228,10 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   /** @brief Arguments (file globs) passed to clang-format. */
   clang_format_args: 'src/*.cpp src/*.h',
   /**
-   * @brief If the `clang-format` workflow is generated. On by default for C and C++ projects. Other
-   *     projects with C or C++ sources can turn it on and set `clang_format_args`. The workflow runs
-   *     the version pinned by the `mirrors-clang-format` hook in `.pre-commit-config.yaml`.
+   * @brief If the `clang-format` workflow is generated. On by default for C and C++ projects. Any
+   *     other project type with C or C++ sources can turn it on, set `clang_format_args`, and add
+   *     the `mirrors-clang-format` hook to `pre_commit_config`. The workflow runs the version that
+   *     hook pins in `.pre-commit-config.yaml`.
    */
   want_clang_format: self.project_type == 'c' || self.project_type == 'c++',
   /** @brief CMake presets. */
