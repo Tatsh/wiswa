@@ -1038,8 +1038,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   authenticated, then from `remote.origin.url` in `.git/config` for GitHub remotes, before falling
   back to `unknown` (0.1.0 shipped a static `unknown` default).
   - `remote.origin.url` values are trimmed, and whitespace-only values are ignored.
-  - Duplicate git `config` paths reached via worktree layout (for example when `commondir` is `.`)
-    are de-duplicated after `Path.resolve()`.
+  - Duplicate git `config` paths reached via a linked working tree layout (for example when
+    `commondir` is `.`) are de-duplicated after `Path.resolve()`.
 - `--quiet` (`-q`) suppresses the final `Done.` line as well as the progress spinner; `--help` and
   the man page describe this behaviour. Post-processing passes `--quiet` through to Ruff when not in
   debug mode, Yarn install and format capture subprocess stdout/stderr, and failed command errors
