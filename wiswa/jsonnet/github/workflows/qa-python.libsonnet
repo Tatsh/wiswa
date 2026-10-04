@@ -99,7 +99,10 @@ function(settings)
           name: 'mypy',
           'runs-on': settings.qa_runs_on,
           steps: [common.checkout] + uv_setup_steps + apt_steps + [
-            python_setup(version=latest_python),
+            // mypy parses installed stubs with the grammar of its configured ``python_version``,
+            // the oldest supported version. Stubs of a release that needs a newer Python (PEP 695
+            // ``type`` statements) are a syntax error under the older grammar.
+            python_setup(version=settings.supported_python_versions[0]),
             install_deps(include_tests=settings.want_tests),
             {
               name: 'Lint with mypy',
