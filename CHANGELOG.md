@@ -29,6 +29,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   hook in `.pre-commit-config.yaml` instead of the runner's version (18.1.3 on `ubuntu-latest`),
   and also runs when `.pre-commit-config.yaml` changes. The two versions formatted some constructs
   differently, and code that passed the pre-commit hook failed in CI.
+- The `Spelling` workflow runs `yarn check-spelling` (the project's locked cspell and dictionaries)
+  instead of `streetsidesoftware/cspell-action`, which bundles its own. `dict:update` drops words
+  the local dictionaries know, and the action then reported them (for example `worktree`). Unknown
+  words are still reported as annotations through cspell's `--issue-template`.
 
 ### Fixed
 

@@ -103,14 +103,17 @@ local utils = import 'utils.libsonnet';
     jobs: {
       spelling: {
         'runs-on': settings.qa_runs_on,
-        steps: [checkout] + [
+        // Run the cspell version and dictionaries the project locks, the same ones dict:update uses.
+        // cspell-action bundles its own, and the two disagree on words such as "worktree". The issue
+        // template prints each unknown word as a workflow command, which GitHub shows as an
+        // annotation on the file and line.
+        steps: [checkout] + yarn_steps + [
           {
             name: 'Check spelling',
-            uses: 'streetsidesoftware/cspell-action@' + utils.githubLatestActionSha('streetsidesoftware', 'cspell-action'),
-            with: {
-              check_dot_files: true,
-              suggestions: true,
-            },
+            run: |||
+              # shellcheck disable=SC2016 # cspell expands the template variables, not the shell.
+              yarn check-spelling --issue-template '::error file=$filename,line=$row,col=$col::Unknown word ($text)'
+            |||,
           },
         ],
       },
