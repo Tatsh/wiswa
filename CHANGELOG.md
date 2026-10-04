@@ -19,6 +19,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `singleQuote`, which conflicted with the double-quoted strings tomlkit writes.
 - Dependabot ignores TypeScript 7 for TypeScript projects until `typescript-eslint` supports it.
 - TypeScript projects with tests add `vite`, a required peer of vitest 5.
+- The `clang-format` workflow runs the clang-format version pinned by the `mirrors-clang-format`
+  hook in `.pre-commit-config.yaml` instead of the runner's version (18.1.3 on `ubuntu-latest`),
+  and also runs when `.pre-commit-config.yaml` changes. The two versions formatted some constructs
+  differently, and code that passed the pre-commit hook failed in CI.
 
 ### Fixed
 

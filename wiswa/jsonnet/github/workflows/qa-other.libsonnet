@@ -3,16 +3,27 @@ local utils = import 'utils.libsonnet';
 
 function(settings)
   local is_c_cpp = settings.project_type == 'c' || settings.project_type == 'c++';
-  local cpp_paths = ['**/*.c', '**/*.cc', '**/*.cpp', '**/*.h', '**/*.hpp', '.github/workflows/clang-format.yml'];
+  local cpp_paths = ['**/*.c', '**/*.cc', '**/*.cpp', '**/*.h', '**/*.hpp', '.github/workflows/clang-format.yml', '.pre-commit-config.yaml'];
   local clang_format_workflow = {
     jobs: {
       'clang-format': {
         'runs-on': settings.qa_runs_on,
         steps: [
           common.checkout,
+          // The runner image ships an older clang-format that formats some constructs differently.
+          // Run the version the pre-commit hook pins so CI and local checks agree.
           {
             name: 'Check formatting (clang-format)',
-            run: 'clang-format --dry-run --Werror %s' % settings.clang_format_args,
+            run: |||
+              version=$(yq '.repos[] | select(.repo == "https://github.com/pre-commit/mirrors-clang-format") | .rev' .pre-commit-config.yaml)
+              if [[ -z "$version" || "$version" == 'null' ]]; then
+                echo '::error::No mirrors-clang-format hook in .pre-commit-config.yaml.'
+                exit 1
+              fi
+              pipx run --spec "clang-format==${version#v}" clang-format --version
+              pipx run --spec "clang-format==${version#v}" clang-format --dry-run --Werror %s
+            ||| % settings.clang_format_args,
+            shell: 'bash',
           },
         ],
       },
