@@ -13,7 +13,7 @@ function(want_main,
          want_coveralls,
          want_sqlfluff,
          want_ty,
-         min_python_version='3.10',
+         min_python_version='3.11',
          tomlkit_in_main=false) {
   local ver(package) = utils.latestPypiPackageVersionCaret(package),
   local want_main_deps = if want_main then { click: ver('click') } else {},

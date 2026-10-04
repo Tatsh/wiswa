@@ -49,6 +49,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (the default for TypeScript projects). pre-commit.ci cannot run the `language: system` hook
   (`yarn eslint --fix`) and failed on TypeScript projects.
 
+### Removed
+
+- Python 3.10 support, in Wiswa and in the generated projects. `supported_python_versions` defaults
+  to 3.11 to 3.14, so projects that use the default require Python 3.11 after the next regen.
+
 ## [0.6.2] - 2026-09-23
 
 ### Added

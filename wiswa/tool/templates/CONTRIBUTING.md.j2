@@ -79,7 +79,7 @@ The above all need to pass for any code changes to be accepted.
 - Add `from __future__ import annotations` at the top of every file (this will be done by Ruff in
   VS Code if you have the extension installed).
 - Keep imports sorted and grouped: future, standard library, third-party, local (also done by Ruff).
-- Prefer latest Python features (3.10+).
+- Prefer latest Python features ({{ settings.supported_python_versions[0] }}+).
 - For subprocess, avoid `shell=True` and `check=False`.
 - Alias subprocess as `import subprocess as sp`.
 - Add public-facing API elements to `__all__`. Prefer not to use underscore-prefix except in

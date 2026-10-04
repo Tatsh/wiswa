@@ -738,7 +738,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    * @brief If the project will use YAPF for formatting.
    *
    * YAPF only supports up to Python 3.11 as of the time of writing, so this is only true if the
-   * project supports Python 3.10 or 3.11.
+   * project supports Python 3.10 or 3.11 (3.10 only when a project sets it explicitly).
    * @var boolean
    */
   want_yapf: std.contains(self.supported_python_versions, '3.10') ||
@@ -1255,7 +1255,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   // Python only
   local pyproject = import 'defaults/pyproject.libsonnet',
   /** @brief Array of supported Python versions. */
-  supported_python_versions: ['3.%d' % i for i in std.range(10, 14)],
+  supported_python_versions: ['3.%d' % i for i in std.range(11, 14)],
   /** @brief If true, add upper boundary to Python version requirement. */
   python_dep_upper_boundary: false,
   /**
