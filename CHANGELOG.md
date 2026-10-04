@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `want_clang_format` generates the `clang-format` workflow for projects other than C and C++ (for
+  example Objective-C projects with C and C++ sources). It defaults to true for C and C++ projects.
+  The workflow also runs when `*.mm` files change.
+
 ### Changed
 
 - The generated `make-release` skill sets `date-released` in `CITATION.cff` to the current date
