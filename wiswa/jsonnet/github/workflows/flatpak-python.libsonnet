@@ -6,7 +6,7 @@ function(settings)
     jobs: {
       build: {
         container: {
-          image: 'ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08',
+          image: settings.flatpak_image,
           options: '--privileged',
         },
         name: 'Build',

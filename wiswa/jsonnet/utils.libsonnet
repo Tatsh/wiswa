@@ -642,6 +642,20 @@ local utils = import 'utils.libsonnet';
    */
   latestVcpkgPortVersion(port):: std.native('latestVcpkgPortVersion')(port),
   /**
+   * @brief Get the newest tag of a GitHub Container Registry image with its digest.
+   *
+   * Requires a native function `ghcrLatestImageTagDigest` to be defined in the Jsonnet environment.
+   * Tags are compared by the dot-separated numbers after the prefix.
+   *
+   * @param repository The image repository, for example `flathub-infra/flatpak-github-actions`.
+   * @param tag_prefix The prefix of the tags to consider, for example `freedesktop-`.
+   * @returns The tag and its digest, for example `freedesktop-26.08@sha256:...`.
+   * @pt string, string
+   * @rv string
+   */
+  ghcrLatestImageTagDigest(repository, tag_prefix)::
+    std.native('ghcrLatestImageTagDigest')(repository, tag_prefix),
+  /**
    * @brief Get the latest version of Yarn.
    *
    * Requires a native function `latestYarnVersion` to be defined in the Jsonnet environment.

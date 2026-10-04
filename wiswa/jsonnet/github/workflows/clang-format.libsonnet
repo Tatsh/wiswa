@@ -22,6 +22,7 @@ function(settings)
                 exit 1
               fi
               pipx run --spec "clang-format==${version#v}" clang-format --version
+              # shellcheck disable=SC2035,SC2046 # The file arguments are globs and command substitutions.
               pipx run --spec "clang-format==${version#v}" clang-format --dry-run --Werror %s
             ||| % settings.clang_format_args,
             shell: 'bash',

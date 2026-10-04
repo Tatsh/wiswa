@@ -45,6 +45,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The AppImage and PyInstaller workflows no longer restore the Poetry cache, matching the uv
   setup.
 - `.github/zizmor.yml` disables the `undocumented-permissions` audit.
+- The Flatpak workflow container image is the newest `freedesktop-<version>` tag of
+  `ghcr.io/flathub-infra/flatpak-github-actions`, resolved on each regen and pinned by digest. The
+  Flatpak manifest `runtime-version` follows the same tag (26.08 at the time of writing).
+- `publish-msys2.yml` pushes the PKGBUILD branch and opens the pull request with `git` and `gh`
+  instead of `peter-evans/create-pull-request`. An open pull request for the same branch is
+  updated instead of duplicated.
+- Generated `run` scripts pass shellcheck (the LuaRocks upload glob, an unused AppImage variable,
+  and a `cd` without a failure check in `publish-msys2.yml`).
 
 ### Fixed
 

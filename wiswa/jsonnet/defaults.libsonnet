@@ -1815,6 +1815,16 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
               donation: 'https://buymeacoffee.com/%s' % settings.social.buymeacoffee,
             } else {}) else {}),
 
+  /**
+   * @brief Container image the Flatpak workflow builds in, pinned by digest.
+   *
+   * Resolved on each regen to the newest `freedesktop-<version>` tag. The manifest
+   * `runtime-version` is read from the same tag. Empty when the project builds no Flatpak.
+   */
+  flatpak_image: if settings.want_flatpak then
+    'ghcr.io/flathub-infra/flatpak-github-actions:' +
+    utils.ghcrLatestImageTagDigest('flathub-infra/flatpak-github-actions', 'freedesktop-')
+  else '',
   /** @brief Flatpak manifest configuration. */
   flatpak: {
     'app-id': settings.publishing.flathub,
@@ -1847,7 +1857,9 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
       },
     ],
     runtime: 'org.freedesktop.Platform',
-    'runtime-version': '24.08',
+    'runtime-version': if settings.want_flatpak then
+      std.split(std.split(settings.flatpak_image, '@')[0], ':freedesktop-')[1]
+    else '24.08',
     sdk: 'org.freedesktop.Sdk',
   },
 }

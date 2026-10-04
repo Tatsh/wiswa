@@ -15,6 +15,7 @@ from wiswa.tool.utils.versions import (
     clear_resolution_caches,
     download_yarn,
     download_yarn_plugins,
+    get_ghcr_image_latest_tag_digest,
     get_github_release_latest_tag,
     get_latest_yarn_version,
     get_npm_latest_package_version,
@@ -40,8 +41,10 @@ def _make_response(text: str = '',
                    content: bytes = b'',
                    status_code: int | None = None,
                    *,
+                   headers: dict[str, str] | None = None,
                    ok: bool = True) -> MagicMock:
     response = MagicMock()
+    response.headers = headers or {}
     response.ok = ok
     if status_code is not None:
         response.status_code = status_code
@@ -1249,3 +1252,80 @@ async def test_get_vcpkg_latest_port_version_no_usable_entry() -> None:
         }]}))
     with pytest.raises(ValueError, match='No versions found for vcpkg port'):
         await get_vcpkg_latest_port_version(mock_session, 'broken')
+
+
+async def test_get_ghcr_image_latest_tag_digest_picks_newest_numeric_tag() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[
+        _make_response(json_data={'token': 'tkn'}),
+        _make_response(
+            json_data={
+                'tags': [
+                    'freedesktop-9.08', 'freedesktop-26.08', 'freedesktop-24.08',
+                    'freedesktop-26.08-x86_64', 'gnome-48', 'latest'
+                ]
+            }),
+    ])
+    mock_session.head = AsyncMock(return_value=_make_response(
+        headers={'Docker-Content-Digest': 'sha256:abc'}))
+    result = await get_ghcr_image_latest_tag_digest(mock_session, 'org/image', 'freedesktop-')
+    assert result == 'freedesktop-26.08@sha256:abc'
+    head_call = mock_session.head.await_args
+    assert head_call is not None
+    assert head_call.args == ('https://ghcr.io/v2/org/image/manifests/freedesktop-26.08',)
+    assert head_call.kwargs['headers']['Authorization'] == 'Bearer tkn'
+    assert 'application/vnd.oci.image.index.v1+json' in head_call.kwargs['headers']['Accept']
+
+
+async def test_get_ghcr_image_latest_tag_digest_follows_pagination() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[
+        _make_response(json_data={'token': 'tkn'}),
+        _make_response(
+            json_data={'tags': ['freedesktop-24.08']},
+            headers={'Link': '</v2/org/image/tags/list?last=freedesktop-24.08&n=1000>; rel="next"'
+                     }),
+        _make_response(json_data={'tags': ['freedesktop-25.08']}),
+    ])
+    mock_session.head = AsyncMock(return_value=_make_response(
+        headers={'Docker-Content-Digest': 'sha256:def'}))
+    result = await get_ghcr_image_latest_tag_digest(mock_session, 'org/image', 'freedesktop-')
+    assert result == 'freedesktop-25.08@sha256:def'
+    assert mock_session.get.await_args_list[2].args == (
+        'https://ghcr.io/v2/org/image/tags/list?last=freedesktop-24.08&n=1000',)
+
+
+async def test_get_ghcr_image_latest_tag_digest_caches() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[
+        _make_response(json_data={'token': 'tkn'}),
+        _make_response(json_data={'tags': ['freedesktop-24.08']}),
+    ])
+    mock_session.head = AsyncMock(return_value=_make_response(
+        headers={'Docker-Content-Digest': 'sha256:abc'}))
+    first = await get_ghcr_image_latest_tag_digest(mock_session, 'org/image', 'freedesktop-')
+    second = await get_ghcr_image_latest_tag_digest(mock_session, 'org/image', 'freedesktop-')
+    assert first == second == 'freedesktop-24.08@sha256:abc'
+    assert mock_session.get.await_count == 2
+    assert mock_session.head.await_count == 1
+
+
+async def test_get_ghcr_image_latest_tag_digest_no_matching_tag() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[
+        _make_response(json_data={'token': 'tkn'}),
+        _make_response(json_data={'tags': ['latest', 'freedesktop-next']}),
+    ])
+    with pytest.raises(ValueError, match='No `freedesktop-` tags found'):
+        await get_ghcr_image_latest_tag_digest(mock_session, 'org/image', 'freedesktop-')
+
+
+async def test_get_ghcr_image_latest_tag_digest_missing_digest() -> None:
+    mock_session = MagicMock()
+    mock_session.get = AsyncMock(side_effect=[
+        _make_response(json_data={'token': 'tkn'}),
+        _make_response(json_data={'tags': ['freedesktop-24.08']}),
+    ])
+    mock_session.head = AsyncMock(return_value=_make_response())
+    with pytest.raises(ValueError, match='No digest returned'):
+        await get_ghcr_image_latest_tag_digest(mock_session, 'org/image', 'freedesktop-')

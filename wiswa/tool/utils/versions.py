@@ -27,9 +27,10 @@ if TYPE_CHECKING:
     import niquests
 
 __all__ = ('clear_resolution_caches', 'download_yarn', 'download_yarn_plugins',
-           'get_github_release_latest_tag', 'get_latest_yarn_version',
-           'get_npm_latest_package_version', 'get_pypi_latest_package_version',
-           'get_vcpkg_latest_port_version', 'resolve_npm_minimal_age_gate_minutes')
+           'get_ghcr_image_latest_tag_digest', 'get_github_release_latest_tag',
+           'get_latest_yarn_version', 'get_npm_latest_package_version',
+           'get_pypi_latest_package_version', 'get_vcpkg_latest_port_version',
+           'resolve_npm_minimal_age_gate_minutes')
 
 log = logging.getLogger(__name__)
 
@@ -55,6 +56,21 @@ _YARNRC_FILENAME = '.yarnrc.yml'
 
 _VCPKG_VERSIONS_BASE_URI = 'https://raw.githubusercontent.com/microsoft/vcpkg/master/versions'
 """Base URI of the vcpkg version database, whose per-port files live under ``<letter>-/``."""
+
+_GHCR_URI = 'https://ghcr.io'
+"""Base URI of the GitHub Container Registry."""
+
+_LINK_NEXT_RE = re.compile(r'<([^>]+)>;\s*rel="next"')
+"""Next-page URI in a registry ``Link`` header (relative to the registry host)."""
+
+_MANIFEST_ACCEPT = ('application/vnd.oci.image.index.v1+json, '
+                    'application/vnd.docker.distribution.manifest.list.v2+json, '
+                    'application/vnd.oci.image.manifest.v1+json, '
+                    'application/vnd.docker.distribution.manifest.v2+json')
+"""Manifest media types to accept, multi-architecture indexes first."""
+
+_NUMERIC_VERSION_RE = re.compile(r'\d+(?:\.\d+)*')
+"""A version made of dot-separated numbers only."""
 
 _VCPKG_VERSION_FIELDS = ('version', 'version-semver', 'version-date', 'version-string')
 """
@@ -634,6 +650,72 @@ async def get_vcpkg_latest_port_version(session: niquests.AsyncSession, port: st
     version = next(str(entry[f]) for f in _VCPKG_VERSION_FIELDS if f in entry)
     port_version = int(entry.get('port-version', 0))
     result = f'{version}#{port_version}' if port_version else version
+    _cache[key] = result
+    return result
+
+
+async def get_ghcr_image_latest_tag_digest(session: niquests.AsyncSession, repository: str,
+                                           tag_prefix: str) -> str:
+    """
+    Get the newest tag of a GitHub Container Registry image with its digest.
+
+    Tags are compared by the dot-separated numbers after ``tag_prefix``, so ``freedesktop-26.08``
+    is newer than ``freedesktop-9.08``. Tags whose remainder is not made of numbers are skipped.
+
+    Parameters
+    ----------
+    session : niquests.AsyncSession
+        The HTTP session.
+    repository : str
+        The image repository, for example ``'flathub-infra/flatpak-github-actions'``.
+    tag_prefix : str
+        The prefix of the tags to consider, for example ``'freedesktop-'``.
+
+    Returns
+    -------
+    str
+        The tag and its manifest digest, for example ``'freedesktop-26.08@sha256:...'``.
+
+    Raises
+    ------
+    ValueError
+        If no tag matches or the registry does not return a digest.
+    """
+    key = f'ghcr_{repository}_{tag_prefix}'
+    if key in _cache:
+        return _cache[key]
+    token_resp = await session.get(f'{_GHCR_URI}/token',
+                                   params={'scope': f'repository:{repository}:pull'},
+                                   timeout=15)
+    token_resp.raise_for_status()
+    headers = {'Authorization': f'Bearer {token_resp.json()["token"]}'}
+    tags: list[str] = []
+    url: str | None = f'{_GHCR_URI}/v2/{repository}/tags/list?n=1000'
+    while url:
+        resp = await session.get(url, headers=headers, timeout=15)
+        resp.raise_for_status()
+        tags.extend(cast('list[str]', resp.json().get('tags') or []))
+        url = (f'{_GHCR_URI}{m.group(1)}' if
+               (m := _LINK_NEXT_RE.search(resp.headers.get('Link', ''))) else None)
+    versions = {
+        tuple(int(part) for part in rest.split('.')): tag
+        for tag in tags if tag.startswith(tag_prefix) and _NUMERIC_VERSION_RE.fullmatch(
+            rest := tag[len(tag_prefix):])
+    }
+    if not versions:
+        msg = f'No `{tag_prefix}` tags found for `{repository}`.'
+        raise ValueError(msg)
+    tag = versions[max(versions)]
+    manifest = await session.head(f'{_GHCR_URI}/v2/{repository}/manifests/{tag}',
+                                  headers={
+                                      **headers, 'Accept': _MANIFEST_ACCEPT
+                                  },
+                                  timeout=15)
+    manifest.raise_for_status()
+    if not (digest := manifest.headers.get('Docker-Content-Digest', '')):
+        msg = f'No digest returned for `{repository}:{tag}`.'
+        raise ValueError(msg)
+    result = f'{tag}@{digest}'
     _cache[key] = result
     return result
 

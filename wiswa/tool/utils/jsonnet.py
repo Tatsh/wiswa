@@ -26,6 +26,7 @@ from wiswa.vcs.github import ref_commit_sha
 
 from .path import tests_dir_has_pytest_modules_excluding_starter_main
 from .versions import (
+    get_ghcr_image_latest_tag_digest,
     get_github_release_latest_tag,
     get_latest_yarn_version,
     get_npm_latest_package_version,
@@ -288,6 +289,9 @@ def _make_native_callbacks(
     return {
         # The argument names here cannot conflict with a wrapping function.
         # f(arg):: std.native('f', arg) will fail if it's defined here as 'f': (('arg',), ...).
+        'ghcrLatestImageTagDigest': (
+            ('r',
+             'tp'), lambda r, tp: _sync_wrap(get_ghcr_image_latest_tag_digest, session, r, tp)),
         'githubCliUsername': github_cli_username_cb,
         'githubLatestActionSha': (('o', 'r'), lambda o, r: _sync_wrap(_gh_action_sha, o, r)),
         'githubLatestActionTag': (('o', 'r'), lambda o, r: _sync_wrap(gh_action, o, r)),

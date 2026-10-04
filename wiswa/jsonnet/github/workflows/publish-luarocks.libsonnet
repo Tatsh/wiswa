@@ -52,7 +52,7 @@ function(settings)
               LUAROCKS_API_KEY: '${{ secrets.LUAROCKS_API_KEY }}',
             },
             name: 'Upload package',
-            run: 'luarocks upload --api-key="$LUAROCKS_API_KEY" *.rockspec',
+            run: 'luarocks upload --api-key="$LUAROCKS_API_KEY" ./*.rockspec',
           },
         ],
       },

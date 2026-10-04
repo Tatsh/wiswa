@@ -76,7 +76,7 @@ exclusions=(
   {{ settings.appimage.exclusions | join("\n") | indent(2) | trim }}
 )
         {% endif %}
-while IFS=$' ' read -r script_name python_path func_name; do
+while IFS=$' ' read -r script_name _ func_name; do
         {% if settings.appimage.include_only | length > 1 %}
     if ! printf '%s\0' "${include_only[@]}" | grep -Fqxz -- "${script_name}"; then
         echo "Skipping ${script_name} (not in include_only)."
