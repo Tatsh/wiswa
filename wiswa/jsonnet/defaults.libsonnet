@@ -1466,7 +1466,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
                    'unsorted-imports',
                  ]),
                } else (
-                 (if settings.want_main then {
+                 (if settings.want_main && !settings.has_multiple_entry_points then {
                     'per-file-ignores': {
                       ['%s/main.py' % primary_module_qualified_path]: ['too-many-arguments'],
                     },
