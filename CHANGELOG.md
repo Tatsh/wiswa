@@ -50,7 +50,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Flatpak manifest `runtime-version` follows the same tag (26.08 at the time of writing).
 - `publish-msys2.yml` pushes the PKGBUILD branch and opens the pull request with `git` and `gh`
   instead of `peter-evans/create-pull-request`. An open pull request for the same branch is
-  updated instead of duplicated.
+  updated instead of duplicated. The job is skipped with a warning when the `MSYS2_TOKEN` secret
+  is not set, as the WinGet job is for `WINGET_TOKEN`.
 - Generated `run` scripts pass shellcheck (the LuaRocks upload glob, an unused AppImage variable,
   and a `cd` without a failure check in `publish-msys2.yml`).
 

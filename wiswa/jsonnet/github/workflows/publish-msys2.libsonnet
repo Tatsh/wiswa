@@ -12,9 +12,27 @@ function(settings)
       '${{ github.workflow }}-${{ github.event.workflow_run.head_sha }}'
     ),
     jobs: {
-      check: utils.publishedReleaseJob(),
+      check: utils.publishedReleaseJob(extra_outputs={
+        has_msys2_token: '${{ steps.check_secret.outputs.has_msys2_token }}',
+      }, extra_steps=[
+        {
+          id: 'check_secret',
+          name: 'Check MSYS2_TOKEN is set',
+          env: {
+            MSYS2_TOKEN: '${{ secrets.MSYS2_TOKEN }}',
+          },
+          run: |||
+            if [[ -n "$MSYS2_TOKEN" ]]; then
+              echo 'has_msys2_token=true' >> "$GITHUB_OUTPUT"
+            else
+              echo 'has_msys2_token=false' >> "$GITHUB_OUTPUT"
+              echo '::warning::MSYS2_TOKEN secret is empty; the update-pkgbuild job will be skipped.'
+            fi
+          |||,
+        },
+      ]),
       'update-pkgbuild': {
-        'if': "needs.check.outputs.tag != ''",
+        'if': "needs.check.outputs.tag != '' && needs.check.outputs.has_msys2_token == 'true'",
         name: 'Update PKGBUILD',
         needs: ['check'],
         'runs-on': 'ubuntu-latest',
