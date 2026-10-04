@@ -128,6 +128,38 @@ local utils = import 'utils.libsonnet';
     std.manifestYamlDoc(value, true, false),
 
   /**
+   * @brief Workflow `concurrency` for a check workflow.
+   *
+   * A new push to a pull request cancels the run for the previous push. Every other event is
+   * grouped by commit, and a run on the default branch is never cancelled. `Release` and the
+   * publishing workflows require the check runs of the released commit to succeed. A cancelled run
+   * blocks the release.
+   *
+   * @rv object
+   */
+  ciConcurrency:: {
+    'cancel-in-progress': true,
+    group: '${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}',
+  },
+
+  /**
+   * @brief Workflow `concurrency` for a workflow that builds, publishes, or releases.
+   *
+   * Runs in the same group queue instead of cancelling one another. `queue: max` is required. The
+   * default queue cancels a pending run when another enters the group and drops a release.
+   *
+   * @param group The concurrency group. The default groups runs by workflow and ref.
+   * @returns A GitHub Actions concurrency object.
+   * @pt string
+   * @rv object
+   */
+  publishConcurrency(group='${{ github.workflow }}-${{ github.ref }}'):: {
+    'cancel-in-progress': false,
+    group: group,
+    queue: 'max',
+  },
+
+  /**
    * @brief Get an author's full name, joining the given and family names when absent.
    * @param author An author object.
    * @returns The author's full name.
@@ -392,13 +424,14 @@ local utils = import 'utils.libsonnet';
    * the attestation, not on the workflow: a workflow-level grant hands the same token to every
    * other job, which zizmor reports as `excessive-permissions`. `contents` stays read-only because
    * the build only checks the repository out; the release writer requests write for itself.
+   * Private projects do not attest and receive read-only `contents` alone.
    *
    * @param settings The settings object.
    * @returns A GitHub Actions permissions object.
    * @pt object
    * @rv object
    */
-  attestPermissions(settings):: (if settings.private then { actions: 'write' } else {}) + {
+  attestPermissions(settings):: if settings.private then { contents: 'read' } else {
     attestations: 'write',
     contents: 'read',
     'id-token': 'write',
@@ -438,6 +471,7 @@ local utils = import 'utils.libsonnet';
       queue: 'max',
     },
     'if': "github.ref_type == 'tag'",
+    name: 'Release Assets',
     needs: needs,
     permissions: {
       contents: 'write',
@@ -495,6 +529,7 @@ local utils = import 'utils.libsonnet';
    */
   publishedReleaseJob(extra_steps=[], extra_outputs={}):: {
     'if': "github.event.workflow_run.conclusion == 'success'",
+    name: 'Find Release',
     outputs: { tag: '${{ steps.release.outputs.tag }}' } + extra_outputs,
     'runs-on': 'ubuntu-latest',
     steps: [

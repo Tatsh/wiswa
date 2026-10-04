@@ -26,8 +26,10 @@ local utils = import 'utils.libsonnet';
   permissions: permissions,
 
   prettier(settings): {
+    concurrency: utils.ciConcurrency,
     jobs: {
       prettier: {
+        name: 'Prettier',
         'runs-on': settings.qa_runs_on,
         steps: [checkout] + yarn_steps + [
           {
@@ -76,8 +78,10 @@ local utils = import 'utils.libsonnet';
   },
 
   markdownlint(settings): {
+    concurrency: utils.ciConcurrency,
     jobs: {
       markdownlint: {
+        name: 'markdownlint',
         'runs-on': settings.qa_runs_on,
         steps: [checkout] + yarn_steps + [
           {
@@ -100,8 +104,10 @@ local utils = import 'utils.libsonnet';
   },
 
   spelling(settings): {
+    concurrency: utils.ciConcurrency,
     jobs: {
       spelling: {
+        name: 'Spelling',
         'runs-on': settings.qa_runs_on,
         // Run the cspell version and dictionaries the project locks, the same ones dict:update uses.
         // cspell-action bundles its own, and the two disagree on words such as "worktree". The issue

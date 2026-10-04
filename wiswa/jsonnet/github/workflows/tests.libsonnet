@@ -3,12 +3,14 @@ local utils = import 'utils.libsonnet';
 function(settings)
   local is_uv = settings.package_manager == 'uv';
   {
+    concurrency: utils.ciConcurrency,
     jobs: {
       test: {
         env: {
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}',
           HOMEBREW_NO_REQUIRE_TAP_TRUST: '1',
         },
+        name: 'Test',
         'runs-on': settings.tests_run_on,
         steps: [
           utils.checkout(),

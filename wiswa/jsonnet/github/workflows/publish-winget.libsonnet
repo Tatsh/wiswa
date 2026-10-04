@@ -2,6 +2,9 @@ local utils = import 'utils.libsonnet';
 
 function(settings)
   {
+    concurrency: utils.publishConcurrency(
+      '${{ github.workflow }}-${{ github.event.workflow_run.head_sha }}'
+    ),
     jobs: {
       check: utils.publishedReleaseJob(extra_outputs={
         has_installer_assets: '${{ steps.check_assets.outputs.has_installer_assets }}',
@@ -46,6 +49,7 @@ function(settings)
       ]),
       'update-winget': {
         'if': "needs.check.outputs.has_winget_token == 'true' && needs.check.outputs.has_installer_assets == 'true'",
+        name: 'Update WinGet',
         needs: ['check'],
         'runs-on': 'windows-latest',
         steps: [

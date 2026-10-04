@@ -15,14 +15,16 @@ function(settings)
     settings.github.workflows.release_gate_workflows
   );
   {
+    concurrency: utils.publishConcurrency(),
     jobs: {
       check: check_workflows.job(required_workflows, optional_workflows),
       publish: {
         [if settings.github.workflows.release_environment != '' then 'environment']:
           settings.github.workflows.release_environment,
+        name: 'Publish',
         needs: ['check'],
         permissions: {
-          contents: 'write',
+          contents: 'read',
           'id-token': 'write',
         },
         'runs-on': settings.github.workflows.publish_pypi_any.runs_on,

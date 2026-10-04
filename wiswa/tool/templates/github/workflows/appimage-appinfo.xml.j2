@@ -7,10 +7,10 @@
   <name>${script_name}</name>
   <summary>${script_name} from ${project_name}</summary>
   <description>
-    <p>${script_name} from ${project_name}. - ${{ '{{' }} github.server_url }}/${{ '{{' }} github.repository }}</p>
+    <p>${script_name} from ${project_name}. - ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}</p>
   </description>
   <launchable type="desktop-id">${script_name}.desktop</launchable>
-  <url type="homepage">${{ '{{' }} github.server_url }}/${{ '{{' }} github.repository }}</url>
+  <url type="homepage">${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}</url>
   <screenshots>
     <screenshot type="default">
       <image></image>

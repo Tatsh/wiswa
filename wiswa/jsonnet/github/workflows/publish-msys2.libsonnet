@@ -8,10 +8,14 @@ function(settings)
   local pkgbuild_dir = 'mingw-w64-' + package_name;
   local source_repo = '%s/%s' % [settings.github_username, settings.github_project_name];
   {
+    concurrency: utils.publishConcurrency(
+      '${{ github.workflow }}-${{ github.event.workflow_run.head_sha }}'
+    ),
     jobs: {
       check: utils.publishedReleaseJob(),
       'update-pkgbuild': {
         'if': "needs.check.outputs.tag != ''",
+        name: 'Update PKGBUILD',
         needs: ['check'],
         'runs-on': 'ubuntu-latest',
         steps: [

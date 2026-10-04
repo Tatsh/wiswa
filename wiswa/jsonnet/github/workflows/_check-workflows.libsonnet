@@ -11,6 +11,7 @@ local utils = import 'utils.libsonnet';
    * @returns A job object suitable for inclusion in a workflow's `jobs` field.
    */
   job(required_workflows, optional_workflows): {
+    name: 'Wait for Workflows',
     permissions: {
       actions: 'read',
       contents: 'read',

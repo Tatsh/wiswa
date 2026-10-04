@@ -50,6 +50,7 @@ function(settings)
   };
   local pyright_job = if settings.want_pyright then {
     pyright: {
+      name: 'Pyright',
       'runs-on': settings.qa_runs_on,
       steps: [common.checkout] + uv_setup_steps + apt_steps + [
         python_setup(version=latest_python),
@@ -64,6 +65,7 @@ function(settings)
   } else {};
   local ty_job = if settings.want_ty then {
     ty: {
+      name: 'ty',
       'runs-on': settings.qa_runs_on,
       steps: [common.checkout] + uv_setup_steps + apt_steps + [
         python_setup(version=latest_python),
@@ -77,8 +79,10 @@ function(settings)
   } else {};
   {
     '.github/workflows/qa.yml': utils.manifestYaml({
+      concurrency: utils.ciConcurrency,
       jobs: {
         ruff: {
+          name: 'Ruff',
           'runs-on': settings.qa_runs_on,
           steps: [
             common.checkout,
@@ -92,6 +96,7 @@ function(settings)
           ],
         },
         mypy: {
+          name: 'mypy',
           'runs-on': settings.qa_runs_on,
           steps: [common.checkout] + uv_setup_steps + apt_steps + [
             python_setup(version=latest_python),
@@ -103,6 +108,7 @@ function(settings)
           ],
         },
         format: {
+          name: 'Format',
           'runs-on': settings.qa_runs_on,
           steps: [common.checkout] + uv_setup_steps + apt_steps + [
             python_setup(version=settings.supported_python_versions[0]),
@@ -118,6 +124,7 @@ function(settings)
         },
       } + pyright_job + ty_job + (if settings.force_eslint then {
                                     eslint: {
+                                      name: 'ESLint',
                                       'runs-on': settings.qa_runs_on,
                                       steps: [common.checkout] + common.yarn_steps + [
                                         {

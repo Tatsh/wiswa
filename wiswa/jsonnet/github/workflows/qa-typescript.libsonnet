@@ -25,8 +25,10 @@ function(settings)
   ] else [];
   {
     '.github/workflows/qa.yml': utils.manifestYaml({
+      concurrency: utils.ciConcurrency,
       jobs: {
         eslint: {
+          name: 'ESLint',
           'runs-on': settings.qa_runs_on,
           steps: [common.checkout] + apt_steps + common.yarn_steps + [
             {

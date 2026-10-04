@@ -82,14 +82,14 @@ while IFS=$' ' read -r script_name python_path func_name; do
     fi
         {% else %}
             {% if settings.pyinstaller.windows_exclusions %}
-    if [[ "${{ '{{' }} matrix.os }}" == windows* ]] &&
+    if [[ "${MATRIX_OS}" == windows* ]] &&
         printf '%s\0' "${windows_exclusions[@]}" | grep -Fqxz -- "${script_name}"; then
         echo "Skipping ${script_name} on Windows."
         continue
     fi
             {% endif %}
             {% if settings.pyinstaller.macos_exclusions %}
-    if [[ "${{ '{{' }} matrix.os }}" == macos* ]] &&
+    if [[ "${MATRIX_OS}" == macos* ]] &&
         printf '%s\0' "${macos_exclusions[@]}" | grep -Fqxz -- "${script_name}"; then
         echo "Skipping ${script_name} on macOS."
         continue

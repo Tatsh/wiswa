@@ -1,9 +1,17 @@
+local utils = import 'utils.libsonnet';
+
 function(settings) {
+  concurrency: utils.ciConcurrency,
   jobs: {
     cleanup: {
+      name: 'Cleanup',
+      permissions: {
+        actions: 'write',
+        contents: 'read',
+      },
       'runs-on': 'ubuntu-latest',
       steps: [
-        (import 'utils.libsonnet').checkout(),
+        utils.checkout(),
         {
           env: {
             GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}',
@@ -31,8 +39,5 @@ function(settings) {
     schedule: [{ cron: '0 */12 * * *' }],
     workflow_dispatch: {},
   },
-  permissions: {
-    actions: 'write',
-    contents: 'read',
-  },
+  permissions: {},
 }

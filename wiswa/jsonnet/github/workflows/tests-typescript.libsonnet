@@ -14,8 +14,10 @@ function(settings)
     'tsconfig.json',
   ];
   {
+    concurrency: utils.ciConcurrency,
     jobs: {
       test: {
+        name: 'Test',
         'runs-on': settings.tests_run_on,
         steps: [
           utils.checkout(),

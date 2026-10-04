@@ -8,14 +8,16 @@ function(settings)
   );
   local required_workflows = std.set(settings.github.workflows.release_gate_workflows);
   {
+    concurrency: utils.publishConcurrency(),
     jobs: {
       check: check_workflows.job(required_workflows, optional_workflows),
       publish: {
         [if settings.github.workflows.release_environment != '' then 'environment']:
           settings.github.workflows.release_environment,
+        name: 'Publish',
         needs: ['check'],
         permissions: {
-          contents: 'write',
+          contents: 'read',
         },
         'runs-on': 'ubuntu-latest',
         steps: [

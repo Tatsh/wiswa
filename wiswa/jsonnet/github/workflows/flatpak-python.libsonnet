@@ -2,23 +2,28 @@ local utils = import 'utils.libsonnet';
 
 function(settings)
   {
+    concurrency: utils.publishConcurrency(),
     jobs: {
       build: {
         container: {
           image: 'ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08',
           options: '--privileged',
         },
+        name: 'Build',
         permissions: utils.attestPermissions(settings),
         'runs-on': '${{ matrix.system.image }}',
         steps: [
           utils.checkout(),
           {
+            env: {
+              MATRIX_ARCH: '${{ matrix.system.arch }}',
+            },
             name: 'Set Flatpak bundle filename',
             id: 'flatpak_bundle',
             run: |||
               version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
               echo "version=${version}" >> "$GITHUB_OUTPUT"
-              echo "filename=%s-${version}-${{ matrix.system.arch }}.flatpak" >> "$GITHUB_OUTPUT"
+              echo "filename=%s-${version}-${MATRIX_ARCH}.flatpak" >> "$GITHUB_OUTPUT"
             ||| % settings.publishing.flathub,
           },
         ] + [

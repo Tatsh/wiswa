@@ -1,10 +1,13 @@
 local common = import 'github/workflows/_qa-common.libsonnet';
+local utils = import 'utils.libsonnet';
 
 function(settings)
   local cpp_paths = ['**/*.c', '**/*.cc', '**/*.cpp', '**/*.h', '**/*.hpp', '**/*.mm', '.clang-format', '.github/workflows/clang-format.yml', '.pre-commit-config.yaml'];
   {
+    concurrency: utils.ciConcurrency,
     jobs: {
       'clang-format': {
+        name: 'clang-format',
         'runs-on': settings.qa_runs_on,
         steps: [
           common.checkout,

@@ -29,6 +29,10 @@
 {% set windows_if = "matrix.os == '" ~ windows_matrix | map(attribute='os') | join("' || matrix.os == '") ~ "'" %}
 {% set macos_group = '(' ~ macos_if ~ ')' if macos_matrix | length > 1 else macos_if %}
 {% set windows_group = '(' ~ windows_if ~ ')' if windows_matrix | length > 1 else windows_if %}
+concurrency:
+  cancel-in-progress: false
+  group: ${{ '{{' }} github.workflow }}-${{ '{{' }} github.ref }}
+  queue: max
 jobs:
   build:
     env:
@@ -38,13 +42,15 @@ jobs:
 {% if macos_matrix %}
       APPLE_SIGNING_CERT: ${{ '{{' }} secrets.{{ apple_sv.signing_certificate }} }}
 {% endif %}
+    name: 'Build'
     permissions:
-{% if settings.private %}
-      actions: 'write'
-{% endif %}
+{% if not settings.private %}
       attestations: 'write'
+{% endif %}
       contents: 'read'
+{% if not settings.private %}
       id-token: 'write'
+{% endif %}
     runs-on: ${{ '{{' }} matrix.os }}
     steps:
       - uses: 'actions/checkout@{{ github_latest_action_sha('actions', 'checkout') }}'
@@ -64,9 +70,6 @@ jobs:
       - name: 'Set up Python'
         uses: 'actions/setup-python@{{ github_latest_action_sha('actions', 'setup-python') }}'
         with:
-{% if settings.package_manager != 'uv' %}
-          cache: 'poetry'
-{% endif %}
           python-version: '3.13'
 {% if settings.pyinstaller.vcpkg.enabled %}
   {% for os_name, target in settings.pyinstaller.vcpkg.targets.items()
@@ -146,6 +149,8 @@ jobs:
         shell: 'bash'
 {% endif %}
       - name: 'Build with PyInstaller'
+        env:
+          MATRIX_OS: ${{ '{{' }} matrix.os }}
         run: |
           {{ build(settings) | indent(10) | trim }}
         shell: 'bash'
@@ -316,6 +321,7 @@ jobs:
       group: release-assets-${{ '{{' }} github.ref }}
       queue: max
     if: github.ref_type == 'tag'
+    name: 'Release Assets'
     needs:
       - 'build'
     permissions:

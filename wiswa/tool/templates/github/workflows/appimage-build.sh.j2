@@ -34,7 +34,7 @@ fi
 cp generic.svg "recipe/${script_name}.svg"
 echo "Building AppImage for '${script_name}'..."
 {{ 'uv run' if settings.package_manager == 'uv' else 'poetry run' }} python -m python_appimage -v build app -b "${base_image}" recipe
-mv "${script_name}-${{ '{{' }} matrix.system.arch }}.AppImage" "dist/${script_name}-v${version}-${{ '{{' }} matrix.system.arch }}.AppImage"
+mv "${script_name}-${MATRIX_ARCH}.AppImage" "dist/${script_name}-v${version}-${MATRIX_ARCH}.AppImage"
 {% endmacro %}
 {% macro build(settings) %}
     {% set single = settings.appimage.include_only | length == 1 %}
@@ -48,7 +48,7 @@ across every runner on the same egress address, so it fails with "HTTP Error 403
 exceeded" at times of day that have nothing to do with the project being built. Asking once with
 the workflow token and passing -b avoids the call altogether. The name has to survive the
 download: python-appimage parses the version and both tags back out of the file name. #}
-base_image_tag='manylinux2014_${{ '{{' }} matrix.system.arch }}.AppImage'
+base_image_tag="manylinux2014_${MATRIX_ARCH}.AppImage"
 base_image=$(curl -fsSL \
     -H "Authorization: Bearer ${GH_TOKEN}" \
     -H 'Accept: application/vnd.github+json' \

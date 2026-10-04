@@ -8,8 +8,15 @@ function(settings)
     push_rules: settings.gitlab.push_rules,
   };
   {
+    // Each run mirrors every ref. A newer pending run replaces an older pending run, and a push in
+    // progress is never cancelled.
+    concurrency: {
+      'cancel-in-progress': false,
+      group: '${{ github.workflow }}',
+    },
     jobs: {
       'sync-to-gitlab': {
+        name: 'Sync to GitLab',
         'runs-on': 'ubuntu-latest',
         steps: [
           utils.checkout({ name: 'Checkout repository' }),

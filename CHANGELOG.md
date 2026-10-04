@@ -33,6 +33,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   instead of `streetsidesoftware/cspell-action`, which bundles its own. `dict:update` drops words
   the local dictionaries know, and the action then reported them (for example `worktree`). Unknown
   words are still reported as annotations through cspell's `--issue-template`.
+- Generated workflows pass the zizmor `pedantic` persona. Every job has a `name`, which changes the
+  check names that branch protection rules match. Every workflow sets `concurrency`. A new push to a
+  pull request cancels the check runs of the previous push, and runs on the default branch are
+  never cancelled. Build, publish, and release workflows queue their runs (`queue: max`) instead of
+  cancelling them.
+- `Release`, `CodeQL`, and `Cleanup` grant permissions on the job instead of the workflow. The
+  publish jobs and the private build jobs drop write permissions their steps do not use.
+- Workflow `run` scripts read GitHub expressions from step environment variables instead of
+  expanding them in the script.
+- The AppImage and PyInstaller workflows no longer restore the Poetry cache, matching the uv
+  setup.
+- `.github/zizmor.yml` disables the `undocumented-permissions` audit.
 
 ### Fixed
 

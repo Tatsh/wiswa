@@ -3,8 +3,10 @@ local utils = import 'utils.libsonnet';
 function(settings)
   local is_uv = settings.package_manager == 'uv';
   {
+    concurrency: utils.publishConcurrency(),
     jobs: {
       build: {
+        name: 'Build',
         permissions: utils.attestPermissions(settings),
         'runs-on': '${{ matrix.system.image }}',
         steps: [

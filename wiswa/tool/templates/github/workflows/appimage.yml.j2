@@ -1,14 +1,20 @@
 {% from 'github/workflows/appimage-build.sh.j2' import build %}
 {% from 'github/workflows/pyinstaller-test.sh.j2' import test_bash %}
+concurrency:
+  cancel-in-progress: false
+  group: ${{ '{{' }} github.workflow }}-${{ '{{' }} github.ref }}
+  queue: max
 jobs:
   build:
+    name: 'Build'
     permissions:
-{% if settings.private %}
-      actions: 'write'
-{% endif %}
+{% if not settings.private %}
       attestations: 'write'
+{% endif %}
       contents: 'read'
+{% if not settings.private %}
       id-token: 'write'
+{% endif %}
     runs-on: ${{ '{{' }} matrix.system.image }}
     steps:
       - uses: 'actions/checkout@{{ github_latest_action_sha('actions', 'checkout') }}'
@@ -28,9 +34,6 @@ jobs:
       - name: 'Set up Python'
         uses: 'actions/setup-python@{{ github_latest_action_sha('actions', 'setup-python') }}'
         with:
-{% if settings.package_manager != 'uv' %}
-          cache: 'poetry'
-{% endif %}
           python-version: '3.13'
 {% if settings.github.workflows.appimage.apt_packages %}
       - name: 'Install dependencies'
@@ -54,6 +57,7 @@ jobs:
       - name: 'Build with python-appimage'
         env:
           GH_TOKEN: '${{ '{{' }} github.token }}'
+          MATRIX_ARCH: ${{ '{{' }} matrix.system.arch }}
 {% for name, value in settings.appimage.build_env | dictsort %}
           {{ name }}: '{{ value }}'
 {% endfor %}
@@ -102,6 +106,7 @@ jobs:
       group: release-assets-${{ '{{' }} github.ref }}
       queue: max
     if: github.ref_type == 'tag'
+    name: 'Release Assets'
     needs:
       - 'build'
     permissions:

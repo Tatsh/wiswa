@@ -1145,6 +1145,9 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
         'dangerous-triggers': {
           ignore: ['publish-msys2.yml', 'publish-winget.yml', 'release.yml'],
         },
+        'undocumented-permissions': {
+          disable: true,
+        },
       },
     },
   },

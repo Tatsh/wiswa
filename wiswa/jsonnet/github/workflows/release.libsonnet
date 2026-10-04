@@ -18,10 +18,18 @@ function(settings)
   );
   local watched_workflows = std.set(required_workflows + optional_workflows);
   {
+    concurrency: utils.publishConcurrency(
+      '${{ github.workflow }}-${{ github.event.workflow_run.head_sha }}'
+    ),
     jobs: {
       'publish-release': {
         [if settings.github.workflows.release_environment != '' then 'environment']:
           settings.github.workflows.release_environment,
+        name: 'Publish Release',
+        permissions: {
+          actions: 'write',
+          contents: 'write',
+        },
         'runs-on': 'ubuntu-latest',
         steps: [
           utils.checkout(),
@@ -208,8 +216,5 @@ function(settings)
         workflows: watched_workflows,
       },
     },
-    permissions: {
-      actions: 'write',
-      contents: 'write',
-    },
+    permissions: {},
   }

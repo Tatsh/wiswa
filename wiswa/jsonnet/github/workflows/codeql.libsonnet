@@ -19,6 +19,7 @@ local cpp_exts = [
 
 function(settings)
   {
+    concurrency: utils.ciConcurrency,
     jobs: {
       analyze: {
         name: 'Analyze',
@@ -90,4 +91,5 @@ function(settings)
         },
       ],
     },
+    permissions: {},
   }
