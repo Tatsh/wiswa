@@ -16,9 +16,9 @@ from rich.text import Text
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
     from types import TracebackType
+    from typing import Self
 
     from rich.console import ConsoleRenderable, RichCast
-    from typing_extensions import Self
 
 __all__ = ('ProgressDisplay', 'TaskId', 'TaskState')
 

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeAlias, cast
@@ -259,8 +259,8 @@ def _make_native_callbacks(
     if session is None:
         return {
             'githubCliUsername': github_cli_username_cb,
-            'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
-            'year': ((), lambda: datetime.now(tz=timezone.utc).year)
+            'isodate': ((), lambda: datetime.now(tz=UTC).isoformat()[:10]),
+            'year': ((), lambda: datetime.now(tz=UTC).year)
         }
     # Jsonnet native callbacks are sync, but our HTTP functions are async. These callbacks run
     # inside run_sync, so we use :func:`anyio.from_thread.run` to schedule the async
@@ -300,7 +300,7 @@ def _make_native_callbacks(
                                                               npm_age_gate_minutes=npm_age_gate)),
         'githubLatestTag': (('o', 'r'), lambda o, r: _sync_wrap(gh_tag, o, r)),
         'githubRefCommitSha': (('o', 'r', 'f'), lambda o, r, f: _sync_wrap(gh_ref_sha, o, r, f)),
-        'isodate': ((), lambda: datetime.now(tz=timezone.utc).isoformat()[:10]),
+        'isodate': ((), lambda: datetime.now(tz=UTC).isoformat()[:10]),
         'latestNpmPackageVersion': (('p',), lambda p: _sync_wrap(
             get_npm_latest_package_version,
             session,
@@ -312,7 +312,7 @@ def _make_native_callbacks(
         'latestVcpkgPortVersion': (
             ('p',), lambda p: _sync_wrap(get_vcpkg_latest_port_version, session, p)),
         'latestYarnVersion': ((), lambda: _sync_wrap(get_latest_yarn_version, session)),
-        'year': ((), lambda: datetime.now(tz=timezone.utc).year)
+        'year': ((), lambda: datetime.now(tz=UTC).year)
     }
 
 

@@ -1,9 +1,7 @@
 """Type definitions for Wiswa settings and related ``pyproject``/``package.json`` shapes."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypedDict
-
-from typing_extensions import NotRequired
+from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from functools import cache
 from pathlib import Path
 from shutil import rmtree
@@ -235,17 +235,17 @@ def _parse_duration(value: str) -> timedelta | None:
 def _parse_exclude_newer(value: str) -> datetime | None:
     value = value.strip()
     try:
-        parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
+        parsed = datetime.fromisoformat(value)
     except ValueError:
         try:
             parsed = datetime.fromisoformat(value)
         except ValueError:
             delta = _parse_duration(value)
             if delta is not None:
-                return datetime.now(tz=timezone.utc) - delta
+                return datetime.now(tz=UTC) - delta
             return None
     if parsed.tzinfo is None:
-        return parsed.replace(tzinfo=timezone.utc)
+        return parsed.replace(tzinfo=UTC)
     return parsed
 
 
@@ -356,7 +356,7 @@ def _get_uv_config(
         if isinstance(tool_uv, dict):
             global_cutoff = _apply_uv_section(tool_uv, global_cutoff, per_package)
     if global_cutoff is None:
-        global_cutoff = datetime.now(tz=timezone.utc) - _UV_EXCLUDE_NEWER_DEFAULT
+        global_cutoff = datetime.now(tz=UTC) - _UV_EXCLUDE_NEWER_DEFAULT
     return global_cutoff, per_package
 
 
@@ -451,7 +451,7 @@ async def get_npm_latest_package_version(
     time_map: dict[str, str] = data.get('time', {})
     published_versions: dict[str, Any] = data.get('versions', {})
     latest_tag = cast('str', data.get('dist-tags', {}).get('latest', ''))
-    cutoff = datetime.now(tz=timezone.utc) - timedelta(minutes=gate_min)
+    cutoff = datetime.now(tz=UTC) - timedelta(minutes=gate_min)
     candidates: list[tuple[Version, datetime]] = []
     for ver_str, pub_date_str in time_map.items():
         if ver_str in {'created', 'modified'} or ver_str not in published_versions:
@@ -463,7 +463,7 @@ async def get_npm_latest_package_version(
         if ver.is_prerelease or ver.is_devrelease:
             continue
         try:
-            pub_date = datetime.fromisoformat(pub_date_str.replace('Z', '+00:00'))
+            pub_date = datetime.fromisoformat(pub_date_str)
         except ValueError:
             continue
         if pub_date > cutoff:
@@ -503,7 +503,7 @@ def _earliest_upload_time(files: list[dict[str, Any]]) -> datetime | None:
         if not isinstance(raw, str):
             continue
         try:
-            dt = datetime.fromisoformat(raw.replace('Z', '+00:00'))
+            dt = datetime.fromisoformat(raw)
         except ValueError:
             continue
         if earliest is None or dt < earliest:

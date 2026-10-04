@@ -1,7 +1,7 @@
 """Write Wiswa run metadata into the generated ``package.json``."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from shlex import join as shlex_join
 from typing import TYPE_CHECKING
@@ -176,7 +176,7 @@ async def get_wiswa_version_or_sha() -> str:
 
 
 def _utc_iso_timestamp() -> str:
-    return datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    return datetime.now(tz=UTC).strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 def _invocation_command_line() -> str:

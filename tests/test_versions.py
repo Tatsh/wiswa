@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock
@@ -173,7 +173,7 @@ async def test_get_pypi_exclude_newer_duration_forms(
     line = (f'exclude-newer = {toml_value}\n'
             if use_bare_int else f'exclude-newer = "{toml_value}"\n')
     (uv_dir / 'uv.toml').write_text(line, encoding='utf-8')
-    fixed_now = datetime(2025, 8, 1, 12, 0, 0, tzinfo=timezone.utc)
+    fixed_now = datetime(2025, 8, 1, 12, 0, 0, tzinfo=UTC)
     mocker.patch('wiswa.tool.utils.versions.datetime', wraps=datetime)
     mocker.patch('wiswa.tool.utils.versions.datetime.now', return_value=fixed_now)
     data = _make_pypi_json([('2.0.0', '2025-08-01T10:00:00Z'), ('1.0.0', '2024-01-01T00:00:00Z')])
@@ -188,7 +188,7 @@ async def test_get_pypi_latest_package_version_uv_toml_duration_exclude_newer(
     uv_dir = tmp_path / '.config' / 'uv'
     uv_dir.mkdir(parents=True)
     (uv_dir / 'uv.toml').write_text('exclude-newer = "P7D"\n', encoding='utf-8')
-    fixed_now = datetime(2025, 3, 15, 12, 0, 0, tzinfo=timezone.utc)
+    fixed_now = datetime(2025, 3, 15, 12, 0, 0, tzinfo=UTC)
     mocker.patch('wiswa.tool.utils.versions.datetime', wraps=datetime)
     mocker.patch('wiswa.tool.utils.versions.datetime.now', return_value=fixed_now)
     data = _make_pypi_json([('1.0.0', '2025-01-01T00:00:00Z')])
@@ -518,8 +518,8 @@ def test_resolve_npm_minimal_age_gate_minutes_npmrc_read_oserror_only(
 
 
 async def test_get_npm_latest_package_version_picks_oldest_stable() -> None:
-    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
-    new_date = (datetime.now(tz=timezone.utc) - timedelta(minutes=5)).isoformat()
+    old_date = (datetime.now(tz=UTC) - timedelta(days=30)).isoformat()
+    new_date = (datetime.now(tz=UTC) - timedelta(minutes=5)).isoformat()
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(
         json_data={
@@ -542,7 +542,7 @@ async def test_get_npm_latest_package_version_picks_oldest_stable() -> None:
 
 
 async def test_get_npm_latest_package_version_all_too_new_falls_back_to_latest() -> None:
-    new_date = (datetime.now(tz=timezone.utc) - timedelta(minutes=5)).isoformat()
+    new_date = (datetime.now(tz=UTC) - timedelta(minutes=5)).isoformat()
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(
         json_data={
@@ -561,7 +561,7 @@ async def test_get_npm_latest_package_version_all_too_new_falls_back_to_latest()
 
 
 async def test_get_npm_latest_package_version_skips_prerelease() -> None:
-    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    old_date = (datetime.now(tz=UTC) - timedelta(days=30)).isoformat()
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(
         json_data={
@@ -582,7 +582,7 @@ async def test_get_npm_latest_package_version_skips_prerelease() -> None:
 
 
 async def test_get_npm_latest_package_version_skips_invalid_versions() -> None:
-    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    old_date = (datetime.now(tz=UTC) - timedelta(days=30)).isoformat()
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(
         json_data={
@@ -603,7 +603,7 @@ async def test_get_npm_latest_package_version_skips_invalid_versions() -> None:
 
 
 async def test_get_npm_latest_package_version_skips_invalid_dates() -> None:
-    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    old_date = (datetime.now(tz=UTC) - timedelta(days=30)).isoformat()
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(
         json_data={
@@ -624,7 +624,7 @@ async def test_get_npm_latest_package_version_skips_invalid_dates() -> None:
 
 
 async def test_get_npm_latest_package_version_cache_hit() -> None:
-    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    old_date = (datetime.now(tz=UTC) - timedelta(days=30)).isoformat()
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(
         json_data={
@@ -645,7 +645,7 @@ async def test_get_npm_latest_package_version_cache_hit() -> None:
 
 
 async def test_get_npm_latest_package_version_picks_highest_version() -> None:
-    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    old_date = (datetime.now(tz=UTC) - timedelta(days=30)).isoformat()
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(
         json_data={
@@ -668,7 +668,7 @@ async def test_get_npm_latest_package_version_picks_highest_version() -> None:
 
 
 async def test_get_npm_latest_package_version_skips_unpublished_versions() -> None:
-    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    old_date = (datetime.now(tz=UTC) - timedelta(days=30)).isoformat()
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(
         json_data={
@@ -688,7 +688,7 @@ async def test_get_npm_latest_package_version_skips_unpublished_versions() -> No
 
 
 async def test_get_npm_latest_package_version_all_unpublished_falls_back_to_latest() -> None:
-    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    old_date = (datetime.now(tz=UTC) - timedelta(days=30)).isoformat()
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(
         json_data={
@@ -707,7 +707,7 @@ async def test_get_npm_latest_package_version_all_unpublished_falls_back_to_late
 
 
 async def test_get_npm_latest_package_version_no_versions_key_falls_back_to_latest() -> None:
-    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    old_date = (datetime.now(tz=UTC) - timedelta(days=30)).isoformat()
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data={
         'dist-tags': {
@@ -722,7 +722,7 @@ async def test_get_npm_latest_package_version_no_versions_key_falls_back_to_late
 
 
 async def test_get_npm_latest_package_version_mixed_published_unpublished() -> None:
-    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    old_date = (datetime.now(tz=UTC) - timedelta(days=30)).isoformat()
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(
         json_data={
@@ -747,7 +747,7 @@ async def test_get_npm_latest_package_version_mixed_published_unpublished() -> N
 
 
 async def test_get_npm_latest_package_version_respects_node_engine() -> None:
-    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    old_date = (datetime.now(tz=UTC) - timedelta(days=30)).isoformat()
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(
         json_data={
@@ -784,7 +784,7 @@ async def test_get_npm_latest_package_version_respects_node_engine() -> None:
 
 
 async def test_get_npm_latest_package_version_node_engine_invalid_constraint() -> None:
-    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
+    old_date = (datetime.now(tz=UTC) - timedelta(days=30)).isoformat()
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(
         json_data={
@@ -832,8 +832,8 @@ async def test_get_pypi_latest_package_version_no_cutoff() -> None:
 
 
 async def test_get_pypi_latest_package_version_default_cutoff_without_config() -> None:
-    old_date = (datetime.now(tz=timezone.utc) - timedelta(days=30)).isoformat()
-    new_date = (datetime.now(tz=timezone.utc) - timedelta(minutes=1)).isoformat()
+    old_date = (datetime.now(tz=UTC) - timedelta(days=30)).isoformat()
+    new_date = (datetime.now(tz=UTC) - timedelta(minutes=1)).isoformat()
     data = _make_pypi_json([('2.0.0', new_date), ('1.0.0', old_date)])
     mock_session = MagicMock()
     mock_session.get = AsyncMock(return_value=_make_response(json_data=data))
