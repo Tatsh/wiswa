@@ -1,7 +1,7 @@
 local common = import 'github/workflows/_qa-common.libsonnet';
 
 function(settings)
-  local cpp_paths = ['**/*.c', '**/*.cc', '**/*.cpp', '**/*.h', '**/*.hpp', '**/*.mm', '.github/workflows/clang-format.yml', '.pre-commit-config.yaml'];
+  local cpp_paths = ['**/*.c', '**/*.cc', '**/*.cpp', '**/*.h', '**/*.hpp', '**/*.mm', '.clang-format', '.github/workflows/clang-format.yml', '.pre-commit-config.yaml'];
   {
     jobs: {
       'clang-format': {
