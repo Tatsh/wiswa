@@ -16,6 +16,7 @@
   '.cspellcache',
   '.directory',
   '.pnp.*',
+  '/.sbclaude-venv/',
   '/.wiswa-ci/',
   '/.yarn/install-state.gz',
   '/build/',

@@ -17,6 +17,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `/.sbclaude-venv/` is in `shared_ignore` and is therefore ignored by Git and Prettier for every
+  project type, not only Python projects.
 - The generated `make-release` skill sets `date-released` in `CITATION.cff` to the current date
   when the file exists. `cz bump` does not update the field.
 - GitHub macOS runners use the lowest available image per architecture: `macos-15` (arm64) and
