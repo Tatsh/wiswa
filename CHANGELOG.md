@@ -56,6 +56,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   is not set, as the WinGet job is for `WINGET_TOKEN`.
 - Generated `run` scripts pass shellcheck (the LuaRocks upload glob, an unused AppImage variable,
   and a `cd` without a failure check in `publish-msys2.yml`).
+- The default `prettierignore` drops patterns for files Prettier has no parser for (`*.1`, `*.3`,
+  `*.7`, `*.desktop`, `*.j2`, `*.jsonnet`, `*.libsonnet`, `*.lock`, and `.eslintignore`, and
+  `*.c`, `*.cpp`, `*.h`, and `*.in` for C and C++ projects). Prettier skips such files during
+  directory expansion, and the pre-commit hook passes `--ignore-unknown`.
 
 ### Fixed
 
@@ -75,6 +79,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The generated `.pre-commit-config.yaml` adds `fix-eslint` to `ci.skip` when `force_eslint` is set
   (the default for TypeScript projects). pre-commit.ci cannot run the `language: system` hook
   (`yarn eslint --fix`) and failed on TypeScript projects.
+- The generated Prettier pre-commit hook runs `yarn exec prettier --write --ignore-unknown`. The
+  hook passed files Prettier has no parser for (CMake, assembly, linker scripts, and similar text
+  files) and failed with `No parser could be inferred`.
 
 ### Removed
 

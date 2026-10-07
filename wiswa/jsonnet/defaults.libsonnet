@@ -1655,25 +1655,19 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   },
 
   local cpp_prettierignore = if self.project_type == 'c++' || self.project_type == 'c' then
-    cpp_ignore + ['*.c', '*.cpp', '*.h', '*.in', 'vcpkg*.json'] else [],
+    cpp_ignore + ['vcpkg*.json'] else [],
   /**
    * @brief Array of patterns to ignore for Prettier.
+   *
+   * Files Prettier has no parser for need no entry. Directory expansion skips them, and the
+   * pre-commit hook passes `--ignore-unknown`.
+   *
    * @var string[]
    */
   prettierignore: std.set(self.shared_ignore +
                           [
-                            '*.1',
-                            '*.3',
-                            '*.7',
-                            '*.desktop',
-                            '*.j2',
-                            '*.jsonnet',
-                            '*.libsonnet',
-                            '*.libsonnet',
-                            '*.lock',
                             '*.min.js',
                             'pylock*.toml',
-                            '.eslintignore',
                             '.shellcheckrc',
                             '/.yarn/**/*.cjs',
                             '/dist/',

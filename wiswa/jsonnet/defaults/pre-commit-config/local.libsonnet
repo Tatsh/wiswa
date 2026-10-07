@@ -76,7 +76,7 @@ local eslint = import 'defaults/pre-commit-config/eslint.libsonnet';
         ],
       },
       {
-        entry: 'yarn exec prettier --write',
+        entry: 'yarn exec prettier --write --ignore-unknown',
         exclude: '((requirements|robots).txt|Dockerfile.*|..*ignore|.(coveragerc|gitattributes)|.*.(csv|lock|resource|robot)|pylock.*\\.toml|CODEOWNERS|py.typed)$',
         exclude_types: [
           'binary',
