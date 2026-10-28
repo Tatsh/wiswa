@@ -1725,7 +1725,8 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   local python_part = if settings.project_type == 'python' then {
     [settings.project_name]: {
       plugin: if is_uv then 'python' else 'poetry',
-      source: '.',
+      source: '%s.git' % settings.repository_uri,
+      'source-tag': 'v%s' % settings.version,
       'build-packages': settings.snap_python_build_packages,
       'stage-packages': settings.snap_python_stage_packages,
     } + (if is_uv then { 'python-packages': ['.'] } else {}),
@@ -1843,8 +1844,9 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
         ],
         sources: [
           {
-            type: 'dir',
-            path: '.',
+            tag: 'v%s' % settings.version,
+            type: 'git',
+            url: settings.repository_uri,
           },
         ],
       },

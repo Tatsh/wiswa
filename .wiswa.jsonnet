@@ -62,27 +62,6 @@ local utils = import 'utils.libsonnet';
       },
     },
   },
-  flatpak+: {
-    modules: [
-      super.modules[0] {
-        sources: [
-          {
-            tag: 'v' + top.version,
-            type: 'git',
-            url: 'https://github.com/Tatsh/wiswa',
-          },
-        ],
-      },
-    ],
-  },
-  snapcraft+: {
-    parts+: {
-      [top.project_name]+: {
-        source: 'https://github.com/Tatsh/wiswa.git',
-        'source-tag': 'v' + top.version,
-      },
-    },
-  },
   python_deps+: {
     main+: {
       anyio: utils.latestPypiPackageVersionCaret('anyio'),

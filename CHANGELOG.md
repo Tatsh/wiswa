@@ -17,6 +17,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The generated Flatpak manifest and `snapcraft.yaml` build from the project's Git repository at
+  the release tag instead of a local directory. The Flatpak source is a `type: git` entry with
+  `tag: v<version>`, and the Snap part sets `source` to the repository and `source-tag` to the
+  release tag.
 - `/.sbclaude-venv/` is in `shared_ignore` and is therefore ignored by Git and Prettier for every
   project type, not only Python projects.
 - The generated `make-release` skill sets `date-released` in `CITATION.cff` to the current date
