@@ -1660,12 +1660,15 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    * @brief Array of patterns to ignore for Prettier.
    *
    * Files Prettier has no parser for need no entry. Directory expansion skips them, and the
-   * pre-commit hook passes `--ignore-unknown`.
+   * pre-commit hook passes `--ignore-unknown`. Lock files are listed because
+   * `prettier-plugin-toml` parses `uv.lock`, and uv rewrites the file in its own style on every
+   * lock.
    *
    * @var string[]
    */
   prettierignore: std.set(self.shared_ignore +
                           [
+                            '*.lock',
                             '*.min.js',
                             'pylock*.toml',
                             '.shellcheckrc',

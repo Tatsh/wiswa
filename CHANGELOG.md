@@ -67,6 +67,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- The default `prettierignore` lists `*.lock` again. `prettier-plugin-toml` parses `uv.lock`, and
+  the Prettier check failed on every `uv lock` that restored uv's own formatting.
 - `publish-winget.yml` and `publish-msys2.yml` find the release from the commit of the completed
   `Release` run. The WinGet job required a `push` run on a `v*` branch, and `Release` runs from
   `workflow_run` on the default branch, which skipped every WinGet update. The MSYS2 workflow
