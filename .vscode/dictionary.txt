@@ -6,6 +6,7 @@ anyio
 appauthor
 appdir
 appimage
+appimagetool
 appinfo
 appstore
 asyncio
@@ -154,6 +155,7 @@ libera
 liberadotchat
 libjsonnet
 libname
+librsvg
 libsonnet
 linters
 localappdata
@@ -240,6 +242,7 @@ resp
 ripgreprc
 rockspec
 rstcheck
+rsvg
 ruiquelhas
 samuelcolvin
 sass

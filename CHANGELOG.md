@@ -67,6 +67,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Generated AppImage workflows convert icons to PNG and repair icon links and permissions before
+  packaging with current `appimagetool` versions.
 - The default `prettierignore` lists `*.lock` again. `prettier-plugin-toml` parses `uv.lock`, and
   the Prettier check failed on every `uv lock` that restored uv's own formatting.
 - `publish-winget.yml` and `publish-msys2.yml` find the release from the commit of the completed
