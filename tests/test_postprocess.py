@@ -5,6 +5,7 @@ from __future__ import annotations
 from shutil import which
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock
+import asyncio
 import json
 import logging
 import subprocess
@@ -233,6 +234,72 @@ async def test_post_process_steps_python_uv(tmp_path: Path, monkeypatch: pytest.
     settings = cast('Any', _make_settings())
     await post_process_steps(settings)
     assert not (tmp_path / 'poetry.lock').exists()
+
+
+@pytest.mark.parametrize('project_type', ['python', 'c', 'c++', 'typescript', 'custom'])
+@pytest.mark.parametrize('using_github', [False, True])
+async def test_post_process_steps_actions_lock(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                               mocker: MockerFixture, project_type: str, *,
+                                               using_github: bool) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    create_process = mocker.patch('wiswa.tool.utils.postprocess.asyncio.create_subprocess_exec',
+                                  return_value=AsyncMock(returncode=0))
+    create_process.return_value.communicate.return_value = (b'', b'')
+    on_command = mocker.Mock()
+    settings = cast('Any', _make_settings(project_type=project_type, using_github=using_github))
+    await post_process_steps(settings, on_command=on_command)
+    commands = [call.args for call in create_process.call_args_list]
+    assert commands.count(('gh', 'actions-lock', '--no-narrow')) == int(using_github)
+    if using_github:
+        assert commands.index(('gh', 'actions-lock', '--no-narrow')) < commands.index(('yarn',))
+        on_command.assert_any_call('gh actions-lock --no-narrow')
+
+
+async def test_post_process_steps_actions_lock_failure(tmp_path: Path,
+                                                       monkeypatch: pytest.MonkeyPatch,
+                                                       mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    process = AsyncMock(returncode=1)
+    process.communicate.return_value = (b'', b'Could not lock actions.')
+    create_process = mocker.patch('wiswa.tool.utils.postprocess.asyncio.create_subprocess_exec',
+                                  return_value=process)
+    settings = cast('Any', _make_settings(project_type='custom'))
+    with pytest.raises(RuntimeError, match='gh actions-lock'):
+        await post_process_steps(settings)
+    create_process.assert_awaited_once_with('gh',
+                                            'actions-lock',
+                                            '--no-narrow',
+                                            stderr=asyncio.subprocess.PIPE,
+                                            stdout=asyncio.subprocess.PIPE)
+
+
+@pytest.mark.parametrize(('workflow', 'overrides'), [('publish.yml', {
+    'private': True
+}), ('tests.yml', {
+    'want_tests': False
+}), ('qa.yml', {
+    'project_type': 'custom'
+})])
+async def test_post_process_steps_actions_lock_after_workflow_removal(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture, workflow: str,
+        overrides: dict[str, Any]) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    workflow_path = tmp_path / '.github' / 'workflows' / workflow
+    workflow_path.parent.mkdir(parents=True)
+    workflow_path.write_text('jobs: {}\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    commands: list[str] = []
+
+    def on_command(command: str) -> None:
+        if command == 'gh actions-lock --no-narrow':
+            assert not workflow_path.exists()
+        commands.append(command)
+
+    await post_process_steps(cast('Any', _make_settings(**overrides)), on_command=on_command)
+    assert 'gh actions-lock --no-narrow' in commands
 
 
 async def test_post_process_steps_removes_legacy_wiswa_ai_files(tmp_path: Path,

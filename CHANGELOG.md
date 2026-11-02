@@ -11,6 +11,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- GitHub projects run `gh actions-lock --no-narrow` during regeneration to generate dependency lock
+  files and preserve SHA pins. An authenticated GitHub CLI and the `github/gh-actions-lock`
+  extension are required. Generated `.gitattributes` treats `.github/workflows/actions.lock` as text
+  for Git diffs and merges.
 - `want_clang_format` generates the `clang-format` workflow for any project type (for example
   Objective-C or Python projects with C and C++ sources). It defaults to true for C and C++
   projects. The workflow also runs when `*.mm` files change.

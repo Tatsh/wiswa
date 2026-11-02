@@ -979,6 +979,11 @@ async def post_process_steps(settings: Settings,
             if await qa_yml.exists() and 'jobs: {}' in (await qa_yml.read_text(encoding='utf-8')):
                 await qa_yml.unlink(missing_ok=True)
             log.warning('No post-processing steps for project type `%s`.', settings['project_type'])
+    if settings['using_github']:
+        await _subprocess_log_run(('gh', 'actions-lock', '--no-narrow'),
+                                  on_command=on_command,
+                                  stderr=asyncio.subprocess.PIPE,
+                                  stdout=asyncio.subprocess.PIPE)
     await asyncio.gather(_check_readme_badges(settings, session=session),
                          _refresh_changelog_reference_urls(session))
     package_json = anyio.Path('package.json')

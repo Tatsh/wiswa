@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from shutil import which
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
 import json
@@ -26,6 +27,36 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 _WISWA_JSONNET = Path(__file__).resolve().parent.parent / 'wiswa' / 'jsonnet'
+
+
+@pytest.mark.skipif(which('git') is None, reason='git not installed')
+def test_default_gitattributes_actions_lock_uses_text_attributes(tmp_path: Path) -> None:
+    attributes = json.loads(
+        _jsonnet.evaluate_snippet('snippet',
+                                  "(import 'defaults.libsonnet').gitattributes",
+                                  jpathdir=[str(_WISWA_JSONNET)]))
+    (tmp_path / '.gitattributes').write_text('\n'.join(attributes) + '\n', encoding='utf-8')
+    git = which('git')
+    assert git is not None
+    sp.run([git, 'init'], capture_output=True, check=True, cwd=tmp_path)
+    paths = ('.github/workflows/actions.lock', 'uv.lock')
+    assert all(not (tmp_path / path).exists() for path in paths)
+    result = sp.run([
+        git, '-c', 'core.attributesFile=/dev/null', 'check-attr', 'text', 'diff', 'merge', '--',
+        *paths
+    ],
+                    capture_output=True,
+                    check=True,
+                    cwd=tmp_path,
+                    text=True)
+    assert result.stdout.splitlines() == [
+        '.github/workflows/actions.lock: text: set',
+        '.github/workflows/actions.lock: diff: set',
+        '.github/workflows/actions.lock: merge: set',
+        'uv.lock: text: unset',
+        'uv.lock: diff: unset',
+        'uv.lock: merge: unset',
+    ]
 
 
 @pytest.mark.parametrize(('username', 'project_name', 'expected'), [

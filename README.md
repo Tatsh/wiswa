@@ -52,6 +52,16 @@ of your project—for example `uv add --group dev wiswa`, or list `wiswa` under
 `dependency-groups.dev` in `pyproject.toml` and install inside the project
 virtual environment with your usual workflow.
 
+GitHub projects also require an authenticated GitHub CLI and its Actions lock extension:
+
+```shell
+gh auth login
+gh extension install github/gh-actions-lock
+```
+
+Regeneration runs `gh actions-lock --no-narrow` after generating GitHub workflows, preserving
+existing SHA pins.
+
 ## Usage
 
 ![demo](demo.gif)

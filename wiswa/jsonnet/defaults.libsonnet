@@ -1192,6 +1192,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   gitattributes: [
     '* text=auto eol=lf',
     '*.lock binary',
+    '/.github/workflows/actions.lock text diff merge',
     '/.yarn/**/*.cjs binary',
   ],
   local cpp_ignore = if self.project_type == 'c++' || self.project_type == 'c' then [
