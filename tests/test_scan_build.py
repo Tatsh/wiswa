@@ -17,7 +17,7 @@ _BASH = which('bash') or '/bin/bash'
 _GIT = which('git') or '/usr/bin/git'
 
 
-def _workflow(*, documentation: bool = False) -> dict[str, Any]:
+def _workflow(*, documentation: bool = False, runs_on: str = 'ubuntu-latest') -> dict[str, Any]:
     """
     Render the analysis workflow.
 
@@ -25,28 +25,80 @@ def _workflow(*, documentation: bool = False) -> dict[str, Any]:
     ----------
     documentation : bool
         Include a documentation build.
+    runs_on : str
+        Runner image for analysis.
 
     Returns
     -------
     dict[str, Any]
     """
+    documentation_steps = '[{run: "cmake --build build --target docs"}]' if documentation else '[]'
     return cast(
         'dict[str, Any]',
         json.loads(
             _jsonnet.evaluate_snippet(
                 'scan-build-test',
-                """
-        local settings = (import 'defaults.libsonnet') + {
+                f"""
+        local settings = (import 'defaults.libsonnet') + {{
           project_name: 'example',
-          github+: { workflows+: { scan_build+: {
-            checkout_options: { 'fetch-depth': 0, submodules: 'recursive' },
-            documentation_steps: %s,
-          } } },
-        };
+          github+: {{ workflows+: {{ scan_build+: {{
+            runs_on: {json.dumps(runs_on)},
+            checkout_options: {{ 'fetch-depth': 0, submodules: 'recursive' }},
+            documentation_steps: {documentation_steps},
+          }} }} }},
+        }};
         (import 'github/workflows/scan-build.libsonnet')(settings)
-        """ % ('[{run: "cmake --build build --target docs"}]' if documentation else '[]'),
+        """,
                 jpathdir=[str(_LIBRARY)],
                 native_callbacks={'githubLatestActionSha': (('o', 'r'), lambda _o, _r: 'a' * 40)})))
+
+
+@pytest.mark.parametrize('runs_on', ['ubuntu-latest', 'macos-15'])
+def test_workflow_uses_platform_compiler(runs_on: str) -> None:
+    workflow = _workflow(runs_on=runs_on)
+    commands = [
+        step['run'] for step in workflow['jobs']['analyze']['steps']
+        if 'scan-build ' in step.get('run', '')
+    ]
+    compiler = '"$(xcrun --find clang)"' if runs_on.startswith('macos') else 'clang'
+    assert len(commands) == 2
+    assert all(f'--use-cc={compiler} ' in command for command in commands)
+
+
+@pytest.mark.parametrize('fail', [False, True])
+def test_compiler_variables_and_errors_inside_scan_build(tmp_path: Path, *, fail: bool) -> None:
+    steps = _workflow()['jobs']['analyze']['steps']
+    compiler_wrapper = """scan-build() {
+      while [ "$1" != bash ]; do shift; done
+      CC=intercepted-c CXX=intercepted-cxx "$@"
+    }
+    """
+    for step in (steps[2], steps[3]):
+        variable, command = next(iter(step['env'].items()))
+        assert command.startswith('cmake ')
+        env = os.environ | {
+            'CC': 'outside-c',
+            'CXX': 'outside-cxx',
+            'RUNNER_TEMP': str(tmp_path),
+            variable: ('false\ntrue' if fail else 'printf "%s:%s" "$CC" "$CXX" > compiler.txt')
+        }
+        if fail:
+            with pytest.raises(sp.CalledProcessError):
+                sp.run([_BASH, '-eo', 'pipefail', '-c', compiler_wrapper + step['run']],
+                       cwd=tmp_path,
+                       env=env,
+                       check=True,
+                       capture_output=True,
+                       text=True)
+        else:
+            sp.run([_BASH, '-eo', 'pipefail', '-c', compiler_wrapper + step['run']],
+                   cwd=tmp_path,
+                   env=env,
+                   check=True,
+                   capture_output=True,
+                   text=True)
+            assert (tmp_path / 'compiler.txt').read_text(encoding='utf-8') == \
+                'intercepted-c:intercepted-cxx'
 
 
 def test_workflow_publication_permissions_and_triggers() -> None:

@@ -2,6 +2,9 @@ local utils = import 'utils.libsonnet';
 
 function(settings)
   local config = settings.github.workflows.scan_build;
+  local compiler_options = if std.startsWith(config.runs_on, 'macos') then
+    '--use-cc="$(xcrun --find clang)" --use-c++="$(xcrun --find clang++)"'
+  else '--use-cc=clang --use-c++=clang++';
   local action(repository) = 'actions/' + repository + '@' +
                              utils.githubLatestActionSha('actions', repository);
   local upload(name, path) = {
@@ -41,18 +44,22 @@ function(settings)
           },
           {
             name: 'Configure with compiler interception',
+            env: { SCAN_BUILD_CONFIGURE_COMMAND: config.configure_command },
             run: 'mkdir -p scan-build-report\n' +
-                 'scan-build --use-cc=clang --use-c++=clang++ -o "$RUNNER_TEMP/scan-configure" ' +
-                 config.configure_command + ' 2>&1 | tee scan-build-report/build.log',
+                 'scan-build ' + compiler_options + ' -o "$RUNNER_TEMP/scan-configure" ' +
+                 'bash -eo pipefail -c "$SCAN_BUILD_CONFIGURE_COMMAND" ' +
+                 '2>&1 | tee scan-build-report/build.log',
           },
           {
             id: 'analysis',
             name: 'Analyze a clean build',
+            env: { SCAN_BUILD_BUILD_COMMAND: config.build_command },
             run: |||
               mkdir -p scan-build-report
-              scan-build --use-cc=clang --use-c++=clang++ -plist-html --keep-empty -v \
-                -o scan-build-report/results %s 2>&1 | tee -a scan-build-report/build.log
-            ||| % config.build_command,
+              scan-build %s -plist-html --keep-empty -v \
+                -o scan-build-report/results bash -eo pipefail -c "$SCAN_BUILD_BUILD_COMMAND" \
+                2>&1 | tee -a scan-build-report/build.log
+            ||| % compiler_options,
           },
           {
             name: 'Prepare report and verify analysis coverage',
