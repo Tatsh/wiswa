@@ -3,7 +3,8 @@ local utils = import 'utils.libsonnet';
 function(settings)
   local config = settings.github.workflows.scan_build;
   local compiler_options = if std.startsWith(config.runs_on, 'macos') then
-    '--use-cc="$(xcrun --find clang)" --use-c++="$(xcrun --find clang++)"'
+    '--use-analyzer="$(xcrun --find clang)" --use-cc="$(xcrun --find clang)" '
+    + '--use-c++="$(xcrun --find clang++)"'
   else '--use-cc=clang --use-c++=clang++';
   local action(repository) = 'actions/' + repository + '@' +
                              utils.githubLatestActionSha('actions', repository);

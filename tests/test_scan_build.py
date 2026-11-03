@@ -54,7 +54,7 @@ def _workflow(*, documentation: bool = False, runs_on: str = 'ubuntu-latest') ->
 
 
 @pytest.mark.parametrize('runs_on', ['ubuntu-latest', 'macos-15'])
-def test_workflow_uses_platform_compiler(runs_on: str) -> None:
+def test_workflow_uses_platform_compiler_and_analyzer(runs_on: str) -> None:
     workflow = _workflow(runs_on=runs_on)
     commands = [
         step['run'] for step in workflow['jobs']['analyze']['steps']
@@ -63,6 +63,10 @@ def test_workflow_uses_platform_compiler(runs_on: str) -> None:
     compiler = '"$(xcrun --find clang)"' if runs_on.startswith('macos') else 'clang'
     assert len(commands) == 2
     assert all(f'--use-cc={compiler} ' in command for command in commands)
+    if runs_on.startswith('macos'):
+        assert all(f'--use-analyzer={compiler} ' in command for command in commands)
+    else:
+        assert all('--use-analyzer=' not in command for command in commands)
 
 
 @pytest.mark.parametrize('fail', [False, True])
