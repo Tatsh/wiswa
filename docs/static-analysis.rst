@@ -25,9 +25,10 @@ must produce at least one plist result without analyser failures. Findings do
 not fail CI; failed builds and incomplete analysis do. Empty analyses never
 produce a successful report.
 
-Pushes publish reports at ``<project Pages URL>/scan-build/<commit SHA>/``.
-``scan-build/`` lists archived commits. Pull requests upload artifacts without
-publishing or requesting write permissions. GitHub does not trigger an individual
+Pushes replace the report at ``<project Pages URL>/scan-build/``. The URL opens
+the Clang HTML report directly. Successful analyses without findings display
+``No bugs reported by the enabled Clang checkers.`` Pull requests upload artifacts
+without publishing or requesting write permissions. GitHub does not trigger an individual
 workflow for each intermediate commit when several commits are pushed together.
 
 Enable GitHub Actions as the repository's Pages publishing source. Existing
@@ -38,14 +39,15 @@ Documentation builds run on the default branch. Other branches retain the
 previously published documentation. Projects using Jekyll can use a pinned
 ``actions/jekyll-build-pages`` step with ``destination: 'build/html'``.
 
-Publication appends reports to the ``scan-build-pages`` archive branch, merges
-documentation, and deploys the assembled site through GitHub Pages. Archive
+Publication replaces the report in the ``scan-build-pages`` site branch, merges
+documentation, and deploys the assembled site through GitHub Pages. Site branch
 pushes do not trigger analysis. Publishing jobs request ``contents: write``,
 ``pages: write``, and ``id-token: write``; build jobs request ``contents: read``.
-Publication uses a shared concurrency queue to prevent conflicting archive
+Publication uses a shared concurrency queue to prevent conflicting site
 updates. GitHub permits up to 100 pending jobs in a concurrency group with
-``queue: max``. Reports accumulate within GitHub Pages storage limits.
+``queue: max``. Only the latest successful report is published. Previous reports
+remain in Git history. CI artifacts expire according to repository retention settings.
 
-``scope`` describes the analysed sources in the HTML report. Cross-compiled
+``scope`` describes the analysed sources in the build log. Cross-compiled
 projects can analyse host tools with a separate native build and record that
 scope. A report for host tools does not cover the cross-compiled target.

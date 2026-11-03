@@ -119,6 +119,7 @@ def test_workflow_publication_permissions_and_triggers() -> None:
     assert workflow['jobs']['documentation']['permissions'] == {'contents': 'read'}
     publish = workflow['jobs']['publish']
     assert "github.event_name != 'pull_request'" in publish['if']
+    assert "needs.analyze.result == 'success'" in publish['if']
     assert publish['concurrency'] == {'cancel-in-progress': False, 'group': 'pages', 'queue': 'max'}
     assert publish['needs'] == ['analyze', 'documentation']
     assert publish['permissions'] == {'contents': 'write', 'id-token': 'write', 'pages': 'write'}
@@ -146,20 +147,28 @@ def test_workflow_generator_opt_in(*, enabled: bool, filename: str) -> None:
     assert (f'.github/workflows/{filename}' in files) is enabled
 
 
-@pytest.mark.parametrize(('units', 'failures', 'outcome', 'complete'), [
-    (1, False, 'success', True),
-    (0, False, 'success', False),
-    (1, True, 'success', False),
-    (1, False, 'failure', False),
+@pytest.mark.parametrize(('units', 'failures', 'outcome', 'reports', 'complete'), [
+    (1, False, 'success', 0, True),
+    (1, False, 'success', 1, True),
+    (1, False, 'success', 2, False),
+    (0, False, 'success', 0, False),
+    (1, True, 'success', 1, False),
+    (1, False, 'failure', 1, False),
 ])
 def test_report_requires_completed_analysis(tmp_path: Path, *, units: int, failures: bool,
-                                            outcome: str, complete: bool) -> None:
+                                            outcome: str, reports: int, complete: bool) -> None:
     steps = _workflow()['jobs']['analyze']['steps']
     script = next(s['run'] for s in steps if s.get('name', '').startswith('Prepare report'))
     report = tmp_path / 'scan-build-report/results/run'
     report.mkdir(parents=True)
     for index in range(units):
         (report / f'report-{index}.plist').write_text('test fixture', encoding='utf-8')
+    for index in range(reports):
+        directory = report if index == 0 else report.parent / str(index)
+        directory.mkdir(exist_ok=True)
+        (directory / 'index.html').write_text('<a href="report.html">Clang report</a>',
+                                              encoding='utf-8')
+        (directory / 'report.html').write_text('Clang finding', encoding='utf-8')
     if failures:
         (report / 'failures').mkdir()
         (report / 'failures/crash.txt').write_text('analyzer failure', encoding='utf-8')
@@ -174,12 +183,21 @@ def test_report_requires_completed_analysis(tmp_path: Path, *, units: int, failu
                         'GITHUB_SHA': 'a' * 40
                     })
     assert (result.returncode == 0) is complete
-    page = (tmp_path / 'scan-build-report/index.html').read_text(encoding='utf-8')
-    assert ('Analysis completed' in page) is complete
-    assert ('No bugs reported' in page) is complete
+    report_index = tmp_path / 'scan-build-report/index.html'
+    assert report_index.exists() is complete
+    if complete:
+        page = report_index.read_text(encoding='utf-8')
+        assert 'Analysis completed' not in page
+        assert ('No bugs reported' in page) is (reports == 0)
+        assert (report_index.parent / 'report-0.plist').exists()
+        assert not (tmp_path / 'scan-build-report/results').exists()
+        if reports:
+            assert page == '<a href="report.html">Clang report</a>'
+            assert (report_index.parent /
+                    'report.html').read_text(encoding='utf-8') == 'Clang finding'
 
 
-def test_site_retains_previous_reports_and_documentation(tmp_path: Path) -> None:
+def test_site_replaces_previous_reports_and_preserves_documentation(tmp_path: Path) -> None:
     steps = _workflow()['jobs']['publish']['steps']
     script = next(s['run'] for s in steps if s.get('name', '').startswith('Assemble site'))
     docs = tmp_path / '_documentation'
@@ -190,7 +208,11 @@ def test_site_retains_previous_reports_and_documentation(tmp_path: Path) -> None
     (report / 'index.html').write_text('Clang report', encoding='utf-8')
     site = tmp_path / '_site'
     site.mkdir()
+    legacy = site / 'scan-build' / ('c' * 40)
+    legacy.mkdir(parents=True)
+    (legacy / 'index.html').write_text('Previous report', encoding='utf-8')
     for sha in ('a' * 40, 'b' * 40):
+        (report / 'index.html').write_text(sha, encoding='utf-8')
         sp.run([_BASH, '-e', '-o', 'pipefail', '-c', script],
                check=True,
                cwd=tmp_path,
@@ -198,9 +220,8 @@ def test_site_retains_previous_reports_and_documentation(tmp_path: Path) -> None
                text=True,
                env=os.environ | {'GITHUB_SHA': sha})
     assert (site / 'index.html').read_text(encoding='utf-8') == 'API documentation'
-    for sha in ('a' * 40, 'b' * 40):
-        assert (site / 'scan-build' / sha / 'index.html').exists()
-        assert sha in (site / 'scan-build/index.html').read_text(encoding='utf-8')
+    assert (site / 'scan-build/index.html').read_text(encoding='utf-8') == 'b' * 40
+    assert sorted(p.name for p in (site / 'scan-build').iterdir()) == ['index.html']
 
 
 def test_archive_round_trip_without_persisted_credentials(tmp_path: Path) -> None:
@@ -212,17 +233,15 @@ def test_archive_round_trip_without_persisted_credentials(tmp_path: Path) -> Non
         encoding='utf-8')
     steps = _workflow()['jobs']['publish']['steps']
     scripts = [
-        s['run'] for s in steps if s.get('name', '') in {
-            'Restore report archive', 'Assemble site and retain commit reports',
-            'Save report archive'
-        }
+        s['run'] for s in steps
+        if s.get('name', '') in {'Restore site', 'Assemble site with latest report', 'Save site'}
     ]
     for index, sha in enumerate(('a' * 40, 'b' * 40, 'b' * 40)):
         run = tmp_path / str(index)
         run.mkdir()
         report = run / '_report'
         report.mkdir()
-        (report / 'index.html').write_text('Clang report', encoding='utf-8')
+        (report / 'index.html').write_text(sha, encoding='utf-8')
         if index == 0:
             docs = run / '_documentation'
             docs.mkdir()
@@ -243,15 +262,20 @@ def test_archive_round_trip_without_persisted_credentials(tmp_path: Path) -> Non
                    env=env)
         assert (run / '_site/index.html').read_text(encoding='utf-8') == 'API documentation'
         assert 'extraheader' not in (run / '_site/.git/config').read_text(encoding='utf-8')
-    for sha in ('a' * 40, 'b' * 40):
-        result = sp.run([
-            _GIT, '--git-dir',
-            str(remote), 'show', f'scan-build-pages:scan-build/{sha}/index.html'
-        ],
-                        check=True,
-                        capture_output=True,
-                        text=True)
-        assert result.stdout == 'Clang report'
+    result = sp.run(
+        [_GIT, '--git-dir',
+         str(remote), 'ls-tree', '--name-only', 'scan-build-pages:scan-build'],
+        check=True,
+        capture_output=True,
+        text=True)
+    assert result.stdout.strip() == 'index.html'
+    result = sp.run(
+        [_GIT, '--git-dir',
+         str(remote), 'show', 'scan-build-pages:scan-build/index.html'],
+        check=True,
+        capture_output=True,
+        text=True)
+    assert result.stdout == 'b' * 40
     result = sp.run([_GIT, '--git-dir',
                      str(remote), 'rev-list', '--count', 'scan-build-pages'],
                     check=True,

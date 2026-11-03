@@ -71,8 +71,8 @@ function(settings)
             },
             run: |||
               python3 - <<'PY'
-              import html
               import os
+              import shutil
               from pathlib import Path
 
               root = Path('scan-build-report')
@@ -81,20 +81,22 @@ function(settings)
               units = list(root.glob('results/*/*.plist'))
               failures = list(root.glob('results/*/failures/*'))
               complete = os.environ['ANALYSIS_OUTCOME'] == 'success' and bool(units) and not failures
-              status = 'Analysis completed' if complete else 'Analysis incomplete or build failed'
-              links = ''.join('<li><a href="' + html.escape(str(p.relative_to(root))) +
-                              '">Clang HTML report</a></li>' for p in reports)
-              if not reports and complete:
-                  links = '<li>No bugs reported by the enabled Clang checkers.</li>'
-              page = ('<!doctype html><html lang="en"><meta charset="utf-8">'
-                      '<title>Clang static analysis</title><h1>' + status + '</h1><p>Commit ' +
-                      html.escape(os.environ['GITHUB_SHA']) + '</p><p>' +
-                      html.escape(os.environ['ANALYSIS_SCOPE']) + '</p><p>' + str(len(units)) +
-                      ' translation units. ' + str(len(failures)) + ' analyzer failure files.</p>' +
-                      '<ul>' + links + '</ul><p><a href="build.log">Build log</a></p></html>')
-              (root / 'index.html').write_text(page, encoding='utf-8')
+              print(os.environ['ANALYSIS_SCOPE'])
+              print(f'{len(units)} translation units. {len(failures)} analyzer failure files.')
               if not complete:
                   raise SystemExit('Incomplete analysis; inspect the build log and analyzer failures.')
+              if len(reports) > 1:
+                  raise SystemExit('Expected a single Clang HTML report.')
+              if reports:
+                  shutil.copytree(reports[0].parent, root, dirs_exist_ok=True)
+              else:
+                  for unit in units:
+                      shutil.copy2(unit, root)
+                  (root / 'index.html').write_text(
+                      '<!doctype html><html lang="en"><meta charset="utf-8">'
+                      '<title>Clang static analysis</title>'
+                      '<h1>No bugs reported by the enabled Clang checkers.</h1>', encoding='utf-8')
+              shutil.rmtree(root / 'results')
               PY
             |||,
           },
@@ -115,7 +117,7 @@ function(settings)
       publish: {
         name: 'Publish reports and documentation',
         needs: ['analyze'] + (if has_docs then ['documentation'] else []),
-        'if': "${{ !cancelled() && github.event_name != 'pull_request' }}",
+        'if': "${{ !cancelled() && needs.analyze.result == 'success' && github.event_name != 'pull_request' }}",
         'runs-on': 'ubuntu-latest',
         concurrency: utils.publishConcurrency('pages'),
         environment: {
@@ -130,7 +132,7 @@ function(settings)
                'if': "${{ needs.documentation.result == 'success' }}",
              }] else []) + [
           {
-            name: 'Restore report archive',
+            name: 'Restore site',
             env: { GH_TOKEN: '${{ github.token }}' },
             run: |||
               git init _site
@@ -150,24 +152,18 @@ function(settings)
             |||,
           },
           {
-            name: 'Assemble site and retain commit reports',
+            name: 'Assemble site with latest report',
             run: |||
               if [ -d _documentation ]; then
                 cp -a _documentation/. _site/
               fi
-              mkdir -p "_site/scan-build/$GITHUB_SHA"
-              cp -a _report/. "_site/scan-build/$GITHUB_SHA/"
+              rm -rf _site/scan-build
+              mkdir -p _site/scan-build
+              cp -a _report/. _site/scan-build/
               python3 - <<'PY'
               from pathlib import Path
 
               root = Path('_site')
-              reports = root / 'scan-build'
-              commits = sorted(p.name for p in reports.iterdir() if p.is_dir())
-              links = ''.join('<li><a href="' + sha + '/">' + sha + '</a></li>' for sha in commits)
-              (reports / 'index.html').write_text(
-                  '<!doctype html><html lang="en"><meta charset="utf-8">'
-                  '<title>Clang static analysis</title><h1>Commit reports</h1><ul>' + links + '</ul>',
-                  encoding='utf-8')
               if not (root / 'index.html').exists():
                   (root / 'index.html').write_text(
                       '<!doctype html><html lang="en"><meta charset="utf-8">'
@@ -178,7 +174,7 @@ function(settings)
             |||,
           },
           {
-            name: 'Save report archive',
+            name: 'Save site',
             env: { GH_TOKEN: '${{ github.token }}' },
             run: |||
               export GIT_CONFIG_COUNT=1
@@ -204,7 +200,7 @@ function(settings)
           {
             name: 'Report URL',
             env: { PAGE_URL: '${{ steps.deployment.outputs.page_url }}' },
-            run: 'echo "[Clang report](${PAGE_URL}scan-build/$GITHUB_SHA/)" >> "$GITHUB_STEP_SUMMARY"',
+            run: 'echo "[Clang report](${PAGE_URL}scan-build/)" >> "$GITHUB_STEP_SUMMARY"',
           },
         ],
       },

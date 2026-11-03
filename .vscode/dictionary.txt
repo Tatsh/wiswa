@@ -44,6 +44,7 @@ commondir
 conftest
 contenttypes
 contrib
+copytree
 coveragerc
 coverallsapp
 cpack
@@ -132,7 +133,6 @@ intersphinx
 isodate
 isort
 itemgetter
-iterdir
 itertools
 ivangabriele
 iwyu
@@ -246,6 +246,7 @@ renderable
 renderables
 resp
 ripgreprc
+rmtree
 rockspec
 rstcheck
 rsvg
@@ -264,6 +265,7 @@ setuptools
 shellcheck
 shellformat
 shopt
+shutil
 signtool
 sigstore
 snapcore
