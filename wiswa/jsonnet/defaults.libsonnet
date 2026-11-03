@@ -952,6 +952,8 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
       workflow_file: 'codeql.yml',
       /** @brief Build mode for CodeQL extraction. */
       build_mode: 'none',
+      /** @brief Environment variables for CodeQL analysis jobs. */
+      env: {},
     },
     /** @brief Dependabot configuration. */
     dependabot: (import 'defaults/dependabot.libsonnet').updates(settings),

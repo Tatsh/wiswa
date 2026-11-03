@@ -11,6 +11,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `github.codeql.env` configures environment variables for generated CodeQL analysis jobs.
 - CodeQL Actions analysis for stub-only GitHub projects. Configured CodeQL languages determine
   combined path filters. `github.codeql.workflow_file` (default `codeql.yml`) supports a generated
   workflow alongside custom workflows, and `github.codeql.build_mode` defaults to `none`. Private

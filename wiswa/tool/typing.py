@@ -144,6 +144,8 @@ class PythonDeps(TypedDict, total=False):
 class SettingsGitHubCodeQL(TypedDict, total=False):
     """CodeQL workflow settings."""
 
+    env: Mapping[str, str]
+    """Environment variables for analysis jobs."""
     workflow_file: str
     """Workflow filename within ``.github/workflows``."""
 

@@ -217,6 +217,7 @@ platformdirs
 plistlib
 popen
 preapproved
+preinclude
 proc
 prodvers
 pycache

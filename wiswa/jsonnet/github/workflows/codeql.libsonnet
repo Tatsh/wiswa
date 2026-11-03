@@ -21,7 +21,9 @@ function(settings)
   {
     concurrency: utils.ciConcurrency,
     jobs: {
-      analyze: {
+      analyze: (if std.length(settings.github.codeql.env) > 0 then {
+                  env: settings.github.codeql.env,
+                } else {}) + {
         name: 'Analyze',
         permissions: {
           actions: 'read',

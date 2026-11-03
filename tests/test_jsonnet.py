@@ -107,6 +107,28 @@ def test_codeql_filters_follow_configured_languages(languages: list[str], build_
     assert result['on']['pull_request']['paths'] == paths
     assert result['jobs']['analyze']['strategy']['matrix']['language'] == languages
     assert result['jobs']['analyze']['steps'][1]['with']['build-mode'] == build_mode
+    assert 'env' not in result['jobs']['analyze']
+
+
+def test_codeql_job_environment_preserves_extractor_options() -> None:
+    environment = {
+        'CODEQL_EXTRACTOR_CPP_OPTION_FRONTEND_OPTIONS':
+            '--preinclude\n${{ github.workspace }}/.github/codeql/patches-preinclude.h'
+    }
+    result = json.loads(
+        _jsonnet.evaluate_snippet('snippet',
+                                  f"""
+            local settings = (import 'defaults.libsonnet') + {{
+              github+: {{ codeql+: {{ env: {json.dumps(environment)} }} }},
+            }};
+            (import 'github/workflows/codeql.libsonnet')(settings)
+            """,
+                                  jpathdir=[str(_WISWA_JSONNET)],
+                                  native_callbacks={
+                                      'githubLatestActionSha': (
+                                          ('o', 'r'), lambda _owner, _repo: 'a' * 40)
+                                  }))
+    assert result['jobs']['analyze']['env'] == environment
 
 
 @pytest.mark.parametrize('workflow_file', ['codeql.yml', 'codeql-actions.yml'])
