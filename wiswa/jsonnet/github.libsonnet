@@ -34,7 +34,7 @@ local utils = import 'utils.libsonnet';
     } else {}
   ) + (
     if settings.want_codeql then {
-      '.github/workflows/codeql.yml': utils.manifestYaml(codeql(settings)),
+      ['.github/workflows/' + settings.github.codeql.workflow_file]: utils.manifestYaml(codeql(settings)),
     } else {}
   ) + (
     if settings.want_tests then {

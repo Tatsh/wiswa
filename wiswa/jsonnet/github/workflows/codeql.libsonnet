@@ -39,6 +39,7 @@ function(settings)
             name: 'Initialize CodeQL',
             uses: 'github/codeql-action/init@' + utils.githubLatestActionSha('github', 'codeql-action'),
             with: {
+              'build-mode': settings.github.codeql.build_mode,
               languages: '${{ matrix.language }}',
             },
           },
@@ -58,22 +59,23 @@ function(settings)
         },
       },
     },
-    name: 'CodeQL',
-    local lang_filters = if settings.project_type == 'python' then {
+    name: if settings.github.codeql.languages == ['actions'] then 'CodeQL Actions' else 'CodeQL',
+    local languages = settings.github.codeql.languages,
+    local lang_filters = if std.member(languages, 'python') then {
       paths: ['**/*.py', '**/*.pyi'],
-    } else if settings.project_type == 'c' then {
-      paths: ['**/*.c', '**/*.h'],
-    } else if settings.project_type == 'c++' then {
+    } else {},
+    local cpp_filters = if std.member(languages, 'c-cpp') then {
       paths: cpp_exts,
-    } else if settings.project_type == 'typescript' then {
+    } else {},
+    local js_filters = if std.member(languages, 'javascript-typescript') then {
       paths: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
-    } else if settings.project_type == 'xcode' then {
-      paths: ['**/*.swift'] + cpp_exts,
     } else {},
     local with_actions = if std.member(settings.github.codeql.languages, 'actions')
     then { paths+: actions_exts }
     else {},
-    local path_filters = lang_filters + with_actions,
+    local paths = std.get(lang_filters, 'paths', []) + std.get(cpp_filters, 'paths', []) +
+                  std.get(js_filters, 'paths', []) + std.get(with_actions, 'paths', []),
+    local path_filters = if std.length(paths) > 0 then { paths: paths } else {},
     on: {
       pull_request: {
         branches: [

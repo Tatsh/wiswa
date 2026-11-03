@@ -635,7 +635,7 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    * @brief If the project should have a CodeQL configuration.
    * @var boolean
    */
-  want_codeql: !self.stubs_only && self.using_github,
+  want_codeql: self.using_github && !self.private,
   /**
    * @brief If the project should run the zizmor GitHub Actions security linter via pre-commit.
    * @var boolean
@@ -941,12 +941,17 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     /** @brief CodeQL configuration. */
     codeql: {
       /** @brief Array of languages for CodeQL analysis. */
-      languages: (if settings.project_type == 'python' then ['python', 'actions']
+      languages: (if settings.stubs_only then ['actions']
+                  else if settings.project_type == 'python' then ['python', 'actions']
                   else if settings.project_type == 'typescript' then ['javascript-typescript', 'actions']
                   else if settings.project_type == 'c' || settings.project_type == 'c++' then ['c-cpp', 'actions']
                   else ['actions']),
       /** @brief Operating system for CodeQL runs on GitHub runners. */
       runs_on: if settings.project_type != 'xcode' then settings.tests_run_on else 'macos-15',
+      /** @brief Filename for managed CodeQL workflow. */
+      workflow_file: 'codeql.yml',
+      /** @brief Build mode for CodeQL extraction. */
+      build_mode: 'none',
     },
     /** @brief Dependabot configuration. */
     dependabot: (import 'defaults/dependabot.libsonnet').updates(settings),

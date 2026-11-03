@@ -11,9 +11,9 @@ if TYPE_CHECKING:
 __all__ = ('CustomProjectBadge', 'ExportRequirements', 'PackageJSON', 'PackageJSONPublishConfig',
            'PyProject', 'PyProjectBuildSystem', 'PyProjectProject', 'PyProjectTool',
            'PyProjectToolCommitizen', 'PyProjectToolPoetry', 'PyProjectToolPoetryPackage',
-           'PythonDeps', 'Settings', 'SettingsGitHub', 'SettingsPublishing', 'SettingsSocial',
-           'SettingsSocialMastodon', 'SettingsSocialTextAndURI', 'VSCode', 'VSCodeLaunch',
-           'VSCodeLaunchConfiguration')
+           'PythonDeps', 'Settings', 'SettingsGitHub', 'SettingsGitHubCodeQL', 'SettingsPublishing',
+           'SettingsSocial', 'SettingsSocialMastodon', 'SettingsSocialTextAndURI', 'VSCode',
+           'VSCodeLaunch', 'VSCodeLaunchConfiguration')
 
 
 class VSCodeLaunchConfiguration(TypedDict):
@@ -141,9 +141,18 @@ class PythonDeps(TypedDict, total=False):
     """Test dependencies."""
 
 
+class SettingsGitHubCodeQL(TypedDict, total=False):
+    """CodeQL workflow settings."""
+
+    workflow_file: str
+    """Workflow filename within ``.github/workflows``."""
+
+
 class SettingsGitHub(TypedDict):
     """GitHub settings."""
 
+    codeql: NotRequired[SettingsGitHubCodeQL]
+    """CodeQL workflow settings."""
     immutable_oidc_subject: bool
     """If the immutable OIDC subject claim format should be enabled."""
     immutable_releases: bool

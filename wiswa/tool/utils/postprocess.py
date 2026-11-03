@@ -545,7 +545,8 @@ async def _post_process_steps_python(settings: Settings,
         cleanup_tasks.extend((run_sync(partial(shutil.rmtree, 'docs', ignore_errors=True)),
                               anyio.Path('.readthedocs.yaml').unlink(missing_ok=True)))
     if not settings['want_codeql']:
-        cleanup_tasks.append(anyio.Path('.github/workflows/codeql.yml').unlink(missing_ok=True))
+        workflow = settings['github'].get('codeql', {}).get('workflow_file', 'codeql.yml')
+        cleanup_tasks.append(anyio.Path('.github/workflows', workflow).unlink(missing_ok=True))
     if not settings.get('want_appimage', False):
         cleanup_tasks.append(anyio.Path('.github/workflows/appimage.yml').unlink(missing_ok=True))
     if not settings.get('want_pyinstaller', False):
@@ -635,8 +636,9 @@ def _github_badges(settings: Settings, *, has_qa_workflow: bool = True) -> Itera
            f"/v{settings['version']}/{branch})]"
            f"({repo_uri}/compare/v{settings['version']}...{branch})")
     if settings['want_codeql']:
-        yield (f'[![CodeQL]({repo_uri}/actions/workflows/codeql.yml/badge.svg)]'
-               f'({repo_uri}/actions/workflows/codeql.yml)')
+        workflow = settings['github'].get('codeql', {}).get('workflow_file', 'codeql.yml')
+        yield (f'[![CodeQL]({repo_uri}/actions/workflows/{workflow}/badge.svg)]'
+               f'({repo_uri}/actions/workflows/{workflow})')
     if has_qa_workflow:
         yield (f'[![QA]({repo_uri}/actions/workflows/qa.yml/badge.svg)]'
                f'({repo_uri}/actions/workflows/qa.yml)')

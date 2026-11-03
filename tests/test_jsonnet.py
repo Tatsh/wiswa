@@ -29,6 +29,106 @@ if TYPE_CHECKING:
 _WISWA_JSONNET = Path(__file__).resolve().parent.parent / 'wiswa' / 'jsonnet'
 
 
+@pytest.mark.parametrize(('project_type', 'stubs_only', 'languages'), [
+    ('other', False, ['actions']),
+    ('lua', False, ['actions']),
+    ('python', True, ['actions']),
+    ('python', False, ['python', 'actions']),
+    ('c', False, ['c-cpp', 'actions']),
+    ('c++', False, ['c-cpp', 'actions']),
+    ('typescript', False, ['javascript-typescript', 'actions']),
+])
+def test_default_codeql_languages(project_type: str, *, stubs_only: bool,
+                                  languages: list[str]) -> None:
+    result = json.loads(
+        _jsonnet.evaluate_snippet('snippet',
+                                  f"""
+            local settings = (import 'defaults.libsonnet') + {{
+              project_type: {json.dumps(project_type)},
+              stubs_only: {json.dumps(stubs_only)},
+              using_github: true,
+              private: false,
+            }};
+            {{ enabled: settings.want_codeql, languages: settings.github.codeql.languages }}
+            """,
+                                  jpathdir=[str(_WISWA_JSONNET)]))
+    assert result == {'enabled': True, 'languages': languages}
+
+
+@pytest.mark.parametrize(('using_github', 'private', 'enabled'), [
+    (True, False, True),
+    (True, True, False),
+    (False, False, False),
+])
+def test_default_codeql_repository_access(*, using_github: bool, private: bool,
+                                          enabled: bool) -> None:
+    result = json.loads(
+        _jsonnet.evaluate_snippet('snippet',
+                                  f"""
+            ((import 'defaults.libsonnet') + {{
+              using_github: {json.dumps(using_github)},
+              private: {json.dumps(private)},
+            }}).want_codeql
+            """,
+                                  jpathdir=[str(_WISWA_JSONNET)]))
+    assert result is enabled
+
+
+@pytest.mark.parametrize(('languages', 'build_mode'), [
+    (['actions'], 'none'),
+    (['python', 'c-cpp', 'actions'], 'none'),
+    (['javascript-typescript'], 'none'),
+    (['c-cpp'], 'manual'),
+])
+def test_codeql_filters_follow_configured_languages(languages: list[str], build_mode: str) -> None:
+    result = json.loads(
+        _jsonnet.evaluate_snippet('snippet',
+                                  f"""
+            local settings = (import 'defaults.libsonnet') + {{
+              project_type: 'other',
+              default_branch: 'master',
+              tests_run_on: 'ubuntu-latest',
+              github+: {{ codeql+: {{ languages: {json.dumps(languages)},
+                                     build_mode: {json.dumps(build_mode)} }} }},
+            }};
+            (import 'github/workflows/codeql.libsonnet')(settings)
+            """,
+                                  jpathdir=[str(_WISWA_JSONNET)],
+                                  native_callbacks={
+                                      'githubLatestActionSha': (
+                                          ('o', 'r'), lambda _owner, _repo: 'a' * 40)
+                                  }))
+    paths = result['on']['push']['paths']
+    assert result['name'] == ('CodeQL Actions' if languages == ['actions'] else 'CodeQL')
+    assert ('.github/workflows/*.yml' in paths) == ('actions' in languages)
+    assert ('**/*.py' in paths) == ('python' in languages)
+    assert ('**/*.cpp' in paths) == ('c-cpp' in languages)
+    assert ('**/*.js' in paths) == ('javascript-typescript' in languages)
+    assert result['on']['pull_request']['paths'] == paths
+    assert result['jobs']['analyze']['strategy']['matrix']['language'] == languages
+    assert result['jobs']['analyze']['steps'][1]['with']['build-mode'] == build_mode
+
+
+@pytest.mark.parametrize('workflow_file', ['codeql.yml', 'codeql-actions.yml'])
+def test_codeql_workflow_filename(workflow_file: str) -> None:
+    result = json.loads(
+        _jsonnet.evaluate_snippet('snippet',
+                                  f"""
+            local settings = (import 'defaults.libsonnet') + {{
+              project_type: 'other',
+              using_github: true,
+              want_clang_format: false,
+              want_tests: false,
+              want_gitlab_mirror: false,
+              private: false,
+              github+: {{ codeql+: {{ workflow_file: {json.dumps(workflow_file)} }} }},
+            }};
+            std.objectFields((import 'github.libsonnet').workflows(settings))
+            """,
+                                  jpathdir=[str(_WISWA_JSONNET)]))
+    assert [path for path in result if '/codeql' in path] == [f'.github/workflows/{workflow_file}']
+
+
 @pytest.mark.skipif(which('git') is None, reason='git not installed')
 def test_default_gitattributes_actions_lock_uses_text_attributes(tmp_path: Path) -> None:
     attributes = json.loads(

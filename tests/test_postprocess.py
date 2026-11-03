@@ -403,16 +403,23 @@ async def test_post_process_steps_python_no_docs(tmp_path: Path, monkeypatch: py
     assert not (tmp_path / '.readthedocs.yaml').exists()
 
 
-async def test_post_process_steps_python_no_codeql(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize('workflow_file', ['codeql.yml', 'codeql-actions.yml'])
+async def test_post_process_steps_python_no_codeql(workflow_file: str, tmp_path: Path,
+                                                   monkeypatch: pytest.MonkeyPatch,
                                                    mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
     _setup_python_project(tmp_path)
     (tmp_path / '.github/workflows').mkdir(parents=True)
-    (tmp_path / '.github/workflows/codeql.yml').write_text('test')
+    workflow = tmp_path / '.github/workflows' / workflow_file
+    workflow.write_text('test')
+    custom = tmp_path / '.github/workflows/custom-codeql.yml'
+    custom.write_text('custom')
     _mock_subprocess(mocker)
     settings = cast('Any', _make_settings(want_codeql=False))
+    settings['github']['codeql'] = {'workflow_file': workflow_file}
     await post_process_steps(settings)
-    assert not (tmp_path / '.github/workflows/codeql.yml').exists()
+    assert not workflow.exists()
+    assert custom.read_text() == 'custom'
 
 
 async def test_post_process_steps_python_no_appimage(tmp_path: Path,
@@ -1033,7 +1040,9 @@ async def test_post_process_steps_badges_use_github_project_name_not_project_nam
     assert 'testuser/my-pypi-name' not in content
 
 
-async def test_post_process_steps_badges_github_with_tests_codeql(tmp_path: Path,
+@pytest.mark.parametrize('workflow_file', ['codeql.yml', 'codeql-actions.yml'])
+async def test_post_process_steps_badges_github_with_tests_codeql(workflow_file: str,
+                                                                  tmp_path: Path,
                                                                   monkeypatch: pytest.MonkeyPatch,
                                                                   mocker: MockerFixture) -> None:
     monkeypatch.chdir(tmp_path)
@@ -1044,10 +1053,12 @@ async def test_post_process_steps_badges_github_with_tests_codeql(tmp_path: Path
     settings = cast(
         'Any',
         _make_settings(_readme_existed=True, want_tests=True, want_codeql=True, want_docs=True))
+    settings['github']['codeql'] = {'workflow_file': workflow_file}
     await post_process_steps(settings)
     content = readme.read_text(encoding='utf-8')
     assert 'Tests' in content
     assert 'CodeQL' in content
+    assert f'/actions/workflows/{workflow_file}/badge.svg' in content
     assert 'Coverage' in content
     assert 'Documentation' in content
 

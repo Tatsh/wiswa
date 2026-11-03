@@ -62,6 +62,13 @@ gh extension install github/gh-actions-lock
 Regeneration runs `gh actions-lock --no-narrow` after generating GitHub workflows, preserving
 existing SHA pins.
 
+CodeQL includes Actions analysis for every public GitHub project type, including stub-only packages.
+Private projects do not enable CodeQL by default.
+Projects without a supported source language receive Actions analysis only. Set
+`github.codeql.languages` to select languages and `github.codeql.build_mode` to select extraction
+mode (default `none`). Set `github.codeql.workflow_file` to `codeql-actions.yml` and languages to
+`['actions']` to generate an Actions workflow alongside a custom `codeql.yml`.
+
 ## Usage
 
 ![demo](demo.gif)

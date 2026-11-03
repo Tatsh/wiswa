@@ -11,6 +11,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- CodeQL Actions analysis for stub-only GitHub projects. Configured CodeQL languages determine
+  combined path filters. `github.codeql.workflow_file` (default `codeql.yml`) supports a generated
+  workflow alongside custom workflows, and `github.codeql.build_mode` defaults to `none`. Private
+  projects do not enable CodeQL by default.
 - GitHub projects run `gh actions-lock --no-narrow` during regeneration to generate dependency lock
   files and preserve SHA pins. An authenticated GitHub CLI and the `github/gh-actions-lock`
   extension are required. Generated `.gitattributes` treats `.github/workflows/actions.lock` as text
