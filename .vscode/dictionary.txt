@@ -1,6 +1,7 @@
 adoc
 aiofiles
 aiohttp
+analyzer
 anchore
 anyio
 appauthor
@@ -59,6 +60,7 @@ datatable
 datatables
 davidanson
 dbuild
+dcmake
 debugpy
 devmode
 devrelease
@@ -89,6 +91,7 @@ esbenp
 esbonio
 excinfo
 exponentcase
+extraheader
 fastmcp
 fdroid
 fileprivate
@@ -129,6 +132,7 @@ intersphinx
 isodate
 isort
 itemgetter
+iterdir
 itertools
 ivangabriele
 iwyu
@@ -186,6 +190,7 @@ netrc
 nextdotjs
 nhoizey
 niquests
+nojekyll
 nonexistent
 noone
 noqa

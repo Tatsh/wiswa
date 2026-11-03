@@ -41,6 +41,7 @@ inside the project virtual environment with your usual workflow.
    remote-api-tokens
    binary-signing
    supply-chain-security
+   static-analysis
 
 .. only:: html
 

@@ -11,6 +11,7 @@ local qa_other = import 'github/workflows/qa-other.libsonnet';
 local qa_python = import 'github/workflows/qa-python.libsonnet';
 local qa_typescript = import 'github/workflows/qa-typescript.libsonnet';
 local release = import 'github/workflows/release.libsonnet';
+local scan_build = import 'github/workflows/scan-build.libsonnet';
 local snap_python = import 'github/workflows/snap-python.libsonnet';
 local sync_to_gitlab = import 'github/workflows/sync-to-gitlab.libsonnet';
 local tests_typescript = import 'github/workflows/tests-typescript.libsonnet';
@@ -35,6 +36,11 @@ local utils = import 'utils.libsonnet';
   ) + (
     if settings.want_codeql then {
       ['.github/workflows/' + settings.github.codeql.workflow_file]: utils.manifestYaml(codeql(settings)),
+    } else {}
+  ) + (
+    if settings.want_scan_build then {
+      ['.github/workflows/' + settings.github.workflows.scan_build.workflow_file]:
+        utils.manifestYaml(scan_build(settings)),
     } else {}
   ) + (
     if settings.want_tests then {
