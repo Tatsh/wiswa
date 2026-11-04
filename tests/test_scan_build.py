@@ -8,16 +8,19 @@ from typing import Any, cast
 import json
 import os
 import subprocess as sp
+import tarfile
 
 import _jsonnet  # ruff:ignore[import-private-name]
 import pytest
 
 _LIBRARY = Path(__file__).resolve().parent.parent / 'wiswa/jsonnet'
 _BASH = which('bash') or '/bin/bash'
-_GIT = which('git') or '/usr/bin/git'
 
 
-def _workflow(*, documentation: bool = False, runs_on: str = 'ubuntu-latest') -> dict[str, Any]:
+def _workflow(*,
+              documentation: bool = False,
+              runs_on: str = 'ubuntu-latest',
+              pages: bool = False) -> dict[str, Any]:
     """
     Render the analysis workflow.
 
@@ -27,12 +30,15 @@ def _workflow(*, documentation: bool = False, runs_on: str = 'ubuntu-latest') ->
         Include a documentation build.
     runs_on : str
         Runner image for analysis.
+    pages : bool
+        Render the Pages consumer workflow.
 
     Returns
     -------
     dict[str, Any]
     """
     documentation_steps = '[{run: "cmake --build build --target docs"}]' if documentation else '[]'
+    template = 'scan-build-pages' if pages else 'scan-build'
     return cast(
         'dict[str, Any]',
         json.loads(
@@ -47,7 +53,7 @@ def _workflow(*, documentation: bool = False, runs_on: str = 'ubuntu-latest') ->
             documentation_steps: {documentation_steps},
           }} }} }},
         }};
-        (import 'github/workflows/scan-build.libsonnet')(settings)
+        (import 'github/workflows/{template}.libsonnet')(settings)
         """,
                 jpathdir=[str(_LIBRARY)],
                 native_callbacks={'githubLatestActionSha': (('o', 'r'), lambda _o, _r: 'a' * 40)})))
@@ -107,7 +113,7 @@ def test_compiler_variables_and_errors_inside_scan_build(tmp_path: Path, *, fail
 
 def test_workflow_publication_permissions_and_triggers() -> None:
     workflow = _workflow(documentation=True)
-    assert workflow['on']['push'] == {'branches-ignore': ['scan-build-pages']}
+    assert workflow['on']['push'] == {}
     assert workflow['on']['pull_request'] == {}
     assert workflow['permissions'] == {}
     assert workflow['jobs']['analyze']['permissions'] == {'contents': 'read'}
@@ -116,17 +122,32 @@ def test_workflow_publication_permissions_and_triggers() -> None:
         'persist-credentials': False,
         'submodules': 'recursive'
     }
-    assert workflow['jobs']['documentation']['permissions'] == {'contents': 'read'}
-    publish = workflow['jobs']['publish']
-    assert "github.event_name != 'pull_request'" in publish['if']
-    assert "needs.analyze.result == 'success'" in publish['if']
+    assert set(workflow['jobs']) == {'analyze', 'pages'}
+    caller = workflow['jobs']['pages']
+    assert caller['uses'] == '$/.github/workflows/pages.yml'
+    assert caller['needs'] == ['analyze']
+    assert caller['if'] == "${{ github.event_name != 'pull_request' }}"
+    assert caller['permissions'] == {'contents': 'read', 'id-token': 'write', 'pages': 'write'}
+    pages = _workflow(documentation=True, pages=True)
+    assert pages['on'] == {'workflow_call': {}}
+    docs = pages['jobs']['documentation']
+    assert docs['permissions'] == {'contents': 'read'}
+    assert docs['steps'][0]['with']['persist-credentials'] is False
+    publish = pages['jobs']['publish']
     assert publish['concurrency'] == {'cancel-in-progress': False, 'group': 'pages', 'queue': 'max'}
-    assert publish['needs'] == ['analyze', 'documentation']
-    assert publish['permissions'] == {'contents': 'write', 'id-token': 'write', 'pages': 'write'}
+    assert publish['needs'] == ['documentation']
+    assert publish['permissions'] == {'id-token': 'write', 'pages': 'write'}
+    assert publish['steps'][0]['with'] == {
+        'name': 'scan-build-${{ github.sha }}',
+        'path': '_report',
+    }
+    assert all('checkout@' not in step.get('uses', '') for step in publish['steps'])
+    assert 'git push' not in json.dumps(pages)
 
 
 @pytest.mark.parametrize(('enabled', 'filename'), [(False, 'scan-build.yml'),
-                                                   (True, 'scan-build.yml'), (True, 'pages.yml')])
+                                                   (True, 'scan-build.yml'),
+                                                   (True, 'analysis.yml')])
 def test_workflow_generator_opt_in(*, enabled: bool, filename: str) -> None:
     files = json.loads(
         _jsonnet.evaluate_snippet('scan-build-selection',
@@ -145,6 +166,7 @@ def test_workflow_generator_opt_in(*, enabled: bool, filename: str) -> None:
         """,
                                   jpathdir=[str(_LIBRARY)]))
     assert (f'.github/workflows/{filename}' in files) is enabled
+    assert ('.github/workflows/pages.yml' in files) is enabled
 
 
 @pytest.mark.parametrize(('units', 'failures', 'outcome', 'reports', 'complete'), [
@@ -197,88 +219,39 @@ def test_report_requires_completed_analysis(tmp_path: Path, *, units: int, failu
                     'report.html').read_text(encoding='utf-8') == 'Clang finding'
 
 
-def test_site_replaces_previous_reports_and_preserves_documentation(tmp_path: Path) -> None:
-    steps = _workflow()['jobs']['publish']['steps']
+@pytest.mark.parametrize('documentation', [False, True])
+def test_site_artifact_has_latest_report_and_documentation(tmp_path: Path, *,
+                                                           documentation: bool) -> None:
+    workflow = _workflow(documentation=documentation, pages=True)
+    assert ('documentation' in workflow['jobs']) is documentation
+    steps = workflow['jobs']['publish']['steps']
     script = next(s['run'] for s in steps if s.get('name', '').startswith('Assemble site'))
-    docs = tmp_path / '_documentation'
-    docs.mkdir()
-    (docs / 'index.html').write_text('API documentation', encoding='utf-8')
+    if documentation:
+        docs = tmp_path / '_documentation'
+        docs.mkdir()
+        (docs / 'index.html').write_text('API documentation', encoding='utf-8')
+        (docs / 'style.css').write_text('body {}', encoding='utf-8')
     report = tmp_path / '_report'
     report.mkdir()
     (report / 'index.html').write_text('Clang report', encoding='utf-8')
+    (report / 'report.html').write_text('Clang finding', encoding='utf-8')
+    sp.run([_BASH, '-e', '-o', 'pipefail', '-c', script],
+           check=True,
+           cwd=tmp_path,
+           capture_output=True,
+           text=True,
+           env=os.environ | {'RUNNER_TEMP': str(tmp_path)})
     site = tmp_path / '_site'
-    site.mkdir()
-    legacy = site / 'scan-build' / ('c' * 40)
-    legacy.mkdir(parents=True)
-    (legacy / 'index.html').write_text('Previous report', encoding='utf-8')
-    for sha in ('a' * 40, 'b' * 40):
-        (report / 'index.html').write_text(sha, encoding='utf-8')
-        sp.run([_BASH, '-e', '-o', 'pipefail', '-c', script],
-               check=True,
-               cwd=tmp_path,
-               capture_output=True,
-               text=True,
-               env=os.environ | {'GITHUB_SHA': sha})
-    assert (site / 'index.html').read_text(encoding='utf-8') == 'API documentation'
-    assert (site / 'scan-build/index.html').read_text(encoding='utf-8') == 'b' * 40
-    assert sorted(p.name for p in (site / 'scan-build').iterdir()) == ['index.html']
-
-
-def test_archive_round_trip_without_persisted_credentials(tmp_path: Path) -> None:
-    remote = tmp_path / 'remote.git'
-    sp.run([_GIT, 'init', '--bare', str(remote)], check=True, capture_output=True)
-    gitconfig = tmp_path / 'gitconfig'
-    gitconfig.write_text(
-        f'[url "{remote.as_uri()}"]\n\tinsteadOf = https://github.com/example/reports.git\n',
-        encoding='utf-8')
-    steps = _workflow()['jobs']['publish']['steps']
-    scripts = [
-        s['run'] for s in steps
-        if s.get('name', '') in {'Restore site', 'Assemble site with latest report', 'Save site'}
-    ]
-    for index, sha in enumerate(('a' * 40, 'b' * 40, 'b' * 40)):
-        run = tmp_path / str(index)
-        run.mkdir()
-        report = run / '_report'
-        report.mkdir()
-        (report / 'index.html').write_text(sha, encoding='utf-8')
-        if index == 0:
-            docs = run / '_documentation'
-            docs.mkdir()
-            (docs / 'index.html').write_text('API documentation', encoding='utf-8')
-        env = os.environ | {
-            'GH_TOKEN': 'test-fixture',
-            'GITHUB_REPOSITORY': 'example/reports',
-            'GITHUB_SHA': sha,
-            'GIT_CONFIG_GLOBAL': str(gitconfig),
-            'RUNNER_TEMP': str(run)
-        }
-        for script in scripts:
-            sp.run([_BASH, '-e', '-o', 'pipefail', '-c', script],
-                   check=True,
-                   cwd=run,
-                   capture_output=True,
-                   text=True,
-                   env=env)
-        assert (run / '_site/index.html').read_text(encoding='utf-8') == 'API documentation'
-        assert 'extraheader' not in (run / '_site/.git/config').read_text(encoding='utf-8')
-    result = sp.run(
-        [_GIT, '--git-dir',
-         str(remote), 'ls-tree', '--name-only', 'scan-build-pages:scan-build'],
-        check=True,
-        capture_output=True,
-        text=True)
-    assert result.stdout.strip() == 'index.html'
-    result = sp.run(
-        [_GIT, '--git-dir',
-         str(remote), 'show', 'scan-build-pages:scan-build/index.html'],
-        check=True,
-        capture_output=True,
-        text=True)
-    assert result.stdout == 'b' * 40
-    result = sp.run([_GIT, '--git-dir',
-                     str(remote), 'rev-list', '--count', 'scan-build-pages'],
-                    check=True,
-                    capture_output=True,
-                    text=True)
-    assert result.stdout.strip() == '2'
+    assert (site / 'scan-build/index.html').read_text(encoding='utf-8') == 'Clang report'
+    assert (site / 'scan-build/report.html').read_text(encoding='utf-8') == 'Clang finding'
+    if documentation:
+        assert (site / 'index.html').read_text(encoding='utf-8') == 'API documentation'
+        assert (site / 'style.css').read_text(encoding='utf-8') == 'body {}'
+    else:
+        assert 'href="scan-build/"' in (site / 'index.html').read_text(encoding='utf-8')
+    assert not (site / '.git').exists()
+    with tarfile.open(tmp_path / 'artifact.tar') as archive:
+        files = {member.name for member in archive.getmembers() if member.isfile()}
+        assert files == {
+            './.nojekyll', './index.html', './scan-build/index.html', './scan-build/report.html'
+        } | ({'./style.css'} if documentation else set())

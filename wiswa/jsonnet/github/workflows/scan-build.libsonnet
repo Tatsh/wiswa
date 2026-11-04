@@ -12,11 +12,6 @@ function(settings)
     uses: action('upload-artifact'),
     with: { name: name, path: path, 'if-no-files-found': 'error' },
   };
-  local download(name, path) = {
-    uses: action('download-artifact'),
-    with: { name: name, path: path },
-  };
-  local has_docs = std.length(config.documentation_steps) > 0;
   local scoped = std.length(settings.static_analysis_paths) > 0;
   local exclude_options = if scoped then
     ' --exclude "$(python3 .github/scripts/static-analysis.py --exclude)"' else '';
@@ -32,14 +27,21 @@ function(settings)
     command,
   ];
   {
-    name: 'Static analysis and Pages',
+    name: 'Clang static analysis',
     on: {
-      push: { 'branches-ignore': ['scan-build-pages'] },
+      push: {},
       pull_request: {},
       workflow_dispatch: {},
     },
     permissions: {},
     jobs: {
+      pages: {
+        name: 'Pages',
+        needs: ['analyze'],
+        'if': "${{ github.event_name != 'pull_request' }}",
+        uses: '$/.github/workflows/pages.yml',
+        permissions: { contents: 'read', pages: 'write', 'id-token': 'write' },
+      },
       analyze: {
         name: 'scan-build',
         'runs-on': config.runs_on,
@@ -124,105 +126,6 @@ function(settings)
           },
           upload('scan-build-${{ github.sha }}', 'scan-build-report') + {
             'if': '${{ !cancelled() }}',
-          },
-        ],
-      },
-      [if has_docs then 'documentation']: {
-        name: 'Documentation',
-        'runs-on': 'ubuntu-latest',
-        'if': "${{ github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch }}",
-        permissions: { contents: 'read' },
-        steps: [utils.checkout({ with: config.checkout_options })] + config.documentation_steps + [
-          upload('documentation', config.documentation_path),
-        ],
-      },
-      publish: {
-        name: 'Publish reports and documentation',
-        needs: ['analyze'] + (if has_docs then ['documentation'] else []),
-        'if': "${{ !cancelled() && needs.analyze.result == 'success' && github.event_name != 'pull_request' }}",
-        'runs-on': 'ubuntu-latest',
-        concurrency: utils.publishConcurrency('pages'),
-        environment: {
-          name: 'github-pages',
-          url: '${{ steps.deployment.outputs.page_url }}',
-        },
-        permissions: { contents: 'write', pages: 'write', 'id-token': 'write' },
-        steps: [
-          utils.checkout(),
-          download('scan-build-${{ github.sha }}', '_report'),
-        ] + (if has_docs then [download('documentation', '_documentation') + {
-               'if': "${{ needs.documentation.result == 'success' }}",
-             }] else []) + [
-          {
-            name: 'Restore site',
-            env: { GH_TOKEN: '${{ github.token }}' },
-            run: |||
-              git init _site
-              git -C _site remote add origin "https://github.com/$GITHUB_REPOSITORY.git"
-              export GIT_CONFIG_COUNT=1
-              export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
-              GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
-              export GIT_CONFIG_VALUE_0
-              status=0
-              git -C _site ls-remote --exit-code origin refs/heads/scan-build-pages || status=$?
-              if [ "$status" -eq 0 ]; then
-                git -C _site fetch --depth=1 origin scan-build-pages
-                git -C _site checkout -b scan-build-pages FETCH_HEAD
-              elif [ "$status" -ne 2 ]; then
-                exit "$status"
-              fi
-            |||,
-          },
-          {
-            name: 'Assemble site with latest report',
-            run: |||
-              if [ -d _documentation ]; then
-                cp -a _documentation/. _site/
-              fi
-              rm -rf _site/scan-build
-              mkdir -p _site/scan-build
-              cp -a _report/. _site/scan-build/
-              python3 - <<'PY'
-              from pathlib import Path
-
-              root = Path('_site')
-              if not (root / 'index.html').exists():
-                  (root / 'index.html').write_text(
-                      '<!doctype html><html lang="en"><meta charset="utf-8">'
-                      '<title>Clang static analysis</title>'
-                      '<a href="scan-build/">Clang static analysis reports</a>', encoding='utf-8')
-              (root / '.nojekyll').touch()
-              PY
-            |||,
-          },
-          {
-            name: 'Save site',
-            env: { GH_TOKEN: '${{ github.token }}' },
-            run: |||
-              export GIT_CONFIG_COUNT=1
-              export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
-              GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
-              export GIT_CONFIG_VALUE_0
-              git -C _site config user.name 'github-actions[bot]'
-              git -C _site config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-              git -C _site add .
-              if ! git -C _site diff --cached --quiet; then
-                git -C _site commit -m "Reports for $GITHUB_SHA"
-                git -C _site push origin HEAD:refs/heads/scan-build-pages
-              fi
-              tar --dereference --hard-dereference -cf "$RUNNER_TEMP/artifact.tar" \
-                --exclude=.git -C _site .
-            |||,
-          },
-          { name: 'Configure Pages', uses: action('configure-pages') },
-          upload('github-pages', '${{ runner.temp }}/artifact.tar') + {
-            with+: { 'retention-days': 1 },
-          },
-          { id: 'deployment', name: 'Deploy Pages', uses: action('deploy-pages') },
-          {
-            name: 'Report URL',
-            env: { PAGE_URL: '${{ steps.deployment.outputs.page_url }}' },
-            run: 'echo "[Clang report](${PAGE_URL}scan-build/)" >> "$GITHUB_STEP_SUMMARY"',
           },
         ],
       },

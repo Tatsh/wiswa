@@ -11,6 +11,7 @@ local qa_other = import 'github/workflows/qa-other.libsonnet';
 local qa_python = import 'github/workflows/qa-python.libsonnet';
 local qa_typescript = import 'github/workflows/qa-typescript.libsonnet';
 local release = import 'github/workflows/release.libsonnet';
+local scan_build_pages = import 'github/workflows/scan-build-pages.libsonnet';
 local scan_build = import 'github/workflows/scan-build.libsonnet';
 local snap_python = import 'github/workflows/snap-python.libsonnet';
 local sync_to_gitlab = import 'github/workflows/sync-to-gitlab.libsonnet';
@@ -52,8 +53,11 @@ local utils = import 'utils.libsonnet';
     } else {}
   ) + (
     if settings.want_scan_build then {
+      assert settings.github.workflows.scan_build.workflow_file != 'pages.yml' :
+             'scan_build.workflow_file must differ from pages.yml.',
       ['.github/workflows/' + settings.github.workflows.scan_build.workflow_file]:
         utils.manifestYaml(scan_build(settings)),
+      '.github/workflows/pages.yml': utils.manifestYaml(scan_build_pages(settings)),
     } else {}
   ) + (
     if settings.want_tests then {
