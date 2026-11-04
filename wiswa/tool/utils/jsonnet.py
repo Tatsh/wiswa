@@ -411,6 +411,8 @@ async def evaluate_jsonnet_project(lib_path: Path,
             await output_file.write_text(stripped)
         else:
             await output_file.write_text(f'{stripped}\n')
+        if filename == '.github/scripts/static-analysis.py':
+            await output_file.chmod(0o755)
         log.debug('Wrote `%s`.', output_file)
 
 

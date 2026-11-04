@@ -246,6 +246,38 @@ async def test_evaluate_jsonnet_project_with_output_dir(tmp_path: Path,
     assert (output_dir / 'sub/file.txt').read_text().strip() == 'hello content'
 
 
+async def test_native_analysis_helper_is_executable_after_generation(tmp_path: Path,
+                                                                     mocker: MockerFixture) -> None:
+    mocker.patch('wiswa.tool.utils.jsonnet.evaluate_jsonnet_file',
+                 return_value=json.dumps(
+                     {'.github/scripts/static-analysis.py': '#!/usr/bin/env python3\n'}))
+    await evaluate_jsonnet_project(_WISWA_JSONNET, [str(_WISWA_JSONNET)], '{}', output_dir=tmp_path)
+    helper = tmp_path / '.github/scripts/static-analysis.py'
+    assert helper.stat().st_mode & 0o111 == 0o111
+
+
+def test_scoped_codeql_defers_native_upload_until_after_filtering() -> None:
+    result = json.loads(
+        _jsonnet.evaluate_snippet(
+            'scoped-codeql',
+            """
+      local settings = (import 'defaults.libsonnet') + {
+        static_analysis_paths: ['src', 'tests'],
+        github+: { codeql+: { languages: ['c-cpp', 'actions'] } },
+      };
+      (import 'github/workflows/codeql.libsonnet')(settings)
+    """,
+            jpathdir=[str(_WISWA_JSONNET)],
+            native_callbacks={'githubLatestActionSha': (('o', 'r'), lambda _o, _r: 'a' * 40)}))
+    steps = result['jobs']['analyze']['steps']
+    analysis, filtering, upload = steps[-3:]
+    assert analysis['with']['upload'] is False
+    assert "matrix.language == 'c-cpp'" in filtering['if']
+    assert 'static-analysis.py --sarif' in filtering['run']
+    assert '/upload-sarif@' in upload['uses']
+    assert analysis['with']['output'] == upload['with']['sarif_file']
+
+
 async def test_evaluate_jsonnet_project_with_custom_file(tmp_path: Path,
                                                          monkeypatch: pytest.MonkeyPatch,
                                                          mocker: MockerFixture) -> None:

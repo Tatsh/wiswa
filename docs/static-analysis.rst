@@ -8,6 +8,22 @@ default build system; Meson, Make, and iOS builds need explicit commands.
 Swift, Python, and JavaScript source are outside Clang static analysis coverage.
 Python projects with native extensions can enable analysis for their native build.
 
+Set ``static_analysis_paths`` to the first-party source and test paths for the
+project, such as ``['src', 'tests']``, ``['Project']``, or ``['native', 'tests']``.
+Paths are relative to the repository root. Files under ``.vcpkg`` or ``3rdparty``
+are excluded, including nested ``.vcpkg`` and ``3rdparty`` directories.
+
+Wiswa generates ``.github/scripts/static-analysis.py`` from the configured paths.
+The scan-build workflow uses the helper to compile dependencies without analysing
+their translation units. Headers required by project sources remain available to
+the compiler. Clang reports exclude findings outside the configured source paths.
+
+CodeQL workflows filter native SARIF findings before upload. Manual C/C++ database
+extraction still includes dependency context; only findings with primary locations
+in project paths are uploaded. Findings without source locations are preserved.
+Custom native workflows must run the helper with ``--sarif FILE_OR_DIRECTORY``
+between analysis and upload. Actions and other language analyses retain their scope.
+
 .. code-block:: jsonnet
 
    {

@@ -17,6 +17,20 @@ function(settings)
     with: { name: name, path: path },
   };
   local has_docs = std.length(config.documentation_steps) > 0;
+  local scoped = std.length(settings.static_analysis_paths) > 0;
+  local exclude_options = if scoped then
+    ' --exclude "$(python3 .github/scripts/static-analysis.py --exclude)"' else '';
+  local scope_build(command) = if !scoped then command else |||
+    export STATIC_ANALYSIS_CC="$CC" STATIC_ANALYSIS_CXX="$CXX"
+    export STATIC_ANALYSIS_REAL_CC=%s STATIC_ANALYSIS_REAL_CXX=%s
+    export CC="$GITHUB_WORKSPACE/.wiswa-ci/scan-build-cc"
+    export CXX="$GITHUB_WORKSPACE/.wiswa-ci/scan-build-cxx"
+    %s
+  ||| % [
+    if std.startsWith(config.runs_on, 'macos') then '"$(xcrun --find clang)"' else 'clang',
+    if std.startsWith(config.runs_on, 'macos') then '"$(xcrun --find clang++)"' else 'clang++',
+    command,
+  ];
   {
     name: 'Static analysis and Pages',
     on: {
@@ -32,7 +46,15 @@ function(settings)
         permissions: { contents: 'read' },
         defaults: { run: { shell: 'bash' } },
         [if std.length(std.objectFields(config.env)) > 0 then 'env']: config.env,
-        steps: [utils.checkout({ with: config.checkout_options })] + config.setup_steps + [
+        steps: [utils.checkout({ with: config.checkout_options })] + config.setup_steps +
+               (if scoped then [{
+                  name: 'Prepare scoped compiler wrappers',
+                  run: |||
+                    mkdir -p .wiswa-ci
+                    install -m 755 .github/scripts/static-analysis.py .wiswa-ci/scan-build-cc
+                    install -m 755 .github/scripts/static-analysis.py .wiswa-ci/scan-build-cxx
+                  |||,
+                }] else []) + [
           {
             name: 'Install Clang analyzer',
             run: if std.startsWith(config.runs_on, 'macos') then |||
@@ -45,22 +67,22 @@ function(settings)
           },
           {
             name: 'Configure with compiler interception',
-            env: { SCAN_BUILD_CONFIGURE_COMMAND: config.configure_command },
+            env: { SCAN_BUILD_CONFIGURE_COMMAND: scope_build(config.configure_command) },
             run: 'mkdir -p scan-build-report\n' +
-                 'scan-build ' + compiler_options + ' -o "$RUNNER_TEMP/scan-configure" ' +
+                 'scan-build ' + compiler_options + exclude_options + ' -o "$RUNNER_TEMP/scan-configure" ' +
                  'bash -eo pipefail -c "$SCAN_BUILD_CONFIGURE_COMMAND" ' +
                  '2>&1 | tee scan-build-report/build.log',
           },
           {
             id: 'analysis',
             name: 'Analyze a clean build',
-            env: { SCAN_BUILD_BUILD_COMMAND: config.build_command },
+            env: { SCAN_BUILD_BUILD_COMMAND: scope_build(config.build_command) },
             run: |||
               mkdir -p scan-build-report
               scan-build %s -plist-html --keep-empty -v \
                 -o scan-build-report/results bash -eo pipefail -c "$SCAN_BUILD_BUILD_COMMAND" \
                 2>&1 | tee -a scan-build-report/build.log
-            ||| % compiler_options,
+            ||| % (compiler_options + exclude_options),
           },
           {
             name: 'Prepare report and verify analysis coverage',

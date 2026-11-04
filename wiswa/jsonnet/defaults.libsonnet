@@ -1259,6 +1259,8 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   want_clang_format: self.project_type == 'c' || self.project_type == 'c++',
   /** @brief Generate scan-build analysis and GitHub Pages publication. */
   want_scan_build: false,
+  /** @brief First-party source and test paths for native static analysis. */
+  static_analysis_paths: [],
   /** @brief CMake presets. */
   cmake_presets: import 'defaults/cmake-presets.libsonnet',
   /** @brief CMake user presets. */

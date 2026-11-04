@@ -18,6 +18,9 @@ local cpp_exts = [
 ];
 
 function(settings)
+  local scoped = std.length(settings.static_analysis_paths) > 0 &&
+                 (std.member(settings.github.codeql.languages, 'c-cpp') ||
+                  std.member(settings.github.codeql.languages, 'cpp'));
   {
     concurrency: utils.ciConcurrency,
     jobs: {
@@ -50,9 +53,23 @@ function(settings)
             uses: 'github/codeql-action/analyze@' + utils.githubLatestActionSha('github', 'codeql-action'),
             with: {
               category: '/language:${{matrix.language}}',
-            },
+            } + if scoped then { upload: false, output: '${{ runner.temp }}/codeql-sarif' } else {},
           },
-        ],
+        ] + (if scoped then [
+               {
+                 name: 'Restrict native findings to project sources',
+                 'if': "matrix.language == 'c-cpp' || matrix.language == 'cpp'",
+                 run: 'python3 .github/scripts/static-analysis.py --sarif "$RUNNER_TEMP/codeql-sarif"',
+               },
+               {
+                 name: 'Upload CodeQL results',
+                 uses: 'github/codeql-action/upload-sarif@' + utils.githubLatestActionSha('github', 'codeql-action'),
+                 with: {
+                   sarif_file: '${{ runner.temp }}/codeql-sarif',
+                   category: '/language:${{matrix.language}}',
+                 },
+               },
+             ] else []),
         strategy: {
           'fail-fast': false,
           matrix: {

@@ -38,6 +38,19 @@ local utils = import 'utils.libsonnet';
       ['.github/workflows/' + settings.github.codeql.workflow_file]: utils.manifestYaml(codeql(settings)),
     } else {}
   ) + (
+    if std.length(settings.static_analysis_paths) > 0 then {
+      '.github/scripts/static-analysis.py': std.strReplace(
+        importstr 'github/static-analysis.py',
+        '_PATHS: tuple[str, ...] = ()',
+        '_PATHS: tuple[str, ...] = (' + std.join(', ', [
+          local quoted = std.escapeStringJson(path);
+          if std.length(std.findSubstr("'", path)) > 0 then quoted
+          else "'" + std.strReplace(std.substr(quoted, 1, std.length(quoted) - 2), '\\"', '"') + "'"
+          for path in settings.static_analysis_paths
+        ]) + (if std.length(settings.static_analysis_paths) == 1 then ',' else '') + ')'
+      ),
+    } else {}
+  ) + (
     if settings.want_scan_build then {
       ['.github/workflows/' + settings.github.workflows.scan_build.workflow_file]:
         utils.manifestYaml(scan_build(settings)),

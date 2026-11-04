@@ -2,6 +2,7 @@ adoc
 aiofiles
 aiohttp
 analyzer
+analyzes
 anchore
 anyio
 appauthor
@@ -25,6 +26,7 @@ brightgreen
 bsky
 buianhthang
 buildsystems
+buildtrees
 buymeacoffee
 bytearray
 caplog
@@ -126,6 +128,7 @@ hostux
 hoverxref
 htmlcov
 idtvuccnmtl
+importstr
 intdays
 intellicode
 internalerror
@@ -240,6 +243,7 @@ pythonhosted
 qstringbuilder
 qtbase
 qtcore
+rdparty
 reflow
 regen
 renderable
@@ -252,6 +256,7 @@ rstcheck
 rsvg
 ruiquelhas
 samuelcolvin
+sarif
 sass
 savestepsize
 sbclaude
@@ -309,6 +314,7 @@ udvare
 undoc
 undraft
 undrafted
+unlocated
 urllib
 urlparse
 userprofile
