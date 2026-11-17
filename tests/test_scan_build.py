@@ -126,7 +126,8 @@ def test_workflow_publication_permissions_and_triggers() -> None:
     caller = workflow['jobs']['pages']
     assert caller['uses'] == '$/.github/workflows/pages.yml'
     assert caller['needs'] == ['analyze']
-    assert caller['if'] == "${{ github.event_name != 'pull_request' }}"
+    assert caller['if'] == ("${{ github.event_name != 'pull_request' && "
+                            "!startsWith(github.ref, 'refs/tags/') }}")
     assert caller['permissions'] == {'contents': 'read', 'id-token': 'write', 'pages': 'write'}
     pages = _workflow(documentation=True, pages=True)
     assert pages['on'] == {'workflow_call': {}}

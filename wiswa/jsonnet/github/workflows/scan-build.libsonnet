@@ -38,7 +38,9 @@ function(settings)
       pages: {
         name: 'Pages',
         needs: ['analyze'],
-        'if': "${{ github.event_name != 'pull_request' }}",
+        // A release tag is pushed after its commit, and the push of the commit already publishes
+        // the pages. A second deployment of the commit competes for the `github-pages` artifact.
+        'if': "${{ github.event_name != 'pull_request' && !startsWith(github.ref, 'refs/tags/') }}",
         uses: '$/.github/workflows/pages.yml',
         permissions: { contents: 'read', pages: 'write', 'id-token': 'write' },
       },
