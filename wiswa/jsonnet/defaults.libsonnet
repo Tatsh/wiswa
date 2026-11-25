@@ -1009,19 +1009,6 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
     },
     /** @brief GitHub Actions workflows configuration. */
     workflows: {
-      /** @brief Clang static analysis and Pages publication settings. */
-      scan_build: {
-        checkout_options: {},
-        scope: 'Native sources selected by the configured build.',
-        workflow_file: 'scan-build.yml',
-        runs_on: 'ubuntu-latest',
-        env: {},
-        setup_steps: [],
-        configure_command: 'cmake -S . -B build-scan -DCMAKE_BUILD_TYPE=Debug',
-        build_command: 'cmake --build build-scan --clean-first --parallel 2',
-        documentation_steps: [],
-        documentation_path: 'build/html',
-      },
       /** @brief AppImage generation settings. */
       appimage: {
         /**
@@ -1257,9 +1244,10 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
    *     hook pins in `.pre-commit-config.yaml`.
    */
   want_clang_format: self.project_type == 'c' || self.project_type == 'c++',
-  /** @brief Generate scan-build analysis and GitHub Pages publication. */
-  want_scan_build: false,
-  /** @brief First-party source and test paths for native static analysis. */
+  /**
+   * @brief First-party source and test paths. Native CodeQL findings outside them are dropped
+   * before upload.
+   */
   static_analysis_paths: [],
   /** @brief CMake presets. */
   cmake_presets: import 'defaults/cmake-presets.libsonnet',

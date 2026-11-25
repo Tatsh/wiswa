@@ -109,6 +109,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Python 3.10 support, in Wiswa and in the generated projects. `supported_python_versions` defaults
   to 3.11 to 3.14, so projects that use the default require Python 3.11 after the next regen.
+- The experimental Clang scan-build workflow, its Pages workflow, `want_scan_build`, and
+  `github.workflows.scan_build`. Regeneration deletes `.github/workflows/scan-build.yml` and the
+  Pages workflow that published its reports, for every project type, and warns while either
+  setting remains in `.wiswa.jsonnet`. `static_analysis_paths` still scopes native CodeQL findings,
+  and `.github/scripts/static-analysis.py` is now generated only with CodeQL C and C++ analysis.
 
 ## [0.6.2] - 2026-09-23
 

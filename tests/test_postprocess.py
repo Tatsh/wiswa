@@ -332,6 +332,156 @@ async def test_post_process_steps_removes_legacy_wiswa_ai_files(tmp_path: Path,
     assert not legacy_comments_rule.exists()
 
 
+@pytest.mark.parametrize('project_type', ['python', 'c++', 'other'])
+async def test_post_process_steps_removes_scan_build_workflows(tmp_path: Path,
+                                                               monkeypatch: pytest.MonkeyPatch,
+                                                               mocker: MockerFixture,
+                                                               project_type: str) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    workflows = tmp_path / '.github' / 'workflows'
+    workflows.mkdir(parents=True)
+    scan_build = workflows / 'scan-build.yml'
+    scan_build.write_text('run: scan-build --use-cc=clang\n', encoding='utf-8')
+    custom = workflows / 'analysis.yml'
+    custom.write_text('run: scan-build --use-cc=clang\n', encoding='utf-8')
+    pages = workflows / 'pages.yml'
+    pages.write_text("name: 'scan-build-${{ github.sha }}'\n", encoding='utf-8')
+    tests = workflows / 'tests.yml'
+    tests.write_text('jobs:\n  test: {}\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = _make_settings(project_type=project_type)
+    settings['github']['workflows'] = {'scan_build': {'workflow_file': 'analysis.yml'}}
+    await post_process_steps(cast('Any', settings))
+    assert not scan_build.exists()
+    assert not custom.exists()
+    assert not pages.exists()
+    assert tests.exists()
+
+
+async def test_post_process_steps_keeps_project_pages_workflow(tmp_path: Path,
+                                                               monkeypatch: pytest.MonkeyPatch,
+                                                               mocker: MockerFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    pages = tmp_path / '.github' / 'workflows' / 'pages.yml'
+    pages.parent.mkdir(parents=True)
+    pages.write_text("name: 'Pages'\njobs:\n  build: {}\n", encoding='utf-8')
+    _mock_subprocess(mocker)
+    await post_process_steps(cast('Any', _make_settings(project_type='c++')))
+    assert pages.exists()
+
+
+@pytest.mark.parametrize(('scan_build', 'name'), [
+    ({}, 'scan-build.yml'),
+    ({
+        'workflow_file': 'analysis.yml'
+    }, 'analysis.yml'),
+    ({
+        'setup_steps': []
+    }, 'scan-build.yml'),
+])
+async def test_post_process_steps_keeps_workflows_without_scan_build(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture,
+        scan_build: dict[str, Any], name: str) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    workflow = tmp_path / '.github' / 'workflows' / name
+    workflow.parent.mkdir(parents=True)
+    workflow.write_text('jobs:\n  lint: {}\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = _make_settings(project_type='c++')
+    if scan_build:
+        settings['github']['workflows'] = {'scan_build': scan_build}
+    await post_process_steps(cast('Any', settings))
+    assert workflow.exists()
+
+
+async def test_post_process_steps_removes_default_scan_build_workflow_without_file_setting(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture,
+        caplog: pytest.LogCaptureFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    workflow = tmp_path / '.github' / 'workflows' / 'scan-build.yml'
+    workflow.parent.mkdir(parents=True)
+    workflow.write_text('run: scan-build make\n', encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = _make_settings(project_type='c++')
+    settings['github']['workflows'] = {'scan_build': {'setup_steps': []}}
+    with caplog.at_level(logging.INFO):
+        await post_process_steps(cast('Any', settings))
+    assert not workflow.exists()
+    assert 'Removed `.github/workflows/scan-build.yml`' in caplog.text
+
+
+@pytest.mark.parametrize(('languages', 'paths', 'content', 'removed', 'want_codeql'), [
+    (['actions'], ['Project'], 'Usage: static-analysis.py --sarif FILE_OR_DIRECTORY', True, True),
+    (['c-cpp', 'actions'], [], 'Usage: static-analysis.py --sarif FILE_OR_DIRECTORY', True, True),
+    (['c-cpp', 'actions'], ['src'
+                            ], 'Usage: static-analysis.py --sarif FILE_OR_DIRECTORY', False, True),
+    (['cpp'], ['src'], 'Usage: static-analysis.py --sarif FILE_OR_DIRECTORY', False, True),
+    (['c-cpp'], ['src'], 'Usage: static-analysis.py --sarif FILE_OR_DIRECTORY', True, False),
+    (['actions'], ['Project'], 'print("project script")', False, True),
+])
+async def test_post_process_steps_removes_unused_analysis_helper(tmp_path: Path,
+                                                                 monkeypatch: pytest.MonkeyPatch,
+                                                                 mocker: MockerFixture,
+                                                                 languages: list[str],
+                                                                 paths: list[str], content: str, *,
+                                                                 removed: bool,
+                                                                 want_codeql: bool) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    helper = tmp_path / '.github' / 'scripts' / 'static-analysis.py'
+    helper.parent.mkdir(parents=True)
+    helper.write_text(content, encoding='utf-8')
+    _mock_subprocess(mocker)
+    settings = _make_settings(project_type='other',
+                              static_analysis_paths=paths,
+                              want_codeql=want_codeql)
+    settings['github']['codeql'] = {'languages': languages}
+    await post_process_steps(cast('Any', settings))
+    assert helper.exists() is not removed
+
+
+@pytest.mark.parametrize(('want_scan_build', 'workflow_settings', 'expected'), [
+    (True, False, 'Delete `want_scan_build` from'),
+    (False, False, 'Delete `want_scan_build` from'),
+    (None, True, 'Delete `github.workflows.scan_build` from'),
+    (True, True, 'Delete `want_scan_build` and `github.workflows.scan_build` from'),
+])
+async def test_post_process_steps_warns_about_scan_build_settings(tmp_path: Path,
+                                                                  monkeypatch: pytest.MonkeyPatch,
+                                                                  mocker: MockerFixture,
+                                                                  caplog: pytest.LogCaptureFixture,
+                                                                  expected: str, *,
+                                                                  want_scan_build: bool | None,
+                                                                  workflow_settings: bool) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    settings = _make_settings(project_type='c++')
+    if want_scan_build is not None:
+        settings['want_scan_build'] = want_scan_build
+    if workflow_settings:
+        settings['github']['workflows'] = {'scan_build': {'setup_steps': []}}
+    with caplog.at_level(logging.WARNING):
+        await post_process_steps(cast('Any', settings))
+    assert 'scan-build support was removed' in caplog.text
+    assert expected in caplog.text
+
+
+async def test_post_process_steps_does_not_warn_without_scan_build_settings(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture,
+        caplog: pytest.LogCaptureFixture) -> None:
+    monkeypatch.chdir(tmp_path)
+    _setup_python_project(tmp_path)
+    _mock_subprocess(mocker)
+    with caplog.at_level(logging.WARNING):
+        await post_process_steps(cast('Any', _make_settings(project_type='c++')))
+    assert 'scan-build support was removed' not in caplog.text
+
+
 async def test_post_process_steps_creates_wiswa_ci_cache_dirs(tmp_path: Path,
                                                               monkeypatch: pytest.MonkeyPatch,
                                                               mocker: MockerFixture) -> None:

@@ -26,7 +26,7 @@ from .github import get_github_pages_build_type
 from .versions import get_github_release_latest_tag
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Iterable, Iterator, Sequence
+    from collections.abc import Awaitable, Callable, Iterable, Iterator, Mapping, Sequence
 
     from wiswa.tool.typing import ExportRequirements, Settings
 
@@ -40,6 +40,11 @@ _README_GENERATED_START = '<!-- WISWA-GENERATED-README:START -->'
 _README_GENERATED_STOP = '<!-- WISWA-GENERATED-README:STOP -->'
 
 _FORMAT_DEFAULT_FILENAMES = {'cyclonedx1.5': 'cyclonedx.json', 'pylock.toml': 'pylock.toml'}
+_SCAN_BUILD_WORKFLOW = '.github/workflows/scan-build.yml'
+_SCAN_BUILD_PAGES_WORKFLOW = '.github/workflows/pages.yml'
+_SCAN_BUILD_MARKER = 'scan-build'
+_STATIC_ANALYSIS_HELPER = '.github/scripts/static-analysis.py'
+_STATIC_ANALYSIS_HELPER_MARKER = 'Usage: static-analysis.py --sarif FILE_OR_DIRECTORY'
 _LEGACY_WISWA_AI_PATHS = ('.claude/agents/release.md', '.claude/rules/minimal-comments.md',
                           '.claude/settings.local.json.dist', '.cursor/permissions.json.dist',
                           '.cursor/rules/general.mdc', '.cursor/rules/json-yaml.mdc',
@@ -203,6 +208,54 @@ async def _remove_disabled_packaging_files(settings: Settings) -> None:
         if await path.is_file():
             await path.unlink()
             log.debug('Removed `%s` because its packaging output is not configured.', relative)
+
+
+async def _remove_scan_build_files(settings: Settings) -> None:
+    """
+    Delete scan-build workflows and the unused analysis helper, and report scan-build settings.
+
+    A workflow (``scan-build.yml``, ``pages.yml``, or the configured scan-build workflow file) is
+    deleted only when it mentions scan-build. A project-maintained Pages workflow is not removed.
+    The analysis helper is deleted when native CodeQL analysis does not use it. Scan-build settings
+    remaining in ``.wiswa.jsonnet`` are reported as a warning.
+
+    Parameters
+    ----------
+    settings : Settings
+        Project settings.
+    """
+    legacy = cast('Mapping[str, Any]', settings)
+    github = legacy.get('github', {})
+    scan_build = github.get('workflows', {}).get('scan_build', {})
+    candidates = {
+        _SCAN_BUILD_WORKFLOW,
+        _SCAN_BUILD_PAGES_WORKFLOW,
+        f'.github/workflows/{scan_build.get("workflow_file", "scan-build.yml")}',
+    }
+    for relative in sorted(candidates):
+        path = anyio.Path(relative)
+        if (await path.is_file() and _SCAN_BUILD_MARKER in await path.read_text(encoding='utf-8')):
+            await path.unlink()
+            log.info('Removed `%s` because Wiswa no longer generates scan-build workflows.',
+                     relative)
+    # The helper was previously generated whenever static_analysis_paths was set. A copy generated
+    # without native CodeQL analysis would otherwise remain.
+    codeql = github.get('codeql', {})
+    helper_generated = (legacy.get('want_codeql', False)
+                        and bool(legacy.get('static_analysis_paths'))
+                        and bool({'c-cpp', 'cpp'} & set(codeql.get('languages', ()))))
+    helper = anyio.Path(_STATIC_ANALYSIS_HELPER)
+    if (not helper_generated and await helper.is_file()
+            and _STATIC_ANALYSIS_HELPER_MARKER in await helper.read_text(encoding='utf-8')):
+        await helper.unlink()
+        log.info('Removed `%s` because no native CodeQL analysis uses it.', _STATIC_ANALYSIS_HELPER)
+    stale_settings = tuple(name
+                           for name, present in (('want_scan_build', 'want_scan_build' in legacy),
+                                                 ('github.workflows.scan_build', bool(scan_build)))
+                           if present)
+    if stale_settings:
+        log.warning('scan-build support was removed. Delete %s from `.wiswa.jsonnet`.',
+                    ' and '.join(f'`{name}`' for name in stale_settings))
 
 
 async def _create_wiswa_ci_cache_dirs(settings: Settings) -> None:
@@ -973,6 +1026,7 @@ async def post_process_steps(settings: Settings,
     if settings['private']:
         await anyio.Path('.github/workflows/publish.yml').unlink(missing_ok=True)
     await _remove_disabled_packaging_files(settings)
+    await _remove_scan_build_files(settings)
     match settings['project_type']:
         case 'python':
             await _post_process_steps_python(settings, debug=debug, on_command=on_command)

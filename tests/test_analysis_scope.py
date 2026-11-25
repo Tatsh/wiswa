@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 import json
 import os
-import re
-import shlex
 import subprocess as sp
 import sys
 
@@ -15,6 +13,43 @@ import _jsonnet  # ruff:ignore[import-private-name]
 import pytest
 
 _LIBRARY = Path(__file__).resolve().parent.parent / 'wiswa/jsonnet'
+
+
+def _workflows(paths: tuple[str, ...], languages: tuple[str, ...], *,
+               want_codeql: bool) -> dict[str, str]:
+    """
+    Render the managed workflows.
+
+    Parameters
+    ----------
+    paths : tuple[str, ...]
+        Project source paths.
+    languages : tuple[str, ...]
+        CodeQL languages.
+    want_codeql : bool
+        Whether the CodeQL workflow is generated.
+
+    Returns
+    -------
+    dict[str, str]
+    """
+    return cast(
+        'dict[str, str]',
+        json.loads(
+            _jsonnet.evaluate_snippet(
+                'analysis-scope',
+                f"""
+      local settings = (import 'defaults.libsonnet') + {{
+        project_type: 'other', private: true,
+        want_clang_format: false, want_codeql: {json.dumps(want_codeql)},
+        want_tests: false, want_gitlab_mirror: false,
+        static_analysis_paths: {json.dumps(paths)},
+        github+: {{ codeql+: {{ languages: {json.dumps(languages)} }} }},
+      }};
+      (import 'github.libsonnet').workflows(settings)
+    """,
+                jpathdir=[str(_LIBRARY)],
+                native_callbacks={'githubLatestActionSha': (('o', 'r'), lambda _o, _r: 'a' * 40)})))
 
 
 def _script(tmp_path: Path, *, paths: tuple[str,
@@ -33,63 +68,27 @@ def _script(tmp_path: Path, *, paths: tuple[str,
     -------
     Path
     """
-    outputs = json.loads(
-        _jsonnet.evaluate_snippet(
-            'analysis-scope',
-            f"""
-      local settings = (import 'defaults.libsonnet') + {{
-        project_type: 'other', private: true,
-        want_clang_format: false, want_codeql: false, want_scan_build: false,
-        want_tests: false, want_gitlab_mirror: false,
-        static_analysis_paths: {json.dumps(paths)},
-      }};
-      (import 'github.libsonnet').workflows(settings)
-    """,
-            jpathdir=[str(_LIBRARY)],
-            native_callbacks={'githubLatestActionSha': (('o', 'r'), lambda _o, _r: 'a' * 40)}))
+    outputs = _workflows(paths, ('c-cpp', 'actions'), want_codeql=True)
     path = tmp_path / 'static-analysis.py'
     path.write_text(outputs['.github/scripts/static-analysis.py'], encoding='utf-8')
     return path
 
 
-@pytest.mark.parametrize(('source', 'expected'), [
-    ('src/main.cpp', 'analyze'),
-    ('tests/test.c', 'analyze'),
-    ('Project/game.m', 'analyze'),
-    ('main.c', 'analyze'),
-    ('other.c', 'compile'),
-    ('.vcpkg/buildtrees/lib/lib.c', 'compile'),
-    ('3rdparty/library.c', 'compile'),
-    ('src/3rdparty/library.c', 'compile'),
-    ('build/probe.c', 'compile'),
-    ('src-other/main.c', 'compile'),
+@pytest.mark.parametrize(('paths', 'languages', 'want_codeql'), [
+    (('src',), ('c-cpp', 'actions'), False),
+    (('src',), ('actions',), True),
+    ((), ('c-cpp', 'actions'), True),
 ])
-@pytest.mark.parametrize('response_file', [False, True])
-def test_compiler_only_analyzes_project_sources(tmp_path: Path, source: str, expected: str, *,
-                                                response_file: bool) -> None:
-    script = _script(tmp_path)
-    wrapper = tmp_path / 'scan-build-cc'
-    script.rename(wrapper)
-    for name, output in (('analyzer', 'analyze'), ('compiler', 'compile')):
-        tool = tmp_path / name
-        tool.write_text(f'#!/bin/sh\nprintf "{output}"\n', encoding='utf-8')
-        tool.chmod(0o755)
-    args = ['-c', str(tmp_path / source)]
-    if response_file:
-        (tmp_path / 'arguments.rsp').write_text(' '.join(args), encoding='utf-8')
-        args = ['@arguments.rsp']
-    result = sp.run(
-        [sys.executable, str(wrapper), *args],
-        cwd=tmp_path,
-        check=True,
-        capture_output=True,
-        text=True,
-        env=os.environ | {
-            'GITHUB_WORKSPACE': str(tmp_path),
-            'STATIC_ANALYSIS_CC': str(tmp_path / 'analyzer'),
-            'STATIC_ANALYSIS_REAL_CC': str(tmp_path / 'compiler'),
-        })
-    assert result.stdout == expected
+def test_helper_requires_native_codeql_and_paths(paths: tuple[str, ...], languages: tuple[str, ...],
+                                                 *, want_codeql: bool) -> None:
+    outputs = _workflows(paths, languages, want_codeql=want_codeql)
+    assert '.github/scripts/static-analysis.py' not in outputs
+
+
+@pytest.mark.parametrize('language', ['c-cpp', 'cpp'])
+def test_helper_generated_for_native_codeql(language: str) -> None:
+    outputs = _workflows(('src',), (language, 'actions'), want_codeql=True)
+    assert "_PATHS: tuple[str, ...] = ('src',)" in outputs['.github/scripts/static-analysis.py']
 
 
 def test_sarif_preserves_project_and_unlocated_findings(tmp_path: Path) -> None:
@@ -112,50 +111,6 @@ def test_sarif_preserves_project_and_unlocated_findings(tmp_path: Path) -> None:
         check=True,
         capture_output=True)
     assert json.loads(sarif.read_text(encoding='utf-8'))['runs'][0]['results'] == results[:3]
-
-
-@pytest.mark.parametrize('language', ['cc', 'cxx'])
-def test_nested_response_files_preserve_arguments_and_select_language(tmp_path: Path,
-                                                                      language: str) -> None:
-    script = _script(tmp_path, paths=('src/../source',))
-    wrapper = tmp_path / f'scan-build-{language}'
-    script.rename(wrapper)
-    for name in ('cc', 'cxx', 'compiler'):
-        tool = tmp_path / name
-        tool.write_text(f'#!/bin/sh\nprintf "{name}\\n"\nprintf "%s\\n" "$@"\n', encoding='utf-8')
-        tool.chmod(0o755)
-    (tmp_path / 'inner.rsp').write_text(shlex.join(['-c', 'source/main file.cpp']),
-                                        encoding='utf-8')
-    (tmp_path / 'outer.rsp').write_text('@inner.rsp', encoding='utf-8')
-    result = sp.run(
-        [sys.executable, str(wrapper), '@outer.rsp'],
-        cwd=tmp_path,
-        check=True,
-        capture_output=True,
-        text=True,
-        env=os.environ | {
-            'GITHUB_WORKSPACE': str(tmp_path),
-            'STATIC_ANALYSIS_CC': str(tmp_path / 'cc'),
-            'STATIC_ANALYSIS_CXX': str(tmp_path / 'cxx'),
-            'STATIC_ANALYSIS_REAL_CC': str(tmp_path / 'compiler'),
-            'STATIC_ANALYSIS_REAL_CXX': str(tmp_path / 'compiler'),
-        })
-    assert result.stdout.splitlines() == [language, '@outer.rsp']
-
-
-def test_recursive_response_files_fail_before_compilation(tmp_path: Path) -> None:
-    script = _script(tmp_path)
-    wrapper = tmp_path / 'scan-build-cc'
-    script.rename(wrapper)
-    (tmp_path / 'outer.rsp').write_text('@inner.rsp', encoding='utf-8')
-    (tmp_path / 'inner.rsp').write_text('@outer.rsp', encoding='utf-8')
-    with pytest.raises(sp.CalledProcessError) as error:
-        sp.run([sys.executable, str(wrapper), '@outer.rsp'],
-               cwd=tmp_path,
-               check=True,
-               capture_output=True,
-               text=True)
-    assert 'Recursive compiler response file.' in error.value.stderr
 
 
 def test_sarif_resolves_artifact_indexes_chained_bases_and_encoded_paths(tmp_path: Path) -> None:
@@ -273,19 +228,13 @@ def test_invalid_sarif_inputs_fail(tmp_path: Path, case: str, message: str) -> N
     assert message in error.value.stderr
 
 
-def test_exclusion_pattern_matches_only_outside_project_scope(tmp_path: Path) -> None:
+@pytest.mark.parametrize('arguments', [['--exclude'], ['@arguments.rsp'], []])
+def test_only_sarif_filtering_is_supported(tmp_path: Path, arguments: list[str]) -> None:
     script = _script(tmp_path)
-    (tmp_path / 'main.c').write_text('int main(void) { return 0; }\n', encoding='utf-8')
-    result = sp.run([sys.executable, str(script), '--exclude'],
-                    cwd=tmp_path,
-                    env=os.environ | {'GITHUB_WORKSPACE': str(tmp_path)},
-                    check=True,
-                    capture_output=True,
-                    text=True)
-    pattern = re.compile(result.stdout.strip())
-    assert not pattern.search(str(tmp_path / 'src'))
-    assert not pattern.search(str(tmp_path))
-    assert not pattern.search(str(tmp_path / 'tests/subdir'))
-    assert pattern.search(str(tmp_path / '.vcpkg'))
-    assert pattern.search(str(tmp_path / 'src/3rdparty'))
-    assert pattern.search(str(tmp_path / 'src-other'))
+    with pytest.raises(sp.CalledProcessError) as error:
+        sp.run([sys.executable, str(script), *arguments],
+               cwd=tmp_path,
+               check=True,
+               capture_output=True,
+               text=True)
+    assert 'Usage: static-analysis.py --sarif FILE_OR_DIRECTORY' in error.value.stderr

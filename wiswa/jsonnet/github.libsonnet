@@ -11,8 +11,6 @@ local qa_other = import 'github/workflows/qa-other.libsonnet';
 local qa_python = import 'github/workflows/qa-python.libsonnet';
 local qa_typescript = import 'github/workflows/qa-typescript.libsonnet';
 local release = import 'github/workflows/release.libsonnet';
-local scan_build_pages = import 'github/workflows/scan-build-pages.libsonnet';
-local scan_build = import 'github/workflows/scan-build.libsonnet';
 local snap_python = import 'github/workflows/snap-python.libsonnet';
 local sync_to_gitlab = import 'github/workflows/sync-to-gitlab.libsonnet';
 local tests_typescript = import 'github/workflows/tests-typescript.libsonnet';
@@ -39,7 +37,10 @@ local utils = import 'utils.libsonnet';
       ['.github/workflows/' + settings.github.codeql.workflow_file]: utils.manifestYaml(codeql(settings)),
     } else {}
   ) + (
-    if std.length(settings.static_analysis_paths) > 0 then {
+    // The helper filters only native CodeQL findings.
+    if settings.want_codeql && std.length(settings.static_analysis_paths) > 0 &&
+       (std.member(settings.github.codeql.languages, 'c-cpp') ||
+        std.member(settings.github.codeql.languages, 'cpp')) then {
       '.github/scripts/static-analysis.py': std.strReplace(
         importstr 'github/static-analysis.py',
         '_PATHS: tuple[str, ...] = ()',
@@ -50,14 +51,6 @@ local utils = import 'utils.libsonnet';
           for path in settings.static_analysis_paths
         ]) + (if std.length(settings.static_analysis_paths) == 1 then ',' else '') + ')'
       ),
-    } else {}
-  ) + (
-    if settings.want_scan_build then {
-      assert settings.github.workflows.scan_build.workflow_file != 'pages.yml' :
-             'scan_build.workflow_file must differ from pages.yml.',
-      ['.github/workflows/' + settings.github.workflows.scan_build.workflow_file]:
-        utils.manifestYaml(scan_build(settings)),
-      '.github/workflows/pages.yml': utils.manifestYaml(scan_build_pages(settings)),
     } else {}
   ) + (
     if settings.want_tests then {
