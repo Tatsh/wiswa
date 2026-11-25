@@ -11,6 +11,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `python_requires_floor` sets the lower bound of `requires-python`. The bound may include a patch
+  release. It defaults to the first supported version, and to 3.11.5 when that version is 3.11.
+  Every soupsieve release that fixes its advisories requires 3.11.5, and every project with docs
+  depends on soupsieve through `enum-tools[sphinx]`. A 3.11 bound locks a vulnerable soupsieve for
+  3.11.0 to 3.11.4.
 - `github.codeql.env` configures environment variables for generated CodeQL analysis jobs.
 - CodeQL Actions analysis for stub-only GitHub projects. Configured CodeQL languages determine
   combined path filters. `github.codeql.workflow_file` (default `codeql.yml`) supports a generated

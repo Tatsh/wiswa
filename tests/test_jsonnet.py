@@ -181,6 +181,33 @@ def test_default_gitattributes_actions_lock_uses_text_attributes(tmp_path: Path)
     ]
 
 
+@pytest.mark.parametrize(('overrides', 'expected', 'expected_mypy'), [
+    ({}, '>=3.11.5,<4.0', '3.11'),
+    ({
+        'supported_python_versions': ['3.12', '3.13']
+    }, '>=3.12,<4.0', '3.12'),
+    ({
+        'python_dep_upper_boundary': True
+    }, '>=3.11.5,<3.15', '3.11'),
+    ({
+        'python_requires_floor': '3.11'
+    }, '>=3.11,<4.0', '3.11'),
+])
+def test_requires_python_floor(overrides: dict[str, object], expected: str,
+                               expected_mypy: str) -> None:
+    result = json.loads(
+        _jsonnet.evaluate_snippet('snippet',
+                                  f"""
+            local settings = (import 'defaults.libsonnet') + {json.dumps(overrides)};
+            {{
+              requires: settings.pyproject.project['requires-python'],
+              mypy: settings.pyproject.tool.mypy.python_version,
+            }}
+            """,
+                                  jpathdir=[str(_WISWA_JSONNET)]))
+    assert result == {'requires': expected, 'mypy': expected_mypy}
+
+
 @pytest.mark.parametrize(('username', 'project_name', 'expected'), [
     ('Tatsh', 'tatsh.github.io', 'https://tatsh.github.io/'),
     ('Tatsh', 'Tatsh.github.io', 'https://tatsh.github.io/'),

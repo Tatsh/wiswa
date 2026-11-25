@@ -1283,6 +1283,15 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
   local pyproject = import 'defaults/pyproject.libsonnet',
   /** @brief Array of supported Python versions. */
   supported_python_versions: ['3.%d' % i for i in std.range(11, 14)],
+  /**
+   * @brief Lower bound of `requires-python`. The bound may include a patch release.
+   *
+   * Defaults to the first supported version. On 3.11 the bound is 3.11.5. soupsieve, required by
+   * the `enum-tools[sphinx]` docs dependency, fixes its advisories only in releases that require
+   * 3.11.5, and a bound below 3.11.5 locks a vulnerable soupsieve for 3.11.0 to 3.11.4.
+   */
+  python_requires_floor: if self.supported_python_versions[0] == '3.11' then '3.11.5'
+  else self.supported_python_versions[0],
   /** @brief If true, add upper boundary to Python version requirement. */
   python_dep_upper_boundary: false,
   /**
@@ -1348,13 +1357,13 @@ local gitlab_opinionated = import 'defaults/gitlab.libsonnet';
       && std.length(std.findSubstr('.', settings.primary_module_qualified)) > 0,
     local poetry_package_includes = std.set([std.split(m, '.')[0] for m in settings.modules]),
     local python_req = if settings.python_dep_upper_boundary then ('>=%s,<3.%d' % [
-                                                                     settings.supported_python_versions[0],
+                                                                     settings.python_requires_floor,
                                                                      std.parseInt(
                                                                        settings.supported_python_versions[
                                                                          std.length(settings.supported_python_versions) - 1][2:]
                                                                      ) + 1,
                                                                    ])
-    else ('>=%s,<4.0' % settings.supported_python_versions[0]),
+    else ('>=%s,<4.0' % settings.python_requires_floor),
     local py_deps = settings.python_deps,
     local to_pep508(group) = std.sort(
       std.flatMap(function(k) utils.formatPep508Deps(k, group[k]), std.objectFields(group))
